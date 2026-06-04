@@ -37,7 +37,9 @@ app.add_middleware(
 # [Why] 路由定义API端点
 # [How] 使用include_router导入各模块路由
 from backend.routers import user as user_router
+from backend.routers import book as book_router
 app.include_router(user_router.router)
+app.include_router(book_router.router)
 
 
 @app.on_event("startup")

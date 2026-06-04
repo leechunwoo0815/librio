@@ -7,5 +7,8 @@
 
 from backend.models.user import User
 from backend.models.child import Child
+from backend.models.book import Book
+from backend.models.collection import Collection
+from backend.models.borrow import Borrow
 
-__all__ = ["User", "Child"]
+__all__ = ["User", "Child", "Book", "Collection", "Borrow"]
