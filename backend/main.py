@@ -36,7 +36,8 @@ app.add_middleware(
 # [What] 注册路由
 # [Why] 路由定义API端点
 # [How] 使用include_router导入各模块路由
-# TODO: 注册路由
+from backend.routers import user as user_router
+app.include_router(user_router.router)
 
 
 @app.on_event("startup")
