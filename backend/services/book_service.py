@@ -35,10 +35,13 @@ class BookService:
         ar_max = None
 
         if search_params.ar_level:
-            parts = search_params.ar_level.replace("AR", "").split("-")
-            if len(parts) == 2:
-                ar_min = float(parts[0])
-                ar_max = float(parts[1])
+            try:
+                parts = search_params.ar_level.replace("AR", "").split("-")
+                if len(parts) == 2:
+                    ar_min = float(parts[0])
+                    ar_max = float(parts[1])
+            except ValueError:
+                logger.warning(f"Invalid ar_level format: {search_params.ar_level}")
 
         items, total = self.book_repo.search(
             keyword=search_params.keyword,

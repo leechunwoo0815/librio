@@ -67,6 +67,21 @@ def test_get_book_detail(book_service, mock_repo):
     assert result.title == "Charlotte's Web"
 
 
+def test_search_books_invalid_ar_level(book_service, mock_repo):
+    """
+    [What] 测试无效AR等级格式不会崩溃
+    [Why] 验证异常输入的容错处理
+    [How] 传入无效ar_level，确保不抛异常
+    """
+    search_params = BookSearch(keyword="test", ar_level="AR-1")
+    mock_repo.search.return_value = ([], 0)
+
+    results = book_service.search_books(search_params)
+
+    assert results.total == 0
+    mock_repo.search.assert_called_once()
+
+
 def test_get_book_detail_not_found(book_service, mock_repo):
     """
     [What] 测试获取不存在的图书详情
