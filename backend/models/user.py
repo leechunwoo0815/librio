@@ -36,8 +36,8 @@ class User(Base):
     
     # [What] 密码
     # [Why] 管理端登录使用
-    # [How] 使用MD5加密存储
-    password = Column(String(64), nullable=True, comment="密码（MD5加密）")
+    # [How] 使用bcrypt加密存储（比MD5更安全）
+    password = Column(String(128), nullable=True, comment="密码（bcrypt加密）")
     
     # [What] 微信openid
     # [Why] 微信登录唯一标识
