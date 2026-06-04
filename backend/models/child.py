@@ -19,7 +19,7 @@ class Child(Base):
     """
     __tablename__ = "child"
     
-    id = Column(Integer, primary_key=True, autoincrement=True, comment="主键")
+    id = Column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True, autoincrement=True, comment="主键")
     user_id = Column(BigInteger, ForeignKey("user.id"), nullable=False, index=True, comment="关联用户表ID")
     name = Column(String(50), nullable=False, comment="孩子姓名")
     age = Column(SmallInteger, nullable=False, comment="孩子年龄")
@@ -28,7 +28,7 @@ class Child(Base):
     # [What] 会员状态
     # [Why] 记录孩子的会员等级
     # [How] 使用SmallInteger枚举：0=体验用户，1=观察期，2=正式会员，3=已过期，4=已退出
-    status = Column(SmallInteger, default=0, comment="会员状态")
+    status = Column(SmallInteger, default=0, index=True, comment="会员状态")
     
     member_start_time = Column(DateTime, nullable=True, comment="会员开始时间")
     member_expire_time = Column(DateTime, nullable=True, comment="会员到期时间")
@@ -40,8 +40,8 @@ class Child(Base):
     deposit_status = Column(SmallInteger, default=0, comment="押金状态")
     deposit_amount = Column(Numeric(10, 2), nullable=True, comment="押金金额")
     
-    teacher_id = Column(BigInteger, nullable=True, comment="分配的老师ID")
-    venue_id = Column(BigInteger, nullable=True, comment="所属场馆ID")
+    teacher_id = Column(BigInteger, nullable=True, index=True, comment="分配的老师ID")
+    venue_id = Column(BigInteger, nullable=True, index=True, comment="所属场馆ID")
     
     create_time = Column(DateTime, default=datetime.now, comment="创建时间")
     update_time = Column(DateTime, default=datetime.now, onupdate=datetime.now, comment="更新时间")

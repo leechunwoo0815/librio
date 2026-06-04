@@ -21,8 +21,8 @@ class User(Base):
     
     # [What] 主键ID
     # [Why] 每条记录需要唯一标识
-    # [How] 使用Integer自增主键（SQLite兼容）
-    id = Column(Integer, primary_key=True, autoincrement=True, comment="主键")
+    # [How] 使用BigInteger自增主键（SQLite下使用Integer兼容）
+    id = Column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True, autoincrement=True, comment="主键")
     
     # [What] 家长姓名
     # [Why] 记录用户基本信息
@@ -57,7 +57,7 @@ class User(Base):
     # [What] 当前选中的孩子ID
     # [Why] 多孩家庭需要切换当前孩子
     # [How] 使用BigInteger外键
-    current_child_id = Column(BigInteger, nullable=True, comment="当前选中的孩子ID")
+    current_child_id = Column(BigInteger, nullable=True, index=True, comment="当前选中的孩子ID")
     
     # [What] 创建时间
     # [Why] 记录数据创建时间
