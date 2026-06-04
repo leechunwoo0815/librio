@@ -10,5 +10,6 @@ from backend.models.child import Child
 from backend.models.book import Book
 from backend.models.collection import Collection
 from backend.models.borrow import Borrow
+from backend.models.order import Order
 
-__all__ = ["User", "Child", "Book", "Collection", "Borrow"]
+__all__ = ["User", "Child", "Book", "Collection", "Borrow", "Order"]
