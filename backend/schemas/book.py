@@ -56,18 +56,3 @@ class BookListResponse(BaseModel):
     """图书列表响应"""
     total: int
     items: list[BookResponse]
-
-
-class ReservationCreate(BaseModel):
-    """创建预约请求"""
-    book_id: int = Field(..., description="图书ID")
-    child_id: int = Field(..., description="孩子ID")
-
-
-class ReservationResponse(BaseModel):
-    """预约响应"""
-    id: int
-    status: str
-
-    class Config:
-        from_attributes = True

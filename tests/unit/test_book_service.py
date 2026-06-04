@@ -45,21 +45,6 @@ def test_search_books(book_service, mock_repo):
     assert results.items[0].title == "Charlotte's Web"
 
 
-def test_reserve_book(book_service, mock_repo):
-    """
-    [What] 测试预约图书
-    [Why] 验证预约逻辑
-    [How] Mock仓库层，测试预约结果
-    """
-    mock_repo.get_book.return_value = MagicMock(id=1, available_count=1)
-    mock_repo.create_reservation.return_value = MagicMock(id=1, status="reserved")
-
-    result = book_service.reserve_book(book_id=1, child_id=1)
-
-    assert result.id == 1
-    assert result.status == "reserved"
-
-
 def test_get_book_detail(book_service, mock_repo):
     """
     [What] 测试获取图书详情
@@ -93,15 +78,3 @@ def test_get_book_detail_not_found(book_service, mock_repo):
     result = book_service.get_book_detail(book_id=999)
 
     assert result is None
-
-
-def test_reserve_book_unavailable(book_service, mock_repo):
-    """
-    [What] 测试预约不可用图书
-    [Why] 验证库存不足时的处理
-    [How] Mock返回available_count=0
-    """
-    mock_repo.get_book.return_value = MagicMock(id=1, available_count=0)
-
-    with pytest.raises(ValueError, match="图书库存不足"):
-        book_service.reserve_book(book_id=1, child_id=1)

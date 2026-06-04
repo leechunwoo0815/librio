@@ -8,7 +8,7 @@
 from backend.repositories.book_repo import BookRepository
 from backend.schemas.book import (
     BookCreate, BookResponse, BookSearch,
-    BookListResponse, ReservationResponse
+    BookListResponse
 )
 from backend.models.book import Book
 from typing import Optional
@@ -72,17 +72,3 @@ class BookService:
         book = Book(**book_data.model_dump())
         created = self.book_repo.create(book)
         return BookResponse.model_validate(created)
-
-    def reserve_book(self, book_id: int, child_id: int) -> ReservationResponse:
-        """
-        预约图书
-        注意：此处简化实现，实际需要创建reservation表
-        """
-        book = self.book_repo.get_book(book_id)
-        if not book:
-            raise ValueError("图书不存在")
-        if book.available_count <= 0:
-            raise ValueError("图书库存不足")
-
-        reservation = self.book_repo.create_reservation(book_id, child_id)
-        return ReservationResponse(id=reservation.id, status=reservation.status)

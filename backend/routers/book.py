@@ -12,7 +12,7 @@ from backend.repositories.book_repo import BookRepository
 from backend.services.book_service import BookService
 from backend.schemas.book import (
     BookCreate, BookResponse, BookSearch,
-    BookListResponse, ReservationCreate, ReservationResponse
+    BookListResponse
 )
 import logging
 
@@ -71,20 +71,5 @@ async def create_book(
     """创建图书"""
     try:
         return book_service.create_book(book_data)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-
-@router.post("/reserve", response_model=ReservationResponse)
-async def reserve_book(
-    reservation: ReservationCreate,
-    book_service: BookService = Depends(get_book_service)
-):
-    """预约图书"""
-    try:
-        return book_service.reserve_book(
-            book_id=reservation.book_id,
-            child_id=reservation.child_id
-        )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
