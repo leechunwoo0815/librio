@@ -56,7 +56,7 @@ class UserService:
         created_user = self.user_repo.create(user)
         logger.info(f"User created successfully: {created_user.id}")
 
-        return UserResponse.from_orm(created_user)
+        return UserResponse.model_validate(created_user)
 
     def get_user_by_id(self, user_id: int) -> Optional[UserResponse]:
         """
@@ -67,7 +67,7 @@ class UserService:
         user = self.user_repo.get_by_id(user_id)
         if not user:
             return None
-        return UserResponse.from_orm(user)
+        return UserResponse.model_validate(user)
 
     def get_user_by_openid(self, openid: str) -> Optional[UserResponse]:
         """
@@ -78,4 +78,4 @@ class UserService:
         user = self.user_repo.get_by_openid(openid)
         if not user:
             return None
-        return UserResponse.from_orm(user)
+        return UserResponse.model_validate(user)

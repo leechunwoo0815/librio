@@ -34,7 +34,7 @@ def test_create_user(user_service, mock_repo):
     )
 
     mock_repo.get_by_phone.return_value = None
-    mock_repo.create.return_value = MagicMock(id=1, **user_data.dict())
+    mock_repo.create.return_value = MagicMock(id=1, **user_data.model_dump())
 
     result = user_service.create_user(user_data)
 
