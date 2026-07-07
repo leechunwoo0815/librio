@@ -1,0 +1,8 @@
+/* PC-028: 统一分页组件 */
+.pagination { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 20px; padding: 12px 0; }
+.pagination .page-info { font-size: 13px; color: var(--muted); margin-right: 12px; }
+.pagination .btn-page { padding: 6px 14px; border: 1px solid var(--border); border-radius: 6px; background: #fff; color: var(--fg); font-size: 13px; cursor: pointer; }
+.pagination .btn-page:hover { background: var(--accent-soft); }
+.pagination .btn-page.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.pagination .btn-page:disabled { opacity: 0.4; cursor: not-allowed; }
+.pagination .btn-page:disabled:hover { background: #fff; }

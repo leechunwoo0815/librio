@@ -1,0 +1,341 @@
+{% extends "admin/base.html" %}
+{% block title %}系统设置{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="/static/admin/css/pages/settings.css" />
+{% endblock %}
+{% block page_title %}系统设置{% endblock %}
+{% block content %}
+<div class="content" style="max-width:860px;padding:0;">
+  <!-- basic info -->
+  <div class="setting-section">
+    <div class="setting-header">
+      <h2>基本信息</h2>
+      <span class="section-badge">品牌</span>
+    </div>
+    <div class="setting-body">
+      <div class="setting-item">
+        <div class="setting-label"><div class="label-text">平台名称</div><div class="label-desc">显示在小程序和管理后台的标题</div></div>
+        <div class="setting-control"><input type="text" id="siteName" value="MegaWords 英文原版阅读" /></div>
+      </div>
+      <div class="setting-item">
+        <div class="setting-label"><div class="label-text">品牌主色</div><div class="label-desc">按钮、强调色、品牌标识</div></div>
+        <div class="setting-control">
+          <div class="color-row"><div class="color-swatch" style="background:var(--accent)"></div><input class="color-input" type="text" value="#6171e5" /></div>
+        </div>
+      </div>
+      <div class="setting-item">
+        <div class="setting-label"><div class="label-text">辅助色</div><div class="label-desc">辅助按钮、标签、次级强调</div></div>
+        <div class="setting-control">
+          <div class="color-row"><div class="color-swatch" style="background:var(--secondary)"></div><input class="color-input" type="text" value="#a0f269" /></div>
+        </div>
+      </div>
+      <div class="setting-item">
+        <div class="setting-label"><div class="label-text">客服电话</div><div class="label-desc">用户端展示的联系电话</div></div>
+        <div class="setting-control"><input type="tel" id="contactPhone" value="400-888-6688" /></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- pricing -->
+  <div class="setting-section">
+    <div class="setting-header"><h2>价格设置</h2><span class="section-badge">收费</span></div>
+    <div class="setting-body">
+      <div class="setting-item">
+        <div class="setting-label"><div class="label-text">亲子体验课</div><div class="label-desc">首次体验课价格（元）</div></div>
+        <div class="setting-control"><input type="number" id="cfgParentCoursePrice" value="99" style="width:120px" /></div>
+      </div>
+      <div class="setting-item">
+        <div class="setting-label"><div class="label-text">观察期月费</div><div class="label-desc">观察期会员月费（元）</div></div>
+        <div class="setting-control"><input type="number" id="cfgObservationPrice" value="500" style="width:120px" /></div>
+      </div>
+      <div class="setting-item">
+        <div class="setting-label"><div class="label-text">正式会员年费</div><div class="label-desc">年度会员费用（元）</div></div>
+        <div class="setting-control"><input type="number" id="cfgOfficialPrice" value="5400" style="width:120px" /></div>
+      </div>
+      <div class="setting-item">
+        <div class="setting-label"><div class="label-text">图书押金</div><div class="label-desc">借阅图书押金（元）</div></div>
+        <div class="setting-control"><input type="number" id="cfgDeposit" value="1200" style="width:120px" /></div>
+      </div>
+      <div class="setting-item">
+        <div class="setting-label"><div class="label-text">多孩折扣</div><div class="label-desc">第二个孩子起的折扣比例</div></div>
+        <div class="setting-control">
+          <div class="input-row"><input type="number" id="cfgMultiChild" value="80" style="width:80px" /><span style="font-size:13px;color:var(--muted)">%</span></div>
+          <div class="input-hint">当前设置为 8 折（第二个孩子起）</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- borrowing rules -->
+  <div class="setting-section">
+    <div class="setting-header"><h2>借阅规则</h2><span class="section-badge">规则</span></div>
+    <div class="setting-body">
+      <div class="setting-item">
+        <div class="setting-label"><div class="label-text">正式会员最大借阅数</div><div class="label-desc">每次最多借阅图书数量</div></div>
+        <div class="setting-control"><input type="number" id="cfgBorrowLimit" value="5" style="width:80px" /></div>
+      </div>
+      <div class="setting-item">
+        <div class="setting-label"><div class="label-text">观察期最大借阅数</div><div class="label-desc">观察期会员每次最多借阅数量</div></div>
+        <div class="setting-control"><input type="number" id="cfgObsBorrowLimit" value="3" style="width:80px" /></div>
+      </div>
+      <div class="setting-item">
+        <div class="setting-label"><div class="label-text">借阅周期</div><div class="label-desc">默认借阅天数</div></div>
+        <div class="setting-control"><div class="input-row"><input type="number" id="cfgBorrowPeriod" value="14" style="width:80px" /><span style="font-size:13px;color:var(--muted)">天</span></div></div>
+      </div>
+      <div class="setting-item">
+        <div class="setting-label"><div class="label-text">续借次数</div><div class="label-desc">每本书最多续借次数</div></div>
+        <div class="setting-control"><input type="number" id="cfgRenew" value="1" style="width:80px" /></div>
+      </div>
+      <div class="setting-item">
+        <div class="setting-label"><div class="label-text">遗失赔偿比例</div><div class="label-desc">按原价的百分比扣除押金</div></div>
+        <div class="setting-control"><div class="input-row"><input type="number" id="cfgLostPenalty" value="70" style="width:80px" /><span style="font-size:13px;color:var(--muted)">%</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- notifications -->
+  <div class="setting-section">
+    <div class="setting-header"><h2>通知设置</h2><span class="section-badge">通知</span></div>
+    <div class="setting-body">
+      <div class="setting-item">
+        <div class="setting-label"><div class="label-text">借阅到期提醒</div><div class="label-desc">到期前 N 天推送提醒</div></div>
+        <div class="setting-control"><div class="input-row"><input type="number" id="cfgBorrowRemind" value="3" style="width:80px" /><span style="font-size:13px;color:var(--muted)">天前</span></div></div>
+      </div>
+      <div class="setting-item">
+        <div class="setting-label"><div class="label-text">会员到期提醒</div><div class="label-desc">会员到期前 N 天推送</div></div>
+        <div class="setting-control"><div class="input-row"><input type="number" id="cfgMemberRemind" value="7" style="width:80px" /><span style="font-size:13px;color:var(--muted)">天前</span></div></div>
+      </div>
+      <div class="setting-item">
+        <div class="setting-label"><div class="label-text">新书入库通知</div><div class="label-desc">新书入库时向匹配用户推送</div></div>
+        <div class="setting-control"><div class="toggle-wrap"><div class="toggle on" onclick="this.classList.toggle('on')"></div><span class="toggle-label">已开启</span></div></div>
+      </div>
+      <div class="setting-item">
+        <div class="setting-label"><div class="label-text">活动报名通知</div><div class="label-desc">活动开始前自动提醒报名用户</div></div>
+        <div class="setting-control"><div class="toggle-wrap"><div class="toggle on" onclick="this.classList.toggle('on')"></div><span class="toggle-label">已开启</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- save actions -->
+  <div class="settings-actions">
+    <button class="btn-reset" onclick="loadConfigs()">重置默认</button>
+    <button class="btn-save" onclick="saveAllSettings()">保存设置</button>
+  </div>
+
+  <!-- admin accounts -->
+  <div class="setting-section" style="margin-top:24px">
+    <div class="setting-header"><h2>管理员账号</h2><span class="section-badge">权限</span></div>
+    <div class="setting-body">
+      <table class="admin-table" id="adminTable">
+        <thead><tr><th>姓名</th><th>手机号</th><th>角色</th><th>最近登录</th><th>操作</th></tr></thead>
+        <tbody id="adminBody">
+          <tr><td colspan="5" style="text-align:center;padding:20px;color:var(--muted)">加载中...</td></tr>
+        </tbody>
+      </table>
+      <button class="btn-primary" style="margin-top:12px" onclick="openAddAdminModal()">+ 添加管理员</button>
+    </div>
+  </div>
+</div>
+
+<!-- admin modal -->
+<div class="modal-overlay" id="adminModal" onclick="if(event.target===this)closeAdminModal()">
+  <div class="modal">
+    <h3 id="adminModalTitle">添加管理员</h3>
+    <form id="adminForm" onsubmit="submitAdmin(event)">
+      <input type="hidden" id="adminEditId" value="" />
+      <div class="form-group">
+        <label>用户名 <span style="color:var(--error)">*</span></label>
+        <input type="text" class="form-input" name="username" required minlength="3" maxlength="50" />
+      </div>
+      <div class="form-group">
+        <label>姓名</label>
+        <input type="text" class="form-input" name="name" />
+      </div>
+      <div class="form-group">
+        <label>密码 <span style="color:var(--error)">*</span></label>
+        <input type="password" class="form-input" name="password" minlength="6" id="adminPassword" />
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">编辑时留空表示不修改密码</div>
+      </div>
+      <div class="form-group">
+        <label>角色</label>
+        <select class="form-input" name="role">
+          <option value="1">员工</option>
+          <option value="0">超级管理员</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" onclick="closeAdminModal()">取消</button>
+        <button type="submit" class="btn-primary" id="adminSubmitBtn">保存</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  var allConfigs = {};
+
+  document.addEventListener('DOMContentLoaded', function() {
+    loadConfigs();
+    loadAdmins();
+  });
+
+  async function loadConfigs() {
+    try {
+      var data = await api.get('/admin/api/config');
+      allConfigs = data || {};
+      Object.entries(allConfigs).forEach(function(entry) {
+        var key = entry[0], val = entry[1];
+        var el = document.getElementById('cfg' + key.split('_').map(function(w) { return w.charAt(0).toUpperCase() + w.slice(1); }).join(''));
+        if (el && val.value != null) el.value = val.value;
+      });
+    } catch (err) {
+      showToast('加载配置失败', 'error');
+    }
+  }
+
+  async function loadAdmins() {
+    try {
+      var data = await api.get('/admin/api/admins');
+      var admins = data.items || [];
+      var roleMap = { 0: 'role-super', 1: 'role-editor' };
+      var roleText = { 0: '超级管理员', 1: '员工' };
+      if (!admins.length) {
+        document.getElementById('adminBody').innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--muted);">暂无管理员</td></tr>';
+        return;
+      }
+      document.getElementById('adminBody').innerHTML = admins.map(function(a) {
+        return '<tr>' +
+          '<td style="font-weight:500">' + escapeHtml(a.name || a.username || '--') + '</td>' +
+          '<td style="font-family:var(--font-mono);font-size:12px">' + escapeHtml(a.phone || '--') + '</td>' +
+          '<td><span class="role-badge ' + (roleMap[a.role] || 'role-editor') + '">' + (roleText[a.role] || a.role_name || '--') + '</span></td>' +
+          '<td>' + (a.last_login ? formatDateTime(a.last_login) : '--') + '</td>' +
+          '<td>' +
+            '<button class="action-btn" style="padding:5px 10px;border-radius:8px;font-size:12px;color:var(--muted);border:1px solid var(--border);background:var(--surface);margin-right:5px" onclick="editAdmin(' + a.id + ')">编辑</button>' +
+            '<button class="action-btn" style="padding:5px 10px;border-radius:8px;font-size:12px;color:var(--error);border:1px solid var(--error);background:var(--surface)" onclick="deleteAdmin(' + a.id + ', \'' + escapeHtml(a.name || a.username) + '\')">删除</button>' +
+          '</td>' +
+        '</tr>';
+      }).join('');
+    } catch (e) {
+      // silent
+    }
+  }
+
+  async function editAdmin(id) {
+    try {
+      var data = await api.get('/admin/api/admins');
+      var admins = data.items || [];
+      var admin = admins.find(function(a) { return a.id === id; });
+      if (!admin) {
+        showToast('管理员不存在', 'error');
+        return;
+      }
+      document.getElementById('adminEditId').value = id;
+      document.getElementById('adminModalTitle').textContent = '编辑管理员';
+      document.getElementById('adminSubmitBtn').textContent = '保存修改';
+      var form = document.getElementById('adminForm');
+      form.elements['username'].value = admin.username || '';
+      form.elements['username'].disabled = true;
+      form.elements['name'].value = admin.name || '';
+      form.elements['password'].value = '';
+      form.elements['role'].value = admin.role || 1;
+      document.getElementById('adminModal').classList.add('show');
+    } catch (err) {
+      showToast('加载管理员信息失败', 'error');
+    }
+  }
+
+  function openAddAdminModal() {
+    document.getElementById('adminEditId').value = '';
+    document.getElementById('adminModalTitle').textContent = '添加管理员';
+    document.getElementById('adminSubmitBtn').textContent = '保存';
+    var form = document.getElementById('adminForm');
+    form.reset();
+    form.elements['username'].disabled = false;
+    document.getElementById('adminPassword').required = true;
+    document.getElementById('adminModal').classList.add('show');
+  }
+
+  function closeAdminModal() {
+    document.getElementById('adminModal').classList.remove('show');
+    document.getElementById('adminPassword').required = true;
+  }
+
+  async function submitAdmin(e) {
+    e.preventDefault();
+    var form = document.getElementById('adminForm');
+    var fd = new FormData(form);
+    var body = {};
+    for (var [k, v] of fd.entries()) {
+      if (k === 'adminEditId') continue;
+      if (v === '') continue;
+      if (k === 'role') {
+        body[k] = Number(v);
+      } else {
+        body[k] = v;
+      }
+    }
+    var editId = document.getElementById('adminEditId').value;
+    try {
+      if (editId) {
+        await api.put('/admin/api/admins/' + editId, body);
+        showToast('管理员更新成功');
+      } else {
+        await api.post('/admin/api/admins', body);
+        showToast('管理员添加成功');
+      }
+      closeAdminModal();
+      loadAdmins();
+    } catch (err) {
+      showToast(err.message || '操作失败', 'error');
+    }
+  }
+
+  async function deleteAdmin(id, name) {
+    showConfirm('删除管理员', '确定删除管理员"' + name + '"？此操作不可撤销。', async function() {
+      try {
+        await api.del('/admin/api/admins/' + id);
+        showToast('管理员已删除');
+        loadAdmins();
+      } catch (err) {
+        showToast(err.message || '删除失败', 'error');
+      }
+    });
+  }
+
+  async function saveAllSettings() {
+    var keys = [
+      { key: 'site_name', el: 'siteName' },
+      { key: 'contact_phone', el: 'contactPhone' },
+      { key: 'price_parent_course', el: 'cfgParentCoursePrice' },
+      { key: 'price_observation', el: 'cfgObservationPrice' },
+      { key: 'price_official_member', el: 'cfgOfficialPrice' },
+      { key: 'deposit_amount', el: 'cfgDeposit' },
+      { key: 'multi_child_discount', el: 'cfgMultiChild' },
+      { key: 'borrow_limit', el: 'cfgBorrowLimit' },
+      { key: 'borrow_period_days', el: 'cfgBorrowPeriod' },
+      { key: 'lost_book_fine_multiplier', el: 'cfgLostPenalty' },
+      { key: 'observation_remind_days', el: 'cfgMemberRemind' },
+      { key: 'borrow_due_remind_days', el: 'cfgBorrowRemind' },
+    ];
+    var saved = 0, failed = 0;
+    for (var i = 0; i < keys.length; i++) {
+      var el = document.getElementById(keys[i].el);
+      if (!el) continue;
+      try {
+        await api.put('/admin/api/config/' + encodeURIComponent(keys[i].key), { value: el.value });
+        saved++;
+      } catch (e) { failed++; }
+    }
+    showToast('保存完成：成功 ' + saved + ' 项' + (failed ? '，失败 ' + failed + ' 项' : ''));
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    var div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+</script>
+{% endblock %}

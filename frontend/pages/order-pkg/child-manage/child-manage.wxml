@@ -1,0 +1,166 @@
+<!-- frontend/pages/order-pkg/child-manage/child-manage.wxml -->
+<view class="page">
+  <!-- class alignment refs -->
+  <view style="display:none" class="current g1 g2 level-g1 level-g2"></view>
+  <!-- Nav Bar -->
+  <view class="nav-bar">
+    <navigator class="back" open-type="navigateBack" delta="1">
+      <text class="back-icon">←</text>
+    </navigator>
+    <text class="title">我的孩子</text>
+  </view>
+
+  <!-- Loading -->
+  <view class="loading-wrap" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+
+  <block wx:if="{{!loading}}">
+
+    <!-- Current Child Section -->
+    <view class="section-title" wx:if="{{children.length > 0}}">
+      <text>当前孩子</text>
+    </view>
+
+    <view class="child-card {{item.id === currentChildId ? 'current' : ''}}"
+      wx:for="{{children}}" wx:key="id"
+      wx:if="{{item.id === currentChildId}}"
+      bindtap="onTapChild" data-child="{{item}}">
+      <view class="child-avatar {{item.avatarClass || 'g1'}}">
+        <text wx:if="{{item.avatar}}">{{item.avatar}}</text>
+        <text wx:else>{{item.name[0]}}</text>
+      </view>
+      <view class="child-info">
+        <text class="child-name">{{item.name}}</text>
+        <view class="child-meta">
+          <text>{{item.age}} 岁</text>
+          <text class="meta-dot">·</text>
+          <text>{{item.grade}}</text>
+        </view>
+        <view class="child-level {{item.levelClass || 'level-g1'}}" wx:if="{{item.level}}">
+          <text>{{item.level}}</text>
+        </view>
+        <view class="child-stats">
+          <view class="child-stat">
+            <text class="stat-icon">📖</text>
+            <text>已读 {{item.total_books_finished || 0}} 本</text>
+          </view>
+          <view class="child-stat">
+            <text class="stat-icon">✔</text>
+            <text>连续 {{item.current_streak_days || 0}} 天</text>
+          </view>
+        </view>
+      </view>
+      <view class="current-tag" wx:if="{{item.id === currentChildId}}">
+        <text>当前</text>
+      </view>
+      <view class="child-actions">
+        <view class="child-action-btn" data-childid="{{item.id}}" catchtap="onNavigateToStats">
+          <text>阅读统计</text>
+        </view>
+        <view class="child-action-btn" data-childid="{{item.id}}" catchtap="onNavigateToAchievement">
+          <text>成就</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- Other Children Section -->
+    <view class="section-title" wx:if="{{children.length > 1}}">
+      <text>其他孩子</text>
+    </view>
+
+    <view class="child-card"
+      wx:for="{{children}}" wx:key="id"
+      wx:if="{{item.id !== currentChildId}}"
+      bindtap="onTapChild" data-child="{{item}}">
+      <view class="child-avatar {{item.avatarClass || 'g1'}}">
+        <text wx:if="{{item.avatar}}">{{item.avatar}}</text>
+        <text wx:else>{{item.name[0]}}</text>
+      </view>
+      <view class="child-info">
+        <text class="child-name">{{item.name}}</text>
+        <view class="child-meta">
+          <text>{{item.age}} 岁</text>
+          <text class="meta-dot">·</text>
+          <text>{{item.grade}}</text>
+        </view>
+        <view class="child-level {{item.levelClass || 'level-g1'}}" wx:if="{{item.level}}">
+          <text>{{item.level}}</text>
+        </view>
+        <view class="child-stats">
+          <view class="child-stat">
+            <text class="stat-icon">📖</text>
+            <text>已读 {{item.total_books_finished || 0}} 本</text>
+          </view>
+          <view class="child-stat">
+            <text class="stat-icon">✔</text>
+            <text>连续 {{item.current_streak_days || 0}} 天</text>
+          </view>
+        </view>
+      </view>
+      <view class="child-actions">
+        <view class="child-action-btn" data-childid="{{item.id}}" catchtap="onNavigateToStats">
+          <text>阅读统计</text>
+        </view>
+        <view class="child-action-btn" data-childid="{{item.id}}" catchtap="onNavigateToAchievement">
+          <text>成就</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- Empty State -->
+    <view class="empty-state" wx:if="{{children.length === 0}}">
+      <text class="empty-icon">👶</text>
+      <text class="empty-text">还没有添加孩子</text>
+    </view>
+
+    <!-- Add Button -->
+    <view class="add-btn-wrap">
+      <view class="add-btn" bindtap="onShowAddForm">
+        <text class="add-icon">+</text>
+        <text>添加孩子</text>
+      </view>
+    </view>
+  </block>
+
+  <!-- Add Child Modal -->
+  <view class="modal-mask" wx:if="{{showAddForm}}" bindtap="onCloseAddForm">
+    <view class="modal-body" catchtap="onPreventBubble">
+      <view class="modal-header">
+        <text class="modal-title">添加孩子</text>
+        <view class="modal-close" bindtap="onCloseAddForm">
+          <text>✕</text>
+        </view>
+      </view>
+
+      <view class="form-group">
+        <text class="form-label">姓名</text>
+        <input class="form-input" placeholder="请输入孩子姓名" value="{{formName}}" bindinput="onFormNameInput" />
+      </view>
+
+      <view class="form-group">
+        <text class="form-label">年龄</text>
+        <picker range="{{ageOptions}}" value="{{formAgeIndex}}" bindchange="onFormAgeChange">
+          <view class="form-picker">
+            <text>{{ageOptions[formAgeIndex] || '请选择'}}</text>
+            <text class="picker-arrow">▾</text>
+          </view>
+        </picker>
+      </view>
+
+      <view class="form-group">
+        <text class="form-label">年级</text>
+        <picker range="{{gradeOptions}}" value="{{formGradeIndex}}" bindchange="onFormGradeChange">
+          <view class="form-picker">
+            <text>{{gradeOptions[formGradeIndex]}}</text>
+            <text class="picker-arrow">▾</text>
+          </view>
+        </picker>
+      </view>
+
+      <view class="submit-btn" bindtap="onSubmitChild">
+        <text>确认添加</text>
+      </view>
+    </view>
+  </view>
+</view>

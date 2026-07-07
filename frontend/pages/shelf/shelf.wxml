@@ -1,0 +1,225 @@
+<!-- frontend/pages/shelf/shelf.wxml -->
+<view class="page-bg">
+  <view style="display:none" class="disabled"></view>
+
+  <error-view wx:if="{{loadError}}" visible="{{loadError}}" icon="😵" title="加载失败" desc="数据加载出错了，请稍后重试" showRetry="{{true}}" retryText="重试" bind:onRetry="onRetry" />
+  <loading-skeleton wx:elif="{{loading}}" />
+
+  <block wx:if="{{!loadError && !loading}}">
+
+  <!-- Top Bar -->
+  <view class="top-bar">
+    <view class="back-btn" bindtap="goBack">
+      <text>←</text>
+    </view>
+    <text class="top-bar-title">我的书架</text>
+  </view>
+
+  <!-- Tab Bar (Category Tabs) -->
+  <view class="tab-bar">
+    <view
+      class="tab-btn {{activeTab === 0 ? 'active' : ''}}"
+      data-index="0"
+      bindtap="onTabChange"
+    >
+      <text>正在阅读</text>
+      <text class="tab-count">{{books.length}}</text>
+    </view>
+    <view
+      class="tab-btn {{activeTab === 1 ? 'active' : ''}}"
+      data-index="1"
+      bindtap="onTabChange"
+    >
+      <text>收藏夹</text>
+      <text class="tab-count">{{favorites.length}}</text>
+    </view>
+    <view
+      class="tab-btn {{activeTab === 2 ? 'active' : ''}}"
+      data-index="2"
+      bindtap="onTabChange"
+    >
+      <text>已读完</text>
+      <text class="tab-count">{{finished.length}}</text>
+    </view>
+  </view>
+
+  <!-- Toast -->
+  <view class="toast" wx:if="{{toastVisible}}">
+    <text>{{toastMsg}}</text>
+  </view>
+
+  <!-- Content Area -->
+  <view class="content">
+
+  <!-- ======== 正在阅读 Tab Panel ======== -->
+  <view class="tab-panel" wx:if="{{activeTab === 0}}">
+    <!-- Section Header -->
+    <view class="section-header">
+      <text class="section-header-title">正在阅读</text>
+      <text class="count">{{books.length}}/{{shelfLimit}}</text>
+    </view>
+
+    <!-- Book Grid -->
+    <view class="book-grid" wx:if="{{books.length > 0}}">
+      <view
+        class="book-card"
+        wx:key="id"
+        wx:for="{{books}}"
+        data-bookid="{{item.id}}"
+        bindtap="goReader"
+        bindlongpress="removeFromShelf"
+      >
+        <view
+          class="book-cover cover-{{item.coverIndex || (index % 6 + 1)}}"
+          style="background: {{item.cover_bg || ''}}"
+        >
+          <text class="book-cover-emoji">{{item.cover_emoji || '📖'}}</text>
+          <text class="ar-badge" wx:if="{{item.ar_value}}">AR {{item.ar_value}}</text>
+        </view>
+        <text class="book-title">{{item.title}}</text>
+        <text class="book-author">{{item.author || ''}}</text>
+        <view class="expiry-info {{item.expiryDays <= 3 ? 'urgent' : (item.expiryDays < 7 ? 'warning' : '')}}" wx:if="{{item.expiryDays != null}}">
+          <text>⏰ 还剩{{item.expiryDays}}天到期</text>
+        </view>
+        <view class="progress-wrap">
+          <view class="progress-label">
+            <text>阅读进度</text>
+            <text class="progress-pct">{{item.progress || 0}}%</text>
+          </view>
+          <view class="progress-bar">
+            <view class="progress-fill" style="width: {{item.progress || 0}}%; background: var(--accent)"></view>
+          </view>
+        </view>
+        <button class="card-btn primary" catchtap="goReader" data-bookid="{{item.id}}">继续阅读</button>
+      </view>
+
+      <!-- Add book card -->
+      <view
+        class="add-card {{books.length >= shelfLimit ? 'disabled' : ''}}"
+        bindtap="goAddBook"
+        wx:if="{{books.length < shelfLimit}}"
+      >
+        <view class="add-icon">＋</view>
+        <text class="add-text">添加书籍</text>
+      </view>
+    </view>
+
+    <!-- Shelf full hint -->
+    <view class="shelf-full-hint" wx:if="{{books.length >= shelfLimit}}">
+      <text>书架已满，请先完成阅读后再添加新书</text>
+    </view>
+
+    <!-- Empty state -->
+    <view class="empty-state" wx:if="{{books.length === 0}}">
+      <text class="empty-emoji">📚</text>
+      <text class="empty-title">还没有收藏的书</text>
+      <text class="empty-desc">去图书馆挑选喜欢的书吧</text>
+      <button class="empty-btn" bindtap="goBooks">📚 去图书馆看看</button>
+    </view>
+  </view>
+
+  <!-- ======== 收藏夹 Tab Panel ======== -->
+  <view class="tab-panel" wx:if="{{activeTab === 1}}">
+    <view class="book-grid" wx:if="{{favorites.length > 0}}">
+      <view
+        class="book-card"
+        wx:key="id"
+        wx:for="{{favorites}}"
+      >
+        <view class="book-cover cover-{{item.coverIndex || (index % 6 + 1)}}" style="background: {{item.cover_bg || ''}}">
+          <text class="book-cover-emoji">{{item.cover_emoji || '📖'}}</text>
+          <text class="ar-badge" wx:if="{{item.ar_value}}">AR {{item.ar_value}}</text>
+        </view>
+        <text class="book-title">{{item.title}}</text>
+        <text class="book-author">{{item.author || ''}}</text>
+        <button class="card-btn secondary" data-bookid="{{item.id}}" catchtap="addToShelfFromFav">📥 加入书架</button>
+      </view>
+    </view>
+
+    <!-- Empty state -->
+    <view class="empty-state" wx:if="{{favorites.length === 0}}">
+      <text class="empty-emoji">💫</text>
+      <text class="empty-title">还没有收藏图书</text>
+      <text class="empty-desc">浏览图书馆，点击❤️把喜欢的书<br/>加入收藏夹吧</text>
+      <button class="empty-btn" bindtap="goBooks">📚 去图书馆看看</button>
+    </view>
+  </view>
+
+  <!-- ======== 已读完 Tab Panel ======== -->
+  <view class="tab-panel" wx:if="{{activeTab === 2}}">
+    <view class="book-grid" wx:if="{{finished.length > 0}}">
+      <view
+        class="book-card"
+        wx:key="id"
+        wx:for="{{finished}}"
+        data-bookid="{{item.id}}"
+        bindtap="goFinishedDetail"
+      >
+        <view class="book-cover cover-{{item.coverIndex || (index % 6 + 1)}}" style="background: {{item.cover_bg || ''}}">
+          <text class="book-cover-emoji">{{item.cover_emoji || '📖'}}</text>
+          <text class="checkmark">✓</text>
+        </view>
+        <text class="book-title">{{item.title}}</text>
+        <text class="book-author">{{item.author || ''}}</text>
+        <view class="completed-info">
+          <text class="finish-date" wx:if="{{item.finish_date}}">读完于 {{item.finish_date}}</text>
+          <view class="stats-row">
+            <text class="stat-badge words" wx:if="{{item.word_count}}">📝 {{item.word_count}}词</text>
+            <text class="stat-badge quiz-pass" wx:if="{{item.quiz_passed}}">✓ 测验通过</text>
+            <text class="stat-badge quiz-fail" wx:if="{{!item.quiz_passed && item.quiz_taken}}">测验未通过</text>
+          </view>
+        </view>
+        <button class="card-btn success" catchtap="goReader" data-bookid="{{item.id}}">🔄 再读一遍</button>
+      </view>
+    </view>
+
+    <!-- Empty state -->
+    <view class="empty-state" wx:if="{{finished.length === 0}}">
+      <text class="empty-emoji">🏆</text>
+      <text class="empty-title">还没有读完的书</text>
+      <text class="empty-desc">继续阅读，完成阅读挑战<br/>获得成就徽章吧</text>
+      <button class="empty-btn" bindtap="onTabChange" data-index="0">📖 去阅读</button>
+    </view>
+  </view>
+
+  </view><!-- end content -->
+
+  </block><!-- end !loadError && !loading -->
+
+  <!-- Bottom Nav bottom-nav -->
+  <view class="bottom-nav">
+    <navigator class="nav-item" url="/pages/index/index" open-type="switchTab">
+      <text class="nav-icon">🏠</text>
+      首页
+    </navigator>
+    <navigator class="nav-item" url="/pages/books/books" open-type="switchTab">
+      <text class="nav-icon">📚</text>
+      图书馆
+    </navigator>
+    <navigator class="nav-item active" url="/pages/shelf/shelf" open-type="switchTab">
+      <text class="nav-icon">📖</text>
+      书架
+    </navigator>
+    <navigator class="nav-item" url="/pages/member/member" open-type="switchTab">
+      <text class="nav-icon">👤</text>
+      我的
+    </navigator>
+  </view>
+
+  <!-- Remove confirmation dialog (context overlay) -->
+  <view
+    class="ctx-overlay {{showRemoveDialog ? 'show' : ''}}"
+    catchtap="hideRemove"
+  >
+    <view class="ctx-dialog" catchtap="">
+      <text class="ctx-emoji">📚</text>
+      <text class="ctx-title">移出《{{removeTarget}}》？</text>
+      <text class="ctx-sub">确定要将这本书移出书架吗？阅读进度将保留，可随时重新添加。</text>
+      <view class="ctx-actions">
+        <button class="ctx-btn cancel" bindtap="hideRemove">取消</button>
+        <button class="ctx-btn confirm" bindtap="confirmRemoveFromShelf">移出书架</button>
+      </view>
+    </view>
+  </view>
+
+</view>

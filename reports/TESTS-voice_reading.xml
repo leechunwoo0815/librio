@@ -1,0 +1,105 @@
+<testsuite name="voice_reading.语音朗读与练习" tests="6" errors="0" failures="3" skipped="0" time="0.055577" timestamp="2026-06-15T16:08:36.081420" hostname="litianyudeMacBook-Air.local"><testcase classname="voice_reading.语音朗读与练习" name="录制朗读" status="failed" time="0.008905"><failure type="AssertionError" message="">
+<![CDATA[
+Failing step: 那么 系统录制朗读音频 ... failed in 0.004s
+Location: features/voice_reading.feature:17
+ASSERT FAILED: ]]>
+</failure><system-out>
+<![CDATA[
+@scenario.begin
+  场景: 录制朗读
+    假如 用户已登录小程序 ... passed in 0.002s
+    并且 用户的孩子是正式会员 ... passed in 0.003s
+    并且 用户正在阅读图书 ... passed in 0.000s
+    当 用户选中一段英文文本 ... passed in 0.000s
+    并且 用户点击"朗读"按钮 ... passed in 0.000s
+    并且 用户朗读文本内容 ... passed in 0.000s
+    那么 系统录制朗读音频 ... failed in 0.004s
+    并且 录音保存在云端 ... skipped in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="voice_reading.语音朗读与练习" name="回放录音" status="failed" time="0.007206"><failure type="AssertionError" message="">
+<![CDATA[
+Failing step: 那么 播放刚才的录音 ... failed in 0.000s
+Location: features/voice_reading.feature:23
+ASSERT FAILED: ]]>
+</failure><system-out>
+<![CDATA[
+@scenario.begin
+  场景: 回放录音
+    假如 用户已登录小程序 ... passed in 0.002s
+    并且 用户的孩子是正式会员 ... passed in 0.001s
+    并且 用户正在阅读图书 ... passed in 0.000s
+    假如 用户已完成朗读 ... passed in 0.004s
+    当 用户点击"回放"按钮 ... passed in 0.001s
+    那么 播放刚才的录音 ... failed in 0.000s
+    并且 同时显示朗读文本 ... skipped in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="voice_reading.语音朗读与练习" name="查看朗读记录" status="failed" time="0.006471"><failure type="AssertionError" message="">
+<![CDATA[
+Failing step: 那么 显示所有朗读记录列表 ... failed in 0.000s
+Location: features/voice_reading.feature:28
+ASSERT FAILED: ]]>
+</failure><system-out>
+<![CDATA[
+@scenario.begin
+  场景: 查看朗读记录
+    假如 用户已登录小程序 ... passed in 0.002s
+    并且 用户的孩子是正式会员 ... passed in 0.001s
+    并且 用户正在阅读图书 ... passed in 0.000s
+    当 用户进入朗读记录页面 ... passed in 0.004s
+    那么 显示所有朗读记录列表 ... failed in 0.000s
+    并且 每条记录显示：图书、文本内容、录音时长、日期 ... skipped in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="voice_reading.语音朗读与练习" name="朗读触发打卡" status="passed" time="0.005033"><system-out>
+<![CDATA[
+@scenario.begin
+  场景: 朗读触发打卡
+    假如 用户已登录小程序 ... passed in 0.004s
+    并且 用户的孩子是正式会员 ... passed in 0.001s
+    并且 用户正在阅读图书 ... passed in 0.000s
+    假如 用户今日未打卡 ... passed in 0.000s
+    当 用户完成一次朗读练习 ... passed in 0.000s
+    那么 自动触发阅读打卡 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="voice_reading.语音朗读与练习" name="获取发音评分" status="passed" time="0.00698"><system-out>
+<![CDATA[
+@scenario.begin
+  场景: 获取发音评分
+    假如 用户已登录小程序 ... passed in 0.005s
+    并且 用户的孩子是正式会员 ... passed in 0.002s
+    并且 用户正在阅读图书 ... passed in 0.000s
+    当 用户完成朗读 ... passed in 0.000s
+    那么 系统返回发音评分(0-100) ... passed in 0.000s
+    并且 显示发音准确度得分 ... passed in 0.000s
+    并且 显示流利度得分 ... passed in 0.000s
+    并且 显示完整度得分 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="voice_reading.语音朗读与练习" name="发音改进建议" status="passed" time="0.020981"><system-out>
+<![CDATA[
+@scenario.begin
+  场景: 发音改进建议
+    假如 用户已登录小程序 ... passed in 0.009s
+    并且 用户的孩子是正式会员 ... passed in 0.011s
+    并且 用户正在阅读图书 ... passed in 0.001s
+    当 评分低于60分 ... passed in 0.000s
+    那么 显示发音改进建议 ... passed in 0.000s
+    并且 标注发音不准确的单词 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

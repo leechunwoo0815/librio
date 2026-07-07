@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "observation-report.html",
+  "entry": "observation-report.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-06-09T11:57:13.458Z",
+  "updatedAt": "2026-06-09T11:57:13.458Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}

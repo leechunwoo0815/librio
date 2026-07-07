@@ -1,0 +1,4 @@
+<view class="level-badge level-badge--{{size}}">
+  <text class="badge-level">Lv.{{level}}</text>
+  <text wx:if="{{name}}" class="badge-name">{{name}}</text>
+</view>

@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>观察期报名 · MegaWords</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.003 250);
+      --surface: oklch(100% 0 0);
+      --fg: oklch(20% 0.015 275);
+      --muted: oklch(48% 0.02 250);
+      --border: oklch(90% 0.008 250);
+      --accent: oklch(54% 0.17 275);
+      --accent-soft: oklch(54% 0.17 275 / 0.1);
+      --accent-hover: oklch(48% 0.17 275);
+      --secondary: oklch(86% 0.20 135);
+      --secondary-soft: oklch(86% 0.20 135 / 0.12);
+      --success: oklch(72% 0.20 145);
+      --success-soft: oklch(72% 0.20 145 / 0.1);
+      --warning: oklch(78% 0.16 85);
+      --error: oklch(62% 0.22 25);
+      --radius: 16px; --radius-sm: 10px; --radius-lg: 20px;
+      --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--fg); font-family: var(--font-body);
+      font-size: 15px; line-height: 1.5; max-width: 430px; margin: 0 auto;
+      min-height: 100vh; padding-bottom: 100px; -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; }
+    .nav-bar {
+      display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 10;
+    }
+    .nav-bar .back { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 10px; }
+    .nav-bar .back svg { width: 20px; height: 20px; }
+    .nav-bar .title { font-family: var(--font-display); font-size: 17px; font-weight: 600; }
+
+    /* hero */
+    .hero {
+      margin: 16px; padding: 28px 20px; border-radius: var(--radius-lg);
+      background: linear-gradient(135deg, oklch(72% 0.20 145 / 0.1), oklch(54% 0.17 275 / 0.08));
+      border: 1px solid oklch(72% 0.20 145 / 0.15); text-align: center;
+    }
+    .hero-icon { font-size: 48px; margin-bottom: 10px; }
+    .hero h1 { font-family: var(--font-display); font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+    .hero p { font-size: 14px; color: var(--muted); }
+
+    /* price section */
+    .price-section {
+      margin: 0 16px 16px; padding: 20px; border-radius: var(--radius-lg);
+      background: var(--surface); border: 1px solid var(--border); text-align: center;
+    }
+    .price-section .duration-badge {
+      display: inline-block; padding: 4px 14px; border-radius: 999px;
+      background: var(--accent-soft); color: var(--accent); font-size: 13px; font-weight: 600; margin-bottom: 12px;
+    }
+    .price-section .price-row {
+      display: flex; align-items: baseline; justify-content: center; gap: 4px; margin-bottom: 4px;
+    }
+    .price-section .price-sym { font-size: 20px; font-weight: 700; color: var(--accent); }
+    .price-section .price-val { font-family: var(--font-display); font-size: 48px; font-weight: 700; color: var(--accent); line-height: 1; }
+    .price-section .price-unit { font-size: 15px; color: var(--muted); }
+    .price-section .price-note { font-size: 13px; color: var(--muted); margin-top: 8px; }
+    .price-section .price-note svg { width: 14px; height: 14px; vertical-align: -2px; margin-right: 2px; }
+
+    /* includes list */
+    .includes-card {
+      margin: 0 16px 16px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 18px 16px;
+    }
+    .includes-card h3 {
+      font-family: var(--font-display); font-size: 15px; font-weight: 600;
+      margin-bottom: 14px; display: flex; align-items: center; gap: 6px;
+    }
+    .includes-card h3 svg { width: 18px; height: 18px; color: var(--accent); }
+    .includes-list { list-style: none; }
+    .includes-list li {
+      display: flex; align-items: center; gap: 12px; padding: 10px 0;
+      border-bottom: 1px solid var(--border); font-size: 14px;
+    }
+    .includes-list li:last-child { border-bottom: none; }
+    .includes-list .inc-icon {
+      width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .includes-list .inc-icon.ic1 { background: var(--accent-soft); }
+    .includes-list .inc-icon.ic2 { background: var(--success-soft); }
+    .includes-list .inc-icon.ic3 { background: var(--secondary-soft); }
+    .includes-list .inc-icon.ic4 { background: oklch(78% 0.16 85 / 0.12); }
+    .includes-list .inc-icon.ic5 { background: oklch(62% 0.22 25 / 0.08); }
+    .includes-list .inc-title { font-weight: 600; font-size: 14px; }
+    .includes-list .inc-desc { font-size: 12px; color: var(--muted); margin-top: 1px; }
+
+    /* guarantee */
+    .guarantee-box {
+      margin: 0 16px 16px; padding: 14px 16px; border-radius: var(--radius);
+      background: var(--secondary-soft); border: 1px solid oklch(86% 0.20 135 / 0.2);
+      display: flex; align-items: flex-start; gap: 10px;
+    }
+    .guarantee-box svg { width: 20px; height: 20px; color: oklch(45% 0.15 135); flex-shrink: 0; margin-top: 1px; }
+    .guarantee-box .g-text { font-size: 13px; line-height: 1.5; }
+
+    /* FAQ */
+    .faq-card {
+      margin: 0 16px 16px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
+    }
+    .faq-card h3 {
+      font-family: var(--font-display); font-size: 15px; font-weight: 600;
+      padding: 16px 16px 0; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;
+    }
+    .faq-item { border-bottom: 1px solid var(--border); }
+    .faq-item:last-child { border-bottom: none; }
+    .faq-q {
+      padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;
+      font-size: 14px; font-weight: 500; cursor: pointer;
+    }
+    .faq-q svg { width: 18px; height: 18px; color: var(--muted); transition: transform 0.2s; flex-shrink: 0; }
+    .faq-item.open .faq-q svg { transform: rotate(180deg); }
+    .faq-a {
+      max-height: 0; overflow: hidden; transition: max-height 0.3s ease;
+      font-size: 13px; color: var(--muted); line-height: 1.6; padding: 0 16px;
+    }
+    .faq-item.open .faq-a { max-height: 200px; padding: 0 16px 14px; }
+
+    /* pay bar */
+    .pay-bar {
+      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 430px;
+      background: color-mix(in oklch, var(--surface) 95%, transparent);
+      backdrop-filter: blur(12px); border-top: 1px solid var(--border);
+      padding: 12px 16px; z-index: 20;
+    }
+    .pay-btn {
+      width: 100%; padding: 14px; border-radius: 999px; background: var(--accent);
+      color: white; font-size: 16px; font-weight: 600; text-align: center;
+      box-shadow: 0 4px 16px oklch(54% 0.17 275 / 0.3);
+      transition: transform 0.1s ease;
+    }
+    .pay-btn:active { transform: scale(0.98); }
+    .pay-sub { text-align: center; font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+    @media (min-width: 768px) { body { max-width: 430px; border-left: 1px solid var(--border); border-right: 1px solid var(--border); } }
+    @media (min-width: 1024px) { body { max-width: 430px; margin: 0 auto; box-shadow: 0 0 40px oklch(20% 0.015 275 / 0.06); } }
+  </style>
+</head>
+<body>
+  <div class="nav-bar">
+    <a class="back" href="home.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg></a>
+    <span class="title">观察期报名</span>
+  </div>
+
+  <!-- hero intro -->
+  <div class="hero" data-od-id="hero">
+    <div class="hero-icon">🔭</div>
+    <h1>MegaWords 观察期体验</h1>
+    <p>30 天沉浸式英语阅读之旅<br/>配备 1 对 1 专业老师全程指导</p>
+  </div>
+
+  <!-- price -->
+  <div class="price-section" data-od-id="price">
+    <div class="duration-badge">30 天体验期</div>
+    <div class="price-row">
+      <span class="price-sym">¥</span>
+      <span class="price-val">500</span>
+      <span class="price-unit">/ 30天</span>
+    </div>
+    <div class="price-note">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
+      升级正式会员时可全额抵扣
+    </div>
+  </div>
+
+  <!-- what's included -->
+  <div class="includes-card" data-od-id="includes">
+    <h3>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
+      包含内容
+    </h3>
+    <ul class="includes-list">
+      <li>
+        <div class="inc-icon ic1">📚</div>
+        <div>
+          <div class="inc-title">在线阅读全量图书</div>
+          <div class="inc-desc">A-Z 全级别 3,500+ 英文原版图书</div>
+        </div>
+      </li>
+      <li>
+        <div class="inc-icon ic2">✅</div>
+        <div>
+          <div class="inc-title">每日阅读打卡</div>
+          <div class="inc-desc">培养孩子坚持阅读的好习惯</div>
+        </div>
+      </li>
+      <li>
+        <div class="inc-icon ic3">📊</div>
+        <div>
+          <div class="inc-title">阅读数据统计</div>
+          <div class="inc-desc">实时追踪阅读时长、词汇量、进度</div>
+        </div>
+      </li>
+      <li>
+        <div class="inc-icon ic4">👩‍🏫</div>
+        <div>
+          <div class="inc-title">老师定期评估</div>
+          <div class="inc-desc">专业老师每周阅读能力评估与反馈</div>
+        </div>
+      </li>
+      <li>
+        <div class="inc-icon ic5">📋</div>
+        <div>
+          <div class="inc-title">观察期结束报告</div>
+          <div class="inc-desc">30 天后生成个性化阅读能力分析报告</div>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <!-- guarantee -->
+  <div class="guarantee-box" data-od-id="guarantee">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    <div class="g-text"><strong>无忧退款：</strong>按剩余天数结算，计算公式：500 / 30 x 剩余天数，3 个工作日内原路返回。</div>
+  </div>
+
+  <!-- FAQ -->
+  <div class="faq-card" data-od-id="faq">
+    <h3>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      常见问题
+    </h3>
+    <div class="faq-item open">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">观察期和正式会员有什么区别？<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></div>
+      <div class="faq-a">观察期享受与正式会员完全一致的权益，包括无限量在线阅读、一对一指导、阅读统计等。唯一区别在于时长（30 天 vs 365 天）和价格。</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">观察期结束后可以升级吗？<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></div>
+      <div class="faq-a">可以！观察期期间或结束后均可升级为正式会员，已支付的 500 元将全额抵扣年费。</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">可以中途退款吗？<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></div>
+      <div class="faq-a">支持按剩余天数退款。退还金额 = 500 / 30 x 剩余天数，3 个工作日内原路返回。</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">适合多大的孩子？<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></div>
+      <div class="faq-a">MegaWords 适合 3-15 岁的孩子，图书涵盖 A-Z 共 26 个级别，从绘本到章节书，老师会根据孩子水平推荐合适的阅读材料。</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">1 对 1 老师怎么指导？<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></div>
+      <div class="faq-a">每位观察期学员都会分配一名专属阅读老师。老师会定期评估孩子的阅读进度，通过线上沟通提供个性化阅读建议和指导。</div>
+    </div>
+  </div>
+
+  <div class="pay-bar">
+    <button class="pay-btn">立即报名</button>
+    <div class="pay-sub">30 天观察期 · 不满意随时退款</div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "admin-profile.html",
+  "entry": "admin-profile.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-06-09T12:00:09.580Z",
+  "updatedAt": "2026-06-09T12:00:09.580Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}

@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>老师管理 · MegaWords</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.003 250);
+      --surface: oklch(100% 0 0);
+      --fg: oklch(20% 0.015 275);
+      --muted: oklch(48% 0.02 250);
+      --border: oklch(90% 0.008 250);
+      --accent: oklch(54% 0.17 275);
+      --accent-soft: oklch(54% 0.17 275 / 0.1);
+      --accent-hover: oklch(48% 0.17 275);
+      --secondary: oklch(86% 0.20 135);
+      --secondary-soft: oklch(86% 0.20 135 / 0.12);
+      --success: oklch(72% 0.20 145);
+      --success-soft: oklch(72% 0.20 145 / 0.1);
+      --warning: oklch(78% 0.16 85);
+      --warning-soft: oklch(78% 0.16 85 / 0.1);
+      --error: oklch(62% 0.22 25);
+      --radius: 12px; --radius-sm: 8px; --radius-lg: 16px;
+      --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+      --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 14px; line-height: 1.5; min-height: 100vh; display: flex; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; }
+    input, select, textarea { font: inherit; }
+    .main { margin-left: 240px; flex: 1; min-height: 100vh; }
+    .top-bar { display: flex; align-items: center; justify-content: space-between; padding: 16px 28px; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; }
+    .top-bar h1 { font-family: var(--font-display); font-size: 18px; font-weight: 600; }
+    .top-bar .right { display: flex; align-items: center; gap: 16px; font-size: 13px; color: var(--muted); }
+    .top-bar .right .name { color: var(--fg); font-weight: 500; }
+    .logout-btn { color: var(--accent); font-size: 13px; }
+    .logout-btn:hover { text-decoration: underline; }
+    .content { padding: 24px 28px; }
+    /* toolbar */
+    .toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; gap: 12px; flex-wrap: wrap; }
+    .toolbar-left { display: flex; align-items: center; gap: 10px; }
+    .search-box { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); width: 260px; }
+    .search-box svg { width: 16px; height: 16px; color: var(--muted); flex-shrink: 0; }
+    .search-box input { border: none; outline: none; background: none; font-size: 13px; width: 100%; color: var(--fg); }
+    .search-box input::placeholder { color: var(--muted); }
+    .filter-select { padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; color: var(--fg); background: var(--surface); cursor: pointer; }
+    .btn-primary { padding: 8px 18px; border-radius: var(--radius-sm); background: var(--accent); color: white; font-size: 13px; font-weight: 500; transition: background 0.15s ease; display: flex; align-items: center; gap: 6px; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-primary svg { width: 16px; height: 16px; }
+    /* cards grid */
+    .teacher-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+    .teacher-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; transition: box-shadow 0.15s ease; }
+    .teacher-card:hover { box-shadow: 0 4px 16px oklch(20% 0.015 275 / 0.06); }
+    .teacher-header { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+    .teacher-avatar { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; font-size: 18px; font-weight: 600; color: white; flex-shrink: 0; }
+    .teacher-avatar.t1 { background: oklch(54% 0.17 275); }
+    .teacher-avatar.t2 { background: oklch(58% 0.16 200); }
+    .teacher-avatar.t3 { background: oklch(62% 0.18 145); }
+    .teacher-avatar.t4 { background: oklch(65% 0.14 85); }
+    .teacher-avatar.t5 { background: oklch(55% 0.15 330); }
+    .teacher-avatar.t6 { background: oklch(50% 0.18 25); }
+    .teacher-meta { flex: 1; min-width: 0; }
+    .teacher-name { font-family: var(--font-display); font-size: 15px; font-weight: 600; }
+    .teacher-role { font-size: 12px; color: var(--muted); }
+    .teacher-status-badge { padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 500; }
+    .badge-online { background: var(--success-soft); color: var(--success); }
+    .badge-offline { background: oklch(90% 0.008 250); color: var(--muted); }
+    .badge-leave { background: var(--warning-soft); color: oklch(55% 0.14 85); }
+    .teacher-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 12px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin-bottom: 14px; }
+    .tstat { text-align: center; }
+    .tstat-val { font-family: var(--font-display); font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .tstat-label { font-size: 11px; color: var(--muted); }
+    .teacher-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+    .tag { padding: 3px 8px; border-radius: 999px; font-size: 11px; background: var(--accent-soft); color: var(--accent); }
+    .teacher-actions { display: flex; gap: 8px; }
+    .teacher-actions .action-btn { flex: 1; padding: 7px; border-radius: var(--radius-sm); font-size: 12px; text-align: center; border: 1px solid var(--border); color: var(--muted); transition: all 0.12s ease; }
+    .teacher-actions .action-btn:hover { border-color: var(--accent); color: var(--accent); }
+    /* modal */
+    .modal-overlay { position: fixed; inset: 0; background: oklch(0% 0 0 / 0.4); z-index: 50; display: none; align-items: center; justify-content: center; }
+    .modal-overlay.show { display: flex; }
+    .modal { background: var(--surface); border-radius: var(--radius-lg); padding: 28px; width: 520px; max-width: 90vw; max-height: 80vh; overflow-y: auto; }
+    .modal h2 { font-family: var(--font-display); font-size: 18px; font-weight: 600; margin-bottom: 20px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; color: var(--fg); background: var(--bg); outline: none; }
+    .form-group input:focus, .form-group select:focus { border-color: var(--accent); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
+    .btn-cancel { padding: 8px 18px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); font-size: 13px; color: var(--fg); }
+    /* responsive */
+    
+    @media (max-width: 768px) { .toolbar { flex-direction: column; align-items: stretch; } .search-box { width: 100%; } .teacher-grid { grid-template-columns: 1fr; } }
+  </style>
+    <link rel="stylesheet" href="admin-sidebar.css">
+  </head>
+<body>
+  <div id="sidebar-root"></div>
+<div class="main">
+    <div class="top-bar">
+      <h1>老师管理</h1>
+      <div class="right">
+        <span class="name">管理员</span>
+        <button class="logout-btn">退出登录</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <div class="search-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <input type="text" placeholder="搜索老师姓名…" />
+          </div>
+          <select class="filter-select">
+            <option>全部场馆</option>
+            <option>人广馆</option>
+            <option>徐汇馆</option>
+            <option>陆家嘴馆</option>
+            <option>松江馆</option>
+          </select>
+          <select class="filter-select">
+            <option>全部状态</option>
+            <option>在线</option>
+            <option>离线</option>
+            <option>休假中</option>
+          </select>
+        </div>
+        <button class="btn-primary" onclick="toggleModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          添加老师
+        </button>
+      </div>
+
+      <div class="teacher-grid" data-od-id="teacher-grid">
+        <!-- teacher 1 -->
+        <div class="teacher-card">
+          <div class="teacher-header">
+            <div class="teacher-avatar t1">L</div>
+            <div class="teacher-meta">
+              <div class="teacher-name">Lucy Chen</div>
+              <div class="teacher-role">人广馆 · 高级阅读顾问</div>
+            </div>
+            <span class="teacher-status-badge badge-online">在线</span>
+          </div>
+          <div class="teacher-stats">
+            <div class="tstat"><div class="tstat-val">86</div><div class="tstat-label">服务学员</div></div>
+            <div class="tstat"><div class="tstat-val">4.9</div><div class="tstat-label">评分</div></div>
+            <div class="tstat"><div class="tstat-val">312</div><div class="tstat-label">本月课时</div></div>
+          </div>
+          <div class="teacher-tags">
+            <span class="tag">绘本启蒙</span>
+            <span class="tag">AR 0.5–3.0</span>
+            <span class="tag">亲子阅读</span>
+          </div>
+          <div class="teacher-actions">
+            <button class="action-btn">编辑</button>
+            <button class="action-btn">课表</button>
+            <button class="action-btn">详情</button>
+          </div>
+        </div>
+
+        <!-- teacher 2 -->
+        <div class="teacher-card">
+          <div class="teacher-header">
+            <div class="teacher-avatar t2">J</div>
+            <div class="teacher-meta">
+              <div class="teacher-name">James Wang</div>
+              <div class="teacher-role">人广馆 · 资深阅读导师</div>
+            </div>
+            <span class="teacher-status-badge badge-online">在线</span>
+          </div>
+          <div class="teacher-stats">
+            <div class="tstat"><div class="tstat-val">72</div><div class="tstat-label">服务学员</div></div>
+            <div class="tstat"><div class="tstat-val">4.8</div><div class="tstat-label">评分</div></div>
+            <div class="tstat"><div class="tstat-val">288</div><div class="tstat-label">本月课时</div></div>
+          </div>
+          <div class="teacher-tags">
+            <span class="tag">章节书</span>
+            <span class="tag">AR 3.0–6.0</span>
+            <span class="tag">阅读理解</span>
+          </div>
+          <div class="teacher-actions">
+            <button class="action-btn">编辑</button>
+            <button class="action-btn">课表</button>
+            <button class="action-btn">详情</button>
+          </div>
+        </div>
+
+        <!-- teacher 3 -->
+        <div class="teacher-card">
+          <div class="teacher-header">
+            <div class="teacher-avatar t3">S</div>
+            <div class="teacher-meta">
+              <div class="teacher-name">Sarah Li</div>
+              <div class="teacher-role">徐汇馆 · 阅读顾问</div>
+            </div>
+            <span class="teacher-status-badge badge-online">在线</span>
+          </div>
+          <div class="teacher-stats">
+            <div class="tstat"><div class="tstat-val">58</div><div class="tstat-label">服务学员</div></div>
+            <div class="tstat"><div class="tstat-val">4.7</div><div class="tstat-label">评分</div></div>
+            <div class="tstat"><div class="tstat-val">240</div><div class="tstat-label">本月课时</div></div>
+          </div>
+          <div class="teacher-tags">
+            <span class="tag">自然拼读</span>
+            <span class="tag">AR 0.5–2.0</span>
+            <span class="tag">零基础</span>
+          </div>
+          <div class="teacher-actions">
+            <button class="action-btn">编辑</button>
+            <button class="action-btn">课表</button>
+            <button class="action-btn">详情</button>
+          </div>
+        </div>
+
+        <!-- teacher 4 -->
+        <div class="teacher-card">
+          <div class="teacher-header">
+            <div class="teacher-avatar t4">M</div>
+            <div class="teacher-meta">
+              <div class="teacher-name">Mike Zhang</div>
+              <div class="teacher-role">陆家嘴馆 · 高级阅读导师</div>
+            </div>
+            <span class="teacher-status-badge badge-offline">离线</span>
+          </div>
+          <div class="teacher-stats">
+            <div class="tstat"><div class="tstat-val">64</div><div class="tstat-label">服务学员</div></div>
+            <div class="tstat"><div class="tstat-val">4.9</div><div class="tstat-label">评分</div></div>
+            <div class="tstat"><div class="tstat-val">196</div><div class="tstat-label">本月课时</div></div>
+          </div>
+          <div class="teacher-tags">
+            <span class="tag">高阶阅读</span>
+            <span class="tag">AR 6.0–12.0</span>
+            <span class="tag">学术写作</span>
+          </div>
+          <div class="teacher-actions">
+            <button class="action-btn">编辑</button>
+            <button class="action-btn">课表</button>
+            <button class="action-btn">详情</button>
+          </div>
+        </div>
+
+        <!-- teacher 5 -->
+        <div class="teacher-card">
+          <div class="teacher-header">
+            <div class="teacher-avatar t5">E</div>
+            <div class="teacher-meta">
+              <div class="teacher-name">Emily Liu</div>
+              <div class="teacher-role">徐汇馆 · 阅读顾问</div>
+            </div>
+            <span class="teacher-status-badge badge-leave">休假中</span>
+          </div>
+          <div class="teacher-stats">
+            <div class="tstat"><div class="tstat-val">45</div><div class="tstat-label">服务学员</div></div>
+            <div class="tstat"><div class="tstat-val">4.6</div><div class="tstat-label">评分</div></div>
+            <div class="tstat"><div class="tstat-val">0</div><div class="tstat-label">本月课时</div></div>
+          </div>
+          <div class="teacher-tags">
+            <span class="tag">绘本故事</span>
+            <span class="tag">AR 1.0–4.0</span>
+            <span class="tag">互动游戏</span>
+          </div>
+          <div class="teacher-actions">
+            <button class="action-btn">编辑</button>
+            <button class="action-btn">课表</button>
+            <button class="action-btn">详情</button>
+          </div>
+        </div>
+
+        <!-- teacher 6 -->
+        <div class="teacher-card">
+          <div class="teacher-header">
+            <div class="teacher-avatar t6">D</div>
+            <div class="teacher-meta">
+              <div class="teacher-name">David Huang</div>
+              <div class="teacher-role">人广馆 · 阅读顾问</div>
+            </div>
+            <span class="teacher-status-badge badge-online">在线</span>
+          </div>
+          <div class="teacher-stats">
+            <div class="tstat"><div class="tstat-val">38</div><div class="tstat-label">服务学员</div></div>
+            <div class="tstat"><div class="tstat-val">4.8</div><div class="tstat-label">评分</div></div>
+            <div class="tstat"><div class="tstat-val">168</div><div class="tstat-label">本月课时</div></div>
+          </div>
+          <div class="teacher-tags">
+            <span class="tag">自然拼读</span>
+            <span class="tag">AR 0.5–3.0</span>
+            <span class="tag">绘本启蒙</span>
+          </div>
+          <div class="teacher-actions">
+            <button class="action-btn">编辑</button>
+            <button class="action-btn">课表</button>
+            <button class="action-btn">详情</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- add teacher modal -->
+  <div class="modal-overlay" id="teacherModal" onclick="if(event.target===this)toggleModal()">
+    <div class="modal">
+      <h2>添加老师</h2>
+      <div class="form-row">
+        <div class="form-group">
+          <label>姓名</label>
+          <input type="text" placeholder="中文名" />
+        </div>
+        <div class="form-group">
+          <label>英文名</label>
+          <input type="text" placeholder="English name" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>所属场馆</label>
+          <select>
+            <option>人广馆</option>
+            <option>徐汇馆</option>
+            <option>陆家嘴馆</option>
+            <option>松江馆</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>职称</label>
+          <select>
+            <option>阅读顾问</option>
+            <option>资深阅读导师</option>
+            <option>高级阅读顾问</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>手机号</label>
+        <input type="tel" placeholder="用于登录和接收通知" />
+      </div>
+      <div class="form-group">
+        <label>擅长领域</label>
+        <input type="text" placeholder="例如：绘本启蒙、AR 0.5–3.0、亲子阅读" />
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="toggleModal()">取消</button>
+        <button class="btn-primary" onclick="toggleModal()">确认添加</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function toggleModal() {
+      document.getElementById('teacherModal').classList.toggle('show');
+    }
+  </script>
+  <script src="admin-sidebar.js"></script>
+</body>
+</html>

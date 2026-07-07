@@ -1,0 +1,12 @@
+<view class="child-selector">
+  <view
+    wx:for="{{childList}}"
+    wx:key="_id"
+    class="child-item {{item._id === currentId ? 'active' : ''}}"
+    data-id="{{item._id}}"
+    bindtap="onSelect"
+  >
+    <image class="child-avatar" src="{{item.avatar || '/images/default-child.png'}}" mode="aspectFill" />
+    <text class="child-name">{{item.name}}</text>
+  </view>
+</view>

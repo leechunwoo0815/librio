@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>成就管理 · MegaWords</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.003 250); --surface: oklch(100% 0 0);
+      --fg: oklch(20% 0.015 275); --muted: oklch(48% 0.02 250);
+      --border: oklch(90% 0.008 250); --accent: oklch(54% 0.17 275);
+      --accent-soft: oklch(54% 0.17 275 / 0.1); --accent-hover: oklch(48% 0.17 275);
+      --secondary: oklch(86% 0.20 135); --secondary-soft: oklch(86% 0.20 135 / 0.12);
+      --success: oklch(72% 0.20 145); --success-soft: oklch(72% 0.20 145 / 0.1);
+      --warning: oklch(78% 0.16 85); --warning-soft: oklch(78% 0.16 85 / 0.1);
+      --error: oklch(62% 0.22 25); --error-soft: oklch(62% 0.22 25 / 0.1);
+      --radius: 12px; --radius-sm: 8px; --radius-lg: 16px;
+      --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+      --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 14px; line-height: 1.5; min-height: 100vh; display: flex; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; }
+    .main { margin-left: 240px; flex: 1; min-height: 100vh; }
+    .top-bar { display: flex; align-items: center; justify-content: space-between; padding: 16px 28px; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; }
+    .top-bar h1 { font-family: var(--font-display); font-size: 18px; font-weight: 600; }
+    .top-bar .right { display: flex; align-items: center; gap: 16px; font-size: 13px; color: var(--muted); }
+    .top-bar .right .name { color: var(--fg); font-weight: 500; }
+    .logout-btn { color: var(--accent); font-size: 13px; }
+    .content { padding: 24px 28px; }
+    /* tabs */
+    .tab-bar { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+    .tab-item { padding: 10px 20px; font-size: 14px; color: var(--muted); font-weight: 500; cursor: pointer; position: relative; }
+    .tab-item.active { color: var(--accent); }
+    .tab-item.active::after { content: ''; position: absolute; bottom: -1px; left: 0; right: 0; height: 2px; background: var(--accent); }
+    /* table */
+    .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 20px; }
+    .table-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+    .table-header h3 { font-family: var(--font-display); font-size: 15px; font-weight: 600; }
+    .table-actions { display: flex; gap: 6px; }
+    .btn { padding: 8px 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-outline { border: 1px solid var(--border); color: var(--fg); background: var(--surface); }
+    .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-danger { background: var(--error-soft); color: var(--error); }
+    .btn-sm { padding: 4px 10px; font-size: 12px; }
+    table { width: 100%; border-collapse: collapse; }
+    thead { background: oklch(97% 0.003 250); }
+    th { padding: 10px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+    td { padding: 12px 16px; font-size: 13px; border-top: 1px solid var(--border); vertical-align: middle; }
+    tr:hover td { background: oklch(97% 0.003 250); }
+    .status { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+    .status-pending { background: var(--warning-soft); color: oklch(42% 0.12 85); }
+    .status-approved { background: var(--success-soft); color: oklch(40% 0.15 145); }
+    .status-active { background: var(--success-soft); color: oklch(40% 0.15 145); }
+    /* search/filter */
+    .search-input { flex: 1; height: 38px; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0 12px; font: inherit; font-size: 13px; outline: none; background: var(--surface); color: var(--fg); }
+    .search-input:focus { border-color: var(--accent); }
+    .filter-select { height: 38px; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0 12px; font: inherit; font-size: 13px; outline: none; background: var(--surface); color: var(--fg); min-width: 120px; }
+    /* modal */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; align-items: center; justify-content: center; }
+    .modal-overlay.show { display: flex; }
+    .modal { background: var(--surface); border-radius: var(--radius-lg); padding: 24px; width: 90%; max-width: 560px; max-height: 80vh; overflow-y: auto; }
+    .modal h3 { font-family: var(--font-display); font-size: 18px; font-weight: 600; margin-bottom: 16px; }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: var(--muted); }
+    .form-input { width: 100%; height: 40px; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0 12px; font: inherit; font-size: 14px; outline: none; }
+    .form-input:focus { border-color: var(--accent); }
+    .form-textarea { width: 100%; min-height: 80px; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; font: inherit; font-size: 14px; outline: none; resize: vertical; }
+    .form-textarea:focus { border-color: var(--accent); }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+    /* responsive */
+    
+    
+  </style>
+    <link rel="stylesheet" href="admin-sidebar.css">
+  </head>
+<body>
+  <div id="sidebar-root"></div>
+<div class="main">
+    <div class="top-bar">
+      <h1>成就管理</h1>
+      <div class="right">
+        <span class="name">管理员</span>
+        <button class="logout-btn">退出登录</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="tab-bar" id="achTabBar">
+        <button class="tab-item active" onclick="switchAchTab('badges', this)">徽章管理</button>
+        <button class="tab-item" onclick="switchAchTab('records', this)">授予记录</button>
+      </div>
+
+      <!-- Badge Management Panel -->
+      <div id="panel-badges">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div style="font-size:14px;color:var(--muted)">共 12 个徽章</div>
+          <button class="btn btn-primary" onclick="openBadgeModal()">+ 新增徽章</button>
+        </div>
+
+        <div class="table-card">
+          <table>
+            <thead>
+              <tr>
+                <th>徽章 Emoji</th>
+                <th>成就名称</th>
+                <th>类型</th>
+                <th>触发条件</th>
+                <th>已授予</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="font-size:24px">📖</td>
+                <td style="font-weight:600">初读启航</td>
+                <td><span class="status status-approved">阅读里程碑</span></td>
+                <td><code style="font-family:var(--font-mono);font-size:11px;background:oklch(97% 0.003 250);padding:2px 6px;border-radius:4px">{"type":"book_milestone","count":1}</code></td>
+                <td>156</td>
+                <td><div class="table-actions"><button class="btn btn-outline btn-sm" onclick="openBadgeModal()">编辑</button><button class="btn btn-danger btn-sm">删除</button></div></td>
+              </tr>
+              <tr>
+                <td style="font-size:24px">🔥</td>
+                <td style="font-weight:600">连续打卡 7 天</td>
+                <td><span class="status status-pending">连续打卡</span></td>
+                <td><code style="font-family:var(--font-mono);font-size:11px;background:oklch(97% 0.003 250);padding:2px 6px;border-radius:4px">{"type":"streak","days":7}</code></td>
+                <td>89</td>
+                <td><div class="table-actions"><button class="btn btn-outline btn-sm" onclick="openBadgeModal()">编辑</button><button class="btn btn-danger btn-sm">删除</button></div></td>
+              </tr>
+              <tr>
+                <td style="font-size:24px">💯</td>
+                <td style="font-weight:600">满分达人</td>
+                <td><span class="status status-active">测验满分</span></td>
+                <td><code style="font-family:var(--font-mono);font-size:11px;background:oklch(97% 0.003 250);padding:2px 6px;border-radius:4px">{"type":"perfect_score","count":1}</code></td>
+                <td>67</td>
+                <td><div class="table-actions"><button class="btn btn-outline btn-sm" onclick="openBadgeModal()">编辑</button><button class="btn btn-danger btn-sm">删除</button></div></td>
+              </tr>
+              <tr>
+                <td style="font-size:24px">📚</td>
+                <td style="font-weight:600">读完 10 本</td>
+                <td><span class="status status-approved">阅读里程碑</span></td>
+                <td><code style="font-family:var(--font-mono);font-size:11px;background:oklch(97% 0.003 250);padding:2px 6px;border-radius:4px">{"type":"book_milestone","count":10}</code></td>
+                <td>45</td>
+                <td><div class="table-actions"><button class="btn btn-outline btn-sm" onclick="openBadgeModal()">编辑</button><button class="btn btn-danger btn-sm">删除</button></div></td>
+              </tr>
+              <tr>
+                <td style="font-size:24px">🎙️</td>
+                <td style="font-weight:600">朗读之星</td>
+                <td><span class="status status-approved">阅读里程碑</span></td>
+                <td><code style="font-family:var(--font-mono);font-size:11px;background:oklch(97% 0.003 250);padding:2px 6px;border-radius:4px">{"type":"reading_practice","count":10}</code></td>
+                <td>34</td>
+                <td><div class="table-actions"><button class="btn btn-outline btn-sm" onclick="openBadgeModal()">编辑</button><button class="btn btn-danger btn-sm">删除</button></div></td>
+              </tr>
+              <tr>
+                <td style="font-size:24px">📝</td>
+                <td style="font-weight:600">词汇先锋</td>
+                <td><span class="status status-approved">阅读里程碑</span></td>
+                <td><code style="font-family:var(--font-mono);font-size:11px;background:oklch(97% 0.003 250);padding:2px 6px;border-radius:4px">{"type":"vocab_milestone","count":50}</code></td>
+                <td>28</td>
+                <td><div class="table-actions"><button class="btn btn-outline btn-sm" onclick="openBadgeModal()">编辑</button><button class="btn btn-danger btn-sm">删除</button></div></td>
+              </tr>
+              <tr>
+                <td style="font-size:24px">🏅</td>
+                <td style="font-weight:600">级别晋升 B</td>
+                <td><span class="status" style="background:var(--accent-soft);color:var(--accent)">晋级徽章</span></td>
+                <td><code style="font-family:var(--font-mono);font-size:11px;background:oklch(97% 0.003 250);padding:2px 6px;border-radius:4px">{"type":"level_up","level":"B"}</code></td>
+                <td>42</td>
+                <td><div class="table-actions"><button class="btn btn-outline btn-sm" onclick="openBadgeModal()">编辑</button><button class="btn btn-danger btn-sm">删除</button></div></td>
+              </tr>
+              <tr>
+                <td style="font-size:24px">🏆</td>
+                <td style="font-weight:600">级别晋升 E</td>
+                <td><span class="status" style="background:var(--accent-soft);color:var(--accent)">晋级徽章</span></td>
+                <td><code style="font-family:var(--font-mono);font-size:11px;background:oklch(97% 0.003 250);padding:2px 6px;border-radius:4px">{"type":"level_up","level":"E"}</code></td>
+                <td>18</td>
+                <td><div class="table-actions"><button class="btn btn-outline btn-sm" onclick="openBadgeModal()">编辑</button><button class="btn btn-danger btn-sm">删除</button></div></td>
+              </tr>
+              <tr>
+                <td style="font-size:24px">🔥</td>
+                <td style="font-weight:600">连续打卡 30 天</td>
+                <td><span class="status status-pending">连续打卡</span></td>
+                <td><code style="font-family:var(--font-mono);font-size:11px;background:oklch(97% 0.003 250);padding:2px 6px;border-radius:4px">{"type":"streak","days":30}</code></td>
+                <td>12</td>
+                <td><div class="table-actions"><button class="btn btn-outline btn-sm" onclick="openBadgeModal()">编辑</button><button class="btn btn-danger btn-sm">删除</button></div></td>
+              </tr>
+              <tr>
+                <td style="font-size:24px">💯</td>
+                <td style="font-weight:600">连续满分 3 次</td>
+                <td><span class="status status-active">测验满分</span></td>
+                <td><code style="font-family:var(--font-mono);font-size:11px;background:oklch(97% 0.003 250);padding:2px 6px;border-radius:4px">{"type":"perfect_streak","count":3}</code></td>
+                <td>9</td>
+                <td><div class="table-actions"><button class="btn btn-outline btn-sm" onclick="openBadgeModal()">编辑</button><button class="btn btn-danger btn-sm">删除</button></div></td>
+              </tr>
+              <tr>
+                <td style="font-size:24px">📚</td>
+                <td style="font-weight:600">读完 50 本</td>
+                <td><span class="status status-approved">阅读里程碑</span></td>
+                <td><code style="font-family:var(--font-mono);font-size:11px;background:oklch(97% 0.003 250);padding:2px 6px;border-radius:4px">{"type":"book_milestone","count":50}</code></td>
+                <td>5</td>
+                <td><div class="table-actions"><button class="btn btn-outline btn-sm" onclick="openBadgeModal()">编辑</button><button class="btn btn-danger btn-sm">删除</button></div></td>
+              </tr>
+              <tr>
+                <td style="font-size:24px">👑</td>
+                <td style="font-weight:600">级别晋升 J</td>
+                <td><span class="status" style="background:var(--accent-soft);color:var(--accent)">晋级徽章</span></td>
+                <td><code style="font-family:var(--font-mono);font-size:11px;background:oklch(97% 0.003 250);padding:2px 6px;border-radius:4px">{"type":"level_up","level":"J"}</code></td>
+                <td>3</td>
+                <td><div class="table-actions"><button class="btn btn-outline btn-sm" onclick="openBadgeModal()">编辑</button><button class="btn btn-danger btn-sm">删除</button></div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Award Records Panel -->
+      <div id="panel-records" style="display:none">
+        <div style="display:flex;gap:10px;margin-bottom:16px">
+          <input class="search-input" placeholder="搜索用户名..." style="width:240px;height:38px" />
+          <select class="filter-select"><option>全部徽章</option><option>初读启航</option><option>连续打卡 7 天</option><option>满分达人</option><option>读完 10 本</option></select>
+          <select class="filter-select"><option>全部时间</option><option>今天</option><option>本周</option><option>本月</option></select>
+        </div>
+
+        <div class="table-card">
+          <table>
+            <thead>
+              <tr><th>用户</th><th>徽章</th><th>类型</th><th>授予时间</th><th>授予方式</th></tr>
+            </thead>
+            <tbody>
+              <tr><td style="font-weight:500">Mega</td><td>📖 初读启航</td><td><span class="status status-approved">阅读里程碑</span></td><td style="font-size:12px;color:var(--muted)">2026-06-08 14:23</td><td>自动</td></tr>
+              <tr><td style="font-weight:500">Lily</td><td>🔥 连续打卡 7 天</td><td><span class="status status-pending">连续打卡</span></td><td style="font-size:12px;color:var(--muted)">2026-06-08 10:15</td><td>自动</td></tr>
+              <tr><td style="font-weight:500">Tom</td><td>💯 满分达人</td><td><span class="status status-active">测验满分</span></td><td style="font-size:12px;color:var(--muted)">2026-06-07 16:42</td><td>自动</td></tr>
+              <tr><td style="font-weight:500">小明</td><td>🏅 级别晋升 B</td><td><span class="status" style="background:var(--accent-soft);color:var(--accent)">晋级徽章</span></td><td style="font-size:12px;color:var(--muted)">2026-06-07 09:30</td><td>自动</td></tr>
+              <tr><td style="font-weight:500">Anna</td><td>📚 读完 10 本</td><td><span class="status status-approved">阅读里程碑</span></td><td style="font-size:12px;color:var(--muted)">2026-06-06 20:11</td><td>自动</td></tr>
+              <tr><td style="font-weight:500">Mike</td><td>🎙️ 朗读之星</td><td><span class="status status-approved">阅读里程碑</span></td><td style="font-size:12px;color:var(--muted)">2026-06-06 15:05</td><td>自动</td></tr>
+              <tr><td style="font-weight:500">Emma</td><td>👑 级别晋升 J</td><td><span class="status" style="background:var(--accent-soft);color:var(--accent)">晋级徽章</span></td><td style="font-size:12px;color:var(--muted)">2026-06-05 11:22</td><td>手动授予</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Add/Edit Badge Modal -->
+      <div class="modal-overlay" id="badgeModal">
+        <div class="modal">
+          <h3>新增 / 编辑徽章</h3>
+          <div style="display:grid;grid-template-columns:1fr 2fr;gap:12px">
+            <div class="form-group"><label>徽章 Emoji</label><input class="form-input" placeholder="例如：⚡" /></div>
+            <div class="form-group"><label>成就名称</label><input class="form-input" placeholder="例如：速度之王" /></div>
+          </div>
+          <div class="form-group"><label>描述</label><textarea class="form-textarea" placeholder="获得条件的描述..." /></div>
+          <div class="form-group">
+            <label>成就类型</label>
+            <select class="form-input">
+              <option value="">请选择类型...</option>
+              <option value="level_up">晋级徽章</option>
+              <option value="book_milestone">阅读里程碑</option>
+              <option value="streak">连续打卡</option>
+              <option value="perfect_score">测验满分</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>触发条件 (JSON)</label>
+            <textarea class="form-textarea" style="font-family:var(--font-mono);font-size:13px;min-height:100px;background:oklch(97% 0.003 250)" placeholder='{"type":"book_milestone","count":10}'></textarea>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px">
+              示例：{"type":"book_milestone","count":10} | {"type":"streak","days":7} | {"type":"perfect_score","count":1} | {"type":"level_up","level":"B"}
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button class="btn btn-outline" onclick="closeBadgeModal()">取消</button>
+            <button class="btn btn-primary" onclick="closeBadgeModal()">保存</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function switchAchTab(name, btn) {
+      document.querySelectorAll('#achTabBar .tab-item').forEach(function(t) { t.classList.remove('active'); });
+      btn.classList.add('active');
+      document.getElementById('panel-badges').style.display = name === 'badges' ? 'block' : 'none';
+      document.getElementById('panel-records').style.display = name === 'records' ? 'block' : 'none';
+    }
+    function openBadgeModal() { document.getElementById('badgeModal').classList.add('show'); }
+    function closeBadgeModal() { document.getElementById('badgeModal').classList.remove('show'); }
+  </script>
+  <script src="admin-sidebar.js"></script>
+</body>
+</html>

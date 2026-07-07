@@ -1,0 +1,720 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>听读 · Librio</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.003 250);
+      --surface: oklch(100% 0 0);
+      --fg: oklch(20% 0.015 275);
+      --muted: oklch(48% 0.02 250);
+      --border: oklch(90% 0.008 250);
+      --accent: oklch(54% 0.17 275);
+      --accent-soft: oklch(54% 0.17 275 / 0.1);
+      --secondary: oklch(86% 0.20 135);
+      --success: oklch(72% 0.20 145);
+      --warning: oklch(78% 0.16 85);
+      --error: oklch(62% 0.22 25);
+      --radius: 16px;
+      --radius-sm: 10px;
+      --radius-lg: 20px;
+      --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      background: var(--bg); color: var(--fg); font-family: var(--font-body);
+      font-size: 15px; line-height: 1.5;
+      max-width: 375px; margin: 0 auto;
+      height: 100vh; height: 100dvh;
+      display: flex; flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden; overflow-y: auto;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+    input { font: inherit; }
+
+    /* ===== TOP NAV ===== */
+    .top-nav {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 12px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      position: sticky; top: 0; z-index: 20;
+    }
+    .top-nav .back-btn {
+      width: 34px; height: 34px;
+      display: grid; place-items: center;
+      border-radius: var(--radius-sm);
+      transition: background 0.12s;
+    }
+    .top-nav .back-btn:active { background: var(--accent-soft); }
+    .top-nav .back-btn svg { width: 20px; height: 20px; color: var(--fg); }
+    .top-nav .nav-title {
+      font-family: var(--font-display); font-size: 17px; font-weight: 700;
+    }
+
+    /* ===== BOOK INFO SECTION ===== */
+    .book-info {
+      padding: 28px 16px 24px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex; flex-direction: column; align-items: center;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .book-cover {
+      width: 120px; height: 160px;
+      border-radius: var(--radius);
+      background: linear-gradient(145deg, oklch(85% 0.08 275), oklch(70% 0.14 275), oklch(60% 0.18 300));
+      display: grid; place-items: center;
+      margin-bottom: 16px;
+      position: relative; overflow: hidden;
+      box-shadow: 0 8px 24px oklch(20% 0.015 275 / 0.12);
+    }
+    .book-cover::before {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(180deg, transparent 40%, oklch(0% 0 0 / 0.15));
+    }
+    .book-cover .cover-emoji {
+      font-size: 52px; position: relative; z-index: 1;
+      filter: drop-shadow(0 2px 6px oklch(0% 0 0 / 0.2));
+    }
+    .book-title {
+      font-family: var(--font-display); font-size: 20px; font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .book-author {
+      font-size: 14px; color: var(--muted); margin-bottom: 10px;
+    }
+    .book-meta-tags {
+      display: flex; gap: 8px; align-items: center;
+    }
+    .meta-tag {
+      padding: 4px 10px; border-radius: 999px;
+      font-size: 11px; font-weight: 600;
+    }
+    .meta-tag.ar { background: var(--accent-soft); color: var(--accent); }
+    .meta-tag.words { background: oklch(86% 0.20 135 / 0.12); color: oklch(45% 0.15 135); }
+
+    /* ===== AUDIO PLAYER SECTION ===== */
+    .player-section {
+      padding: 24px 20px 16px;
+      display: flex; flex-direction: column; align-items: center;
+      flex-shrink: 0;
+    }
+
+    /* Progress bar */
+    .progress-area {
+      width: 100%; margin-bottom: 20px;
+    }
+    .progress-times {
+      display: flex; justify-content: space-between;
+      font-size: 12px; color: var(--muted);
+      font-variant-numeric: tabular-nums;
+      margin-bottom: 8px;
+    }
+    .progress-times .time-now { color: var(--fg); font-weight: 600; }
+    .progress-track {
+      width: 100%; height: 6px;
+      background: var(--border); border-radius: 3px;
+      position: relative; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .progress-fill {
+      height: 100%; background: var(--accent); border-radius: 3px;
+      width: 0%; position: relative;
+      transition: width 0.1s linear;
+    }
+    .progress-handle {
+      position: absolute; right: -7px; top: 50%; transform: translateY(-50%);
+      width: 16px; height: 16px; border-radius: 50%;
+      background: var(--accent);
+      border: 2.5px solid var(--surface);
+      box-shadow: 0 1px 6px oklch(54% 0.17 275 / 0.35);
+      transition: transform 0.1s ease;
+    }
+    .progress-track:active .progress-handle { transform: translateY(-50%) scale(1.2); }
+
+    /* Playback controls row */
+    .playback-controls {
+      display: flex; align-items: center; gap: 20px;
+      margin-bottom: 18px;
+    }
+    .ctrl-skip {
+      display: flex; flex-direction: column; align-items: center; gap: 1px;
+      padding: 6px 10px; border-radius: var(--radius-sm);
+      transition: background 0.12s;
+    }
+    .ctrl-skip:active { background: var(--accent-soft); }
+    .ctrl-skip svg { width: 22px; height: 22px; color: var(--fg); }
+    .ctrl-skip .skip-label {
+      font-size: 9px; color: var(--muted); font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .ctrl-play {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: var(--accent);
+      display: grid; place-items: center;
+      box-shadow: 0 4px 20px oklch(54% 0.17 275 / 0.35);
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
+    }
+    .ctrl-play:active { transform: scale(0.92); }
+    .ctrl-play.playing {
+      box-shadow: 0 4px 28px oklch(54% 0.17 275 / 0.5);
+    }
+    .ctrl-play svg { width: 26px; height: 26px; color: white; }
+
+    /* Speed selector */
+    .speed-row {
+      display: flex; gap: 6px; align-items: center;
+      margin-bottom: 20px;
+    }
+    .speed-chip {
+      padding: 5px 14px; border-radius: 999px;
+      font-size: 12px; font-weight: 600;
+      background: var(--bg); color: var(--muted);
+      border: 1px solid var(--border);
+      transition: all 0.15s ease;
+    }
+    .speed-chip:active { transform: scale(0.95); }
+    .speed-chip.active {
+      background: var(--accent); color: white;
+      border-color: var(--accent);
+    }
+
+    /* Chapter indicator */
+    .chapter-indicator {
+      font-family: var(--font-display); font-size: 13px; font-weight: 500;
+      color: var(--muted);
+      padding: 6px 14px; border-radius: 999px;
+      background: var(--bg);
+    }
+
+    /* ===== DIVIDER ===== */
+    .section-divider {
+      height: 8px; background: var(--bg);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    /* ===== DICTIONARY SECTION ===== */
+    .dict-section {
+      padding: 16px 16px 12px;
+      flex: 1; min-height: 0;
+    }
+    .dict-section .section-title {
+      font-family: var(--font-display); font-size: 13px; font-weight: 600;
+      color: var(--muted); margin-bottom: 10px;
+      text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .dict-input-row {
+      display: flex; gap: 8px; margin-bottom: 10px;
+    }
+    .dict-input {
+      flex: 1; padding: 10px 14px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 14px; color: var(--fg);
+      outline: none; transition: border-color 0.15s;
+    }
+    .dict-input::placeholder { color: oklch(60% 0.015 250); }
+    .dict-input:focus { border-color: var(--accent); }
+    .dict-search-btn {
+      padding: 10px 18px;
+      background: var(--accent); color: white;
+      border-radius: var(--radius);
+      font-size: 14px; font-weight: 600;
+      flex-shrink: 0;
+      transition: opacity 0.12s;
+    }
+    .dict-search-btn:active { opacity: 0.85; }
+
+    .dict-result {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 14px 16px;
+      display: none;
+      animation: slideUp 0.2s ease;
+    }
+    .dict-result.show { display: block; }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .dr-word {
+      font-family: var(--font-display); font-size: 18px; font-weight: 700;
+    }
+    .dr-phonetic {
+      font-size: 13px; color: var(--muted); margin: 2px 0 8px;
+    }
+    .dr-def {
+      font-size: 14px; line-height: 1.6; color: var(--fg); margin-bottom: 12px;
+    }
+    .dr-btn {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 7px 14px; border-radius: 999px;
+      font-size: 12px; font-weight: 600;
+      background: var(--accent); color: white;
+      transition: opacity 0.12s;
+    }
+    .dr-btn:active { opacity: 0.85; }
+
+    /* ===== BOTTOM ACTION BAR ===== */
+    .bottom-bar {
+      display: flex; align-items: center; justify-content: space-around;
+      padding: 8px 8px max(8px, env(safe-area-inset-bottom));
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+      position: sticky; bottom: 0; z-index: 20;
+    }
+    .bar-item {
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      padding: 6px 20px; border-radius: var(--radius-sm);
+      font-size: 11px; color: var(--muted); font-weight: 500;
+      transition: all 0.12s;
+    }
+    .bar-item .bar-icon { font-size: 20px; line-height: 1; }
+    .bar-item:active { color: var(--accent); background: var(--accent-soft); }
+
+    /* ===== DEMO TOGGLE BUTTONS ===== */
+    .demo-toggles {
+      display: flex; gap: 8px; justify-content: center;
+      padding: 10px 16px 4px;
+      flex-shrink: 0;
+    }
+    .demo-btn {
+      padding: 5px 12px; border-radius: 999px;
+      font-size: 11px; font-weight: 600;
+      background: oklch(85% 0.04 250); color: var(--muted);
+      border: 1px solid var(--border);
+      transition: all 0.12s;
+    }
+    .demo-btn:active { transform: scale(0.95); }
+    .demo-btn.active-demo { background: var(--warning); color: white; border-color: var(--warning); }
+
+    /* ===== OVERDUE LOCK OVERLAY ===== */
+    .overdue-overlay {
+      position: fixed; inset: 0; z-index: 100;
+      background: oklch(0% 0 0 / 0.55);
+      display: none; align-items: center; justify-content: center;
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    }
+    .overdue-overlay.show { display: flex; }
+    .overdue-card {
+      background: var(--surface); border-radius: var(--radius-lg);
+      padding: 40px 28px 32px;
+      width: calc(100% - 48px); max-width: 340px;
+      text-align: center;
+      box-shadow: 0 20px 60px oklch(0% 0 0 / 0.15);
+    }
+    .overdue-card .od-icon { font-size: 52px; margin-bottom: 14px; }
+    .overdue-card .od-title {
+      font-family: var(--font-display); font-size: 18px; font-weight: 700;
+      color: var(--error); margin-bottom: 8px;
+    }
+    .overdue-card .od-desc {
+      font-size: 14px; color: var(--muted); line-height: 1.6;
+      margin-bottom: 24px;
+    }
+    .overdue-card .od-btn {
+      display: inline-block; padding: 12px 36px;
+      border-radius: 999px;
+      background: var(--accent); color: white;
+      font-size: 15px; font-weight: 600;
+      box-shadow: 0 4px 16px oklch(54% 0.17 275 / 0.3);
+      transition: transform 0.12s;
+    }
+    .overdue-card .od-btn:active { transform: scale(0.96); }
+
+    /* ===== COMPLETION POPUP ===== */
+    .completion-overlay {
+      position: fixed; inset: 0; z-index: 100;
+      background: oklch(0% 0 0 / 0.5);
+      display: none; align-items: center; justify-content: center;
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    }
+    .completion-overlay.show { display: flex; }
+    .completion-card {
+      background: var(--surface); border-radius: var(--radius-lg);
+      padding: 36px 24px 28px;
+      width: calc(100% - 40px); max-width: 340px;
+      text-align: center; position: relative; overflow: hidden;
+      box-shadow: 0 20px 60px oklch(0% 0 0 / 0.15);
+    }
+    .completion-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+      background: linear-gradient(90deg, var(--accent), var(--success));
+    }
+    .cc-emoji { font-size: 56px; margin-bottom: 6px; }
+    .cc-title {
+      font-family: var(--font-display); font-size: 20px; font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .cc-sub {
+      font-size: 13px; color: var(--muted); margin-bottom: 20px;
+    }
+    .cc-stats {
+      display: flex; gap: 10px; margin-bottom: 22px; justify-content: center;
+    }
+    .cc-stat {
+      flex: 1; background: var(--bg); border-radius: var(--radius-sm);
+      padding: 12px 6px; max-width: 96px;
+    }
+    .cc-stat .val {
+      font-family: var(--font-display); font-size: 22px; font-weight: 700;
+      color: var(--accent);
+    }
+    .cc-stat .lbl {
+      font-size: 10px; color: var(--muted); margin-top: 2px;
+    }
+    .cc-actions { display: flex; flex-direction: column; gap: 8px; }
+    .cc-btn {
+      padding: 13px; border-radius: 999px;
+      font-size: 15px; font-weight: 600;
+      text-align: center; width: 100%;
+      transition: transform 0.12s;
+    }
+    .cc-btn:active { transform: scale(0.97); }
+    .cc-btn.primary {
+      background: var(--accent); color: white;
+      box-shadow: 0 4px 16px oklch(54% 0.17 275 / 0.3);
+    }
+    .cc-btn.secondary { background: var(--border); color: var(--muted); }
+  </style>
+</head>
+<body>
+
+  <!-- Top Nav -->
+  <div class="top-nav">
+    <button class="back-btn" onclick="history.back()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <span class="nav-title">听读</span>
+  </div>
+
+  <!-- Book Info Section -->
+  <div class="book-info">
+    <div class="book-cover">
+      <span class="cover-emoji">🕷️</span>
+    </div>
+    <div class="book-title">Charlotte's Web</div>
+    <div class="book-author">E.B. White</div>
+    <div class="book-meta-tags">
+      <span class="meta-tag ar">AR 3.2</span>
+      <span class="meta-tag words">31,200词</span>
+    </div>
+  </div>
+
+  <!-- Audio Player Section -->
+  <div class="player-section">
+    <!-- Progress Bar -->
+    <div class="progress-area">
+      <div class="progress-times">
+        <span class="time-now" id="timeCurrent">0:00</span>
+        <span id="timeTotal">12:30</span>
+      </div>
+      <div class="progress-track" id="progressTrack">
+        <div class="progress-fill" id="progressFill" style="width: 0%">
+          <div class="progress-handle" id="progressHandle"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Playback Controls -->
+    <div class="playback-controls">
+      <button class="ctrl-skip" onclick="skipAudio(-15)" aria-label="后退15秒">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+        </svg>
+        <span class="skip-label">-15s</span>
+      </button>
+
+      <button class="ctrl-play" id="playBtn" onclick="togglePlay()" aria-label="播放/暂停">
+        <svg id="playIcon" viewBox="0 0 24 24" fill="white"><polygon points="9,6 19,12 9,18"/></svg>
+      </button>
+
+      <button class="ctrl-skip" onclick="skipAudio(15)" aria-label="前进15秒">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+        </svg>
+        <span class="skip-label">+15s</span>
+      </button>
+    </div>
+
+    <!-- Speed Selector -->
+    <div class="speed-row">
+      <button class="speed-chip" data-speed="0.75" onclick="setSpeed(this)">0.75x</button>
+      <button class="speed-chip active" data-speed="1" onclick="setSpeed(this)">1x</button>
+      <button class="speed-chip" data-speed="1.25" onclick="setSpeed(this)">1.25x</button>
+      <button class="speed-chip" data-speed="1.5" onclick="setSpeed(this)">1.5x</button>
+    </div>
+
+    <!-- Chapter Indicator -->
+    <div class="chapter-indicator">Chapter 3: The Escape</div>
+  </div>
+
+  <!-- Divider -->
+  <div class="section-divider"></div>
+
+  <!-- Dictionary Lookup Section -->
+  <div class="dict-section">
+    <div class="section-title">词典查词</div>
+    <div class="dict-input-row">
+      <input class="dict-input" type="text" id="dictInput" placeholder="输入英文单词..." onkeydown="if(event.key==='Enter')lookupWord()" />
+      <button class="dict-search-btn" onclick="lookupWord()">查</button>
+    </div>
+    <div class="dict-result" id="dictResult">
+      <div class="dr-word" id="drWord">gorgeous</div>
+      <div class="dr-phonetic" id="drPhonetic">/ˈɡɔːrdʒəs/</div>
+      <div class="dr-def" id="drDef">adj. 华丽的，灿烂的；令人十分愉快的</div>
+      <button class="dr-btn" onclick="addToVocab()">加入生词本</button>
+    </div>
+  </div>
+
+  <!-- Demo Toggle Buttons -->
+  <div class="demo-toggles">
+    <button class="demo-btn" id="toggleOverdue" onclick="toggleOverdueState()">切换逾期状态</button>
+    <button class="demo-btn" id="toggleCompletion" onclick="toggleCompletionState()">切换完成弹窗</button>
+  </div>
+
+  <!-- Bottom Action Bar -->
+  <div class="bottom-bar">
+    <button class="bar-item" onclick="navigate('my-books.html')">
+      <span class="bar-icon">📚</span>
+      书架
+    </button>
+    <button class="bar-item" onclick="navigate('quiz.html')">
+      <span class="bar-icon">📝</span>
+      测评
+    </button>
+    <button class="bar-item" onclick="shareBook()">
+      <span class="bar-icon">📤</span>
+      分享
+    </button>
+  </div>
+
+  <!-- Overdue Lock Overlay -->
+  <div class="overdue-overlay" id="overdueOverlay">
+    <div class="overdue-card">
+      <div class="od-icon">🔒</div>
+      <div class="od-title">借阅已逾期</div>
+      <div class="od-desc">请先归还图书后再听读</div>
+      <button class="od-btn" onclick="closeOverdue()">返回</button>
+    </div>
+  </div>
+
+  <!-- Completion Popup -->
+  <div class="completion-overlay" id="completionOverlay">
+    <div class="completion-card">
+      <div class="cc-emoji">🎉</div>
+      <div class="cc-title">恭喜读完！</div>
+      <div class="cc-sub">你已完成本书的听读</div>
+      <div class="cc-stats">
+        <div class="cc-stat">
+          <div class="val">5</div>
+          <div class="lbl">读完本数</div>
+        </div>
+        <div class="cc-stat">
+          <div class="val">31,200</div>
+          <div class="lbl">词数</div>
+        </div>
+        <div class="cc-stat">
+          <div class="val">4.5h</div>
+          <div class="lbl">用时</div>
+        </div>
+      </div>
+      <div class="cc-actions">
+        <button class="cc-btn primary" onclick="navigate('quiz.html')">参加测评</button>
+        <button class="cc-btn secondary" onclick="closeCompletion()">返回书架</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ── State ──
+    var isPlaying = false;
+    var playbackSpeed = 1;
+    var progress = 0;           // 0 to 1
+    var totalSeconds = 750;     // 12:30
+    var animId = null;
+    var lastTick = null;
+
+    // ── Play / Pause ──
+    function togglePlay() {
+      isPlaying = !isPlaying;
+      updatePlayUI();
+      if (isPlaying) {
+        lastTick = performance.now();
+        tick();
+      } else {
+        if (animId) cancelAnimationFrame(animId);
+      }
+    }
+
+    function updatePlayUI() {
+      var icon = document.getElementById('playIcon');
+      var btn = document.getElementById('playBtn');
+      if (isPlaying) {
+        icon.innerHTML = '<rect x="7" y="5" width="3" height="14" rx="0.5"/><rect x="14" y="5" width="3" height="14" rx="0.5"/>';
+        btn.classList.add('playing');
+      } else {
+        icon.innerHTML = '<polygon points="9,6 19,12 9,18"/>';
+        btn.classList.remove('playing');
+      }
+    }
+
+    function tick() {
+      if (!isPlaying) return;
+      var now = performance.now();
+      var dt = (now - (lastTick || now)) / 1000;
+      lastTick = now;
+      progress = Math.min(1, progress + (dt / totalSeconds) * playbackSpeed);
+      renderProgress();
+      if (progress >= 1) {
+        isPlaying = false;
+        updatePlayUI();
+        setTimeout(function() { showCompletion(); }, 400);
+        return;
+      }
+      animId = requestAnimationFrame(function() { setTimeout(tick, 50); });
+    }
+
+    // ── Progress rendering ──
+    function renderProgress() {
+      var sec = Math.round(progress * totalSeconds);
+      var m = Math.floor(sec / 60);
+      var s = sec % 60;
+      document.getElementById('timeCurrent').textContent = m + ':' + (s < 10 ? '0' : '') + s;
+      document.getElementById('progressFill').style.width = (progress * 100) + '%';
+    }
+
+    // ── Seek ──
+    (function() {
+      var track = document.getElementById('progressTrack');
+      var dragging = false;
+
+      function seek(clientX) {
+        var rect = track.getBoundingClientRect();
+        var ratio = (clientX - rect.left) / rect.width;
+        ratio = Math.max(0, Math.min(1, ratio));
+        progress = ratio;
+        renderProgress();
+      }
+
+      track.addEventListener('mousedown', function(e) { dragging = true; seek(e.clientX); });
+      document.addEventListener('mousemove', function(e) { if (dragging) seek(e.clientX); });
+      document.addEventListener('mouseup', function() { dragging = false; });
+
+      track.addEventListener('touchstart', function(e) { dragging = true; seek(e.touches[0].clientX); }, { passive: true });
+      document.addEventListener('touchmove', function(e) { if (dragging) seek(e.touches[0].clientX); }, { passive: true });
+      document.addEventListener('touchend', function() { dragging = false; });
+    })();
+
+    // ── Skip ──
+    function skipAudio(seconds) {
+      progress = Math.max(0, Math.min(1, progress + seconds / totalSeconds));
+      renderProgress();
+    }
+
+    // ── Speed ──
+    function setSpeed(btn) {
+      playbackSpeed = parseFloat(btn.dataset.speed);
+      document.querySelectorAll('.speed-chip').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+    }
+
+    // ── Dictionary ──
+    var dict = {
+      'gorgeous': { word: 'gorgeous', phonetic: '/ˈɡɔːrdʒəs/', def: 'adj. 华丽的，灿烂的；令人十分愉快的' },
+      'charlotte': { word: 'Charlotte', phonetic: '/ˈʃɑːrlət/', def: 'n. 夏洛特（人名）' },
+      'web': { word: 'web', phonetic: '/web/', def: 'n. 网；蛛网；网络 v. 结网' },
+      'spider': { word: 'spider', phonetic: '/ˈspaɪdər/', def: 'n. 蜘蛛' },
+      'pig': { word: 'pig', phonetic: '/pɪɡ/', def: 'n. 猪；猪肉' },
+      'barn': { word: 'barn', phonetic: '/bɑːrn/', def: 'n. 谷仓；畜棚' },
+      'runt': { word: 'runt', phonetic: '/rʌnt/', def: 'n. 一窝中最小的动物；矮小的人或物' },
+      'escape': { word: 'escape', phonetic: '/ɪˈskeɪp/', def: 'v. 逃跑；逃脱 n. 逃跑；逃避' },
+      'terrific': { word: 'terrific', phonetic: '/təˈrɪfɪk/', def: 'adj. 极好的；可怕的；极大的' },
+      'humble': { word: 'humble', phonetic: '/ˈhʌmbl/', def: 'adj. 谦逊的；卑微的 v. 使谦卑' }
+    };
+
+    function lookupWord() {
+      var raw = document.getElementById('dictInput').value.trim().toLowerCase();
+      if (!raw) return;
+      var el = document.getElementById('dictResult');
+      var entry = dict[raw];
+      if (entry) {
+        document.getElementById('drWord').textContent = entry.word;
+        document.getElementById('drPhonetic').textContent = entry.phonetic;
+        document.getElementById('drDef').textContent = entry.def;
+      } else {
+        document.getElementById('drWord').textContent = raw;
+        document.getElementById('drPhonetic').textContent = '/—/';
+        document.getElementById('drDef').textContent = '暂无该词释义，请检查拼写';
+      }
+      el.classList.remove('show');
+      // Force reflow for re-animation
+      void el.offsetWidth;
+      el.classList.add('show');
+    }
+
+    function addToVocab() {
+      var word = document.getElementById('drWord').textContent;
+      var btn = event.currentTarget;
+      btn.textContent = '已加入 ✓';
+      btn.style.background = 'var(--success)';
+      setTimeout(function() {
+        btn.textContent = '加入生词本';
+        btn.style.background = '';
+      }, 1800);
+    }
+
+    // ── Demo toggles ──
+    function toggleOverdueState() {
+      var overlay = document.getElementById('overdueOverlay');
+      var btn = document.getElementById('toggleOverdue');
+      var showing = overlay.classList.toggle('show');
+      btn.classList.toggle('active-demo', showing);
+    }
+
+    function toggleCompletionState() {
+      var overlay = document.getElementById('completionOverlay');
+      var btn = document.getElementById('toggleCompletion');
+      var showing = overlay.classList.toggle('show');
+      btn.classList.toggle('active-demo', showing);
+    }
+
+    function showCompletion() {
+      document.getElementById('completionOverlay').classList.add('show');
+      document.getElementById('toggleCompletion').classList.add('active-demo');
+    }
+
+    function closeOverdue() {
+      document.getElementById('overdueOverlay').classList.remove('show');
+      document.getElementById('toggleOverdue').classList.remove('active-demo');
+    }
+
+    function closeCompletion() {
+      document.getElementById('completionOverlay').classList.remove('show');
+      document.getElementById('toggleCompletion').classList.remove('active-demo');
+    }
+
+    // ── Navigation ──
+    function navigate(url) { window.location.href = url; }
+    function shareBook() {
+      var btn = event.currentTarget;
+      var label = btn.querySelector('.bar-icon').nextSibling;
+      // Simple feedback
+      btn.style.color = 'var(--accent)';
+      setTimeout(function() { btn.style.color = ''; }, 1200);
+    }
+  </script>
+</body>
+</html>

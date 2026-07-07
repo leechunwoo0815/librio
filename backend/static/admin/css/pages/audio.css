@@ -1,0 +1,55 @@
+/* audio.css — 音频管理页面专属样式 */
+
+/* Stats grid */
+.stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+.stat-card .stat-label { font-size: 12px; color: var(--muted); }
+.stat-card .stat-value { font-family: var(--font-display); font-size: 24px; font-weight: 700; }
+
+/* Toolbar */
+.toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; gap: 12px; flex-wrap: wrap; }
+.toolbar-left { display: flex; align-items: center; gap: 10px; }
+.btn { padding: 8px 18px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; }
+.btn-primary { background: var(--accent); color: white; }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-outline { background: var(--surface); border: 1px solid var(--border); color: var(--fg); }
+.btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+.filter-select { padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; color: var(--fg); background: var(--surface); cursor: pointer; }
+.search-box { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); width: 240px; }
+.search-box svg { width: 16px; height: 16px; color: var(--muted); flex-shrink: 0; }
+.search-box input { border: none; outline: none; background: none; font-size: 13px; width: 100%; color: var(--fg); }
+
+/* Table */
+.audio-table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+.audio-table th, .audio-table td { padding: 12px 16px; text-align: left; font-size: 13px; }
+.audio-table th { background: var(--bg); font-weight: 600; font-size: 12px; color: var(--muted); border-bottom: 1px solid var(--border); }
+.audio-table td { border-bottom: 1px solid var(--border); }
+.audio-table tr:last-child td { border-bottom: none; }
+.audio-table tr:hover td { background: var(--bg); }
+
+/* Tags */
+.tag { padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 500; }
+.tag-done { background: var(--success-soft); color: var(--success); }
+.tag-pending { background: var(--warning-soft); color: var(--warning); }
+
+/* Action buttons */
+.action-sm { padding: 4px 10px; font-size: 12px; color: var(--accent); border-radius: 6px; border: none; background: none; cursor: pointer; }
+.action-sm:hover { background: var(--accent-soft); }
+
+/* Audio player bar */
+.audio-player-bar { display: flex; align-items: center; padding: 12px 20px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-top: 16px; gap: 12px; font-size: 13px; color: var(--fg); }
+
+/* Modal */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 50; display: none; align-items: center; justify-content: center; }
+.modal-overlay.show { display: flex; }
+.modal { background: var(--surface); border-radius: var(--radius-lg); padding: 28px; width: 480px; max-height: 80vh; overflow-y: auto; box-shadow: 0 16px 48px rgba(0,0,0,0.12); }
+.modal h3 { font-family: var(--font-display); font-size: 17px; font-weight: 600; margin-bottom: 16px; }
+.form-group { margin-bottom: 14px; }
+.form-group label { display: block; font-size: 12px; font-weight: 500; color: var(--muted); margin-bottom: 4px; }
+.form-group input, .form-group select { width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; background: var(--bg); color: var(--fg); }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+
+/* Responsive */
+@media (max-width: 1024px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 768px) { .stats-grid { grid-template-columns: 1fr; } }

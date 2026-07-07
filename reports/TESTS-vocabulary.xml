@@ -1,0 +1,161 @@
+<testsuite name="vocabulary.查词与生词本" tests="9" errors="1" failures="3" skipped="0" time="0.077646" timestamp="2026-06-15T16:08:35.899714" hostname="litianyudeMacBook-Air.local"><testcase classname="vocabulary.查词与生词本" name="点击单词查看释义" status="passed" time="0.016286"><system-out>
+<![CDATA[
+@scenario.begin
+  场景: 点击单词查看释义
+    假如 用户已登录小程序 ... passed in 0.005s
+    并且 用户的孩子是正式会员 ... passed in 0.001s
+    并且 用户正在阅读图书 ... passed in 0.000s
+    当 用户点击单词"curiosity" ... passed in 0.009s
+    那么 显示单词"curiosity"的弹窗 ... passed in 0.000s
+    并且 显示音标"/ˌkjʊriˈɑːsəti/" ... passed in 0.000s
+    并且 显示词性"名词" ... passed in 0.000s
+    并且 显示中文释义"好奇心" ... passed in 0.000s
+    并且 显示例句 ... passed in 0.000s
+    并且 显示"加入生词本"按钮 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="vocabulary.查词与生词本" name="播放单词发音" status="passed" time="0.011608"><system-out>
+<![CDATA[
+@scenario.begin
+  场景: 播放单词发音
+    假如 用户已登录小程序 ... passed in 0.003s
+    并且 用户的孩子是正式会员 ... passed in 0.008s
+    并且 用户正在阅读图书 ... passed in 0.000s
+    当 用户点击发音按钮 ... passed in 0.000s
+    那么 播放"curiosity"的标准发音 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="vocabulary.查词与生词本" name="单词不在词库中" status="passed" time="0.01066"><system-out>
+<![CDATA[
+@scenario.begin
+  场景: 单词不在词库中
+    假如 用户已登录小程序 ... passed in 0.002s
+    并且 用户的孩子是正式会员 ... passed in 0.003s
+    并且 用户正在阅读图书 ... passed in 0.000s
+    当 用户点击单词"supercalifragilisticexpialidocious" ... passed in 0.006s
+    那么 显示"单词未收录，已记录，将尽快补充" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="vocabulary.查词与生词本" name="加入生词本" status="failed" time="0.011201"><failure type="AssertionError" message="">
+<![CDATA[
+Failing step: 那么 单词"curiosity"加入生词本 ... failed in 0.000s
+Location: features/vocabulary.feature:33
+ASSERT FAILED: ]]>
+</failure><system-out>
+<![CDATA[
+@scenario.begin
+  场景: 加入生词本
+    假如 用户已登录小程序 ... passed in 0.004s
+    并且 用户的孩子是正式会员 ... passed in 0.001s
+    并且 用户正在阅读图书 ... passed in 0.000s
+    当 用户在查词弹窗点击"加入生词本" ... passed in 0.007s
+    那么 单词"curiosity"加入生词本 ... failed in 0.000s
+    并且 显示"已加入生词本"提示 ... skipped in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="vocabulary.查词与生词本" name="查看生词本" status="failed" time="0.00683"><failure type="AssertionError" message="">
+<![CDATA[
+Failing step: 那么 显示所有已收集的生词列表 ... failed in 0.000s
+Location: features/vocabulary.feature:38
+ASSERT FAILED: ]]>
+</failure><system-out>
+<![CDATA[
+@scenario.begin
+  场景: 查看生词本
+    假如 用户已登录小程序 ... passed in 0.002s
+    并且 用户的孩子是正式会员 ... passed in 0.001s
+    并且 用户正在阅读图书 ... passed in 0.000s
+    当 用户进入生词本页面 ... passed in 0.003s
+    那么 显示所有已收集的生词列表 ... failed in 0.000s
+    并且 每个生词显示：单词、中文释义、添加时间、来源图书 ... skipped in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="vocabulary.查词与生词本" name="复习生词" status="passed" time="0.003312"><system-out>
+<![CDATA[
+@scenario.begin
+  场景: 复习生词
+    假如 用户已登录小程序 ... passed in 0.002s
+    并且 用户的孩子是正式会员 ... passed in 0.001s
+    并且 用户正在阅读图书 ... passed in 0.000s
+    当 用户点击"复习模式" ... passed in 0.000s
+    那么 显示英文单词 ... passed in 0.000s
+    并且 用户点击查看中文释义 ... passed in 0.000s
+    并且 可以选择"已掌握"或"继续学习" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="vocabulary.查词与生词本" name="标记已掌握" status="error" time="0.008742"><error type="TypeError" message="string indices must be integers, not 'str'">
+<![CDATA[
+Failing step: 当 用户将生词"curiosity"标记为已掌握 ... error in 0.003s
+Location: features/vocabulary.feature:48
+Traceback (most recent call last):
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/behave/model.py", line 1991, in run
+    match.run(runner.context)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/behave/matchers.py", line 105, in run
+    self.func(context, *args, **kwargs)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "features/steps/vocabulary_steps.py", line 106, in step_mark_mastered
+    if w["word"] == word.lower():
+       ~^^^^^^^^
+TypeError: string indices must be integers, not 'str'
+]]>
+</error><system-out>
+<![CDATA[
+@scenario.begin
+  场景: 标记已掌握
+    假如 用户已登录小程序 ... passed in 0.002s
+    并且 用户的孩子是正式会员 ... passed in 0.003s
+    并且 用户正在阅读图书 ... passed in 0.000s
+    当 用户将生词"curiosity"标记为已掌握 ... error in 0.003s
+    那么 该词移入"已掌握"列表 ... skipped in 0.000s
+    并且 不再出现在复习列表中 ... skipped in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="vocabulary.查词与生词本" name="生词统计" status="failed" time="0.006091"><failure type="AssertionError" message="">
+<![CDATA[
+Failing step: 那么 显示累计生词数、学习中、已掌握数量 ... failed in 0.000s
+Location: features/vocabulary.feature:54
+ASSERT FAILED: ]]>
+</failure><system-out>
+<![CDATA[
+@scenario.begin
+  场景: 生词统计
+    假如 用户已登录小程序 ... passed in 0.002s
+    并且 用户的孩子是正式会员 ... passed in 0.001s
+    并且 用户正在阅读图书 ... passed in 0.000s
+    当 用户查看生词本统计 ... passed in 0.004s
+    那么 显示累计生词数、学习中、已掌握数量 ... failed in 0.000s
+    并且 显示本月新增生词趋势 ... skipped in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="vocabulary.查词与生词本" name="阅读中生词高亮" status="passed" time="0.002915"><system-out>
+<![CDATA[
+@scenario.begin
+  场景: 阅读中生词高亮
+    假如 用户已登录小程序 ... passed in 0.002s
+    并且 用户的孩子是正式会员 ... passed in 0.001s
+    并且 用户正在阅读图书 ... passed in 0.000s
+    当 用户再次阅读包含"curiosity"的页面 ... passed in 0.000s
+    那么 "curiosity"在文中高亮显示 ... passed in 0.000s
+    并且 点击可再次查看释义 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

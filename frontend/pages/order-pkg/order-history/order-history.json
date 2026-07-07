@@ -1,0 +1,5 @@
+{
+  "navigationBarTitleText": "订单历史",
+  "enablePullDownRefresh": true,
+  "backgroundTextStyle": "dark"
+}

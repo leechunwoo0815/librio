@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>回收站 — MegaWords 管理后台</title>
+<style>
+:root {
+  --bg: oklch(98% 0.003 250);
+  --surface: oklch(100% 0 0);
+  --fg: oklch(20% 0.015 275);
+  --muted: oklch(48% 0.02 250);
+  --border: oklch(90% 0.008 250);
+  --accent: oklch(54% 0.17 275);
+  --accent-soft: oklch(54% 0.17 275 / 0.1);
+  --accent-hover: oklch(48% 0.17 275);
+  --secondary: oklch(86% 0.20 135);
+  --secondary-soft: oklch(86% 0.20 135 / 0.12);
+  --success: oklch(72% 0.20 145);
+  --success-soft: oklch(72% 0.20 145 / 0.1);
+  --warning: oklch(78% 0.16 85);
+  --warning-soft: oklch(78% 0.16 85 / 0.1);
+  --error: oklch(62% 0.22 25);
+  --radius: 12px; --radius-sm: 8px; --radius-lg: 16px;
+  --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+}
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: var(--font-body); background: var(--bg); color: var(--fg); display: flex; min-height: 100vh; }
+a { text-decoration: none; color: inherit; }
+
+/* Sidebar */
+.logo-icon { font-size: 28px; }
+.logo-text { font-size: 17px; font-weight: 700; color: var(--accent); font-family: var(--font-display); }
+.logo-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+/* Main */
+.main { margin-left: 240px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+.top-bar { display: flex; align-items: center; justify-content: space-between; padding: 16px 32px; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50; }
+.top-bar h1 { font-size: 18px; font-weight: 700; font-family: var(--font-display); }
+.top-bar .right { display: flex; align-items: center; gap: 16px; font-size: 13px; color: var(--muted); }
+.logout-btn { color: var(--error); font-size: 13px; }
+.content { padding: 24px 32px; flex: 1; }
+
+/* Notice */
+.recycle-notice { display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: var(--warning-soft); border: 1px solid oklch(78% 0.16 85 / 0.25); border-radius: var(--radius-sm); margin-bottom: 20px; font-size: 13px; color: var(--fg); }
+
+/* Filter bar */
+.filter-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+.filter-bar select {
+  height: 36px; padding: 0 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; background: var(--surface); color: var(--fg); font-family: var(--font-body); outline: none;
+}
+.filter-bar select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+/* Table */
+.table-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.table-card table { width: 100%; border-collapse: collapse; }
+.table-card th { background: oklch(97% 0.005 250); padding: 10px 14px; font-size: 12px; font-weight: 600; color: var(--muted); text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.table-card td { padding: 11px 14px; font-size: 13px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.table-card tr:last-child td { border-bottom: none; }
+.table-card tr:hover td { background: oklch(97% 0.005 250); }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 500; }
+.badge-accent { background: var(--accent-soft); color: var(--accent); }
+.badge-success { background: var(--success-soft); color: var(--success); }
+.badge-warning { background: var(--warning-soft); color: var(--warning); }
+.badge-muted { background: oklch(92% 0.005 250); color: var(--muted); }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 0 16px; height: 36px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; border: none; cursor: pointer; font-family: var(--font-body); transition: all 0.15s; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-sm { height: 28px; padding: 0 12px; font-size: 12px; border-radius: 6px; }
+.btn-restore { background: var(--success-soft); color: var(--success); border: 1px solid oklch(72% 0.20 145 / 0.25); height: 28px; padding: 0 12px; font-size: 12px; border-radius: 6px; cursor: pointer; font-family: var(--font-body); font-weight: 500; transition: all 0.15s; }
+.btn-restore:hover { background: var(--success); color: #fff; }
+.btn-delete-permanent { background: none; color: var(--error); border: none; height: 28px; padding: 0 8px; font-size: 12px; cursor: pointer; font-family: var(--font-body); transition: all 0.15s; text-decoration: underline; }
+.btn-delete-permanent:hover { color: oklch(52% 0.22 25); }
+
+/* Pagination */
+.pagination { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; }
+.pagination-info { font-size: 12px; color: var(--muted); }
+.pagination-pages { display: flex; gap: 4px; }
+.pagination-pages a { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-sm); font-size: 13px; color: var(--muted); border: 1px solid var(--border); background: var(--surface); }
+.pagination-pages a:hover { border-color: var(--accent); color: var(--accent); }
+.pagination-pages a.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* Modal overlay */
+.modal-overlay { display: none; position: fixed; inset: 0; background: oklch(20% 0.015 275 / 0.4); z-index: 999; align-items: center; justify-content: center; }
+.modal-overlay.show { display: flex; }
+.modal { background: var(--surface); border-radius: var(--radius-lg); box-shadow: 0 16px 48px oklch(20% 0.015 275 / 0.15); width: 420px; max-width: 90vw; overflow: hidden; }
+.modal-header { padding: 20px 24px 12px; }
+.modal-header h3 { font-size: 16px; font-weight: 700; font-family: var(--font-display); }
+.modal-body { padding: 0 24px 20px; font-size: 13px; color: var(--muted); line-height: 1.6; }
+.modal-body .item-name { color: var(--fg); font-weight: 600; }
+.modal-footer { padding: 12px 24px 20px; display: flex; justify-content: flex-end; gap: 10px; }
+.btn-cancel { background: oklch(94% 0.005 250); color: var(--fg); border: 1px solid var(--border); height: 36px; padding: 0 20px; font-size: 13px; font-weight: 500; border-radius: var(--radius-sm); cursor: pointer; font-family: var(--font-body); transition: all 0.15s; }
+.btn-cancel:hover { background: oklch(90% 0.005 250); }
+.btn-danger { background: var(--error); color: #fff; border: none; height: 36px; padding: 0 20px; font-size: 13px; font-weight: 500; border-radius: var(--radius-sm); cursor: pointer; font-family: var(--font-body); transition: all 0.15s; }
+.btn-danger:hover { background: oklch(55% 0.22 25); }
+</style>
+    <link rel="stylesheet" href="admin-sidebar.css">
+  </head>
+<body>
+  <div id="sidebar-root"></div>
+<script>
+document.querySelectorAll('.nav-link').forEach(a => {
+  a.classList.remove('active');
+  if (a.getAttribute('href') === window.location.pathname.split('/').pop()) a.classList.add('active');
+});
+</script>
+
+<div class="main">
+  <div class="top-bar"><h1>回收站</h1><div class="right"><span>管理员</span><a class="logout-btn" href="admin-login.html">退出</a></div></div>
+
+  <div class="content">
+    <!-- Notice -->
+    <div class="recycle-notice">
+      ⚠️ 回收站中的数据将在删除后 <strong>30 天</strong>自动清除，届时将无法恢复。请及时处理需要恢复的数据。
+    </div>
+
+    <!-- Filter bar -->
+    <div class="filter-bar">
+      <select><option value="">全部模块</option><option>图书</option><option>活动</option><option>老师</option><option>场馆</option></select>
+    </div>
+
+    <!-- Table -->
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr>
+            <th>模块</th>
+            <th>内容名称</th>
+            <th>删除人</th>
+            <th>删除时间</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="badge badge-accent">图书</span></td>
+            <td><strong>Percy Jackson and the Lightning Thief</strong><br><span style="font-size:11px;color:var(--muted)">ISBN: 978-0-7868-5629-0</span></td>
+            <td>张明</td>
+            <td style="font-size:12px;color:var(--muted)">2026-06-23 16:42:18</td>
+            <td>
+              <button class="btn-restore" onclick="alert('已恢复')">恢复</button>
+              <button class="btn-delete-permanent" onclick="showDeleteModal('Percy Jackson and the Lightning Thief')">永久删除</button>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-success">活动</span></td>
+            <td><strong>春季英文绘本创作比赛</strong><br><span style="font-size:11px;color:var(--muted)">活动编号: ACT-20260315</span></td>
+            <td>王芳</td>
+            <td style="font-size:12px;color:var(--muted)">2026-06-22 14:18:55</td>
+            <td>
+              <button class="btn-restore" onclick="alert('已恢复')">恢复</button>
+              <button class="btn-delete-permanent" onclick="showDeleteModal('春季英文绘本创作比赛')">永久删除</button>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-warning">老师</span></td>
+            <td><strong>Emily Johnson</strong><br><span style="font-size:11px;color:var(--muted)">原属场馆: 阳光阅读馆</span></td>
+            <td>李雪</td>
+            <td style="font-size:12px;color:var(--muted)">2026-06-21 10:33:27</td>
+            <td>
+              <button class="btn-restore" onclick="alert('已恢复')">恢复</button>
+              <button class="btn-delete-permanent" onclick="showDeleteModal('Emily Johnson')">永久删除</button>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-accent">图书</span></td>
+            <td><strong>Harry Potter and the Sorcerer's Stone</strong><br><span style="font-size:11px;color:var(--muted)">ISBN: 978-0-590-35342-7</span></td>
+            <td>张明</td>
+            <td style="font-size:12px;color:var(--muted)">2026-06-20 17:55:09</td>
+            <td>
+              <button class="btn-restore" onclick="alert('已恢复')">恢复</button>
+              <button class="btn-delete-permanent" onclick="showDeleteModal('Harry Potter and the Sorcerer\'s Stone')">永久删除</button>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-muted">场馆</span></td>
+            <td><strong>虹桥社区阅读点</strong><br><span style="font-size:11px;color:var(--muted)">地址: 虹桥路 288 号 B1</span></td>
+            <td>王芳</td>
+            <td style="font-size:12px;color:var(--muted)">2026-06-19 11:22:44</td>
+            <td>
+              <button class="btn-restore" onclick="alert('已恢复')">恢复</button>
+              <button class="btn-delete-permanent" onclick="showDeleteModal('虹桥社区阅读点')">永久删除</button>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-success">活动</span></td>
+            <td><strong>万圣节英文故事夜</strong><br><span style="font-size:11px;color:var(--muted)">活动编号: ACT-20251031</span></td>
+            <td>张明</td>
+            <td style="font-size:12px;color:var(--muted)">2026-06-18 09:15:33</td>
+            <td>
+              <button class="btn-restore" onclick="alert('已恢复')">恢复</button>
+              <button class="btn-delete-permanent" onclick="showDeleteModal('万圣节英文故事夜')">永久删除</button>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-accent">图书</span></td>
+            <td><strong>The Cat in the Hat</strong><br><span style="font-size:11px;color:var(--muted)">ISBN: 978-0-394-80001-2</span></td>
+            <td>李雪</td>
+            <td style="font-size:12px;color:var(--muted)">2026-06-17 15:48:12</td>
+            <td>
+              <button class="btn-restore" onclick="alert('已恢复')">恢复</button>
+              <button class="btn-delete-permanent" onclick="showDeleteModal('The Cat in the Hat')">永久删除</button>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-warning">老师</span></td>
+            <td><strong>Sarah Williams</strong><br><span style="font-size:11px;color:var(--muted)">原属场馆: 星光书房</span></td>
+            <td>王芳</td>
+            <td style="font-size:12px;color:var(--muted)">2026-06-16 13:05:28</td>
+            <td>
+              <button class="btn-restore" onclick="alert('已恢复')">恢复</button>
+              <button class="btn-delete-permanent" onclick="showDeleteModal('Sarah Williams')">永久删除</button>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-accent">图书</span></td>
+            <td><strong>Goodnight Moon</strong><br><span style="font-size:11px;color:var(--muted)">ISBN: 978-0-06-443017-3</span></td>
+            <td>张明</td>
+            <td style="font-size:12px;color:var(--muted)">2026-06-15 10:30:55</td>
+            <td>
+              <button class="btn-restore" onclick="alert('已恢复')">恢复</button>
+              <button class="btn-delete-permanent" onclick="showDeleteModal('Goodnight Moon')">永久删除</button>
+            </td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-muted">场馆</span></td>
+            <td><strong>静安临时展点</strong><br><span style="font-size:11px;color:var(--muted)">地址: 南京西路 1688 号</span></td>
+            <td>李雪</td>
+            <td style="font-size:12px;color:var(--muted)">2026-06-14 16:22:11</td>
+            <td>
+              <button class="btn-restore" onclick="alert('已恢复')">恢复</button>
+              <button class="btn-delete-permanent" onclick="showDeleteModal('静安临时展点')">永久删除</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination">
+      <div class="pagination-info">共 42 条，第 1/5 页</div>
+      <div class="pagination-pages">
+        <a href="#">&lt;</a>
+        <a href="#" class="active">1</a>
+        <a href="#">2</a>
+        <a href="#">3</a>
+        <a href="#">4</a>
+        <a href="#">5</a>
+        <a href="#">&gt;</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>⚠️ 确认永久删除</h3>
+    </div>
+    <div class="modal-body">
+      <p>您即将永久删除 <span class="item-name" id="deleteItemName"></span></p>
+      <p style="margin-top:8px;color:var(--error)">此操作不可撤销，删除后数据将无法恢复。请确认是否继续？</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="hideDeleteModal()">取消</button>
+      <button class="btn-danger" onclick="confirmDelete()">确认永久删除</button>
+    </div>
+  </div>
+</div>
+
+
+  <script src="admin-sidebar.js"></script>
+</body>
+</html>

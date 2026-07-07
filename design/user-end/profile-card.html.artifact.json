@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "profile-card.html",
+  "entry": "profile-card.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-06-09T11:57:13.456Z",
+  "updatedAt": "2026-06-09T11:57:13.456Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}

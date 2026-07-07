@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>出卷管理 · MegaWords</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.003 250); --surface: oklch(100% 0 0);
+      --fg: oklch(20% 0.015 275); --muted: oklch(48% 0.02 250);
+      --border: oklch(90% 0.008 250); --accent: oklch(54% 0.17 275);
+      --accent-soft: oklch(54% 0.17 275 / 0.1); --accent-hover: oklch(48% 0.17 275);
+      --secondary: oklch(86% 0.20 135); --secondary-soft: oklch(86% 0.20 135 / 0.12);
+      --success: oklch(72% 0.20 145); --success-soft: oklch(72% 0.20 145 / 0.1);
+      --warning: oklch(78% 0.16 85); --warning-soft: oklch(78% 0.16 85 / 0.1);
+      --error: oklch(62% 0.22 25); --error-soft: oklch(62% 0.22 25 / 0.1);
+      --radius: 12px; --radius-sm: 8px; --radius-lg: 16px;
+      --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+      --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 14px; line-height: 1.5; min-height: 100vh; display: flex; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; }
+    .main { margin-left: 240px; flex: 1; min-height: 100vh; }
+    .top-bar { display: flex; align-items: center; justify-content: space-between; padding: 16px 28px; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; }
+    .top-bar h1 { font-family: var(--font-display); font-size: 18px; font-weight: 600; }
+    .top-bar .right { display: flex; align-items: center; gap: 16px; font-size: 13px; color: var(--muted); }
+    .top-bar .right .name { color: var(--fg); font-weight: 500; }
+    .logout-btn { color: var(--accent); font-size: 13px; }
+    .logout-btn:hover { text-decoration: underline; }
+    .content { padding: 24px 28px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; }
+    .stat-card .stat-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    .stat-card .stat-value { font-family: var(--font-display); font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .stat-card .stat-change { font-size: 12px; margin-top: 4px; }
+    .stat-card .stat-change.up { color: var(--success); }
+    .stat-card .stat-change.down { color: var(--error); }
+    .stat-card:nth-child(1) { border-top: 3px solid var(--accent); }
+    .stat-card:nth-child(2) { border-top: 3px solid var(--success); }
+    .stat-card:nth-child(3) { border-top: 3px solid var(--secondary); }
+    .stat-card:nth-child(4) { border-top: 3px solid var(--warning); }
+    /* table */
+    .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 20px; }
+    .table-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+    .table-header h3 { font-family: var(--font-display); font-size: 15px; font-weight: 600; }
+    .table-actions { display: flex; gap: 8px; }
+    .btn { padding: 8px 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-outline { border: 1px solid var(--border); color: var(--fg); background: var(--surface); }
+    .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-success { background: var(--success); color: white; }
+    .btn-danger { background: var(--error-soft); color: var(--error); }
+    .btn-sm { padding: 4px 10px; font-size: 12px; }
+    table { width: 100%; border-collapse: collapse; }
+    thead { background: oklch(97% 0.003 250); }
+    th { padding: 10px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+    td { padding: 12px 16px; font-size: 13px; border-top: 1px solid var(--border); }
+    tr:hover td { background: oklch(97% 0.003 250); }
+    .status { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+    .status-pending { background: var(--warning-soft); color: oklch(42% 0.12 85); }
+    .status-approved { background: var(--success-soft); color: oklch(40% 0.15 145); }
+    .status-rejected { background: var(--error-soft); color: oklch(40% 0.15 25); }
+    .status-active { background: var(--success-soft); color: oklch(40% 0.15 145); }
+    /* search */
+    .search-bar { display: flex; gap: 8px; margin-bottom: 16px; }
+    .search-input { flex: 1; height: 38px; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0 12px; font: inherit; font-size: 13px; outline: none; background: var(--surface); color: var(--fg); }
+    .search-input:focus { border-color: var(--accent); }
+    .search-input::placeholder { color: var(--muted); }
+    .filter-select { height: 38px; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0 12px; font: inherit; font-size: 13px; outline: none; background: var(--surface); color: var(--fg); min-width: 120px; }
+    /* tabs */
+    .tab-bar { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+    .tab-item { padding: 10px 20px; font-size: 14px; color: var(--muted); font-weight: 500; cursor: pointer; position: relative; }
+    .tab-item.active { color: var(--accent); }
+    .tab-item.active::after { content: ''; position: absolute; bottom: -1px; left: 0; right: 0; height: 2px; background: var(--accent); }
+    /* modal */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; align-items: center; justify-content: center; }
+    .modal-overlay.show { display: flex; }
+    .modal { background: var(--surface); border-radius: var(--radius-lg); padding: 24px; width: 90%; max-width: 520px; max-height: 80vh; overflow-y: auto; }
+    .modal h3 { font-family: var(--font-display); font-size: 18px; font-weight: 600; margin-bottom: 16px; }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: var(--muted); }
+    .form-input { width: 100%; height: 40px; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0 12px; font: inherit; font-size: 14px; outline: none; }
+    .form-input:focus { border-color: var(--accent); }
+    .form-textarea { width: 100%; min-height: 80px; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; font: inherit; font-size: 14px; outline: none; resize: vertical; }
+    .form-textarea:focus { border-color: var(--accent); }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+    .empty-state { text-align: center; padding: 40px; color: var(--muted); }
+    .empty-state svg { width: 40px; height: 40px; margin: 0 auto 8px; opacity: 0.4; }
+    /* responsive */
+    @media (max-width: 1024px) { .main { margin-left: 200px; } .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 768px) { .stats-grid { grid-template-columns: 1fr; } }
+
+  </style>
+    <link rel="stylesheet" href="admin-sidebar.css">
+  </head>
+<body>
+  <div id="sidebar-root"></div>
+<div class="main">
+    <div class="top-bar">
+      <h1>出卷管理</h1>
+      <div class="right">
+        <span class="name">管理员</span>
+        <button class="logout-btn">退出登录</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;max-width:700px">
+        <h3 style="font-family:var(--font-display);font-size:18px;font-weight:600;margin-bottom:20px">出卷向导</h3>
+
+        <!-- Step 1 -->
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+          <div style="width:32px;height:32px;border-radius:50%;background:var(--accent);color:white;display:grid;place-items:center;font-size:14px;font-weight:700;flex-shrink:0">1</div>
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:15px">选择孩子</div>
+            <select class="form-input" style="margin-top:8px">
+              <option>Mega · Level 3</option>
+              <option>Mini · Level 1</option>
+              <option>小明 · Level 5</option>
+              <option>Lily · Level 4</option>
+              <option>Tom · Level 3</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+          <div style="width:32px;height:32px;border-radius:50%;background:var(--accent);color:white;display:grid;place-items:center;font-size:14px;font-weight:700;flex-shrink:0">2</div>
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:15px">选择图书</div>
+            <div style="margin-top:8px;font-size:13px;color:var(--muted);margin-bottom:8px">Mega 正在读的书：</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <label style="display:flex;align-items:center;gap:10px;padding:12px;border:2px solid var(--accent);border-radius:var(--radius-sm);cursor:pointer;background:var(--accent-soft)">
+                <input type="radio" name="book" checked style="accent-color:var(--accent)" />
+                <div>
+                  <div style="font-weight:600;font-size:14px">Dinosaurs Before Dark</div>
+                  <div style="font-size:12px;color:var(--muted)">AR 2.6 · 68 页 · 已读 45%</div>
+                </div>
+              </label>
+              <label style="display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer">
+                <input type="radio" name="book" style="accent-color:var(--accent)" />
+                <div>
+                  <div style="font-weight:600;font-size:14px">Frog and Toad Together</div>
+                  <div style="font-size:12px;color:var(--muted)">AR 2.9 · 64 页 · 已读 20%</div>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:16px">
+          <div style="width:32px;height:32px;border-radius:50%;background:var(--accent);color:white;display:grid;place-items:center;font-size:14px;font-weight:700;flex-shrink:0">3</div>
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:15px;margin-bottom:8px">勾选题目（4-5 题）</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <label style="display:flex;align-items:flex-start;gap:10px;padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer">
+                <input type="checkbox" checked style="accent-color:var(--accent);margin-top:3px" />
+                <div>
+                  <div style="font-weight:500;font-size:14px">1. What did Jack find in the tree house?</div>
+                  <div style="font-size:12px;color:var(--muted)">正确答案：A. A lot of books</div>
+                </div>
+              </label>
+              <label style="display:flex;align-items:flex-start;gap:10px;padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer">
+                <input type="checkbox" checked style="accent-color:var(--accent);margin-top:3px" />
+                <div>
+                  <div style="font-weight:500;font-size:14px">2. Where did the tree house take them?</div>
+                  <div style="font-size:12px;color:var(--muted)">正确答案：B. To the age of dinosaurs</div>
+                </div>
+              </label>
+              <label style="display:flex;align-items:flex-start;gap:10px;padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer">
+                <input type="checkbox" checked style="accent-color:var(--accent);margin-top:3px" />
+                <div>
+                  <div style="font-weight:500;font-size:14px">3. What kind of dinosaur did Annie see first?</div>
+                  <div style="font-size:12px;color:var(--muted)">正确答案：B. A Pteranodon</div>
+                </div>
+              </label>
+              <label style="display:flex;align-items:flex-start;gap:10px;padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer">
+                <input type="checkbox" checked style="accent-color:var(--accent);margin-top:3px" />
+                <div>
+                  <div style="font-weight:500;font-size:14px">4. What did Jack use to take notes?</div>
+                  <div style="font-size:12px;color:var(--muted)">正确答案：B. A notebook and pencil</div>
+                </div>
+              </label>
+              <label style="display:flex;align-items:flex-start;gap:10px;padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer">
+                <input type="checkbox" checked style="accent-color:var(--accent);margin-top:3px" />
+                <div>
+                  <div style="font-weight:500;font-size:14px">5. How did they get back home?</div>
+                  <div style="font-size:12px;color:var(--muted)">正确答案：D. The tree house spun again</div>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 4 -->
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
+          <div style="width:32px;height:32px;border-radius:50%;background:var(--accent);color:white;display:grid;place-items:center;font-size:14px;font-weight:700;flex-shrink:0">4</div>
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:15px">测验摘要</div>
+            <div style="margin-top:8px;padding:12px;background:var(--bg);border-radius:var(--radius-sm);font-size:14px">
+              <div>孩子：<strong>Mega</strong></div>
+              <div>图书：<strong>Dinosaurs Before Dark</strong></div>
+              <div>题数：<strong>5 题</strong></div>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;border-radius:var(--radius)" onclick="alert('测验已生成，已通知 Mega 答题')">生成测验</button>
+      </div>
+    </div>
+  </div>
+  <script src="admin-sidebar.js"></script>
+</body>
+</html>

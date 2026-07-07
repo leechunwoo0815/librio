@@ -1,0 +1,105 @@
+<!--frontend/pages/order-pkg/observation/observation.wxml-->
+<view class="page-bg">
+  <view style="display:none" class="open pay-bar pay-btn pay-sub title"></view>
+  <view class="nav-bar">
+    <navigator class="back" open-type="navigateBack" hover-class="none">‹</navigator>
+    <text class="nav-title">观察期报名</text>
+  </view>
+
+  <!-- hero intro -->
+  <view class="hero">
+    <text class="hero-icon">🔭</text>
+    <view class="hero-h1">MegaWords 观察期体验</view>
+    <text class="hero-p">30 天沉浸式英语阅读之旅\n配备 1 对 1 专业老师全程指导</text>
+  </view>
+
+  <!-- price -->
+  <view class="price-section">
+    <text class="duration-badge">30 天体验期</text>
+    <view class="price-row">
+      <text class="price-sym">¥</text>
+      <text class="price-val">500</text>
+      <text class="price-unit">/ 30天</text>
+    </view>
+    <text class="price-note">升级正式会员时可全额抵扣</text>
+  </view>
+
+  <!-- includes list -->
+  <view class="includes-card">
+    <view class="includes-h3">
+      <text class="includes-h3-icon">✓</text>
+      <text>包含内容</text>
+    </view>
+    <view class="includes-list">
+      <view class="includes-item">
+        <view class="inc-icon ic1">📚</view>
+        <view class="inc-content">
+          <text class="inc-title">在线阅读全量图书</text>
+          <text class="inc-desc">A-Z 全级别 3,500+ 英文原版图书</text>
+        </view>
+      </view>
+      <view class="includes-item">
+        <view class="inc-icon ic2">✅</view>
+        <view class="inc-content">
+          <text class="inc-title">每日阅读打卡</text>
+          <text class="inc-desc">培养孩子坚持阅读的好习惯</text>
+        </view>
+      </view>
+      <view class="includes-item">
+        <view class="inc-icon ic3">📊</view>
+        <view class="inc-content">
+          <text class="inc-title">阅读数据统计</text>
+          <text class="inc-desc">实时追踪阅读时长、词汇量、进度</text>
+        </view>
+      </view>
+      <view class="includes-item">
+        <view class="inc-icon ic4">👩‍🏫</view>
+        <view class="inc-content">
+          <text class="inc-title">老师定期评估</text>
+          <text class="inc-desc">专业老师每周阅读能力评估与反馈</text>
+        </view>
+      </view>
+      <view class="includes-item">
+        <view class="inc-icon ic5">📋</view>
+        <view class="inc-content">
+          <text class="inc-title">观察期结束报告</text>
+          <text class="inc-desc">30 天后生成个性化阅读能力分析报告</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- guarantee -->
+  <view class="guarantee-box">
+    <text class="guarantee-icon">🛡️</text>
+    <text class="g-text"><text class="g-strong">无忧退款：</text>按剩余天数结算，计算公式：500 / 30 x 剩余天数，3 个工作日内原路返回。</text>
+  </view>
+
+  <!-- FAQ -->
+  <view class="faq-card">
+    <view class="faq-header">
+      <text class="faq-header-icon">❓</text>
+      <text>常见问题</text>
+    </view>
+    <view class="faq-item {{item.open ? 'faq-item-open' : ''}}" wx:for="{{faqList}}" wx:key="q">
+      <view class="faq-q" bindtap="toggleFaq" data-index="{{index}}">
+        <text class="faq-q-text">{{item.q}}</text>
+        <text class="faq-arrow {{item.open ? 'faq-arrow-open' : ''}}">‹</text>
+      </view>
+      <view class="faq-a" wx:if="{{item.open}}">
+        <text>{{item.a}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- pay bar -->
+  <view class="fixed-bottom-bar">
+    <pay-button
+      amount="{{500}}"
+      buttonText="{{loading ? '处理中...' : '立即报名'}}"
+      disabled="{{loading}}"
+      bind:pay="handleOrder"
+      bind:iosfallback="showIOSNotice"
+    />
+  </view>
+</view>

@@ -1,0 +1,88 @@
+<view style="display:none" class="bl br tl tr"></view>
+<!-- frontend/pages/member-pkg/certificate/certificate.wxml -->
+<view class="page-bg">
+  <!-- 单张证书视图 -->
+  <view class="cert-single" wx:if="{{mode === 'single' && cert}}">
+    <!-- 装饰彩纸 -->
+    <view class="confetti-top">🎊</view>
+
+    <!-- 证书金色边框包裹 -->
+    <view class="cert-wrapper">
+      <view class="cert-card">
+        <!-- 装饰角 -->
+        <view class="cert-corner cert-corner-tl"></view>
+        <view class="cert-corner cert-corner-tr"></view>
+        <view class="cert-corner cert-corner-bl"></view>
+        <view class="cert-corner cert-corner-br"></view>
+
+        <view class="cert-header">Certificate of Achievement</view>
+        <view class="cert-logo">MegaWords</view>
+        <view class="cert-title">晋级证书</view>
+        <view class="cert-badge">{{cert.badge_emoji || '🏆'}}</view>
+        <view class="cert-child-name">{{cert.child_name}}</view>
+        <view class="cert-english-name" wx:if="{{cert.english_name}}">{{cert.english_name}}</view>
+        <view class="cert-promo">成功晋级至 {{cert.level_name}}</view>
+        <view class="cert-level-change">
+          <view class="cert-level from">{{cert.from_level || 'Level ?'}}</view>
+          <view class="cert-arrow">→</view>
+          <view class="cert-level to">{{cert.level_name}}</view>
+        </view>
+        <view class="cert-level-name">⭐ {{cert.level_name}}</view>
+        <view class="cert-divider"></view>
+        <view class="cert-meta">
+          <text class="cert-date">颁发日期：{{cert.dateStr}}</text>
+          <view class="cert-number" wx:if="{{cert.certificate_no}}">证书编号：{{cert.certificate_no}}</view>
+        </view>
+        <view class="cert-seal">🏅</view>
+      </view>
+    </view>
+
+    <!-- 操作按钮 -->
+    <view class="cert-actions">
+      <view class="btn-save" bindtap="saveToAlbum">📥 保存到相册</view>
+      <button class="btn-share" open-type="share">🔗 分享给朋友</button>
+      <navigator class="btn-back" open-type="navigateBack" hover-class="none">返回成就中心</navigator>
+    </view>
+
+    <!-- 隐藏 Canvas -->
+    <canvas type="2d" id="certCanvas" class="cert-canvas"></canvas>
+
+    <!-- 分享弹窗 -->
+    <view class="share-modal {{showShare ? 'show' : ''}}" bindtap="closeShare">
+      <view class="share-card" catchtap="noop">
+        <view class="qr-placeholder">
+          <text>小程序码</text>
+        </view>
+        <view class="share-hint">长按识别小程序码\n查看晋级证书</view>
+        <view class="share-close" bindtap="closeShare">关闭</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 证书列表视图 -->
+  <view class="cert-list" wx:if="{{mode === 'list'}}">
+    <view class="empty-state" wx:if="{{certList.length === 0 && !loading}}">
+      <view class="emoji">📜</view>
+      <view class="text">暂无晋级证书</view>
+    </view>
+
+    <view class="loading" wx:if="{{loading}}">
+      <text>加载中...</text>
+    </view>
+
+    <view
+      class="cert-list-item"
+      wx:for="{{certList}}" wx:key="id"
+      data-index="{{index}}"
+      bindtap="onCertTap"
+    >
+      <view class="cert-list-badge">{{item.badge_emoji || '🎓'}}</view>
+      <view class="cert-list-info">
+        <text class="cert-list-level">{{item.level_name}}</text>
+        <text class="cert-list-no" wx:if="{{item.certificate_no}}">证书编号：{{item.certificate_no}}</text>
+        <text class="cert-list-date">{{item.dateStr}}</text>
+      </view>
+      <text class="cert-list-arrow">查看 ›</text>
+    </view>
+  </view>
+</view>

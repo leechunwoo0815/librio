@@ -1,0 +1,108 @@
+<!-- frontend/pages/member-pkg/profile-card/profile-card.wxml -->
+<view class="page">
+  <!-- Nav Bar -->
+  <view class="nav-bar">
+    <navigator class="back" open-type="navigateBack" delta="1">
+      <text class="back-icon">←</text>
+    </navigator>
+    <text class="title">阅读名片</text>
+    <view class="spacer"></view>
+  </view>
+
+  <!-- Card Wrapper -->
+  <view class="card-wrapper">
+    <view class="profile-card" id="profileCard">
+      <!-- Decorative circles (replacing CSS pseudo-elements) -->
+      <view class="deco-circle deco-top"></view>
+      <view class="deco-circle deco-bottom"></view>
+
+      <!-- Header: Avatar + Name -->
+      <view class="card-header">
+        <view class="card-avatar">
+          <text wx:if="{{profile.avatar_emoji || profile.avatar_url}}">{{profile.avatar_emoji || ''}}</text>
+          <text wx:elif="{{profile.chinese_name}}">{{profile.chinese_name[0]}}</text>
+          <text wx:else>👦</text>
+        </view>
+        <view class="card-identity">
+          <text class="card-cn-name">{{profile.chinese_name || '未知'}}</text>
+          <text class="card-en-name">{{profile.english_name || ''}}</text>
+        </view>
+      </view>
+
+      <!-- Level Badge -->
+      <view class="level-section">
+        <view class="level-badge-icon">
+          <text>{{currentLevel.level_badge || currentLevel.badge_emoji || 'B'}}</text>
+        </view>
+        <view class="level-text">
+          <text class="level-title">{{currentLevel.level_name || '未评级'}}</text>
+          <text class="level-subtitle">{{currentLevel.level_subtitle || ''}}</text>
+        </view>
+      </view>
+
+      <!-- Reading Stats -->
+      <view class="stats-row">
+        <view class="stat-item">
+          <text class="stat-val">{{profile.books_finished || 0}}</text>
+          <text class="stat-label">读完本书</text>
+        </view>
+        <view class="stat-item">
+          <text class="stat-val">{{profile.total_words_read || 0}}</text>
+          <text class="stat-label">累计词数</text>
+        </view>
+        <view class="stat-item">
+          <text class="stat-val">{{profile.current_streak || 0}}</text>
+          <text class="stat-label">连续打卡</text>
+        </view>
+      </view>
+
+      <!-- Achievement Badges -->
+      <view class="achievements" wx:if="{{achievements.length > 0}}">
+        <view class="ach-item" wx:for="{{achievements}}" wx:key="id">
+          <text class="ach-icon">{{item.badge_emoji || '🏆'}}</text>
+          <text class="ach-name">{{item.name}}</text>
+        </view>
+      </view>
+
+      <view class="card-divider"></view>
+
+      <!-- QR Section -->
+      <view class="qr-section">
+        <view class="qr-code">
+          <text class="qr-placeholder-text">QR</text>
+        </view>
+        <view class="qr-text">
+          <text class="qr-heading">扫码加入 MegaWords</text>
+          <text class="qr-desc">让孩子爱上阅读，轻松掌握英文词汇</text>
+        </view>
+      </view>
+
+      <!-- Brand Footer -->
+      <view class="card-footer">
+        <view class="brand">
+          <view class="brand-icon">
+            <text>M</text>
+          </view>
+          <text class="brand-name">MegaWords</text>
+        </view>
+        <text class="card-date">{{todayDate}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Action Buttons -->
+  <view class="action-btns">
+    <view class="btn btn-primary" bindtap="savePoster">
+      <text class="btn-icon">⬇</text>
+      <text>保存图片</text>
+    </view>
+    <view class="btn btn-outline" open-type="share">
+      <text class="btn-icon">📤</text>
+      <text>分享给朋友</text>
+    </view>
+  </view>
+
+  <view class="tip">
+    <text>长按名片可保存为图片</text>
+  </view>
+</view>

@@ -1,0 +1,47 @@
+<!--frontend/pages/login/login.wxml-->
+<view class="login-container">
+  <view class="logo-area">
+    <view class="logo-icon">
+      <text class="logo-emoji">📚</text>
+    </view>
+    <view class="app-name">MegaWords</view>
+    <view class="app-slogan">英文原版阅读 · 让阅读成为习惯</view>
+  </view>
+
+  <view class="login-form">
+    <button class="wx-login-btn" bindtap="handleLogin" loading="{{loading}}">
+      微信一键登录
+    </button>
+
+    <view class="divider">
+      <view class="divider-line"></view>
+      <text>或手机号登录</text>
+      <view class="divider-line"></view>
+    </view>
+
+    <view class="phone-form">
+      <view class="input-row">
+        <text class="input-icon">📱</text>
+        <input class="input-field" type="number" placeholder="请输入手机号" maxlength="11" value="{{phone}}" bindinput="handlePhoneInput" />
+      </view>
+      <view class="sms-row">
+        <view class="input-row">
+          <text class="input-icon">🔒</text>
+          <input class="input-field" type="number" placeholder="验证码" maxlength="6" value="{{smsCode}}" bindinput="handleSmsCodeInput" />
+        </view>
+        <button class="sms-btn" disabled="{{smsDisabled || countdown > 0}}" bindtap="handleSendSms">
+          {{countdown > 0 ? countdown + 's' : '获取验证码'}}
+        </button>
+      </view>
+      <button class="login-btn" bindtap="handlePhoneLogin">登录</button>
+    </view>
+  </view>
+</view>
+
+<view class="footer">
+  <view class="footer-links">
+    <text class="link">《服务协议》</text>
+    <text class="sep">和</text>
+    <text class="link">《隐私政策》</text>
+  </view>
+</view>

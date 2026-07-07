@@ -1,0 +1,100 @@
+<!-- frontend/pages/order-pkg/messages/messages.wxml -->
+<view class="page-bg">
+
+  <view class="nav-bar">
+    <navigator class="back" open-type="navigateBack" delta="1">
+      <image src="/images/icons/back.png" mode="aspectFit" style="width:40rpx;height:40rpx;" />
+    </navigator>
+    <text class="title">消息中心</text>
+    <view class="read-all" bindtap="markAllRead">
+      <text>全部已读</text>
+    </view>
+  </view>
+
+  <!-- Category tabs -->
+  <scroll-view scroll-x class="cat-tabs">
+    <view
+      wx:for="{{categories}}"
+      wx:key="key"
+      data-tab="{{item.key}}"
+      bindtap="switchTab"
+    >
+      <view wx:if="{{activeTab === item.key}}" class="cat-tab active">
+        <text>{{item.label}}</text>
+        <view class="dot" wx:if="{{item.hasUnread}}"></view>
+      </view>
+      <view wx:else class="cat-tab">
+        <text>{{item.label}}</text>
+        <view class="dot" wx:if="{{item.hasUnread}}"></view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- Loading -->
+  <view class="loading" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+
+  <!-- Message list -->
+  <view class="msg-list" wx:elif="{{filteredMessages.length > 0}}">
+    <block wx:for="{{filteredMessages}}" wx:key="id">
+    <view class="msg-date" wx:if="{{item.showDate}}">{{item.dateText}}</view>
+    <view wx:if="{{item.is_read}}" class="msg-item read" data-id="{{item.id}}" bindtap="toggleMessage">
+      <view wx:if="{{item.category === 'system'}}" class="msg-icon system">
+        <text>{{item.icon}}</text>
+      </view>
+      <view wx:elif="{{item.category === 'borrow'}}" class="msg-icon borrow">
+        <text>{{item.icon}}</text>
+      </view>
+      <view wx:elif="{{item.category === 'event'}}" class="msg-icon event">
+        <text>{{item.icon}}</text>
+      </view>
+      <view wx:elif="{{item.category === 'teacher'}}" class="msg-icon teacher">
+        <text>{{item.icon}}</text>
+      </view>
+      <view wx:else class="msg-icon">
+        <text>{{item.icon}}</text>
+      </view>
+      <view class="msg-content">
+        <view class="msg-title-row">
+          <text class="msg-title">{{item.title}}</text>
+        </view>
+        <view class="msg-body">{{item.preview}}</view>
+        <view class="msg-time">{{item.timeText}}</view>
+      </view>
+    </view>
+    <view wx:else class="msg-item" data-id="{{item.id}}" bindtap="toggleMessage">
+      <view wx:if="{{item.category === 'system'}}" class="msg-icon system">
+        <text>{{item.icon}}</text>
+      </view>
+      <view wx:elif="{{item.category === 'borrow'}}" class="msg-icon borrow">
+        <text>{{item.icon}}</text>
+      </view>
+      <view wx:elif="{{item.category === 'event'}}" class="msg-icon event">
+        <text>{{item.icon}}</text>
+      </view>
+      <view wx:elif="{{item.category === 'teacher'}}" class="msg-icon teacher">
+        <text>{{item.icon}}</text>
+      </view>
+      <view wx:else class="msg-icon">
+        <text>{{item.icon}}</text>
+      </view>
+      <view class="msg-content">
+        <view class="msg-title-row">
+          <text class="msg-title">{{item.title}}</text>
+          <view class="msg-unread" wx:if="{{!item.is_read}}"></view>
+        </view>
+        <view class="msg-body">{{item.preview}}</view>
+        <view class="msg-time">{{item.timeText}}</view>
+      </view>
+    </view>
+    </block>
+  </view>
+
+  <!-- Empty state -->
+  <view class="empty-state" wx:elif="{{!loading}}">
+    <view class="emoji">📭</view>
+    <text class="text">{{emptyText}}</text>
+  </view>
+
+</view>

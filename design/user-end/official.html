@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>正式会员报名 · MegaWords</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.003 250);
+      --surface: oklch(100% 0 0);
+      --fg: oklch(20% 0.015 275);
+      --muted: oklch(48% 0.02 250);
+      --border: oklch(90% 0.008 250);
+      --accent: oklch(54% 0.17 275);
+      --accent-soft: oklch(54% 0.17 275 / 0.1);
+      --accent-hover: oklch(48% 0.17 275);
+      --secondary: oklch(86% 0.20 135);
+      --secondary-soft: oklch(86% 0.20 135 / 0.12);
+      --success: oklch(72% 0.20 145);
+      --success-soft: oklch(72% 0.20 145 / 0.1);
+      --warning: oklch(78% 0.16 85);
+      --error: oklch(62% 0.22 25);
+      --radius: 16px; --radius-sm: 10px; --radius-lg: 20px;
+      --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--fg); font-family: var(--font-body);
+      font-size: 15px; line-height: 1.5; max-width: 430px; margin: 0 auto;
+      min-height: 100vh; padding-bottom: 100px; -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; }
+    .nav-bar {
+      display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 10;
+    }
+    .nav-bar .back { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 10px; }
+    .nav-bar .back svg { width: 20px; height: 20px; }
+    .nav-bar .title { font-family: var(--font-display); font-size: 17px; font-weight: 600; }
+
+    /* premium hero */
+    .premium-hero {
+      margin: 16px; padding: 28px 20px; border-radius: var(--radius-lg);
+      background: linear-gradient(135deg, oklch(54% 0.17 275 / 0.15), oklch(86% 0.20 135 / 0.1));
+      border: 1px solid oklch(54% 0.17 275 / 0.2); text-align: center;
+      position: relative; overflow: hidden;
+    }
+    .premium-hero::before {
+      content: ''; position: absolute; top: -50%; right: -30%; width: 200px; height: 200px;
+      background: radial-gradient(circle, oklch(78% 0.16 85 / 0.1) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+    .premium-hero .crown { font-size: 48px; margin-bottom: 8px; }
+    .premium-hero h1 { font-family: var(--font-display); font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+    .premium-hero p { font-size: 14px; color: var(--muted); }
+
+    /* price */
+    .price-section {
+      margin: 0 16px 12px; padding: 24px 20px; border-radius: var(--radius-lg);
+      background: var(--surface); border: 1px solid var(--border); text-align: center;
+    }
+    .price-badges { display: flex; justify-content: center; gap: 8px; margin-bottom: 12px; }
+    .p-badge {
+      display: inline-block; padding: 3px 12px; border-radius: 999px; font-size: 11px; font-weight: 600;
+    }
+    .p-badge-hot { background: var(--error); color: white; }
+    .p-badge-annual { background: var(--accent-soft); color: var(--accent); }
+    .original-price { font-size: 14px; color: var(--muted); text-decoration: line-through; margin-bottom: 2px; }
+    .price-row {
+      display: flex; align-items: baseline; justify-content: center; gap: 4px; margin-bottom: 4px;
+    }
+    .price-sym { font-size: 20px; font-weight: 700; color: var(--accent); }
+    .price-val { font-family: var(--font-display); font-size: 48px; font-weight: 700; color: var(--accent); line-height: 1; }
+    .price-unit { font-size: 15px; color: var(--muted); }
+    .price-savings {
+      display: inline-block; margin-top: 8px; padding: 4px 14px; border-radius: 999px;
+      background: var(--success-soft); color: oklch(40% 0.15 145); font-size: 13px; font-weight: 600;
+    }
+    .multi-child {
+      margin-top: 10px; padding: 10px 16px; border-radius: var(--radius-sm);
+      background: oklch(78% 0.16 85 / 0.08); border: 1px solid oklch(78% 0.16 85 / 0.15);
+      font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .multi-child svg { width: 16px; height: 16px; color: oklch(55% 0.14 85); }
+    .multi-child strong { color: oklch(50% 0.16 85); }
+
+    /* benefits */
+    .benefits-card {
+      margin: 0 16px 16px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 18px 16px;
+    }
+    .benefits-card h3 {
+      font-family: var(--font-display); font-size: 15px; font-weight: 600;
+      margin-bottom: 14px; display: flex; align-items: center; gap: 6px;
+    }
+    .benefits-card h3 svg { width: 18px; height: 18px; color: var(--accent); }
+    .benefits-list { list-style: none; }
+    .benefits-list li {
+      display: flex; align-items: center; gap: 12px; padding: 10px 0;
+      border-bottom: 1px solid var(--border); font-size: 14px;
+    }
+    .benefits-list li:last-child { border-bottom: none; }
+    .ben-icon {
+      width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .ben-icon.bi1 { background: var(--accent-soft); }
+    .ben-icon.bi2 { background: var(--secondary-soft); }
+    .ben-icon.bi3 { background: var(--success-soft); }
+    .ben-icon.bi4 { background: oklch(78% 0.16 85 / 0.12); }
+    .ben-icon.bi5 { background: oklch(62% 0.22 25 / 0.08); }
+    .ben-title { font-weight: 600; font-size: 14px; }
+    .ben-desc { font-size: 12px; color: var(--muted); margin-top: 1px; }
+
+    /* comparison table */
+    .compare-card {
+      margin: 0 16px 16px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
+    }
+    .compare-card h3 {
+      font-family: var(--font-display); font-size: 15px; font-weight: 600;
+      padding: 16px 16px 0; margin-bottom: 12px; text-align: center;
+    }
+    .compare-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .compare-table thead th {
+      padding: 10px 12px; font-weight: 600; font-size: 13px; text-align: center;
+      border-bottom: 1px solid var(--border);
+    }
+    .compare-table thead th:first-child { text-align: left; }
+    .compare-table thead th.highlight { background: var(--accent-soft); color: var(--accent); border-radius: 12px 12px 0 0; }
+    .compare-table td {
+      padding: 10px 12px; text-align: center; border-bottom: 1px solid var(--border);
+    }
+    .compare-table td:first-child { text-align: left; color: var(--muted); font-size: 13px; }
+    .compare-table td.highlight { background: oklch(54% 0.17 275 / 0.03); }
+    .compare-table tr:last-child td { border-bottom: none; }
+    .compare-table .check { color: var(--success); font-weight: 600; }
+    .compare-table .cross { color: var(--muted); }
+    .compare-table .best { background: var(--accent); color: white; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
+
+    /* info */
+    .info-card {
+      margin: 0 16px 12px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px;
+    }
+    .info-card h3 {
+      font-family: var(--font-display); font-size: 15px; font-weight: 600;
+      margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+    }
+    .info-card h3 svg { width: 18px; height: 18px; color: var(--accent); }
+    .info-list { list-style: none; }
+    .info-list li {
+      padding: 8px 0; font-size: 13px; display: flex; align-items: flex-start; gap: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .info-list li:last-child { border-bottom: none; }
+    .info-list .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); flex-shrink: 0; margin-top: 7px; }
+
+    /* pay bar */
+    .pay-bar {
+      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 430px;
+      background: color-mix(in oklch, var(--surface) 95%, transparent);
+      backdrop-filter: blur(12px); border-top: 1px solid var(--border);
+      padding: 12px 16px; z-index: 20;
+    }
+    .pay-btn {
+      width: 100%; padding: 14px; border-radius: 999px; background: var(--accent);
+      color: white; font-size: 16px; font-weight: 600; text-align: center;
+      box-shadow: 0 4px 16px oklch(54% 0.17 275 / 0.3);
+      transition: transform 0.1s ease;
+    }
+    .pay-btn:active { transform: scale(0.98); }
+    .pay-sub { text-align: center; font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+    @media (min-width: 768px) { body { max-width: 430px; border-left: 1px solid var(--border); border-right: 1px solid var(--border); } }
+    @media (min-width: 1024px) { body { max-width: 430px; margin: 0 auto; box-shadow: 0 0 40px oklch(20% 0.015 275 / 0.06); } }
+  </style>
+</head>
+<body>
+  <div class="nav-bar">
+    <a class="back" href="home.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg></a>
+    <span class="title">正式会员报名</span>
+  </div>
+
+  <!-- premium hero -->
+  <div class="premium-hero" data-od-id="hero">
+    <div class="crown">👑</div>
+    <h1>MegaWords 正式会员</h1>
+    <p>365 天全年畅读 · A-Z 26 级进阶体系</p>
+  </div>
+
+  <!-- price -->
+  <div class="price-section" data-od-id="price">
+    <div class="price-badges">
+      <span class="p-badge p-badge-hot">限时特惠</span>
+      <span class="p-badge p-badge-annual">年度会员</span>
+    </div>
+    <div class="original-price">原价 ¥6,000 / 年</div>
+    <div class="price-row">
+      <span class="price-sym">¥</span>
+      <span class="price-val">5,400</span>
+      <span class="price-unit">/年</span>
+    </div>
+    <div class="price-savings">节省 ¥600</div>
+    <div class="multi-child">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+      第 2 孩起享 <strong>¥4,860 / 年</strong>
+    </div>
+  </div>
+
+  <!-- benefits -->
+  <div class="benefits-card" data-od-id="benefits">
+    <h3>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
+      正式会员权益
+    </h3>
+    <ul class="benefits-list">
+      <li>
+        <div class="ben-icon bi1">📚</div>
+        <div>
+          <div class="ben-title">全量图书在线阅读</div>
+          <div class="ben-desc">3,500+ 英文原版图书，A-Z 全级别覆盖</div>
+        </div>
+      </li>
+      <li>
+        <div class="ben-icon bi2">🏆</div>
+        <div>
+          <div class="ben-title">A-Z 26 级晋级体系</div>
+          <div class="ben-desc">科学分级，逐级挑战，见证孩子成长</div>
+        </div>
+      </li>
+      <li>
+        <div class="ben-icon bi3">📊</div>
+        <div>
+          <div class="ben-title">排行榜</div>
+          <div class="ben-desc">与小伙伴一起比拼，激发阅读动力</div>
+        </div>
+      </li>
+      <li>
+        <div class="ben-icon bi4">🎖️</div>
+        <div>
+          <div class="ben-title">晋级证书</div>
+          <div class="ben-desc">每通过一级生成精美晋级证书</div>
+        </div>
+      </li>
+      <li>
+        <div class="ben-icon bi5">⭐</div>
+        <div>
+          <div class="ben-title">成就系统</div>
+          <div class="ben-desc">阅读里程碑、连续打卡、测验满分等多种成就</div>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <!-- comparison table -->
+  <div class="compare-card" data-od-id="compare">
+    <h3>权益对比</h3>
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>权益项目</th>
+          <th>观察期</th>
+          <th class="highlight">正式会员 <span class="best">推荐</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>有效期</td>
+          <td>30 天</td>
+          <td class="highlight"><strong>365 天</strong></td>
+        </tr>
+        <tr>
+          <td>在线阅读图书</td>
+          <td><span class="check">✓</span></td>
+          <td class="highlight"><span class="check">✓</span></td>
+        </tr>
+        <tr>
+          <td>每日打卡</td>
+          <td><span class="check">✓</span></td>
+          <td class="highlight"><span class="check">✓</span></td>
+        </tr>
+        <tr>
+          <td>阅读数据统计</td>
+          <td><span class="check">✓</span></td>
+          <td class="highlight"><span class="check">✓</span></td>
+        </tr>
+        <tr>
+          <td>老师定期评估</td>
+          <td><span class="check">✓</span></td>
+          <td class="highlight"><span class="check">✓</span></td>
+        </tr>
+        <tr>
+          <td>1 对 1 老师指导</td>
+          <td><span class="check">✓</span></td>
+          <td class="highlight"><span class="check">✓</span></td>
+        </tr>
+        <tr>
+          <td>A-Z 26 级晋级体系</td>
+          <td><span class="cross">—</span></td>
+          <td class="highlight"><span class="check">✓</span></td>
+        </tr>
+        <tr>
+          <td>排行榜</td>
+          <td><span class="cross">—</span></td>
+          <td class="highlight"><span class="check">✓</span></td>
+        </tr>
+        <tr>
+          <td>晋级证书</td>
+          <td><span class="cross">—</span></td>
+          <td class="highlight"><span class="check">✓</span></td>
+        </tr>
+        <tr>
+          <td>成就系统</td>
+          <td><span class="cross">—</span></td>
+          <td class="highlight"><span class="check">✓</span></td>
+        </tr>
+        <tr>
+          <td>观察期费用抵扣</td>
+          <td>—</td>
+          <td class="highlight"><span class="check">✓</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- refund info -->
+  <div class="info-card" data-od-id="refund">
+    <h3>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M12 8v4M12 16h.01"/></svg>
+      退款与说明
+    </h3>
+    <ul class="info-list">
+      <li><span class="dot"></span>按剩余时间比例退还：实付 / 365 x 剩余天数</li>
+      <li><span class="dot"></span>退款将在 5 个工作日内原路返回</li>
+      <li><span class="dot"></span>观察期用户升级可抵扣已支付费用</li>
+    </ul>
+  </div>
+
+  <div class="pay-bar">
+    <button class="pay-btn">立即开通 · ¥5,400 / 年</button>
+    <div class="pay-sub">365 天全年畅读 · 不满意随时退款</div>
+  </div>
+</body>
+</html>

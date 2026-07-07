@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>馆藏管理 · MegaWords</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.003 250); --surface: oklch(100% 0 0); --fg: oklch(20% 0.015 275);
+      --muted: oklch(48% 0.02 250); --border: oklch(90% 0.008 250);
+      --accent: oklch(54% 0.17 275); --accent-soft: oklch(54% 0.17 275 / 0.1);
+      --accent-hover: oklch(48% 0.17 275);
+      --secondary: oklch(86% 0.20 135); --secondary-soft: oklch(86% 0.20 135 / 0.12);
+      --success: oklch(72% 0.20 145); --success-soft: oklch(72% 0.20 145 / 0.1);
+      --warning: oklch(78% 0.16 85); --warning-soft: oklch(78% 0.16 85 / 0.1);
+      --error: oklch(62% 0.22 25); --error-soft: oklch(62% 0.22 25 / 0.08);
+      --radius: 12px; --radius-sm: 8px; --radius-lg: 16px;
+      --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+      --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 14px; line-height: 1.5; min-height: 100vh; display: flex; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; }
+    .main { margin-left: 240px; flex: 1; min-height: 100vh; }
+    .top-bar { display: flex; align-items: center; justify-content: space-between; padding: 16px 28px; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; }
+    .top-bar h1 { font-family: var(--font-display); font-size: 18px; font-weight: 600; }
+    .top-bar .right { display: flex; align-items: center; gap: 16px; font-size: 13px; color: var(--muted); }
+    .top-bar .right .name { color: var(--fg); font-weight: 500; }
+    .logout-btn { color: var(--accent); font-size: 13px; }
+    .logout-btn:hover { text-decoration: underline; }
+    .content { padding: 24px 28px; }
+
+    /* toolbar */
+    .toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+    .scan-input { padding: 9px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; background: var(--surface); color: var(--fg); outline: none; width: 200px; font-family: var(--font-mono); }
+    .scan-input:focus { border-color: var(--accent); }
+    .search-input { padding: 9px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; background: var(--surface); color: var(--fg); outline: none; width: 200px; }
+    .search-input:focus { border-color: var(--accent); }
+    .filter-select { padding: 9px 32px 9px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; background: var(--surface); color: var(--fg); outline: none; appearance: none; background-image: url("data:image/svg+xml,%3Csvg width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%238896ab' stroke-width='2.5' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; }
+    .filter-select:focus { border-color: var(--accent); }
+    .toolbar-spacer { flex: 1; }
+    .btn-action { padding: 9px 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-scan { padding: 9px 14px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; background: var(--accent); color: white; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-scan:hover { background: var(--accent-hover); }
+    .btn-outline { background: var(--surface); color: var(--fg); border: 1px solid var(--border); }
+    .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* table */
+    .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; padding: 12px 16px; font-weight: 500; color: var(--muted); border-bottom: 1px solid var(--border); font-size: 12px; letter-spacing: 0.03em; }
+    td { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: oklch(54% 0.17 275 / 0.02); }
+    .status-badge { padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 500; }
+    .status-available { background: var(--success-soft); color: var(--success); }
+    .status-borrowed { background: var(--accent-soft); color: var(--accent); }
+    .status-lost { background: var(--error-soft); color: var(--error); }
+    .status-damaged { background: var(--warning-soft); color: oklch(55% 0.14 85); }
+    .action-link { color: var(--accent); font-size: 12px; cursor: pointer; }
+    .action-link:hover { text-decoration: underline; }
+    .pagination { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; font-size: 13px; color: var(--muted); }
+    .page-btns { display: flex; gap: 4px; }
+    .page-btn { width: 32px; height: 32px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); display: grid; place-items: center; font-size: 13px; color: var(--fg); }
+    .page-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+    .page-btn:hover:not(.active) { border-color: var(--accent); }
+
+    
+    
+  </style>
+    <link rel="stylesheet" href="admin-sidebar.css">
+  </head>
+<body>
+  <div id="sidebar-root"></div>
+<script>
+document.querySelectorAll('.nav-link').forEach(a => {
+  a.classList.remove('active');
+  if (a.getAttribute('href') === window.location.pathname.split('/').pop()) a.classList.add('active');
+});
+</script>
+  <script>
+    (function(){
+      var page = (location.pathname.split('/').pop()) || 'admin-dashboard.html';
+      document.querySelectorAll('.sidebar-nav .nav-link').forEach(function(l){
+        if (l.getAttribute('href') === page) l.classList.add('active');
+      });
+    })();
+  </script>
+
+  <div class="main">
+    <div class="top-bar"><h1>馆藏管理</h1><div class="right"><span class="name">管理员</span><button class="logout-btn">退出登录</button></div></div>
+    <div class="content">
+      <!-- Toolbar -->
+      <div class="toolbar" data-od-id="toolbar">
+        <input class="scan-input" type="text" placeholder="扫描或输入条码..." />
+        <button class="btn-scan">📷 扫码</button>
+        <input class="search-input" type="text" placeholder="搜索书名 / ISBN" />
+        <select class="filter-select">
+          <option>全部状态</option>
+          <option>在馆</option>
+          <option>借出</option>
+          <option>丢失</option>
+          <option>损坏</option>
+        </select>
+        <select class="filter-select">
+          <option>全部场馆</option>
+          <option>人广馆</option>
+          <option>徐汇馆</option>
+          <option>浦东馆</option>
+        </select>
+        <div class="toolbar-spacer"></div>
+        <button class="btn-action btn-outline">导出 Excel</button>
+      </div>
+
+      <!-- Table -->
+      <div class="table-wrap" data-od-id="table">
+        <table>
+          <thead><tr><th>条码</th><th>书名</th><th>ISBN</th><th>AR 值</th><th>状态</th><th>存放位置</th><th>当前借阅人</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr>
+              <td style="font-family: var(--font-mono); font-size: 12px;">MW-BK-20260105-001</td>
+              <td>The Very Hungry Caterpillar</td>
+              <td style="font-family: var(--font-mono); font-size: 12px;">978-0-399-22690-7</td>
+              <td>2.9</td>
+              <td><span class="status-badge status-available">在馆</span></td>
+              <td>人广馆 · A区 · 3排</td>
+              <td style="color: var(--muted);">--</td>
+              <td><span class="action-link">编辑</span> · <span class="action-link">详情</span></td>
+            </tr>
+            <tr>
+              <td style="font-family: var(--font-mono); font-size: 12px;">MW-BK-20260105-002</td>
+              <td>Goodnight Moon</td>
+              <td style="font-family: var(--font-mono); font-size: 12px;">978-0-06-443017-3</td>
+              <td>1.8</td>
+              <td><span class="status-badge status-borrowed">借出</span></td>
+              <td>人广馆 · A区 · 1排</td>
+              <td>李思涵</td>
+              <td><span class="action-link">归还</span> · <span class="action-link">详情</span></td>
+            </tr>
+            <tr>
+              <td style="font-family: var(--font-mono); font-size: 12px;">MW-BK-20260108-003</td>
+              <td>Where the Wild Things Are</td>
+              <td style="font-family: var(--font-mono); font-size: 12px;">978-0-06-443178-1</td>
+              <td>3.4</td>
+              <td><span class="status-badge status-borrowed">借出</span></td>
+              <td>人广馆 · B区 · 2排</td>
+              <td>张小明</td>
+              <td><span class="action-link">归还</span> · <span class="action-link">详情</span></td>
+            </tr>
+            <tr>
+              <td style="font-family: var(--font-mono); font-size: 12px;">MW-BK-20260115-004</td>
+              <td>Brown Bear, Brown Bear, What Do You See?</td>
+              <td style="font-family: var(--font-mono); font-size: 12px;">978-0-8050-4790-5</td>
+              <td>1.5</td>
+              <td><span class="status-badge status-available">在馆</span></td>
+              <td>人广馆 · A区 · 2排</td>
+              <td style="color: var(--muted);">--</td>
+              <td><span class="action-link">编辑</span> · <span class="action-link">详情</span></td>
+            </tr>
+            <tr>
+              <td style="font-family: var(--font-mono); font-size: 12px;">MW-BK-20260201-005</td>
+              <td>If You Give a Mouse a Cookie</td>
+              <td style="font-family: var(--font-mono); font-size: 12px;">978-0-06-024586-7</td>
+              <td>2.3</td>
+              <td><span class="status-badge status-available">在馆</span></td>
+              <td>徐汇馆 · A区 · 1排</td>
+              <td style="color: var(--muted);">--</td>
+              <td><span class="action-link">编辑</span> · <span class="action-link">详情</span></td>
+            </tr>
+            <tr>
+              <td style="font-family: var(--font-mono); font-size: 12px;">MW-BK-20260211-006</td>
+              <td>Corduroy</td>
+              <td style="font-family: var(--font-mono); font-size: 12px;">978-0-14-050173-4</td>
+              <td>2.6</td>
+              <td><span class="status-badge status-lost">丢失</span></td>
+              <td>人广馆 · B区 · 1排</td>
+              <td style="color: var(--muted);">--</td>
+              <td><span class="action-link">详情</span></td>
+            </tr>
+            <tr>
+              <td style="font-family: var(--font-mono); font-size: 12px;">MW-BK-20260218-007</td>
+              <td>The Snowy Day</td>
+              <td style="font-family: var(--font-mono); font-size: 12px;">978-0-14-050182-6</td>
+              <td>2.1</td>
+              <td><span class="status-badge status-borrowed">借出</span></td>
+              <td>徐汇馆 · B区 · 3排</td>
+              <td>陈嘉怡</td>
+              <td><span class="action-link">归还</span> · <span class="action-link">详情</span></td>
+            </tr>
+            <tr>
+              <td style="font-family: var(--font-mono); font-size: 12px;">MW-BK-20260301-008</td>
+              <td>Guess How Much I Love You</td>
+              <td style="font-family: var(--font-mono); font-size: 12px;">978-0-7636-4264-8</td>
+              <td>2.8</td>
+              <td><span class="status-badge status-damaged">损坏</span></td>
+              <td>浦东馆 · A区 · 2排</td>
+              <td style="color: var(--muted);">--</td>
+              <td><span class="action-link">修复</span> · <span class="action-link">详情</span></td>
+            </tr>
+            <tr>
+              <td style="font-family: var(--font-mono); font-size: 12px;">MW-BK-20260312-009</td>
+              <td>Charlotte's Web</td>
+              <td style="font-family: var(--font-mono); font-size: 12px;">978-0-06-112106-0</td>
+              <td>4.4</td>
+              <td><span class="status-badge status-available">在馆</span></td>
+              <td>人广馆 · C区 · 1排</td>
+              <td style="color: var(--muted);">--</td>
+              <td><span class="action-link">编辑</span> · <span class="action-link">详情</span></td>
+            </tr>
+            <tr>
+              <td style="font-family: var(--font-mono); font-size: 12px;">MW-BK-20260320-010</td>
+              <td>Matilda</td>
+              <td style="font-family: var(--font-mono); font-size: 12px;">978-0-14-241029-2</td>
+              <td>5.0</td>
+              <td><span class="status-badge status-borrowed">借出</span></td>
+              <td>人广馆 · C区 · 2排</td>
+              <td>王语晨</td>
+              <td><span class="action-link">归还</span> · <span class="action-link">详情</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination">
+        <span>共 1,256 条记录 · 第 1/126 页</span>
+        <div class="page-btns">
+          <button class="page-btn active">1</button>
+          <button class="page-btn">2</button>
+          <button class="page-btn">3</button>
+          <button class="page-btn">...</button>
+          <button class="page-btn">126</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="admin-sidebar.js"></script>
+</body>
+</html>

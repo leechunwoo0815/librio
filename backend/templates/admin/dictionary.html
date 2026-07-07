@@ -1,0 +1,217 @@
+{% extends "admin/base.html" %}
+{% block title %}词库管理{% endblock %}
+{% block page_title %}词库管理{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/admin/css/pages/dictionary.css" />
+{% endblock %}
+
+{% block content %}
+<div class="toolbar">
+  <div class="left">
+    <select id="levelFilter" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--fg);" onchange="loadWords()">
+      <option value="">全部等级</option>
+      <option value="0-2">AR 0-2 (入门)</option>
+      <option value="2-4">AR 2-4 (初级)</option>
+      <option value="4-6">AR 4-6 (中级)</option>
+      <option value="6+">AR 6+ (高级)</option>
+    </select>
+    <input type="text" id="searchInput" placeholder="搜索单词..." style="width:180px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--fg);" onkeyup="if(event.key==='Enter')loadWords()" />
+  </div>
+  <div class="right">
+    <span style="font-size:12px;color:var(--muted)" id="totalCount">共 0 个词条</span>
+    <button class="btn-primary" onclick="openAddModal()" style="margin-left:12px">+ 添加单词</button>
+  </div>
+</div>
+
+<table class="dict-table">
+  <thead>
+    <tr><th>单词</th><th>音标</th><th>释义</th><th>词性</th><th>难度等级</th><th>操作</th></tr>
+  </thead>
+  <tbody id="wordBody">
+    <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:32px;">加载中...</td></tr>
+  </tbody>
+</table>
+
+<div class="pagination">
+  <span id="paginationInfo">-</span>
+  <div id="paginationBtns"></div>
+</div>
+
+<!-- word modal -->
+<div class="modal-overlay" id="wordModal" onclick="if(event.target===this)closeWordModal()">
+  <div class="modal">
+    <h3 id="modalTitle">添加单词</h3>
+    <form id="wordForm" onsubmit="submitWord(event)">
+      <input type="hidden" id="editId" value="" />
+      <div class="form-group">
+        <label>单词 <span style="color:var(--error)">*</span></label>
+        <input type="text" class="form-input" name="word" required />
+      </div>
+      <div class="form-group">
+        <label>音标</label>
+        <input type="text" class="form-input" name="phonetic" placeholder="/ˈwɜːrd/" />
+      </div>
+      <div class="form-group">
+        <label>中文释义 <span style="color:var(--error)">*</span></label>
+        <input type="text" class="form-input" name="cn_definition" required />
+      </div>
+      <div class="form-group">
+        <label>词性</label>
+        <select class="form-input" name="pos">
+          <option value="">请选择</option>
+          <option value="n.">n. 名词</option>
+          <option value="v.">v. 动词</option>
+          <option value="adj.">adj. 形容词</option>
+          <option value="adv.">adv. 副词</option>
+          <option value="prep.">prep. 介词</option>
+          <option value="conj.">conj. 连词</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>AR 等级</label>
+        <input type="number" class="form-input" name="ar_level" step="0.1" placeholder="2.5" />
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" onclick="closeWordModal()">取消</button>
+        <button type="submit" class="btn-primary" id="submitBtn">保存</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+var currentPage = 1;
+var pageSize = 20;
+
+function escapeHtml(str) {
+  if (!str) return '';
+  var div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function getTagClass(level) {
+  if (!level) return 'tag-ar2';
+  var val = parseFloat(level);
+  if (val < 2) return 'tag-ar1';
+  if (val < 4) return 'tag-ar2';
+  if (val < 6) return 'tag-ar3';
+  return 'tag-ar4';
+}
+
+function getTagLabel(level) {
+  if (!level) return 'AR ?';
+  var val = parseFloat(level);
+  if (val < 2) return 'AR 0-2';
+  if (val < 4) return 'AR 2-4';
+  if (val < 6) return 'AR 4-6';
+  return 'AR 6+';
+}
+
+async function loadWords() {
+  var keyword = document.getElementById('searchInput').value.trim();
+  var level = document.getElementById('levelFilter').value;
+  var tbody = document.getElementById('wordBody');
+  try {
+    var params = '?page=' + currentPage + '&page_size=' + pageSize;
+    if (keyword) params += '&keyword=' + encodeURIComponent(keyword);
+    if (level) params += '&level=' + encodeURIComponent(level);
+    var r = await api.get('/admin/api/dictionary/search' + params);
+    var items = r.items || r || [];
+    document.getElementById('totalCount').textContent = '共 ' + (r.total || items.length) + ' 个词条';
+    if (items.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:32px;">暂无词条</td></tr>';
+      return;
+    }
+    tbody.innerHTML = items.map(function(w) {
+      return '<tr>' +
+        '<td style="font-weight:600">' + escapeHtml(w.word) + '</td>' +
+        '<td style="font-family:var(--font-mono);font-size:12px;">' + escapeHtml(w.phonetic || '-') + '</td>' +
+        '<td>' + escapeHtml(w.cn_definition || '-') + '</td>' +
+        '<td>' + escapeHtml(w.pos || '-') + '</td>' +
+        '<td><span class="tag ' + getTagClass(w.ar_level) + '">' + getTagLabel(w.ar_level) + '</span></td>' +
+        '<td>' +
+          '<button class="action-sm" onclick="editWord(' + w.id + ', \'' + escapeHtml(w.word) + '\', \'' + escapeHtml(w.phonetic || '') + '\', \'' + escapeHtml(w.cn_definition || '') + '\', \'' + escapeHtml(w.pos || '') + '\', ' + (w.ar_level || 0) + ')">编辑</button> ' +
+          '<button class="action-sm" onclick="deleteWord(' + w.id + ')">删除</button>' +
+        '</td>' +
+      '</tr>';
+    }).join('');
+    var total = r.total || items.length;
+    document.getElementById('paginationInfo').textContent = Math.min((currentPage - 1) * pageSize + 1, total) + '-' + Math.min(currentPage * pageSize, total) + ' / ' + total;
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--error);padding:32px;">加载失败: ' + escapeHtml(e.message) + '</td></tr>';
+  }
+}
+
+async function deleteWord(id) {
+  if (!confirm('确定删除该单词？')) return;
+  try {
+    await api.del('/admin/api/dictionary/' + id);
+    showToast('删除成功');
+    loadWords();
+  } catch (e) {
+    showToast('删除失败: ' + e.message, 'error');
+  }
+}
+
+function openAddModal() {
+  document.getElementById('editId').value = '';
+  document.getElementById('modalTitle').textContent = '添加单词';
+  document.getElementById('submitBtn').textContent = '保存';
+  document.getElementById('wordForm').reset();
+  document.getElementById('wordModal').classList.add('show');
+}
+
+function editWord(id, word, phonetic, cnDef, pos, arLevel) {
+  document.getElementById('editId').value = id;
+  document.getElementById('modalTitle').textContent = '编辑单词';
+  document.getElementById('submitBtn').textContent = '保存修改';
+  var form = document.getElementById('wordForm');
+  form.elements['word'].value = word;
+  form.elements['phonetic'].value = phonetic;
+  form.elements['cn_definition'].value = cnDef;
+  form.elements['pos'].value = pos;
+  form.elements['ar_level'].value = arLevel || '';
+  document.getElementById('wordModal').classList.add('show');
+}
+
+function closeWordModal() {
+  document.getElementById('wordModal').classList.remove('show');
+}
+
+async function submitWord(e) {
+  e.preventDefault();
+  var form = document.getElementById('wordForm');
+  var fd = new FormData(form);
+  var body = {};
+  for (var [k, v] of fd.entries()) {
+    if (k === 'editId') continue;
+    if (v === '') continue;
+    if (k === 'ar_level') {
+      body[k] = Number(v);
+    } else {
+      body[k] = v;
+    }
+  }
+  var editId = document.getElementById('editId').value;
+  try {
+    if (editId) {
+      await api.put('/admin/api/dictionary/' + editId, body);
+      showToast('单词更新成功');
+    } else {
+      await api.post('/admin/api/dictionary/', body);
+      showToast('单词添加成功');
+    }
+    closeWordModal();
+    loadWords();
+  } catch (e) {
+    showToast('操作失败: ' + e.message, 'error');
+  }
+}
+
+loadWords();
+</script>
+{% endblock %}

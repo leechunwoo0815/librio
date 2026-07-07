@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>扫码借还 · MegaWords</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.003 250); --surface: oklch(100% 0 0); --fg: oklch(20% 0.015 275);
+      --muted: oklch(48% 0.02 250); --border: oklch(90% 0.008 250);
+      --accent: oklch(54% 0.17 275); --accent-soft: oklch(54% 0.17 275 / 0.1);
+      --accent-hover: oklch(48% 0.17 275);
+      --secondary: oklch(86% 0.20 135); --secondary-soft: oklch(86% 0.20 135 / 0.12);
+      --success: oklch(72% 0.20 145); --success-soft: oklch(72% 0.20 145 / 0.1);
+      --warning: oklch(78% 0.16 85); --warning-soft: oklch(78% 0.16 85 / 0.1);
+      --error: oklch(62% 0.22 25); --error-soft: oklch(62% 0.22 25 / 0.08);
+      --radius: 12px; --radius-sm: 8px; --radius-lg: 16px;
+      --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+      --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 14px; line-height: 1.5; min-height: 100vh; display: flex; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; }
+    .main { margin-left: 240px; flex: 1; min-height: 100vh; }
+    .top-bar { display: flex; align-items: center; justify-content: space-between; padding: 16px 28px; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; }
+    .top-bar h1 { font-family: var(--font-display); font-size: 18px; font-weight: 600; }
+    .top-bar .right { display: flex; align-items: center; gap: 16px; font-size: 13px; color: var(--muted); }
+    .top-bar .right .name { color: var(--fg); font-weight: 500; }
+    .logout-btn { color: var(--accent); font-size: 13px; }
+    .logout-btn:hover { text-decoration: underline; }
+    .content { padding: 24px 28px; }
+
+    /* scan area */
+    .scan-area { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+    .scan-input { padding: 12px 16px; border: 2px solid var(--border); border-radius: var(--radius-sm); font-size: 15px; background: var(--surface); color: var(--fg); outline: none; width: 360px; font-family: var(--font-mono); }
+    .scan-input:focus { border-color: var(--accent); }
+    .scan-input::placeholder { color: oklch(75% 0.01 250); }
+    .btn-scan { padding: 12px 20px; border-radius: var(--radius-sm); font-size: 15px; font-weight: 500; background: var(--accent); color: white; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-scan:hover { background: var(--accent-hover); }
+
+    /* scan result card */
+    .scan-result { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; margin-bottom: 24px; display: flex; gap: 28px; align-items: flex-start; }
+    .scan-result .book-cover { width: 90px; height: 120px; border-radius: var(--radius-sm); background: var(--accent-soft); display: grid; place-items: center; font-size: 36px; flex-shrink: 0; }
+    .scan-result .book-info { flex: 1; }
+    .scan-result .book-info h3 { font-family: var(--font-display); font-size: 17px; font-weight: 600; margin-bottom: 8px; }
+    .scan-result .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 24px; font-size: 13px; margin-bottom: 16px; }
+    .scan-result .info-grid .label { color: var(--muted); }
+    .scan-result .info-grid .value { color: var(--fg); font-weight: 500; }
+    .scan-result .status-available { color: var(--success); font-weight: 600; }
+    .scan-result .status-borrowed { color: var(--warning); font-weight: 600; }
+    .scan-result .status-lost { color: var(--error); font-weight: 600; }
+    .scan-result .child-selector { margin-bottom: 16px; }
+    .scan-result .child-selector label { font-size: 13px; color: var(--muted); margin-right: 8px; }
+    .filter-select { padding: 9px 32px 9px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; background: var(--surface); color: var(--fg); outline: none; appearance: none; background-image: url("data:image/svg+xml,%3Csvg width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%238896ab' stroke-width='2.5' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; }
+    .filter-select:focus { border-color: var(--accent); }
+    .scan-result .action-btns { display: flex; gap: 10px; }
+    .btn-action { padding: 9px 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-success { background: var(--success); color: white; }
+    .btn-success:hover { background: oklch(62% 0.20 145); }
+    .btn-warning { background: var(--warning); color: var(--fg); }
+    .btn-warning:hover { background: oklch(70% 0.16 85); }
+    .btn-danger { background: var(--error); color: white; }
+    .btn-danger:hover { background: oklch(52% 0.22 25); }
+
+    /* section header */
+    .section-header { font-family: var(--font-display); font-size: 15px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    .section-header .count { font-size: 12px; color: var(--muted); font-weight: 400; }
+
+    /* table */
+    .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; padding: 12px 16px; font-weight: 500; color: var(--muted); border-bottom: 1px solid var(--border); font-size: 12px; letter-spacing: 0.03em; }
+    td { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: oklch(54% 0.17 275 / 0.02); }
+    .status-badge { padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 500; }
+    .status-borrow { background: var(--success-soft); color: var(--success); }
+    .status-return { background: var(--accent-soft); color: var(--accent); }
+
+    
+    
+  </style>
+    <link rel="stylesheet" href="admin-sidebar.css">
+  </head>
+<body>
+  <div id="sidebar-root"></div>
+<script>
+document.querySelectorAll('.nav-link').forEach(a => {
+  a.classList.remove('active');
+  if (a.getAttribute('href') === window.location.pathname.split('/').pop()) a.classList.add('active');
+});
+</script>
+  <script>
+    (function(){
+      var page = (location.pathname.split('/').pop()) || 'admin-dashboard.html';
+      document.querySelectorAll('.sidebar-nav .nav-link').forEach(function(l){
+        if (l.getAttribute('href') === page) l.classList.add('active');
+      });
+    })();
+  </script>
+
+  <div class="main">
+    <div class="top-bar"><h1>扫码借还</h1><div class="right"><span class="name">管理员</span><button class="logout-btn">退出登录</button></div></div>
+    <div class="content">
+      <!-- Scan Area -->
+      <div class="scan-area" data-od-id="scan-area">
+        <input class="scan-input" type="text" placeholder="扫描或输入图书条码..." value="MW-BK-20260312-047" />
+        <button class="btn-scan">📷 扫码</button>
+      </div>
+
+      <!-- Scan Result Card -->
+      <div class="scan-result" data-od-id="scan-result">
+        <div class="book-cover">📘</div>
+        <div class="book-info">
+          <h3>The Very Hungry Caterpillar</h3>
+          <div class="info-grid">
+            <div><span class="label">ISBN：</span><span class="value" style="font-family: var(--font-mono); font-size: 12px;">978-0-399-22690-7</span></div>
+            <div><span class="label">条码：</span><span class="value" style="font-family: var(--font-mono); font-size: 12px;">MW-BK-20260312-047</span></div>
+            <div><span class="label">AR 值：</span><span class="value">2.9</span></div>
+            <div><span class="label">当前状态：</span><span class="status-available">可借 ✅</span></div>
+          </div>
+          <div class="child-selector">
+            <label>选择借阅孩子：</label>
+            <select class="filter-select">
+              <option>-- 请选择 --</option>
+              <option>张小明（ID: C0012）</option>
+              <option>李思涵（ID: C0035）</option>
+              <option>王语晨（ID: C0048）</option>
+              <option>刘子涵（ID: C0056）</option>
+              <option>陈嘉怡（ID: C0071）</option>
+            </select>
+          </div>
+          <div class="action-btns">
+            <button class="btn-action btn-success">✅ 确认借出</button>
+            <button class="btn-action btn-primary">🔄 确认归还</button>
+            <button class="btn-action btn-danger">❌ 标记丢失</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Today's Records -->
+      <div class="section-header">📋 今日借还记录 <span class="count">（共 8 条）</span></div>
+      <div class="table-wrap" data-od-id="records-table">
+        <table>
+          <thead><tr><th>时间</th><th>孩子姓名</th><th>操作</th><th>书名</th><th>条码</th></tr></thead>
+          <tbody>
+            <tr>
+              <td style="font-family: var(--font-mono);">15:32</td>
+              <td>张小明</td>
+              <td><span class="status-badge status-borrow">借出</span></td>
+              <td>Brown Bear, Brown Bear, What Do You See?</td>
+              <td style="font-family: var(--font-mono); font-size: 12px;">MW-BK-20260218-012</td>
+            </tr>
+            <tr>
+              <td style="font-family: var(--font-mono);">14:58</td>
+              <td>李思涵</td>
+              <td><span class="status-badge status-return">归还</span></td>
+              <td>Goodnight Moon</td>
+              <td style="font-family: var(--font-mono); font-size: 12px;">MW-BK-20260105-003</td>
+            </tr>
+            <tr>
+              <td style="font-family: var(--font-mono);">14:20</td>
+              <td>王语晨</td>
+              <td><span class="status-badge status-borrow">借出</span></td>
+              <td>Where the Wild Things Are</td>
+              <td style="font-family: var(--font-mono); font-size: 12px;">MW-BK-20260401-089</td>
+            </tr>
+            <tr>
+              <td style="font-family: var(--font-mono);">13:45</td>
+              <td>刘子涵</td>
+              <td><span class="status-badge status-return">归还</span></td>
+              <td>If You Give a Mouse a Cookie</td>
+              <td style="font-family: var(--font-mono); font-size: 12px;">MW-BK-20260220-031</td>
+            </tr>
+            <tr>
+              <td style="font-family: var(--font-mono);">11:30</td>
+              <td>陈嘉怡</td>
+              <td><span class="status-badge status-borrow">借出</span></td>
+              <td>The Snowy Day</td>
+              <td style="font-family: var(--font-mono); font-size: 12px;">MW-BK-20260315-056</td>
+            </tr>
+            <tr>
+              <td style="font-family: var(--font-mono);">10:55</td>
+              <td>赵思远</td>
+              <td><span class="status-badge status-return">归还</span></td>
+              <td>Corduroy</td>
+              <td style="font-family: var(--font-mono); font-size: 12px;">MW-BK-20260108-007</td>
+            </tr>
+            <tr>
+              <td style="font-family: var(--font-mono);">10:20</td>
+              <td>孙雅琪</td>
+              <td><span class="status-badge status-borrow">借出</span></td>
+              <td>Guess How Much I Love You</td>
+              <td style="font-family: var(--font-mono); font-size: 12px;">MW-BK-20260422-101</td>
+            </tr>
+            <tr>
+              <td style="font-family: var(--font-mono);">09:38</td>
+              <td>周浩然</td>
+              <td><span class="status-badge status-return">归还</span></td>
+              <td>Chicka Chicka Boom Boom</td>
+              <td style="font-family: var(--font-mono); font-size: 12px;">MW-BK-20260211-019</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <script src="admin-sidebar.js"></script>
+</body>
+</html>

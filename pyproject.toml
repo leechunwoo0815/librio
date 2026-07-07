@@ -1,0 +1,40 @@
+# Ruff configuration for MegaWords
+# https://docs.astral.sh/ruff/
+
+target-version = "py313"
+line-length = 120
+
+[lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort (import sorting)
+    "N",    # pep8-naming
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "SIM",  # flake8-simplify
+]
+ignore = [
+    "E501",   # line too long (handled by formatter)
+    "N802",   # function name should be lowercase (some test fixtures)
+    "N803",   # argument name should be lowercase
+    "N806",   # variable in function should be lowercase
+    "SIM108", # use ternary operator (less readable sometimes)
+    "B008",   # function call in default argument (FastAPI Depends)
+    "F401",   # unused import (re-exports in __init__.py)
+]
+
+[lint.per-file-ignores]
+"**/__init__.py" = ["F401"]
+"tests/**/*.py" = ["E", "W", "N", "B"]
+"features/**/*.py" = ["E", "W", "N", "B"]
+"alembic/**/*.py" = ["E", "W", "F", "N", "UP"]
+"backend/seeds/**/*.py" = ["E", "W"]
+
+[lint.isort]
+known-first-party = ["backend"]
+
+[format]
+quote-style = "double"
+indent-style = "space"

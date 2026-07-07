@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>活动详情 — MegaWords</title>
+<style>
+:root {
+  --bg: oklch(98% 0.003 250);
+  --surface: oklch(100% 0 0);
+  --fg: oklch(20% 0.015 275);
+  --muted: oklch(48% 0.02 250);
+  --border: oklch(90% 0.008 250);
+  --accent: oklch(54% 0.17 275);
+  --accent-soft: oklch(54% 0.17 275 / 0.1);
+  --secondary: oklch(86% 0.20 135);
+  --secondary-soft: oklch(86% 0.20 135 / 0.12);
+  --success: oklch(72% 0.20 145);
+  --success-soft: oklch(72% 0.20 145 / 0.1);
+  --warning: oklch(78% 0.16 85);
+  --warning-soft: oklch(78% 0.16 85 / 0.1);
+  --error: oklch(62% 0.22 25);
+  --radius: 12px; --radius-sm: 8px; --radius-lg: 16px;
+  --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--fg);
+  width: 375px;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding-bottom: 100px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Top Navigation */
+.top-bar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 56px;
+  padding: 0 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.top-bar .back-btn {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: var(--fg);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s;
+}
+.top-bar .back-btn:active { background: var(--accent-soft); }
+.top-bar h1 {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 600;
+}
+
+/* Share Button */
+.top-bar .share-btn {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+/* Hero Section */
+.hero {
+  width: 100%;
+  height: 200px;
+  background: linear-gradient(135deg, #7c5ce7 0%, #a78bfa 40%, #c4b5fd 70%, #ddd6fe 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: oklch(100% 0 0 / 0.08);
+}
+.hero::after {
+  content: '';
+  position: absolute;
+  bottom: -20px;
+  left: -20px;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: oklch(100% 0 0 / 0.06);
+}
+.hero .hero-emoji {
+  font-size: 64px;
+  z-index: 1;
+  filter: drop-shadow(0 4px 12px oklch(20% 0.015 275 / 0.2));
+}
+.hero .hero-tag {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  background: oklch(100% 0 0 / 0.2);
+  backdrop-filter: blur(8px);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  z-index: 1;
+}
+.hero .hero-status {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: var(--success);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  z-index: 1;
+}
+
+/* Info Card */
+.info-card {
+  background: var(--surface);
+  margin: -24px 16px 0;
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: 0 4px 16px oklch(20% 0.015 275 / 0.08);
+  position: relative;
+  z-index: 2;
+}
+.info-card .activity-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.4;
+  margin-bottom: 16px;
+}
+.info-card .info-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.info-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.info-row .info-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+  width: 24px;
+  text-align: center;
+  margin-top: 1px;
+}
+.info-row .info-content {
+  flex: 1;
+}
+.info-row .info-label {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+.info-row .info-value {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+.info-row .info-value .highlight {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* Capacity Bar */
+.capacity-wrap {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.capacity-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.capacity-header .cap-label {
+  font-size: 13px;
+  font-weight: 500;
+}
+.capacity-header .cap-count {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+}
+.capacity-bar {
+  height: 8px;
+  background: var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.capacity-bar .cap-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), #a78bfa);
+  border-radius: 8px;
+  transition: width 0.8s ease;
+}
+.capacity-hint {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+/* Price Row */
+.price-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.price-label {
+  font-size: 12px;
+  color: var(--muted);
+}
+.price-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--success);
+}
+.price-value .original {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+  text-decoration: line-through;
+  margin-right: 6px;
+}
+
+/* Content Sections */
+.section {
+  background: var(--surface);
+  margin: 12px 16px 0;
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  box-shadow: 0 1px 3px oklch(20% 0.015 275 / 0.04);
+}
+.section-title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.section-body {
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--fg);
+}
+.section-body p { margin-bottom: 8px; }
+.section-body p:last-child { margin-bottom: 0; }
+.section-body .highlight-list {
+  list-style: none;
+  padding: 0;
+}
+.section-body .highlight-list li {
+  padding: 6px 0;
+  padding-left: 20px;
+  position: relative;
+}
+.section-body .highlight-list li::before {
+  content: '✨';
+  position: absolute;
+  left: 0;
+  font-size: 12px;
+}
+
+/* Bring Items */
+.bring-box {
+  background: var(--warning-soft);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin-top: 4px;
+}
+.bring-box .bring-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg);
+  margin-bottom: 6px;
+}
+.bring-box .bring-items {
+  font-size: 12px;
+  color: var(--fg);
+  line-height: 1.7;
+}
+
+/* QR Code Section */
+.qr-section {
+  background: var(--surface);
+  margin: 12px 16px 0;
+  border-radius: var(--radius);
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 1px 3px oklch(20% 0.015 275 / 0.04);
+}
+.qr-section .qr-title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.qr-placeholder {
+  width: 160px;
+  height: 160px;
+  margin: 0 auto 12px;
+  background: var(--bg);
+  border-radius: var(--radius);
+  border: 2px dashed var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--muted);
+  flex-direction: column;
+  gap: 8px;
+}
+.qr-placeholder .qr-icon {
+  font-size: 40px;
+}
+.qr-hint {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* FAQ Section */
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.faq-item {
+  border-bottom: 1px solid var(--border);
+  padding: 12px 0;
+  cursor: pointer;
+}
+.faq-item:last-child { border-bottom: none; }
+.faq-question {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+}
+.faq-question .faq-arrow {
+  font-size: 12px;
+  color: var(--muted);
+  transition: transform 0.2s;
+}
+.faq-item.open .faq-arrow {
+  transform: rotate(90deg);
+}
+.faq-answer {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.7;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, padding 0.3s ease;
+}
+.faq-item.open .faq-answer {
+  max-height: 200px;
+  padding-top: 8px;
+}
+
+/* Bottom Action Bar */
+.action-bar {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 375px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 12px 16px calc(env(safe-area-inset-bottom, 8px) + 12px);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 200;
+}
+.action-bar .action-info {
+  flex: 1;
+}
+.action-bar .action-price {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.action-bar .action-price-label {
+  font-size: 11px;
+  color: var(--muted);
+}
+.action-bar .action-btn {
+  flex-shrink: 0;
+  padding: 12px 32px;
+  border: none;
+  border-radius: var(--radius);
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.action-bar .action-btn:active { transform: scale(0.97); }
+.action-bar .action-btn.register {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 4px 12px oklch(54% 0.17 275 / 0.3);
+}
+.action-bar .action-btn.registered {
+  background: var(--success-soft);
+  color: var(--success);
+  box-shadow: none;
+}
+.action-bar .cancel-link {
+  font-size: 12px;
+  color: var(--muted);
+  cursor: pointer;
+  margin-left: 8px;
+  white-space: nowrap;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-20px);
+  background: oklch(20% 0.015 275 / 0.88);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 10px 20px;
+  border-radius: var(--radius);
+  z-index: 999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s, transform 0.25s;
+  backdrop-filter: blur(8px);
+  white-space: nowrap;
+}
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Teacher Card */
+.teacher-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--accent-soft);
+  border-radius: var(--radius-sm);
+}
+.teacher-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), #a78bfa);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.teacher-info .teacher-name {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.teacher-info .teacher-desc {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* Divider */
+.section-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 12px 0;
+}
+</style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div class="top-bar">
+  <button class="back-btn" onclick="history.back()">←</button>
+  <h1>活动详情</h1>
+  <button class="share-btn">⤴</button>
+</div>
+
+<!-- Hero -->
+<div class="hero">
+  <span class="hero-tag">🔥 本周热门</span>
+  <span class="hero-emoji">📚</span>
+  <span class="hero-status" id="hero-status">报名中</span>
+</div>
+
+<!-- Info Card -->
+<div class="info-card">
+  <div class="activity-title">亲子英语绘本阅读工作坊</div>
+
+  <div class="info-rows">
+    <div class="info-row">
+      <span class="info-icon">📅</span>
+      <div class="info-content">
+        <div class="info-label">活动时间</div>
+        <div class="info-value">2026年7月15日 周六<br>14:00 - 16:00</div>
+      </div>
+    </div>
+    <div class="info-row">
+      <span class="info-icon">📍</span>
+      <div class="info-content">
+        <div class="info-label">活动地点</div>
+        <div class="info-value">人民广场馆<br><span class="highlight">上海市黄浦区南京东路800号3楼</span></div>
+      </div>
+    </div>
+    <div class="info-row">
+      <span class="info-icon">👩‍🏫</span>
+      <div class="info-content">
+        <div class="info-label">主讲老师</div>
+        <div class="teacher-card">
+          <div class="teacher-avatar">👩‍🏫</div>
+          <div class="teacher-info">
+            <div class="teacher-name">Sarah老师</div>
+            <div class="teacher-desc">英语教育硕士 · 10年少儿英语教学经验</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Capacity -->
+  <div class="capacity-wrap">
+    <div class="capacity-header">
+      <span class="cap-label">名额情况</span>
+      <span class="cap-count" id="cap-count">已报名 12/20人</span>
+    </div>
+    <div class="capacity-bar">
+      <div class="cap-fill" id="cap-fill" style="width: 60%"></div>
+    </div>
+    <div class="capacity-hint">剩余 8 个名额，建议尽快报名</div>
+  </div>
+
+  <!-- Price -->
+  <div class="price-row">
+    <span class="price-label">活动费用</span>
+    <span class="price-value">
+      <span class="original">¥299</span>
+      免费（会员专享）
+    </span>
+  </div>
+</div>
+
+<!-- Activity Description -->
+<div class="section">
+  <div class="section-title">📋 活动介绍</div>
+  <div class="section-body">
+    <p>与Sarah老师一起走进英文绘本的奇妙世界！本次工作坊精选了多本获奖英文绘本，通过互动阅读、角色扮演和创意手工，让孩子在轻松愉快的氛围中爱上英语阅读。</p>
+    <ul class="highlight-list">
+      <li>精选经典英文绘本，适合3-10岁儿童</li>
+      <li>专业外教互动式阅读引导</li>
+      <li>亲子协作手工环节，增进亲子关系</li>
+      <li>活动后赠送阅读书单和家庭延伸活动建议</li>
+    </ul>
+  </div>
+</div>
+
+<!-- What to Bring -->
+<div class="section">
+  <div class="section-title">🎒 参与须知</div>
+  <div class="section-body">
+    <div class="bring-box">
+      <div class="bring-title">请携带：</div>
+      <div class="bring-items">
+        📖 孩子最爱的英文书（任意一本即可）<br>
+        🍶 水杯<br>
+        👟 室内鞋（场馆提供，也可自带）
+      </div>
+    </div>
+    <p style="margin-top:12px; font-size:12px; color:var(--muted);">
+      * 请提前10分钟到场签到<br>
+      * 活动面向会员家庭，每位会员可携带1-2名儿童<br>
+      * 如需取消报名，请提前24小时操作
+    </p>
+  </div>
+</div>
+
+<!-- QR Section (shown when registered) -->
+<div class="qr-section" id="qr-section" style="display:none">
+  <div class="qr-title">📱 签到二维码</div>
+  <div class="qr-placeholder">
+    <span class="qr-icon">📋</span>
+    <span>活动当天生成</span>
+  </div>
+  <div class="qr-hint">活动当天到达现场后，请出示此二维码签到<br>二维码将在活动开始前1小时激活</div>
+</div>
+
+<!-- FAQ -->
+<div class="section">
+  <div class="section-title">❓ 常见问题</div>
+  <div class="faq-list">
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-question">
+        <span>孩子英语零基础可以参加吗？</span>
+        <span class="faq-arrow">›</span>
+      </div>
+      <div class="faq-answer">当然可以！本次活动适合所有英语水平的孩子。老师会用中英双语引导，绘本内容生动有趣，即使是零基础的小朋友也能愉快参与。</div>
+    </div>
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-question">
+        <span>家长需要全程陪同吗？</span>
+        <span class="faq-arrow">›</span>
+      </div>
+      <div class="faq-answer">是的，这是一场亲子活动。我们鼓励家长全程参与，和孩子一起阅读、互动。这也是增进亲子关系的好机会！</div>
+    </div>
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-question">
+        <span>如何取消报名？</span>
+        <span class="faq-arrow">›</span>
+      </div>
+      <div class="faq-answer">请在活动开始前24小时在本页面点击"取消报名"。逾期取消可能会影响后续活动报名优先级。如有特殊情况请联系客服。</div>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom Action Bar -->
+<div class="action-bar" id="action-bar">
+  <div class="action-info">
+    <div class="action-price-label">会员专享</div>
+    <div class="action-price">免费</div>
+  </div>
+  <button class="action-btn register" id="register-btn" onclick="handleRegister()">立即报名</button>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+let isRegistered = false;
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function handleRegister() {
+  if (isRegistered) return;
+  isRegistered = true;
+
+  // Update button
+  const btn = document.getElementById('register-btn');
+  btn.textContent = '已报名 ✓';
+  btn.className = 'action-btn registered';
+
+  // Update capacity
+  const capCount = document.getElementById('cap-count');
+  capCount.textContent = '已报名 13/20人';
+  const capFill = document.getElementById('cap-fill');
+  capFill.style.width = '65%';
+
+  // Update hero status
+  const heroStatus = document.getElementById('hero-status');
+  heroStatus.textContent = '已报名';
+  heroStatus.style.background = 'var(--accent)';
+
+  // Show QR section
+  document.getElementById('qr-section').style.display = 'block';
+
+  // Add cancel link to action bar
+  const actionBar = document.getElementById('action-bar');
+  const existingCancel = actionBar.querySelector('.cancel-link');
+  if (!existingCancel) {
+    const cancelLink = document.createElement('span');
+    cancelLink.className = 'cancel-link';
+    cancelLink.textContent = '取消报名';
+    cancelLink.onclick = handleCancel;
+    actionBar.appendChild(cancelLink);
+  }
+
+  showToast('报名成功！已为您预留名额');
+}
+
+function handleCancel() {
+  if (!isRegistered) return;
+  isRegistered = false;
+
+  // Update button
+  const btn = document.getElementById('register-btn');
+  btn.textContent = '立即报名';
+  btn.className = 'action-btn register';
+
+  // Update capacity
+  const capCount = document.getElementById('cap-count');
+  capCount.textContent = '已报名 12/20人';
+  const capFill = document.getElementById('cap-fill');
+  capFill.style.width = '60%';
+
+  // Update hero status
+  const heroStatus = document.getElementById('hero-status');
+  heroStatus.textContent = '报名中';
+  heroStatus.style.background = 'var(--success)';
+
+  // Hide QR section
+  document.getElementById('qr-section').style.display = 'none';
+
+  // Remove cancel link
+  const cancelLink = document.querySelector('.cancel-link');
+  if (cancelLink) cancelLink.remove();
+
+  showToast('已取消报名');
+}
+
+function toggleFaq(el) {
+  el.classList.toggle('open');
+}
+</script>
+</body>
+</html>

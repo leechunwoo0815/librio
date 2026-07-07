@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>个人名片管理 · MegaWords</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.003 250); --surface: oklch(100% 0 0);
+      --fg: oklch(20% 0.015 275); --muted: oklch(48% 0.02 250);
+      --border: oklch(90% 0.008 250); --accent: oklch(54% 0.17 275);
+      --accent-soft: oklch(54% 0.17 275 / 0.1); --accent-hover: oklch(48% 0.17 275);
+      --secondary: oklch(86% 0.20 135); --secondary-soft: oklch(86% 0.20 135 / 0.12);
+      --success: oklch(72% 0.20 145); --success-soft: oklch(72% 0.20 145 / 0.1);
+      --warning: oklch(78% 0.16 85); --warning-soft: oklch(78% 0.16 85 / 0.1);
+      --error: oklch(62% 0.22 25); --error-soft: oklch(62% 0.22 25 / 0.1);
+      --radius: 12px; --radius-sm: 8px; --radius-lg: 16px;
+      --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+      --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 14px; line-height: 1.5; min-height: 100vh; display: flex; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; }
+    .main { margin-left: 240px; flex: 1; min-height: 100vh; }
+    .top-bar { display: flex; align-items: center; justify-content: space-between; padding: 16px 28px; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; }
+    .top-bar h1 { font-family: var(--font-display); font-size: 18px; font-weight: 600; }
+    .top-bar .right { display: flex; align-items: center; gap: 16px; font-size: 13px; color: var(--muted); }
+    .top-bar .right .name { color: var(--fg); font-weight: 500; }
+    .logout-btn { color: var(--accent); font-size: 13px; }
+    .logout-btn:hover { text-decoration: underline; }
+    .content { padding: 24px 28px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; }
+    .stat-card .stat-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    .stat-card .stat-value { font-family: var(--font-display); font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .stat-card .stat-change { font-size: 12px; margin-top: 4px; }
+    .stat-card .stat-change.up { color: var(--success); }
+    .stat-card .stat-change.down { color: var(--error); }
+    .stat-card:nth-child(1) { border-top: 3px solid var(--accent); }
+    .stat-card:nth-child(2) { border-top: 3px solid var(--success); }
+    .stat-card:nth-child(3) { border-top: 3px solid var(--secondary); }
+    .stat-card:nth-child(4) { border-top: 3px solid var(--warning); }
+    .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 20px; }
+    .table-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+    .table-header h3 { font-family: var(--font-display); font-size: 15px; font-weight: 600; }
+    .btn { padding: 8px 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-outline { border: 1px solid var(--border); color: var(--fg); background: var(--surface); }
+    .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-sm { padding: 4px 10px; font-size: 12px; }
+    table { width: 100%; border-collapse: collapse; }
+    thead { background: oklch(97% 0.003 250); }
+    th { padding: 10px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+    td { padding: 12px 16px; font-size: 13px; border-top: 1px solid var(--border); }
+    tr:hover td { background: oklch(97% 0.003 250); }
+    .level-badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+    .level-1 { background: oklch(90% 0.10 135 / 0.2); color: oklch(45% 0.12 135); }
+    .level-2 { background: oklch(88% 0.12 200 / 0.2); color: oklch(42% 0.12 200); }
+    .level-3 { background: oklch(86% 0.15 275 / 0.15); color: oklch(42% 0.14 275); }
+    .level-4 { background: oklch(85% 0.18 300 / 0.15); color: oklch(40% 0.15 300); }
+    .level-5 { background: oklch(84% 0.20 30 / 0.15); color: oklch(42% 0.15 30); }
+    .search-bar { display: flex; gap: 8px; margin-bottom: 16px; }
+    .search-input { flex: 1; height: 38px; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0 12px; font: inherit; font-size: 13px; outline: none; background: var(--surface); color: var(--fg); }
+    .search-input:focus { border-color: var(--accent); }
+    .search-input::placeholder { color: var(--muted); }
+    .filter-select { height: 38px; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0 12px; font: inherit; font-size: 13px; outline: none; background: var(--surface); color: var(--fg); min-width: 120px; }
+    /* Card Preview Modal */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; }
+    .modal-overlay.show { display: flex; }
+    .profile-card-preview { width: 400px; background: var(--surface); border-radius: var(--radius-lg); overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
+    .profile-card-banner { height: 120px; background: linear-gradient(135deg, var(--accent) 0%, oklch(62% 0.20 300) 100%); position: relative; display: flex; align-items: center; justify-content: center; }
+    .profile-card-banner .deco { position: absolute; font-size: 60px; opacity: 0.1; }
+    .profile-card-banner .deco-1 { top: -10px; left: 20px; transform: rotate(-15deg); }
+    .profile-card-banner .deco-2 { bottom: -5px; right: 30px; transform: rotate(10deg); }
+    .profile-card-avatar { width: 72px; height: 72px; border-radius: 50%; background: var(--surface); border: 4px solid var(--surface); display: grid; place-items: center; font-size: 32px; position: absolute; bottom: -36px; left: 50%; transform: translateX(-50%); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .profile-card-body { padding: 44px 24px 24px; text-align: center; }
+    .profile-card-name { font-family: var(--font-display); font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+    .profile-card-level { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+    .profile-card-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; padding: 16px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+    .profile-card-stats .stat { text-align: center; }
+    .profile-card-stats .stat-num { font-family: var(--font-display); font-size: 22px; font-weight: 700; color: var(--accent); }
+    .profile-card-stats .stat-lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .profile-card-badges { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px; }
+    .profile-card-badges .badge { padding: 4px 10px; background: var(--bg); border-radius: 999px; font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 4px; }
+    .profile-card-badges .badge .emoji { font-size: 13px; }
+    .profile-card-close { position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.2); display: grid; place-items: center; color: white; }
+    .profile-card-close:hover { background: rgba(255,255,255,0.35); }
+    @media (max-width: 1024px) { .main { margin-left: 200px; } .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 768px) { .stats-grid { grid-template-columns: 1fr; } }
+  </style>
+    <link rel="stylesheet" href="admin-sidebar.css">
+  </head>
+<body>
+  <div id="sidebar-root"></div>
+<div class="main">
+    <div class="top-bar">
+      <h1>个人名片管理</h1>
+      <div class="right">
+        <span class="name">管理员</span>
+        <button class="logout-btn">退出登录</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- Stats -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">学生总数</div>
+          <div class="stat-value">6</div>
+          <div class="stat-change">已有名片</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">累计阅读本数</div>
+          <div class="stat-value">60</div>
+          <div class="stat-change up">全部学生</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">累计阅读词数</div>
+          <div class="stat-value">197.5K</div>
+          <div class="stat-change up">较上月 +12%</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">累计获得成就</div>
+          <div class="stat-value">42</div>
+          <div class="stat-change up">较上月 +8</div>
+        </div>
+      </div>
+
+      <!-- Search & Filters -->
+      <div class="search-bar">
+        <input class="search-input" placeholder="搜索孩子姓名…" id="searchInput" oninput="filterTable()" />
+        <select class="filter-select" id="levelFilter" onchange="filterTable()">
+          <option value="">全部级别</option>
+          <option value="1">Level 1</option>
+          <option value="2">Level 2</option>
+          <option value="3">Level 3</option>
+          <option value="4">Level 4</option>
+          <option value="5">Level 5</option>
+        </select>
+      </div>
+
+      <!-- Table -->
+      <div class="table-card">
+        <div class="table-header">
+          <h3>学生名片列表</h3>
+        </div>
+        <table id="profileTable">
+          <thead>
+            <tr>
+              <th>孩子姓名</th>
+              <th>当前级别</th>
+              <th>读完本数</th>
+              <th>总词数</th>
+              <th>成就数</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="profileBody">
+            <tr data-level="3">
+              <td><strong>Mega</strong><br><span style="color:var(--muted);font-size:12px">ID: MW20250001</span></td>
+              <td><span class="level-badge level-3">Level 3</span></td>
+              <td>12 本</td>
+              <td>28,450 词</td>
+              <td>
+                <span style="display:flex;align-items:center;gap:4px">
+                  <span style="font-size:14px">&#127942;</span> 8 个
+                </span>
+              </td>
+              <td><button class="btn btn-primary btn-sm" onclick="openCard(0)">查看名片</button></td>
+            </tr>
+            <tr data-level="4">
+              <td><strong>Lily</strong><br><span style="color:var(--muted);font-size:12px">ID: MW20250002</span></td>
+              <td><span class="level-badge level-4">Level 4</span></td>
+              <td>15 本</td>
+              <td>42,300 词</td>
+              <td>
+                <span style="display:flex;align-items:center;gap:4px">
+                  <span style="font-size:14px">&#127942;</span> 10 个
+                </span>
+              </td>
+              <td><button class="btn btn-primary btn-sm" onclick="openCard(1)">查看名片</button></td>
+            </tr>
+            <tr data-level="3">
+              <td><strong>Tom</strong><br><span style="color:var(--muted);font-size:12px">ID: MW20250003</span></td>
+              <td><span class="level-badge level-3">Level 3</span></td>
+              <td>8 本</td>
+              <td>18,200 词</td>
+              <td>
+                <span style="display:flex;align-items:center;gap:4px">
+                  <span style="font-size:14px">&#127942;</span> 5 个
+                </span>
+              </td>
+              <td><button class="btn btn-primary btn-sm" onclick="openCard(2)">查看名片</button></td>
+            </tr>
+            <tr data-level="5">
+              <td><strong>小月</strong><br><span style="color:var(--muted);font-size:12px">ID: MW20250004</span></td>
+              <td><span class="level-badge level-5">Level 5</span></td>
+              <td>10 本</td>
+              <td>56,800 词</td>
+              <td>
+                <span style="display:flex;align-items:center;gap:4px">
+                  <span style="font-size:14px">&#127942;</span> 9 个
+                </span>
+              </td>
+              <td><button class="btn btn-primary btn-sm" onclick="openCard(3)">查看名片</button></td>
+            </tr>
+            <tr data-level="5">
+              <td><strong>小明</strong><br><span style="color:var(--muted);font-size:12px">ID: MW20250005</span></td>
+              <td><span class="level-badge level-5">Level 5</span></td>
+              <td>9 本</td>
+              <td>48,600 词</td>
+              <td>
+                <span style="display:flex;align-items:center;gap:4px">
+                  <span style="font-size:14px">&#127942;</span> 7 个
+                </span>
+              </td>
+              <td><button class="btn btn-primary btn-sm" onclick="openCard(4)">查看名片</button></td>
+            </tr>
+            <tr data-level="1">
+              <td><strong>Mini</strong><br><span style="color:var(--muted);font-size:12px">ID: MW20250006</span></td>
+              <td><span class="level-badge level-1">Level 1</span></td>
+              <td>6 本</td>
+              <td>3,200 词</td>
+              <td>
+                <span style="display:flex;align-items:center;gap:4px">
+                  <span style="font-size:14px">&#127942;</span> 3 个
+                </span>
+              </td>
+              <td><button class="btn btn-primary btn-sm" onclick="openCard(5)">查看名片</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card Preview Modal -->
+  <div class="modal-overlay" id="cardModal">
+    <div style="position:relative">
+      <button class="profile-card-close" onclick="closeCard()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <div class="profile-card-preview" id="cardContent">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var students = [
+      { name: 'Mega', level: 3, books: 12, words: 28450, achievements: 8, avatar: '&#128054;', badges: [
+        { icon: '&#128214;', label: '阅读先锋' }, { icon: '&#127775;', label: '连续7天' },
+        { icon: '&#127942;', label: '测验满分' }, { icon: '&#128293;', label: '阅读达人' }
+      ]},
+      { name: 'Lily', level: 4, books: 15, words: 42300, achievements: 10, avatar: '&#128008;', badges: [
+        { icon: '&#128214;', label: '阅读先锋' }, { icon: '&#127775;', label: '连续14天' },
+        { icon: '&#127942;', label: '测验满分' }, { icon: '&#128293;', label: '阅读达人' },
+        { icon: '&#127793;', label: '词汇王' }
+      ]},
+      { name: 'Tom', level: 3, books: 8, words: 18200, achievements: 5, avatar: '&#128049;', badges: [
+        { icon: '&#128214;', label: '阅读先锋' }, { icon: '&#127775;', label: '连续7天' },
+        { icon: '&#128161;', label: '好奇宝宝' }
+      ]},
+      { name: '小月', level: 5, books: 10, words: 56800, achievements: 9, avatar: '&#129412;', badges: [
+        { icon: '&#128214;', label: '阅读先锋' }, { icon: '&#127775;', label: '连续30天' },
+        { icon: '&#127942;', label: '测验满分' }, { icon: '&#128293;', label: '阅读达人' },
+        { icon: '&#127793;', label: '词汇王' }, { icon: '&#11088;', label: '小作家' }
+      ]},
+      { name: '小明', level: 5, books: 9, words: 48600, achievements: 7, avatar: '&#128059;', badges: [
+        { icon: '&#128214;', label: '阅读先锋' }, { icon: '&#127775;', label: '连续14天' },
+        { icon: '&#128293;', label: '阅读达人' }, { icon: '&#127793;', label: '词汇王' }
+      ]},
+      { name: 'Mini', level: 1, books: 6, words: 3200, achievements: 3, avatar: '&#128039;', badges: [
+        { icon: '&#128214;', label: '初入书海' }, { icon: '&#127775;', label: '连续7天' }
+      ]}
+    ];
+
+    function openCard(idx) {
+      var s = students[idx];
+      var html = '';
+      html += '<div class="profile-card-banner">';
+      html += '<span class="deco deco-1">&#128218;</span>';
+      html += '<span class="deco deco-2">&#127775;</span>';
+      html += '<div class="profile-card-avatar">' + s.avatar + '</div>';
+      html += '</div>';
+      html += '<div class="profile-card-body">';
+      html += '<div class="profile-card-name">' + s.name + '</div>';
+      html += '<div class="profile-card-level">Level ' + s.level + ' &#183; MegaWords Reader</div>';
+      html += '<div class="profile-card-stats">';
+      html += '<div class="stat"><div class="stat-num">' + s.books + '</div><div class="stat-lbl">读完本数</div></div>';
+      html += '<div class="stat"><div class="stat-num">' + (s.words >= 1000 ? (s.words / 1000).toFixed(1) + 'K' : s.words) + '</div><div class="stat-lbl">总词数</div></div>';
+      html += '<div class="stat"><div class="stat-num">' + s.achievements + '</div><div class="stat-lbl">成就数</div></div>';
+      html += '</div>';
+      html += '<div class="profile-card-badges">';
+      s.badges.forEach(function(b) {
+        html += '<span class="badge"><span class="emoji">' + b.icon + '</span>' + b.label + '</span>';
+      });
+      html += '</div>';
+      html += '<div style="font-size:11px;color:var(--muted);margin-top:8px">MegaWords &#183; 让阅读成为习惯</div>';
+      html += '</div>';
+      document.getElementById('cardContent').innerHTML = html;
+      document.getElementById('cardModal').classList.add('show');
+    }
+
+    function closeCard() {
+      document.getElementById('cardModal').classList.remove('show');
+    }
+
+    document.getElementById('cardModal').addEventListener('click', function(e) {
+      if (e.target === this) closeCard();
+    });
+
+    function filterTable() {
+      var search = document.getElementById('searchInput').value.toLowerCase();
+      var level = document.getElementById('levelFilter').value;
+      var rows = document.querySelectorAll('#profileBody tr');
+      rows.forEach(function(row) {
+        var name = row.querySelector('td strong').textContent.toLowerCase();
+        var matchSearch = !search || name.indexOf(search) >= 0;
+        var matchLevel = !level || row.dataset.level === level;
+        row.style.display = (matchSearch && matchLevel) ? '' : 'none';
+      });
+    }
+  </script>
+  <script src="admin-sidebar.js"></script>
+</body>
+</html>

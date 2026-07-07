@@ -1,0 +1,150 @@
+/* ============================================
+   全局样式 — 设计系统基座
+   色彩 Token 从 design/ 原型提取，oklch → hex 转换
+   ============================================ */
+
+page {
+  /* 设计 Token — oklch 精确转换 */
+  --bg: #f7f9fa;
+  --surface: #ffffff;
+  --fg: #14161d;
+  --muted: #555f69;
+  --border: #dadee3;
+  --accent: #5560cf;
+  --accent-soft: rgba(85, 96, 207, 0.1);
+  --accent-hover: #464dbb;
+  --secondary: #94ed5a;
+  --secondary-soft: rgba(148, 237, 90, 0.12);
+  --success: #39c34b;
+  --success-soft: rgba(57, 195, 75, 0.1);
+  --warning: #e6ad00;
+  --warning-soft: rgba(230, 173, 0, 0.1);
+  --error: #ee343b;
+  --error-soft: rgba(238, 52, 59, 0.1);
+  --radius: 32rpx;
+  --radius-sm: 20rpx;
+  --radius-lg: 40rpx;
+  --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+
+  font-family: var(--font-body);
+  font-size: 28rpx;
+  color: var(--fg);
+  background: var(--bg);
+}
+
+/* 全局按钮最小触控区 88rpx (44pt) — MP-018 */
+button {
+  min-height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 核心操作按钮 96rpx */
+.btn-primary, .fixed-bottom-btn {
+  min-height: 96rpx;
+}
+
+/* 全局安全底部栏 */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* 全局 flex 工具 */
+.flex { display: flex; }
+.flex-col { display: flex; flex-direction: column; }
+.flex-1 { flex: 1; }
+.flex-between { display: flex; justify-content: space-between; align-items: center; }
+.gap-sm { gap: 12rpx; }
+
+/* 全局文本工具 */
+.text-primary { color: var(--accent); }
+.text-secondary { color: var(--muted); }
+.text-bold { font-weight: 600; }
+.text-sm { font-size: 24rpx; }
+
+/* 全局按钮样式 */
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 28rpx;
+  font-weight: 500;
+}
+.btn-primary:active {
+  opacity: 0.85;
+  transform: scale(0.97);
+}
+.btn-outline {
+  background: transparent;
+  color: var(--accent);
+  border: 2rpx solid var(--accent);
+  border-radius: var(--radius);
+  font-size: 28rpx;
+}
+.btn-outline:active {
+  background: var(--accent-soft);
+}
+.btn-disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+.btn-success {
+  background: var(--success);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 28rpx;
+  font-weight: 500;
+}
+.btn-danger {
+  background: var(--error);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 28rpx;
+  font-weight: 500;
+}
+
+/* 全局固定底部栏 */
+.fixed-bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16rpx 32rpx;
+  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
+  background: var(--surface);
+  box-shadow: 0 -4rpx 12rpx rgba(0,0,0,0.08);
+  box-sizing: border-box;
+  z-index: 100;
+}
+.fixed-bottom-btn {
+  width: 100%;
+  max-width: 600rpx;
+  margin: 0 auto;
+}
+
+/* 全局卡片样式 */
+.card {
+  background: var(--surface);
+  border: 2rpx solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 32rpx;
+}
+
+/* 全局徽章样式 */
+.badge {
+  display: inline-block;
+  padding: 4rpx 16rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  font-weight: 600;
+}
+.badge-success { background: var(--success-soft); color: var(--success); }
+.badge-warning { background: var(--warning-soft); color: var(--warning); }
+.badge-error { background: var(--error-soft); color: var(--error); }
+.badge-info { background: var(--accent-soft); color: var(--accent); }

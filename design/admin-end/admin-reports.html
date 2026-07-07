@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>观察期报告 · MegaWords</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.003 250); --surface: oklch(100% 0 0);
+      --fg: oklch(20% 0.015 275); --muted: oklch(48% 0.02 250);
+      --border: oklch(90% 0.008 250); --accent: oklch(54% 0.17 275);
+      --accent-soft: oklch(54% 0.17 275 / 0.1); --accent-hover: oklch(48% 0.17 275);
+      --secondary: oklch(86% 0.20 135); --secondary-soft: oklch(86% 0.20 135 / 0.12);
+      --success: oklch(72% 0.20 145); --success-soft: oklch(72% 0.20 145 / 0.1);
+      --warning: oklch(78% 0.16 85); --warning-soft: oklch(78% 0.16 85 / 0.1);
+      --error: oklch(62% 0.22 25); --error-soft: oklch(62% 0.22 25 / 0.1);
+      --radius: 12px; --radius-sm: 8px; --radius-lg: 16px;
+      --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+      --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 14px; line-height: 1.5; min-height: 100vh; display: flex; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; }
+    .main { margin-left: 240px; flex: 1; min-height: 100vh; }
+    .top-bar { display: flex; align-items: center; justify-content: space-between; padding: 16px 28px; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; }
+    .top-bar h1 { font-family: var(--font-display); font-size: 18px; font-weight: 600; }
+    .top-bar .right { display: flex; align-items: center; gap: 16px; font-size: 13px; color: var(--muted); }
+    .top-bar .right .name { color: var(--fg); font-weight: 500; }
+    .logout-btn { color: var(--accent); font-size: 13px; }
+    .logout-btn:hover { text-decoration: underline; }
+    .content { padding: 24px 28px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; }
+    .stat-card .stat-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    .stat-card .stat-value { font-family: var(--font-display); font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .stat-card .stat-change { font-size: 12px; margin-top: 4px; }
+    .stat-card .stat-change.up { color: var(--success); }
+    .stat-card .stat-change.down { color: var(--error); }
+    .stat-card:nth-child(1) { border-top: 3px solid var(--accent); }
+    .stat-card:nth-child(2) { border-top: 3px solid var(--success); }
+    .stat-card:nth-child(3) { border-top: 3px solid var(--secondary); }
+    .stat-card:nth-child(4) { border-top: 3px solid var(--warning); }
+    .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 20px; }
+    .table-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+    .table-header h3 { font-family: var(--font-display); font-size: 15px; font-weight: 600; }
+    .table-actions { display: flex; gap: 8px; }
+    .btn { padding: 8px 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-outline { border: 1px solid var(--border); color: var(--fg); background: var(--surface); }
+    .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-success { background: var(--success); color: white; }
+    .btn-success:hover { opacity: 0.9; }
+    .btn-warning { background: var(--warning); color: oklch(30% 0.08 85); }
+    .btn-warning:hover { opacity: 0.9; }
+    .btn-danger { background: var(--error-soft); color: var(--error); }
+    .btn-sm { padding: 4px 10px; font-size: 12px; }
+    table { width: 100%; border-collapse: collapse; }
+    thead { background: oklch(97% 0.003 250); }
+    th { padding: 10px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+    td { padding: 12px 16px; font-size: 13px; border-top: 1px solid var(--border); }
+    tr:hover td { background: oklch(97% 0.003 250); }
+    .status { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+    .status-generated { background: var(--secondary-soft); color: oklch(40% 0.15 135); }
+    .status-viewed { background: var(--success-soft); color: oklch(40% 0.15 145); }
+    .search-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+    .search-input { flex: 1; min-width: 200px; height: 38px; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0 12px; font: inherit; font-size: 13px; outline: none; background: var(--surface); color: var(--fg); }
+    .search-input:focus { border-color: var(--accent); }
+    .search-input::placeholder { color: var(--muted); }
+    .filter-select { height: 38px; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0 12px; font: inherit; font-size: 13px; outline: none; background: var(--surface); color: var(--fg); min-width: 120px; }
+    /* side panel */
+    .panel-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 100; }
+    .panel-overlay.show { display: block; }
+    .side-panel { position: fixed; top: 0; right: -560px; width: 560px; height: 100vh; background: var(--surface); border-left: 1px solid var(--border); z-index: 101; overflow-y: auto; transition: right 0.25s ease; box-shadow: -4px 0 20px rgba(0,0,0,0.08); }
+    .side-panel.open { right: 0; }
+    .panel-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--surface); z-index: 2; }
+    .panel-header h3 { font-family: var(--font-display); font-size: 16px; font-weight: 600; }
+    .panel-close { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; color: var(--muted); transition: all 0.15s; }
+    .panel-close:hover { background: var(--bg); color: var(--fg); }
+    .panel-body { padding: 24px; }
+    .report-section { margin-bottom: 24px; }
+    .report-section h4 { font-family: var(--font-display); font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--fg); display: flex; align-items: center; gap: 8px; }
+    .report-section h4 .icon { width: 20px; height: 20px; border-radius: 4px; display: grid; place-items: center; font-size: 12px; }
+    .report-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .meta-item { padding: 12px; background: var(--bg); border-radius: var(--radius-sm); }
+    .meta-item .label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+    .meta-item .value { font-size: 14px; font-weight: 600; }
+    .reading-bar { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; margin-top: 6px; }
+    .reading-bar .fill { height: 100%; border-radius: 4px; background: var(--accent); }
+    .comment-box { padding: 14px; background: var(--bg); border-radius: var(--radius-sm); font-size: 13px; line-height: 1.7; border-left: 3px solid var(--accent); }
+    .progress-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .progress-label { font-size: 13px; min-width: 80px; color: var(--muted); }
+    .progress-bar { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+    .progress-bar .fill { height: 100%; border-radius: 3px; }
+    .progress-value { font-size: 13px; font-weight: 600; min-width: 50px; text-align: right; }
+    /* modal */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; align-items: center; justify-content: center; }
+    .modal-overlay.show { display: flex; }
+    .modal { background: var(--surface); border-radius: var(--radius-lg); padding: 24px; width: 90%; max-width: 480px; max-height: 80vh; overflow-y: auto; }
+    .modal h3 { font-family: var(--font-display); font-size: 18px; font-weight: 600; margin-bottom: 16px; }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: var(--muted); }
+    .form-textarea { width: 100%; min-height: 120px; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; font: inherit; font-size: 14px; outline: none; resize: vertical; }
+    .form-textarea:focus { border-color: var(--accent); }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+    @media (max-width: 1024px) { .main { margin-left: 200px; } .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 768px) { .stats-grid { grid-template-columns: 1fr; } }
+  </style>
+    <link rel="stylesheet" href="admin-sidebar.css">
+  </head>
+<body>
+  <div id="sidebar-root"></div>
+<div class="main">
+    <div class="top-bar">
+      <h1>观察期报告管理</h1>
+      <div class="right">
+        <span class="name">管理员</span>
+        <button class="logout-btn">退出登录</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- Stats -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">总报告数</div>
+          <div class="stat-value">6</div>
+          <div class="stat-change up">本观察期</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">已生成</div>
+          <div class="stat-value">4</div>
+          <div class="stat-change">等待查看</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">已查看</div>
+          <div class="stat-value">2</div>
+          <div class="stat-change up">已完成</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">平均通过率</div>
+          <div class="stat-value">87%</div>
+          <div class="stat-change up">较上期 +5%</div>
+        </div>
+      </div>
+
+      <!-- Search & Filters -->
+      <div class="search-bar">
+        <input class="search-input" placeholder="搜索孩子姓名…" id="searchInput" oninput="filterTable()" />
+        <select class="filter-select" id="statusFilter" onchange="filterTable()">
+          <option value="">全部状态</option>
+          <option value="generated">已生成</option>
+          <option value="viewed">已查看</option>
+        </select>
+        <select class="filter-select" id="periodFilter" onchange="filterTable()">
+          <option value="">全部时间段</option>
+          <option value="2025-05">2025年5月</option>
+          <option value="2025-04">2025年4月</option>
+          <option value="2025-03">2025年3月</option>
+        </select>
+      </div>
+
+      <!-- Table -->
+      <div class="table-card">
+        <div class="table-header">
+          <h3>观察期报告列表</h3>
+          <div class="table-actions">
+            <button class="btn btn-outline" onclick="alert('批量导出PDF功能')">批量导出</button>
+          </div>
+        </div>
+        <table id="reportTable">
+          <thead>
+            <tr>
+              <th>孩子姓名</th>
+              <th>观察期</th>
+              <th>阅读本数</th>
+              <th>阅读词数</th>
+              <th>测验通过率</th>
+              <th>老师评语</th>
+              <th>生成时间</th>
+              <th>状态</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="reportBody">
+            <tr data-status="generated" data-period="2025-05">
+              <td><strong>Mega</strong><br><span style="color:var(--muted);font-size:12px">Level 3</span></td>
+              <td>2025.03.01 - 2025.05.31</td>
+              <td>12 本</td>
+              <td>28,450 词</td>
+              <td>
+                <div class="progress-row" style="margin:0">
+                  <div class="progress-bar" style="width:80px"><div class="fill" style="width:92%;background:var(--success)"></div></div>
+                  <span style="font-weight:600;font-size:13px">92%</span>
+                </div>
+              </td>
+              <td style="max-width:140px"><span style="color:var(--muted);font-size:12px">暂无评语</span></td>
+              <td>2025-06-01</td>
+              <td><span class="status status-generated">已生成</span></td>
+              <td>
+                <button class="btn btn-primary btn-sm" onclick="openPanel(0)">查看</button>
+                <button class="btn btn-outline btn-sm" onclick="openComment(0)" style="margin-left:4px">添加评语</button>
+              </td>
+            </tr>
+            <tr data-status="viewed" data-period="2025-05">
+              <td><strong>Lily</strong><br><span style="color:var(--muted);font-size:12px">Level 4</span></td>
+              <td>2025.03.01 - 2025.05.31</td>
+              <td>15 本</td>
+              <td>42,300 词</td>
+              <td>
+                <div class="progress-row" style="margin:0">
+                  <div class="progress-bar" style="width:80px"><div class="fill" style="width:88%;background:var(--success)"></div></div>
+                  <span style="font-weight:600;font-size:13px">88%</span>
+                </div>
+              </td>
+              <td style="max-width:140px"><span style="font-size:12px">阅读习惯很好，建议增加阅读难度</span></td>
+              <td>2025-06-01</td>
+              <td><span class="status status-viewed">已查看</span></td>
+              <td>
+                <button class="btn btn-outline btn-sm" onclick="openPanel(1)">查看</button>
+                <button class="btn btn-outline btn-sm" onclick="openComment(1)" style="margin-left:4px">添加评语</button>
+              </td>
+            </tr>
+            <tr data-status="generated" data-period="2025-05">
+              <td><strong>Tom</strong><br><span style="color:var(--muted);font-size:12px">Level 3</span></td>
+              <td>2025.03.01 - 2025.05.31</td>
+              <td>8 本</td>
+              <td>18,200 词</td>
+              <td>
+                <div class="progress-row" style="margin:0">
+                  <div class="progress-bar" style="width:80px"><div class="fill" style="width:75%;background:var(--warning)"></div></div>
+                  <span style="font-weight:600;font-size:13px">75%</span>
+                </div>
+              </td>
+              <td style="max-width:140px"><span style="color:var(--muted);font-size:12px">暂无评语</span></td>
+              <td>2025-06-01</td>
+              <td><span class="status status-generated">已生成</span></td>
+              <td>
+                <button class="btn btn-primary btn-sm" onclick="openPanel(2)">查看</button>
+                <button class="btn btn-outline btn-sm" onclick="openComment(2)" style="margin-left:4px">添加评语</button>
+              </td>
+            </tr>
+            <tr data-status="generated" data-period="2025-05">
+              <td><strong>小月</strong><br><span style="color:var(--muted);font-size:12px">Level 5</span></td>
+              <td>2025.03.01 - 2025.05.31</td>
+              <td>10 本</td>
+              <td>56,800 词</td>
+              <td>
+                <div class="progress-row" style="margin:0">
+                  <div class="progress-bar" style="width:80px"><div class="fill" style="width:95%;background:var(--success)"></div></div>
+                  <span style="font-weight:600;font-size:13px">95%</span>
+                </div>
+              </td>
+              <td style="max-width:140px"><span style="color:var(--muted);font-size:12px">暂无评语</span></td>
+              <td>2025-06-01</td>
+              <td><span class="status status-generated">已生成</span></td>
+              <td>
+                <button class="btn btn-primary btn-sm" onclick="openPanel(3)">查看</button>
+                <button class="btn btn-outline btn-sm" onclick="openComment(3)" style="margin-left:4px">添加评语</button>
+              </td>
+            </tr>
+            <tr data-status="viewed" data-period="2025-04">
+              <td><strong>小明</strong><br><span style="color:var(--muted);font-size:12px">Level 5</span></td>
+              <td>2025.01.01 - 2025.03.31</td>
+              <td>9 本</td>
+              <td>48,600 词</td>
+              <td>
+                <div class="progress-row" style="margin:0">
+                  <div class="progress-bar" style="width:80px"><div class="fill" style="width:90%;background:var(--success)"></div></div>
+                  <span style="font-weight:600;font-size:13px">90%</span>
+                </div>
+              </td>
+              <td style="max-width:140px"><span style="font-size:12px">词汇量增长显著，继续保持</span></td>
+              <td>2025-04-05</td>
+              <td><span class="status status-viewed">已查看</span></td>
+              <td>
+                <button class="btn btn-outline btn-sm" onclick="openPanel(4)">查看</button>
+                <button class="btn btn-outline btn-sm" onclick="openComment(4)" style="margin-left:4px">添加评语</button>
+              </td>
+            </tr>
+            <tr data-status="generated" data-period="2025-03">
+              <td><strong>Mini</strong><br><span style="color:var(--muted);font-size:12px">Level 1</span></td>
+              <td>2024.12.01 - 2025.02.28</td>
+              <td>6 本</td>
+              <td>3,200 词</td>
+              <td>
+                <div class="progress-row" style="margin:0">
+                  <div class="progress-bar" style="width:80px"><div class="fill" style="width:83%;background:var(--success)"></div></div>
+                  <span style="font-weight:600;font-size:13px">83%</span>
+                </div>
+              </td>
+              <td style="max-width:140px"><span style="color:var(--muted);font-size:12px">暂无评语</span></td>
+              <td>2025-03-05</td>
+              <td><span class="status status-generated">已生成</span></td>
+              <td>
+                <button class="btn btn-primary btn-sm" onclick="openPanel(5)">查看</button>
+                <button class="btn btn-outline btn-sm" onclick="openComment(5)" style="margin-left:4px">添加评语</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Report Detail Panel -->
+  <div class="panel-overlay" id="panelOverlay" onclick="closePanel()"></div>
+  <div class="side-panel" id="sidePanel">
+    <div class="panel-header">
+      <h3 id="panelTitle">观察期报告详情</h3>
+      <button class="panel-close" onclick="closePanel()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="panel-body" id="panelBody">
+      <!-- Populated by JS -->
+    </div>
+  </div>
+
+  <!-- Add Comment Modal -->
+  <div class="modal-overlay" id="commentModal">
+    <div class="modal">
+      <h3>添加老师评语</h3>
+      <div style="padding:12px;background:var(--bg);border-radius:var(--radius-sm);margin-bottom:16px">
+        <div style="font-size:12px;color:var(--muted)">孩子</div>
+        <div style="font-weight:600" id="commentStudent">Mega · Level 3</div>
+      </div>
+      <div class="form-group">
+        <label>综合评语</label>
+        <textarea class="form-textarea" id="commentText" placeholder="请输入老师对该学生观察期的综合评语…"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="document.getElementById('commentModal').classList.remove('show')">取消</button>
+        <button class="btn btn-primary" onclick="saveComment()">保存评语</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var reports = [
+      { name: 'Mega', level: 'Level 3', period: '2025.03.01 - 2025.05.31', books: 12, words: 28450, passRate: 92, comment: '', time: '2025-06-01', status: 'generated',
+        readingDetails: [
+          { book: 'Dinosaurs Before Dark', words: 5800, quiz: 95 },
+          { book: 'Frog and Toad Together', words: 3200, quiz: 88 },
+          { book: 'Mercy Watson to the Rescue', words: 4500, quiz: 90 },
+          { book: 'Owl at Home', words: 2100, quiz: 100 },
+          { book: 'Nate the Great', words: 3800, quiz: 85 },
+          { book: 'The Case of the Lost Boy', words: 4200, quiz: 92 },
+          { book: 'Henry and Mudge', words: 1800, quiz: 96 },
+          { book: 'Mr. Putter and Tabby', words: 2050, quiz: 88 },
+        ],
+        summary: '本观察期内，Mega共完成12本书的阅读，累计阅读28,450词。测验平均通过率92%，表现优秀。阅读速度稳步提升，从初期每分钟45词提升至62词。对科普类题材表现出浓厚兴趣。'
+      },
+      { name: 'Lily', level: 'Level 4', period: '2025.03.01 - 2025.05.31', books: 15, words: 42300, passRate: 88, comment: '阅读习惯很好，建议增加阅读难度', time: '2025-06-01', status: 'viewed',
+        readingDetails: [
+          { book: 'Charlotte\'s Web', words: 8200, quiz: 85 },
+          { book: 'Stuart Little', words: 7500, quiz: 90 },
+          { book: 'The Trumpet of the Swan', words: 7800, quiz: 82 },
+          { book: 'James and the Giant Peach', words: 6200, quiz: 88 },
+          { book: 'Fantastic Mr Fox', words: 5600, quiz: 92 },
+        ],
+        summary: 'Lily在本观察期内完成15本书，累计42,300词。测验通过率88%。已准备好升级到Level 5。建议增加长篇小说的阅读比重。'
+      },
+      { name: 'Tom', level: 'Level 3', period: '2025.03.01 - 2025.05.31', books: 8, words: 18200, passRate: 75, comment: '', time: '2025-06-01', status: 'generated',
+        readingDetails: [
+          { book: 'Biscuit', words: 1200, quiz: 100 },
+          { book: 'Pete the Cat', words: 1800, quiz: 85 },
+          { book: 'Elephant and Piggie', words: 1500, quiz: 90 },
+          { book: 'Frog and Toad Are Friends', words: 2800, quiz: 70 },
+          { book: 'Amelia Bedelia', words: 3200, quiz: 60 },
+          { book: 'Magic Tree House #1', words: 5800, quiz: 55 },
+        ],
+        summary: 'Tom本观察期完成8本书，累计18,200词。测验通过率75%，后半段因难度提升有所下降。建议巩固Level 3基础后再挑战更高难度书籍。'
+      },
+      { name: '小月', level: 'Level 5', period: '2025.03.01 - 2025.05.31', books: 10, words: 56800, passRate: 95, comment: '', time: '2025-06-01', status: 'generated',
+        readingDetails: [
+          { book: 'Diary of a Wimpy Kid', words: 19500, quiz: 92 },
+          { book: 'The BFG', words: 13800, quiz: 96 },
+          { book: 'Matilda', words: 12500, quiz: 98 },
+          { book: 'Charlie and the Chocolate Factory', words: 11000, quiz: 94 },
+        ],
+        summary: '小月在本观察期内表现卓越，完成10本书、56,800词的阅读量。测验通过率高达95%。阅读理解力和词汇量均有显著提升，是全组最优秀的学生之一。'
+      },
+      { name: '小明', level: 'Level 5', period: '2025.01.01 - 2025.03.31', books: 9, words: 48600, passRate: 90, comment: '词汇量增长显著，继续保持', time: '2025-04-05', status: 'viewed',
+        readingDetails: [
+          { book: 'Percy Jackson #1', words: 14200, quiz: 88 },
+          { book: 'Harry Potter #1', words: 18500, quiz: 85 },
+          { book: 'The Hobbit', words: 15900, quiz: 92 },
+        ],
+        summary: '小明在上一观察期完成9本书、48,600词。测验通过率90%。词汇量增长显著，已能自主阅读中长篇英文小说。'
+      },
+      { name: 'Mini', level: 'Level 1', period: '2024.12.01 - 2025.02.28', books: 6, words: 3200, passRate: 83, comment: '', time: '2025-03-05', status: 'generated',
+        readingDetails: [
+          { book: 'Bob Books Set 1', words: 400, quiz: 100 },
+          { book: 'Go, Dog. Go!', words: 600, quiz: 90 },
+          { book: 'Hop on Pop', words: 500, quiz: 95 },
+          { book: 'Green Eggs and Ham', words: 700, quiz: 85 },
+          { book: 'The Cat in the Hat', words: 1000, quiz: 65 },
+        ],
+        summary: 'Mini在观察期内完成6本启蒙读物，累计3,200词。Phonics基础扎实，但对长句理解有困难。建议增加互动式阅读训练。'
+      }
+    ];
+
+    var currentCommentIndex = -1;
+
+    function openPanel(idx) {
+      var r = reports[idx];
+      document.getElementById('panelTitle').textContent = r.name + ' - 观察期报告';
+      var html = '';
+
+      // Student info
+      html += '<div class="report-section">';
+      html += '<h4><span class="icon" style="background:var(--accent-soft);color:var(--accent)">&#9679;</span> 基本信息</h4>';
+      html += '<div class="report-meta">';
+      html += '<div class="meta-item"><div class="label">学生姓名</div><div class="value">' + r.name + '</div></div>';
+      html += '<div class="meta-item"><div class="label">当前级别</div><div class="value">' + r.level + '</div></div>';
+      html += '<div class="meta-item"><div class="label">观察期</div><div class="value">' + r.period + '</div></div>';
+      html += '<div class="meta-item"><div class="label">报告生成时间</div><div class="value">' + r.time + '</div></div>';
+      html += '</div></div>';
+
+      // Reading stats
+      html += '<div class="report-section">';
+      html += '<h4><span class="icon" style="background:var(--secondary-soft);color:oklch(40% 0.15 135)">&#9679;</span> 阅读统计</h4>';
+      html += '<div class="report-meta">';
+      html += '<div class="meta-item"><div class="label">阅读本数</div><div class="value" style="color:var(--accent)">' + r.books + ' 本</div></div>';
+      html += '<div class="meta-item"><div class="label">阅读词数</div><div class="value" style="color:var(--accent)">' + r.words.toLocaleString() + ' 词</div></div>';
+      html += '<div class="meta-item"><div class="label">测验通过率</div><div class="value" style="color:' + (r.passRate >= 85 ? 'var(--success)' : 'var(--warning)') + '">' + r.passRate + '%</div></div>';
+      html += '<div class="meta-item"><div class="label">状态</div><div class="value"><span class="status status-' + r.status + '">' + (r.status === 'generated' ? '已生成' : '已查看') + '</span></div></div>';
+      html += '</div></div>';
+
+      // Book details
+      html += '<div class="report-section">';
+      html += '<h4><span class="icon" style="background:var(--success-soft);color:oklch(40% 0.15 145)">&#9679;</span> 阅读书目明细</h4>';
+      r.readingDetails.forEach(function(b) {
+        html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">';
+        html += '<div><div style="font-weight:500;font-size:13px">' + b.book + '</div><div style="font-size:12px;color:var(--muted)">' + b.words.toLocaleString() + ' 词</div></div>';
+        html += '<div style="text-align:right"><div style="font-size:12px;color:var(--muted)">测验通过率</div><div style="font-weight:600;color:' + (b.quiz >= 80 ? 'var(--success)' : 'var(--warning)') + '">' + b.quiz + '%</div></div>';
+        html += '</div>';
+      });
+      html += '</div>';
+
+      // Summary
+      html += '<div class="report-section">';
+      html += '<h4><span class="icon" style="background:var(--warning-soft);color:oklch(42% 0.12 85)">&#9679;</span> 阅读总结</h4>';
+      html += '<div class="comment-box">' + r.summary + '</div>';
+      html += '</div>';
+
+      // Teacher comment
+      html += '<div class="report-section">';
+      html += '<h4><span class="icon" style="background:var(--accent-soft);color:var(--accent)">&#9679;</span> 老师评语</h4>';
+      if (r.comment) {
+        html += '<div class="comment-box">' + r.comment + '</div>';
+      } else {
+        html += '<div style="padding:16px;text-align:center;color:var(--muted);font-size:13px">暂无评语，点击下方按钮添加</div>';
+      }
+      html += '</div>';
+
+      // Actions
+      html += '<div style="display:flex;gap:8px;padding-top:8px;border-top:1px solid var(--border)">';
+      html += '<button class="btn btn-outline" onclick="closePanel();openComment(' + idx + ')">添加评语</button>';
+      html += '<button class="btn btn-primary" onclick="alert(\'PDF导出功能\')">导出PDF</button>';
+      html += '</div>';
+
+      document.getElementById('panelBody').innerHTML = html;
+      document.getElementById('panelOverlay').classList.add('show');
+      document.getElementById('sidePanel').classList.add('open');
+    }
+
+    function closePanel() {
+      document.getElementById('panelOverlay').classList.remove('show');
+      document.getElementById('sidePanel').classList.remove('open');
+    }
+
+    function openComment(idx) {
+      currentCommentIndex = idx;
+      var r = reports[idx];
+      document.getElementById('commentStudent').textContent = r.name + ' · ' + r.level;
+      document.getElementById('commentText').value = r.comment || '';
+      document.getElementById('commentModal').classList.add('show');
+    }
+
+    function saveComment() {
+      if (currentCommentIndex >= 0) {
+        reports[currentCommentIndex].comment = document.getElementById('commentText').value;
+        // Update table cell
+        var rows = document.querySelectorAll('#reportBody tr');
+        var td = rows[currentCommentIndex].querySelectorAll('td')[5];
+        if (reports[currentCommentIndex].comment) {
+          td.innerHTML = '<span style="font-size:12px">' + reports[currentCommentIndex].comment.substring(0, 30) + (reports[currentCommentIndex].comment.length > 30 ? '...' : '') + '</span>';
+        }
+      }
+      document.getElementById('commentModal').classList.remove('show');
+    }
+
+    function filterTable() {
+      var search = document.getElementById('searchInput').value.toLowerCase();
+      var status = document.getElementById('statusFilter').value;
+      var period = document.getElementById('periodFilter').value;
+      var rows = document.querySelectorAll('#reportBody tr');
+      rows.forEach(function(row) {
+        var name = row.querySelector('td strong').textContent.toLowerCase();
+        var matchSearch = !search || name.indexOf(search) >= 0;
+        var matchStatus = !status || row.dataset.status === status;
+        var matchPeriod = !period || row.dataset.period === period;
+        row.style.display = (matchSearch && matchStatus && matchPeriod) ? '' : 'none';
+      });
+    }
+  </script>
+  <script src="admin-sidebar.js"></script>
+</body>
+</html>

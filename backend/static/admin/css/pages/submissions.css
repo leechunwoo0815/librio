@@ -1,0 +1,171 @@
+/* pages/submissions.css — 审核队列页专属样式 */
+
+/* ===== Stats Grid ===== */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+.stat-card .stat-label {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.stat-card .stat-value {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.stat-card .stat-change {
+  font-size: 12px;
+  margin-top: 4px;
+}
+.stat-card .stat-change.up { color: var(--success); }
+.stat-card .stat-change.down { color: var(--error); }
+.stat-card:nth-child(1) { border-top: 3px solid var(--accent); }
+.stat-card:nth-child(2) { border-top: 3px solid var(--success); }
+.stat-card:nth-child(3) { border-top: 3px solid var(--error); }
+.stat-card:nth-child(4) { border-top: 3px solid var(--warning); }
+
+/* ===== Search Bar ===== */
+.search-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+/* ===== Filter Select ===== */
+.filter-select {
+  height: 38px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0 12px;
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+  background: var(--surface);
+  color: var(--fg);
+  min-width: 120px;
+}
+
+/* ===== Tab Bar ===== */
+.tab-bar {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+.tab-item {
+  padding: 10px 20px;
+  font-size: 14px;
+  color: var(--muted);
+  font-weight: 500;
+  cursor: pointer;
+  position: relative;
+}
+.tab-item.active {
+  color: var(--accent);
+}
+.tab-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--accent);
+}
+
+/* ===== Status Pills ===== */
+.status {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.status-pending {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+.status-approved {
+  background: var(--success-soft);
+  color: var(--success);
+}
+.status-rejected {
+  background: var(--error-soft);
+  color: var(--error);
+}
+.status-active {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+/* ===== Table Card ===== */
+.table-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+.table-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ===== thead bg override ===== */
+thead {
+  background: var(--bg);
+}
+
+/* ===== Form Textarea ===== */
+.form-textarea {
+  width: 100%;
+  min-height: 80px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+  resize: vertical;
+}
+.form-textarea:focus {
+  border-color: var(--accent);
+}
+
+/* ===== Review Info Card (inside modal) ===== */
+.review-info {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+}
+.review-info-item {
+  flex: 1;
+}
+.review-info-item .info-label {
+  font-size: 12px;
+  color: var(--muted);
+}
+.review-info-item .info-value {
+  font-weight: 600;
+}
+.review-notes {
+  padding: 12px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  line-height: 1.6;
+}

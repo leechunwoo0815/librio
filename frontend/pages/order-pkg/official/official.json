@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "正式会员",
+  "usingComponents": {
+    "pay-button": "/components/pay-button/pay-button"
+  }
+}

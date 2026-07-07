@@ -1,0 +1,11 @@
+<view class="book-card" bindtap="onTap">
+  <image class="book-cover" src="{{book.cover}}" mode="aspectFill" />
+  <view class="book-info">
+    <text class="book-title">{{book.title}}</text>
+    <text class="book-author">{{book.author}}</text>
+    <text class="book-ar">AR {{book.ar_value}}</text>
+  </view>
+  <view wx:if="{{showAction}}" class="book-action" catchtap="onAction">
+    <slot name="action"></slot>
+  </view>
+</view>

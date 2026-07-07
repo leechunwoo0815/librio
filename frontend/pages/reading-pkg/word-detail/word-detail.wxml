@@ -1,0 +1,94 @@
+<!-- frontend/pages/reading-pkg/word-detail/word-detail.wxml -->
+<view class="page-bg">
+
+  <error-view wx:if="{{loadError}}" visible="{{loadError}}" icon="😵" title="加载失败" desc="数据加载出错了，请稍后重试" showRetry="{{true}}" retryText="重试" bind:onRetry="onRetry" />
+  <loading-skeleton wx:elif="{{loading}}" />
+  <block wx:if="{{!loadError && !loading}}">
+
+  <block wx:if="{{wordData && !loading}}">
+
+    <view class="nav-bar">
+      <navigator class="back" open-type="navigateBack" delta="1">
+        <image src="/images/icons/back.png" mode="aspectFit" style="width:40rpx;height:40rpx;" />
+      </navigator>
+      <text class="title">单词详情</text>
+    </view>
+
+    <view class="word-hero">
+      <view class="big-word">{{word}}</view>
+      <view class="phonetic" wx:if="{{wordData.phonetic}}">{{wordData.phonetic}}</view>
+      <text class="pos-tag" wx:if="{{wordData.part_of_speech}}">{{wordData.part_of_speech}}</text>
+      <view class="play-btn {{audioPlaying ? 'audio-playing' : ''}}" bindtap="playAudio">
+        <image src="/images/icons/play.png" mode="aspectFit" class="play-icon" />
+      </view>
+    </view>
+
+    <!-- Definitions -->
+    <view class="def-card" wx:if="{{wordData.chinese_meaning || wordData.definitions}}">
+      <view class="def-card-header">
+        <text class="def-card-title">释义</text>
+      </view>
+      <view class="def-list">
+        <view class="def-item" wx:if="{{wordData.english_meaning}}">
+          <text class="def-num">1.</text>
+          <text>{{wordData.english_meaning}}</text>
+        </view>
+        <view class="example" wx:if="{{wordData.example_sentence}}">
+          <text>{{wordData.example_sentence}}</text>
+        </view>
+        <view class="def-item" wx:if="{{wordData.chinese_meaning}}" style="margin-top:16rpx;">
+          <text class="def-num" wx:if="{{wordData.english_meaning}}">2.</text>
+          <text>{{wordData.chinese_meaning}}</text>
+        </view>
+        <view class="example" wx:if="{{wordData.chinese_example}}">
+          <text>{{wordData.chinese_example}}</text>
+        </view>
+        <view class="synonyms" wx:if="{{wordData.synonyms && wordData.synonyms.length > 0}}">
+          <text class="syn-tag" wx:for="{{wordData.synonyms}}" wx:key="index">{{item}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- Source book -->
+    <view class="source-card" wx:if="{{wordData.source_book}}">
+      <view class="source-card-header">
+        <text class="source-card-title">来源书籍</text>
+      </view>
+      <view class="source-item">
+        <text style="font-size:48rpx;">🐷</text>
+        <view class="source-item-info">
+          <view class="s-book">{{wordData.source_book}}</view>
+          <view class="s-context" wx:if="{{wordData.source_context}}">"{{wordData.source_context}}"</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- Action buttons -->
+    <view class="action-bar" wx:if="{{!inVocab}}">
+      <view class="action-btn secondary" bindtap="markMastered">
+        ✅ 已掌握
+      </view>
+      <view class="action-btn primary" bindtap="addToVocab">
+        + 加入生词本
+      </view>
+    </view>
+
+    <view class="action-bar" wx:if="{{inVocab}}">
+      <view class="action-btn secondary {{vocabStatus === 'mastered' ? 'btn-disabled' : ''}}" bindtap="markMastered">
+        {{vocabStatus === 'mastered' ? '✅ 已掌握' : '✅ 已掌握'}}
+      </view>
+      <view class="action-btn primary" wx:if="{{vocabStatus !== 'mastered'}}" bindtap="addToVocab">
+        已加入生词本
+      </view>
+      <view class="action-btn danger" wx:if="{{vocabStatus === 'mastered'}}" bindtap="removeFromVocab">
+        移除
+      </view>
+    </view>
+
+    <!-- Bottom spacer -->
+    <view style="height:48rpx;"></view>
+
+  </block>
+
+  </block>
+</view>

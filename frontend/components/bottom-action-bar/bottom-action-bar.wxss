@@ -1,0 +1,29 @@
+.bottom-action-bar {
+  display: flex;
+  align-items: center;
+  padding: 16rpx 24rpx;
+  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
+  background: var(--surface);
+  border-top: 1rpx solid var(--border);
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+.action-btn {
+  flex: 1;
+  height: 80rpx;
+  line-height: 80rpx;
+  text-align: center;
+  border-radius: 40rpx;
+  font-size: 28rpx;
+  margin: 0 8rpx;
+}
+.action-default {
+  background: var(--bg);
+  color: var(--fg);
+}
+.action-primary {
+  background: var(--success);
+  color: var(--surface);
+}

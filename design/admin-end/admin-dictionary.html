@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>词库管理 · MegaWords 管理后台</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.003 250); --surface: oklch(100% 0 0);
+      --fg: oklch(20% 0.015 275); --muted: oklch(48% 0.02 250);
+      --border: oklch(90% 0.008 250); --accent: oklch(54% 0.17 275);
+      --accent-soft: oklch(54% 0.17 275 / 0.1); --accent-hover: oklch(48% 0.17 275);
+      --secondary: oklch(86% 0.20 135); --secondary-soft: oklch(86% 0.20 135 / 0.12);
+      --success: oklch(72% 0.20 145); --warning: oklch(78% 0.16 85);
+      --error: oklch(62% 0.22 25); --radius: 12px; --radius-sm: 8px; --radius-lg: 16px;
+      --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+      --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 14px; line-height: 1.5; min-height: 100vh; display: flex; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; }
+    .main { margin-left: 240px; flex: 1; min-height: 100vh; }
+    .top-bar { display: flex; align-items: center; justify-content: space-between; padding: 16px 28px; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; }
+    .top-bar h1 { font-family: var(--font-display); font-size: 18px; font-weight: 600; }
+    .content { padding: 24px 28px; }
+    .toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 8px; }
+    .toolbar .left { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .btn { padding: 8px 18px; border-radius: 8px; font-size: 13px; font-weight: 500; }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-secondary { background: var(--surface); border: 1px solid var(--border); color: var(--fg); }
+    select, input { padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; background: var(--surface); color: var(--fg); }
+    table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+    th, td { padding: 12px 16px; text-align: left; font-size: 13px; }
+    th { background: var(--bg); font-weight: 600; font-size: 12px; color: var(--muted); border-bottom: 1px solid var(--border); }
+    td { border-bottom: 1px solid var(--border); }
+    tr:last-child td { border-bottom: none; }
+    .tag { padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 500; }
+    .tag-ar1 { background: var(--success-soft); color: var(--success); }
+    .tag-ar2 { background: var(--accent-soft); color: var(--accent); }
+    .tag-ar3 { background: var(--warning-soft); color: oklch(55% 0.14 85); }
+    .tag-ar4 { background: oklch(62% 0.22 25 / 0.08); color: var(--error); }
+    .action-sm { padding: 4px 10px; font-size: 12px; color: var(--accent); border-radius: 6px; }
+    .action-sm:hover { background: var(--accent-soft); }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 50; display: none; align-items: center; justify-content: center; }
+    .modal-overlay.show { display: flex; }
+    .modal { background: var(--surface); border-radius: var(--radius-lg); padding: 28px; width: 520px; max-height: 80vh; overflow-y: auto; box-shadow: 0 16px 48px rgba(0,0,0,0.12); }
+    .modal h3 { font-family: var(--font-display); font-size: 17px; font-weight: 600; margin-bottom: 16px; }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 12px; font-weight: 500; color: var(--muted); margin-bottom: 4px; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; background: var(--bg); color: var(--fg); }
+    .form-group textarea { min-height: 60px; resize: vertical; }
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+    .pagination { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; font-size: 13px; color: var(--muted); }
+    
+    
+  </style>
+    <link rel="stylesheet" href="admin-sidebar.css">
+  </head>
+<body>
+  <div id="sidebar-root"></div>
+<div class="main">
+    <div class="top-bar"><h1>词库管理</h1><div class="right"><span class="name">管理员</span><a href="admin-dashboard.html" class="logout-btn">退出</a></div></div>
+    <div class="content">
+      <div class="toolbar">
+        <div class="left">
+          <button class="btn btn-primary" onclick="openModal()">+ 新增单词</button>
+          <button class="btn btn-secondary">批量导入 (Excel/CSV)</button>
+          <select><option>全部等级</option><option>AR 0-2 (入门)</option><option>AR 2-4 (初级)</option><option>AR 4-6 (中级)</option><option>AR 6+ (高级)</option></select>
+          <input type="text" placeholder="搜索单词..." style="width:180px" />
+        </div>
+        <span style="font-size:12px;color:var(--muted)">共 1,356 个词条</span>
+      </div>
+      <table>
+        <thead><tr><th>单词</th><th>音标</th><th>释义</th><th>词性</th><th>难度等级</th><th>关联图书</th><th>操作</th></tr></thead>
+        <tbody>
+          <tr><td style="font-weight:600">ax</td><td>/æks/</td><td>斧头；砍伐工具</td><td>n.</td><td><span class="tag tag-ar2">AR 4-6</span></td><td>Charlotte's Web</td><td><button class="action-sm">编辑</button><button class="action-sm">例句</button></td></tr>
+          <tr><td style="font-weight:600">runt</td><td>/rʌnt/</td><td>一窝中最小的动物</td><td>n.</td><td><span class="tag tag-ar2">AR 4-6</span></td><td>Charlotte's Web</td><td><button class="action-sm">编辑</button><button class="action-sm">例句</button></td></tr>
+          <tr><td style="font-weight:600">caterpillar</td><td>/ˈkætərpɪlər/</td><td>毛毛虫</td><td>n.</td><td><span class="tag tag-ar1">AR 0-2</span></td><td>The Very Hungry Caterpillar</td><td><button class="action-sm">编辑</button><button class="action-sm">例句</button></td></tr>
+          <tr><td style="font-weight:600">burrow</td><td>/ˈbɜːroʊ/</td><td>洞穴；挖掘洞穴</td><td>n./v.</td><td><span class="tag tag-ar3">AR 2-4</span></td><td>Fantastic Mr. Fox</td><td><button class="action-sm">编辑</button><button class="action-sm">例句</button></td></tr>
+          <tr><td style="font-weight:600">wardrobe</td><td>/ˈwɔːrdroʊb/</td><td>衣柜；衣橱</td><td>n.</td><td><span class="tag tag-ar4">AR 6+</span></td><td>The Lion, the Witch and the Wardrobe</td><td><button class="action-sm">编辑</button><button class="action-sm">例句</button></td></tr>
+        </tbody>
+      </table>
+      <div class="pagination"><span>1-5 / 1,356</span></div>
+    </div>
+  </div>
+  <div class="modal-overlay" id="wordModal">
+    <div class="modal">
+      <h3>新增/编辑单词</h3>
+      <div class="form-group"><label>单词</label><input type="text" placeholder="输入英文单词" /></div>
+      <div class="form-group"><label>音标</label><input type="text" placeholder="/æks/" /></div>
+      <div class="form-group"><label>词性</label><select><option>n. (名词)</option><option>v. (动词)</option><option>adj. (形容词)</option><option>adv. (副词)</option><option>n./v.</option></select></div>
+      <div class="form-group"><label>英文释义</label><textarea placeholder="a tool used for cutting down trees..."></textarea></div>
+      <div class="form-group"><label>中文释义</label><textarea placeholder="斧头；砍伐工具"></textarea></div>
+      <div class="form-group"><label>例句</label><textarea placeholder="He swung the ax and split the log in two."></textarea></div>
+      <div class="form-group"><label>关联图书</label><select><option>Charlotte's Web</option><option>The Cat in the Hat</option></select></div>
+      <div class="form-group"><label>难度等级</label><select><option>AR 0-2 (入门)</option><option>AR 2-4 (初级)</option><option>AR 4-6 (中级)</option><option>AR 6+ (高级)</option></select></div>
+      <div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">取消</button><button class="btn btn-primary" onclick="closeModal()">保存</button></div>
+    </div>
+  </div>
+  <script>
+    function openModal() { document.getElementById('wordModal').classList.add('show'); }
+    function closeModal() { document.getElementById('wordModal').classList.remove('show'); }
+  </script>
+  <script src="admin-sidebar.js"></script>
+</body>
+</html>

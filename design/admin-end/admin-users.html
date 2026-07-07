@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>用户管理 · MegaWords</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.003 250); --surface: oklch(100% 0 0); --fg: oklch(20% 0.015 275);
+      --muted: oklch(48% 0.02 250); --border: oklch(90% 0.008 250);
+      --accent: oklch(54% 0.17 275); --accent-soft: oklch(54% 0.17 275 / 0.1);
+      --secondary: oklch(86% 0.20 135); --secondary-soft: oklch(86% 0.20 135 / 0.12);
+      --success: oklch(72% 0.20 145); --success-soft: oklch(72% 0.20 145 / 0.1);
+      --radius: 12px; --radius-sm: 8px; --radius-lg: 16px;
+      --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+      --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 14px; line-height: 1.5; min-height: 100vh; display: flex; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; }
+    .main { margin-left: 240px; flex: 1; min-height: 100vh; }
+    .top-bar { display: flex; align-items: center; justify-content: space-between; padding: 16px 28px; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; }
+    .top-bar h1 { font-family: var(--font-display); font-size: 18px; font-weight: 600; }
+    .top-bar .right { display: flex; align-items: center; gap: 16px; font-size: 13px; color: var(--muted); }
+    .top-bar .right .name { color: var(--fg); font-weight: 500; }
+    .logout-btn { color: var(--accent); font-size: 13px; }
+    .content { padding: 24px 28px; }
+    /* toolbar */
+    .toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+    .search-input { padding: 9px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; background: var(--surface); color: var(--fg); outline: none; width: 240px; }
+    .search-input:focus { border-color: var(--accent); }
+    .filter-select { padding: 9px 32px 9px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; background: var(--surface); color: var(--fg); outline: none; appearance: none; background-image: url("data:image/svg+xml,%3Csvg width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%238896ab' stroke-width='2.5' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; }
+    .filter-select:focus { border-color: var(--accent); }
+    .toolbar-spacer { flex: 1; }
+    .btn-action { padding: 9px 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover { background: oklch(48% 0.17 275); }
+    .btn-outline { background: var(--surface); color: var(--fg); border: 1px solid var(--border); }
+    .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+    /* table */
+    .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; padding: 12px 16px; font-weight: 500; color: var(--muted); border-bottom: 1px solid var(--border); font-size: 12px; letter-spacing: 0.03em; }
+    td { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: oklch(54% 0.17 275 / 0.02); }
+    .role-badge { padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 500; }
+    .role-member { background: var(--accent-soft); color: var(--accent); }
+    .role-obs { background: var(--secondary-soft); color: oklch(45% 0.15 135); }
+    .role-trial { background: var(--success-soft); color: var(--success); }
+    .action-link { color: var(--accent); font-size: 12px; cursor: pointer; }
+    .action-link:hover { text-decoration: underline; }
+    /* pagination */
+    .pagination { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; font-size: 13px; color: var(--muted); }
+    .page-btns { display: flex; gap: 4px; }
+    .page-btn { width: 32px; height: 32px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); display: grid; place-items: center; font-size: 13px; color: var(--fg); }
+    .page-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+    .page-btn:hover:not(.active) { border-color: var(--accent); }
+    
+    
+  </style>
+    <link rel="stylesheet" href="admin-sidebar.css">
+  </head>
+<body>
+  <div id="sidebar-root"></div>
+<div class="main">
+    <div class="top-bar"><h1>用户管理</h1><div class="right"><span class="name">管理员</span><button class="logout-btn">退出登录</button></div></div>
+    <div class="content">
+      <div class="toolbar" data-od-id="toolbar">
+        <input class="search-input" type="text" placeholder="搜索姓名或手机号" />
+        <select class="filter-select"><option>全部身份</option><option>正式会员</option><option>观察期</option><option>体验课</option></select>
+        <select class="filter-select"><option>全部场馆</option><option>人广馆</option><option>徐汇馆</option><option>陆家嘴馆</option><option>松江馆</option></select>
+        <div class="toolbar-spacer"></div>
+        <button class="btn-action btn-outline">导出 Excel</button>
+        <button class="btn-action btn-primary">+ 新增用户</button>
+      </div>
+      <div class="table-wrap" data-od-id="table">
+        <table>
+          <thead><tr><th>家长名</th><th>手机号</th><th>孩子名</th><th>年龄</th><th>身份</th><th>场馆</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr><td>张莉</td><td style="font-family: var(--font-mono);">138****2156</td><td>Lucy</td><td>7 岁</td><td><span class="role-badge role-member">正式会员</span></td><td>人广馆</td><td><span class="action-link">查看</span> · <span class="action-link">编辑</span></td></tr>
+            <tr><td>王明</td><td style="font-family: var(--font-mono);">139****8823</td><td>Tom</td><td>10 岁</td><td><span class="role-badge role-member">正式会员</span></td><td>徐汇馆</td><td><span class="action-link">查看</span> · <span class="action-link">编辑</span></td></tr>
+            <tr><td>李娜</td><td style="font-family: var(--font-mono);">136****4521</td><td>Mia</td><td>5 岁</td><td><span class="role-badge role-obs">观察期</span></td><td>人广馆</td><td><span class="action-link">查看</span> · <span class="action-link">编辑</span></td></tr>
+            <tr><td>陈伟</td><td style="font-family: var(--font-mono);">137****7789</td><td>Leo</td><td>12 岁</td><td><span class="role-badge role-member">正式会员</span></td><td>陆家嘴馆</td><td><span class="action-link">查看</span> · <span class="action-link">编辑</span></td></tr>
+            <tr><td>刘芳</td><td style="font-family: var(--font-mono);">135****3367</td><td>Emma</td><td>8 岁</td><td><span class="role-badge role-trial">体验课</span></td><td>松江馆</td><td><span class="action-link">查看</span> · <span class="action-link">编辑</span></td></tr>
+            <tr><td>赵敏</td><td style="font-family: var(--font-mono);">133****6612</td><td>Jack</td><td>6 岁</td><td><span class="role-badge role-member">正式会员</span></td><td>人广馆</td><td><span class="action-link">查看</span> · <span class="action-link">编辑</span></td></tr>
+            <tr><td>孙浩</td><td style="font-family: var(--font-mono);">158****9901</td><td>Sophie</td><td>9 岁</td><td><span class="role-badge role-obs">观察期</span></td><td>徐汇馆</td><td><span class="action-link">查看</span> · <span class="action-link">编辑</span></td></tr>
+            <tr><td>周婷</td><td style="font-family: var(--font-mono);">186****4455</td><td>Oliver</td><td>4 岁</td><td><span class="role-badge role-trial">体验课</span></td><td>陆家嘴馆</td><td><span class="action-link">查看</span> · <span class="action-link">编辑</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination">
+        <span>共 1,284 条记录 · 第 1/161 页</span>
+        <div class="page-btns">
+          <button class="page-btn active">1</button>
+          <button class="page-btn">2</button>
+          <button class="page-btn">3</button>
+          <button class="page-btn">…</button>
+          <button class="page-btn">161</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="admin-sidebar.js"></script>
+</body>
+</html>

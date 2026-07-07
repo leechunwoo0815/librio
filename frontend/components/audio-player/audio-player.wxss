@@ -1,0 +1,33 @@
+.audio-player {
+  display: flex;
+  align-items: center;
+  padding: 16rpx;
+  background: var(--surface);
+  border-radius: 12rpx;
+}
+.audio-btn {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: var(--success);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 16rpx;
+  flex-shrink: 0;
+}
+.audio-icon {
+  font-size: 24rpx;
+  color: var(--surface);
+}
+.audio-info {
+  flex: 1;
+  overflow: hidden;
+}
+.audio-title {
+  font-size: 26rpx;
+  color: var(--fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

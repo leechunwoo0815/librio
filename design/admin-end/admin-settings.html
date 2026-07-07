@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>系统设置 · MegaWords</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.003 250);
+      --surface: oklch(100% 0 0);
+      --fg: oklch(20% 0.015 275);
+      --muted: oklch(48% 0.02 250);
+      --border: oklch(90% 0.008 250);
+      --accent: oklch(54% 0.17 275);
+      --accent-soft: oklch(54% 0.17 275 / 0.1);
+      --accent-hover: oklch(48% 0.17 275);
+      --secondary: oklch(86% 0.20 135);
+      --secondary-soft: oklch(86% 0.20 135 / 0.12);
+      --success: oklch(72% 0.20 145);
+      --success-soft: oklch(72% 0.20 145 / 0.1);
+      --warning: oklch(78% 0.16 85);
+      --warning-soft: oklch(78% 0.16 85 / 0.1);
+      --error: oklch(62% 0.22 25);
+      --radius: 12px; --radius-sm: 8px; --radius-lg: 16px;
+      --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+      --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 14px; line-height: 1.5; min-height: 100vh; display: flex; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; }
+    input, select, textarea { font: inherit; }
+    .main { margin-left: 240px; flex: 1; min-height: 100vh; }
+    .top-bar { display: flex; align-items: center; justify-content: space-between; padding: 16px 28px; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; }
+    .top-bar h1 { font-family: var(--font-display); font-size: 18px; font-weight: 600; }
+    .top-bar .right { display: flex; align-items: center; gap: 16px; font-size: 13px; color: var(--muted); }
+    .top-bar .right .name { color: var(--fg); font-weight: 500; }
+    .logout-btn { color: var(--accent); font-size: 13px; }
+    .content { padding: 24px 28px; max-width: 860px; }
+    /* section card */
+    .setting-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); margin-bottom: 20px; overflow: hidden; }
+    .setting-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; border-bottom: 1px solid var(--border); }
+    .setting-header h2 { font-family: var(--font-display); font-size: 16px; font-weight: 600; }
+    .setting-header .section-badge { font-size: 11px; padding: 3px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+    .setting-body { padding: 20px; }
+    /* form items */
+    .setting-item { display: flex; align-items: flex-start; gap: 20px; padding: 16px 0; border-bottom: 1px solid var(--border); }
+    .setting-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .setting-item:first-child { padding-top: 0; }
+    .setting-label { width: 160px; flex-shrink: 0; }
+    .setting-label .label-text { font-size: 14px; font-weight: 500; margin-bottom: 2px; }
+    .setting-label .label-desc { font-size: 12px; color: var(--muted); line-height: 1.4; }
+    .setting-control { flex: 1; min-width: 0; }
+    .setting-control input[type="text"],
+    .setting-control input[type="number"],
+    .setting-control input[type="email"],
+    .setting-control input[type="tel"],
+    .setting-control input[type="url"],
+    .setting-control select,
+    .setting-control textarea {
+      width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+      font-size: 13px; color: var(--fg); background: var(--bg); outline: none; transition: border-color 0.15s ease;
+    }
+    .setting-control input:focus, .setting-control select:focus, .setting-control textarea:focus { border-color: var(--accent); }
+    .setting-control textarea { resize: vertical; min-height: 80px; }
+    .setting-control .input-row { display: flex; gap: 8px; align-items: center; }
+    .setting-control .input-hint { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    /* toggle switch */
+    .toggle-wrap { display: flex; align-items: center; gap: 10px; }
+    .toggle { position: relative; width: 44px; height: 24px; background: var(--border); border-radius: 12px; cursor: pointer; transition: background 0.2s ease; flex-shrink: 0; }
+    .toggle.on { background: var(--accent); }
+    .toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: white; border-radius: 50%; transition: transform 0.2s ease; box-shadow: 0 1px 3px oklch(0% 0 0 / 0.15); }
+    .toggle.on::after { transform: translateX(20px); }
+    .toggle-label { font-size: 13px; }
+    /* color swatch */
+    .color-row { display: flex; align-items: center; gap: 12px; }
+    .color-swatch { width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border); flex-shrink: 0; }
+    .color-input { flex: 1; }
+    /* action buttons */
+    .settings-actions { display: flex; justify-content: flex-end; gap: 10px; padding: 20px; }
+    .btn-save { padding: 10px 24px; border-radius: var(--radius-sm); background: var(--accent); color: white; font-size: 14px; font-weight: 500; transition: background 0.15s ease; }
+    .btn-save:hover { background: var(--accent-hover); }
+    .btn-reset { padding: 10px 24px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); font-size: 14px; color: var(--muted); }
+    .btn-reset:hover { color: var(--fg); }
+    /* admin accounts table */
+    .admin-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    .admin-table th { padding: 8px 12px; text-align: left; font-size: 12px; font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--border); }
+    .admin-table td { padding: 10px 12px; font-size: 13px; border-bottom: 1px solid var(--border); }
+    .admin-table tr:last-child td { border-bottom: none; }
+    .role-badge { padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 500; }
+    .role-super { background: oklch(62% 0.22 25 / 0.1); color: var(--error); }
+    .role-editor { background: var(--accent-soft); color: var(--accent); }
+    .role-viewer { background: oklch(90% 0.008 250); color: var(--muted); }
+    /* responsive */
+    
+    @media (max-width: 768px) { .setting-item { flex-direction: column; gap: 8px; } .setting-label { width: 100%; } }
+  </style>
+    <link rel="stylesheet" href="admin-sidebar.css">
+  </head>
+<body>
+  <div id="sidebar-root"></div>
+<div class="main">
+    <div class="top-bar">
+      <h1>系统设置</h1>
+      <div class="right">
+        <span class="name">管理员</span>
+        <button class="logout-btn">退出登录</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- basic info -->
+      <div class="setting-section" data-od-id="basic-info">
+        <div class="setting-header">
+          <h2>基本信息</h2>
+          <span class="section-badge">品牌</span>
+        </div>
+        <div class="setting-body">
+          <div class="setting-item">
+            <div class="setting-label">
+              <div class="label-text">平台名称</div>
+              <div class="label-desc">显示在小程序和管理后台的标题</div>
+            </div>
+            <div class="setting-control">
+              <input type="text" value="MegaWords 英文原版阅读" />
+            </div>
+          </div>
+          <div class="setting-item">
+            <div class="setting-label">
+              <div class="label-text">品牌主色</div>
+              <div class="label-desc">按钮、强调色、品牌标识</div>
+            </div>
+            <div class="setting-control">
+              <div class="color-row">
+                <div class="color-swatch" style="background: oklch(54% 0.17 275)"></div>
+                <input class="color-input" type="text" value="#6171e5" />
+              </div>
+            </div>
+          </div>
+          <div class="setting-item">
+            <div class="setting-label">
+              <div class="label-text">辅助色</div>
+              <div class="label-desc">辅助按钮、标签、次级强调</div>
+            </div>
+            <div class="setting-control">
+              <div class="color-row">
+                <div class="color-swatch" style="background: oklch(86% 0.20 135)"></div>
+                <input class="color-input" type="text" value="#a0f269" />
+              </div>
+            </div>
+          </div>
+          <div class="setting-item">
+            <div class="setting-label">
+              <div class="label-text">客服电话</div>
+              <div class="label-desc">用户端展示的联系电话</div>
+            </div>
+            <div class="setting-control">
+              <input type="tel" value="400-888-6688" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- pricing -->
+      <div class="setting-section" data-od-id="pricing">
+        <div class="setting-header">
+          <h2>价格设置</h2>
+          <span class="section-badge">收费</span>
+        </div>
+        <div class="setting-body">
+          <div class="setting-item">
+            <div class="setting-label">
+              <div class="label-text">亲子体验课</div>
+              <div class="label-desc">首次体验课价格（元）</div>
+            </div>
+            <div class="setting-control">
+              <input type="number" value="99" style="width:120px" />
+            </div>
+          </div>
+          <div class="setting-item">
+            <div class="setting-label">
+              <div class="label-text">观察期月费</div>
+              <div class="label-desc">观察期会员月费（元）</div>
+            </div>
+            <div class="setting-control">
+              <input type="number" value="500" style="width:120px" />
+            </div>
+          </div>
+          <div class="setting-item">
+            <div class="setting-label">
+              <div class="label-text">正式会员年费</div>
+              <div class="label-desc">年度会员费用（元）</div>
+            </div>
+            <div class="setting-control">
+              <input type="number" value="5400" style="width:120px" />
+            </div>
+          </div>
+          <div class="setting-item">
+            <div class="setting-label">
+              <div class="label-text">图书押金</div>
+              <div class="label-desc">借阅图书押金（元）</div>
+            </div>
+            <div class="setting-control">
+              <input type="number" value="1200" style="width:120px" />
+            </div>
+          </div>
+          <div class="setting-item">
+            <div class="setting-label">
+              <div class="label-text">多孩折扣</div>
+              <div class="label-desc">第二个孩子起的折扣比例</div>
+            </div>
+            <div class="setting-control">
+              <div class="input-row">
+                <input type="number" value="80" style="width:80px" />
+                <span style="font-size:13px;color:var(--muted)">%</span>
+              </div>
+              <div class="input-hint">当前设置为 8 折（第二个孩子起）</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- borrowing rules -->
+      <div class="setting-section" data-od-id="borrow-rules">
+        <div class="setting-header">
+          <h2>借阅规则</h2>
+          <span class="section-badge">规则</span>
+        </div>
+        <div class="setting-body">
+          <div class="setting-item">
+            <div class="setting-label">
+              <div class="label-text">正式会员最大借阅数</div>
+              <div class="label-desc">每次最多借阅图书数量</div>
+            </div>
+            <div class="setting-control">
+              <input type="number" value="5" style="width:80px" />
+            </div>
+          </div>
+          <div class="setting-item">
+            <div class="setting-label">
+              <div class="label-text">观察期最大借阅数</div>
+              <div class="label-desc">观察期会员每次最多借阅数量</div>
+            </div>
+            <div class="setting-control">
+              <input type="number" value="3" style="width:80px" />
+            </div>
+          </div>
+          <div class="setting-item">
+            <div class="setting-label">
+              <div class="label-text">借阅周期</div>
+              <div class="label-desc">默认借阅天数</div>
+            </div>
+            <div class="setting-control">
+              <div class="input-row">
+                <input type="number" value="14" style="width:80px" />
+                <span style="font-size:13px;color:var(--muted)">天</span>
+              </div>
+            </div>
+          </div>
+          <div class="setting-item">
+            <div class="setting-label">
+              <div class="label-text">续借次数</div>
+              <div class="label-desc">每本书最多续借次数</div>
+            </div>
+            <div class="setting-control">
+              <input type="number" value="1" style="width:80px" />
+            </div>
+          </div>
+          <div class="setting-item">
+            <div class="setting-label">
+              <div class="label-text">遗失赔偿比例</div>
+              <div class="label-desc">按原价的百分比扣除押金</div>
+            </div>
+            <div class="setting-control">
+              <div class="input-row">
+                <input type="number" value="70" style="width:80px" />
+                <span style="font-size:13px;color:var(--muted)">%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- notifications -->
+      <div class="setting-section" data-od-id="notifications">
+        <div class="setting-header">
+          <h2>通知设置</h2>
+          <span class="section-badge">通知</span>
+        </div>
+        <div class="setting-body">
+          <div class="setting-item">
+            <div class="setting-label">
+              <div class="label-text">借阅到期提醒</div>
+              <div class="label-desc">到期前 N 天推送提醒</div>
+            </div>
+            <div class="setting-control">
+              <div class="input-row">
+                <input type="number" value="3" style="width:80px" />
+                <span style="font-size:13px;color:var(--muted)">天前</span>
+              </div>
+            </div>
+          </div>
+          <div class="setting-item">
+            <div class="setting-label">
+              <div class="label-text">会员到期提醒</div>
+              <div class="label-desc">会员到期前 N 天推送</div>
+            </div>
+            <div class="setting-control">
+              <div class="input-row">
+                <input type="number" value="7" style="width:80px" />
+                <span style="font-size:13px;color:var(--muted)">天前</span>
+              </div>
+            </div>
+          </div>
+          <div class="setting-item">
+            <div class="setting-label">
+              <div class="label-text">新书入库通知</div>
+              <div class="label-desc">新书入库时向匹配用户推送</div>
+            </div>
+            <div class="setting-control">
+              <div class="toggle-wrap">
+                <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+                <span class="toggle-label">已开启</span>
+              </div>
+            </div>
+          </div>
+          <div class="setting-item">
+            <div class="setting-label">
+              <div class="label-text">活动报名通知</div>
+              <div class="label-desc">活动开始前自动提醒报名用户</div>
+            </div>
+            <div class="setting-control">
+              <div class="toggle-wrap">
+                <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+                <span class="toggle-label">已开启</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- admin accounts -->
+      <div class="setting-section" data-od-id="admin-accounts">
+        <div class="setting-header">
+          <h2>管理员账号</h2>
+          <span class="section-badge">权限</span>
+        </div>
+        <div class="setting-body">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>姓名</th>
+                <th>邮箱</th>
+                <th>角色</th>
+                <th>最近登录</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="font-weight:500">张经理</td>
+                <td style="font-family:var(--font-mono);font-size:12px">zhang@megawords.com</td>
+                <td><span class="role-badge role-super">超级管理员</span></td>
+                <td>2026-06-04 09:12</td>
+                <td><button class="action-btn" style="padding:5px 10px;border-radius:8px;font-size:12px;color:var(--muted);border:1px solid var(--border);background:var(--surface)">编辑</button></td>
+              </tr>
+              <tr>
+                <td style="font-weight:500">李老师</td>
+                <td style="font-family:var(--font-mono);font-size:12px">li@megawords.com</td>
+                <td><span class="role-badge role-editor">内容编辑</span></td>
+                <td>2026-06-03 16:45</td>
+                <td><button class="action-btn" style="padding:5px 10px;border-radius:8px;font-size:12px;color:var(--muted);border:1px solid var(--border);background:var(--surface)">编辑</button></td>
+              </tr>
+              <tr>
+                <td style="font-weight:500">王助理</td>
+                <td style="font-family:var(--font-mono);font-size:12px">wang@megawords.com</td>
+                <td><span class="role-badge role-viewer">只读查看</span></td>
+                <td>2026-06-02 11:20</td>
+                <td><button class="action-btn" style="padding:5px 10px;border-radius:8px;font-size:12px;color:var(--muted);border:1px solid var(--border);background:var(--surface)">编辑</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- save actions -->
+      <div class="settings-actions">
+        <button class="btn-reset">重置默认</button>
+        <button class="btn-save">保存设置</button>
+      </div>
+    </div>
+  </div>
+  <script src="admin-sidebar.js"></script>
+</body>
+</html>

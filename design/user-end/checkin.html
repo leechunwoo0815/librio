@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>阅读打卡 · MegaWords</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.003 250); --surface: oklch(100% 0 0);
+      --fg: oklch(20% 0.015 275); --muted: oklch(48% 0.02 250);
+      --border: oklch(90% 0.008 250); --accent: oklch(54% 0.17 275);
+      --accent-soft: oklch(54% 0.17 275 / 0.1); --accent-hover: oklch(48% 0.17 275);
+      --secondary: oklch(86% 0.20 135); --secondary-soft: oklch(86% 0.20 135 / 0.12);
+      --success: oklch(72% 0.20 145); --warning: oklch(78% 0.16 85);
+      --error: oklch(62% 0.22 25); --radius: 16px; --radius-sm: 10px; --radius-lg: 20px;
+      --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+      --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--fg); font-family: var(--font-body);
+      font-size: 15px; line-height: 1.5; max-width: 430px; margin: 0 auto;
+      min-height: 100vh; padding-bottom: 80px; -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; }
+    .nav-bar {
+      display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 10;
+    }
+    .nav-bar .back { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 10px; }
+    .nav-bar .back svg { width: 20px; height: 20px; }
+    .nav-bar .title { font-family: var(--font-display); font-size: 17px; font-weight: 600; }
+    .streak-banner {
+      margin: 16px; padding: 20px; border-radius: var(--radius-lg);
+      background: linear-gradient(135deg, var(--accent), oklch(48% 0.17 275));
+      color: white; text-align: center;
+    }
+    .streak-banner .streak-num { font-family: var(--font-display); font-size: 48px; font-weight: 700; line-height: 1; }
+    .streak-banner .streak-label { font-size: 14px; opacity: 0.85; margin-top: 4px; }
+    .streak-banner .streak-sub { font-size: 12px; opacity: 0.7; margin-top: 4px; }
+    /* today status card */
+    .today-card {
+      margin: 0 16px 12px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px; display: flex; align-items: center; gap: 14px;
+    }
+    .today-card.checked { border-color: oklch(72% 0.20 145 / 0.3); background: oklch(72% 0.20 145 / 0.04); }
+    .today-card .tc-icon {
+      width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center;
+      font-size: 24px; flex-shrink: 0;
+    }
+    .today-card.checked .tc-icon { background: var(--success-soft); }
+    .today-card.unchecked .tc-icon { background: oklch(78% 0.16 85 / 0.1); }
+    .today-card .tc-info { flex: 1; }
+    .today-card .tc-title { font-family: var(--font-display); font-size: 15px; font-weight: 600; }
+    .today-card .tc-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .today-card .tc-time {
+      font-family: var(--font-mono); font-size: 14px; font-weight: 600; color: var(--success);
+    }
+    /* auto trigger explanation */
+    .auto-trigger {
+      margin: 0 16px 16px; padding: 12px 14px;
+      background: var(--accent-soft); border-radius: var(--radius-sm);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .auto-trigger svg { width: 16px; height: 16px; color: var(--accent); flex-shrink: 0; }
+    .auto-trigger span { font-size: 12px; color: var(--fg); }
+    /* streak stats */
+    .streak-stats {
+      display: flex; justify-content: center; gap: 32px; margin-top: 12px;
+    }
+    .streak-stats .ss-item { text-align: center; }
+    .streak-stats .ss-num { font-family: var(--font-display); font-size: 22px; font-weight: 700; }
+    .streak-stats .ss-label { font-size: 11px; opacity: 0.8; }
+    /* share button */
+    .share-btn {
+      margin: 0 16px 16px; padding: 14px; border-radius: var(--radius);
+      background: var(--success); color: white; font-size: 15px; font-weight: 600;
+      text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: calc(100% - 32px);
+    }
+    .share-btn:active { opacity: 0.85; }
+    .share-btn svg { width: 18px; height: 18px; }
+    .badge-row { display: flex; justify-content: center; gap: 12px; margin: 0 16px 16px; }
+    .badge-item { text-align: center; }
+    .badge-icon {
+      width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center;
+      font-size: 28px; margin: 0 auto 4px;
+    }
+    .badge-icon.unlocked { background: var(--surface); border: 2px solid var(--accent); }
+    .badge-icon.locked { background: var(--border); opacity: 0.4; filter: grayscale(1); }
+    .badge-item .b-name { font-size: 10px; color: var(--muted); }
+    .calendar-card {
+      margin: 0 16px 16px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px;
+    }
+    .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .cal-header .month { font-family: var(--font-display); font-size: 16px; font-weight: 600; }
+    .cal-header .nav-btns { display: flex; gap: 4px; }
+    .cal-header .nav-btns button { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 6px; }
+    .cal-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
+    .cal-day {
+      aspect-ratio: 1; display: grid; place-items: center; border-radius: 50%;
+      font-size: 13px; font-variant-numeric: tabular-nums; font-weight: 500;
+    }
+    .cal-day.checked { background: var(--accent); color: white; }
+    .cal-day.today { border: 2px solid var(--accent); color: var(--accent); }
+    .cal-day.other { color: var(--border); }
+    .cal-day.future { color: var(--muted); }
+    .records { margin: 0 16px; display: flex; flex-direction: column; gap: 8px; }
+    .records h3 { font-family: var(--font-display); font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+    .record-item {
+      display: flex; align-items: center; gap: 12px; background: var(--surface);
+      border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px;
+    }
+    .record-item .r-icon { width: 36px; height: 36px; border-radius: 50%; background: var(--accent-soft); display: grid; place-items: center; font-size: 18px; flex-shrink: 0; }
+    .record-item .r-info { flex: 1; }
+    .record-item .r-date { font-size: 13px; font-weight: 500; }
+    .record-item .r-detail { font-size: 12px; color: var(--muted); }
+    .record-item .r-duration { font-family: var(--font-mono); font-size: 13px; font-weight: 500; color: var(--accent); }
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 430px; display: flex; justify-content: space-around;
+      padding: 8px 8px 20px; background: var(--surface); border-top: 1px solid var(--border);
+      z-index: 10;
+    }
+    .nav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 10px; color: var(--muted); padding: 4px 12px; }
+    .nav-item.active { color: var(--accent); }
+    .nav-item svg { width: 22px; height: 22px; }
+  </style>
+</head>
+<body>
+  <div class="nav-bar">
+    <a class="back" href="home.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a>
+    <span class="title">阅读打卡</span>
+  </div>
+  <div class="streak-banner">
+    <div class="streak-num">21</div>
+    <div class="streak-label">连续打卡天数</div>
+    <div class="streak-sub">🔥 再坚持 9 天解锁 30 天徽章</div>
+    <div class="streak-stats">
+      <div class="ss-item"><div class="ss-num">21</div><div class="ss-label">当前连续</div></div>
+      <div class="ss-item"><div class="ss-num">35</div><div class="ss-label">最长连续</div></div>
+    </div>
+  </div>
+  <div class="badge-row">
+    <div class="badge-item"><div class="badge-icon unlocked">🏅</div><div class="b-name">7天徽章</div></div>
+    <div class="badge-item"><div class="badge-icon unlocked">🎖️</div><div class="b-name">14天徽章</div></div>
+    <div class="badge-item"><div class="badge-icon unlocked">🏆</div><div class="b-name">21天徽章</div></div>
+    <div class="badge-item"><div class="badge-icon locked">👑</div><div class="b-name">30天徽章</div></div>
+  </div>
+  <!-- today status card -->
+  <div class="today-card checked">
+    <div class="tc-icon">✅</div>
+    <div class="tc-info">
+      <div class="tc-title">今日已打卡</div>
+      <div class="tc-sub">Charlotte's Web · 阅读 25 分钟</div>
+    </div>
+    <div class="tc-time">08:32</div>
+  </div>
+  <!-- auto trigger explanation -->
+  <div class="auto-trigger">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+    <span>阅读满 10 分钟自动打卡，无需手动操作</span>
+  </div>
+  <div class="calendar-card">
+    <div class="cal-header">
+      <span class="month">2026年6月</span>
+      <div class="nav-btns"><button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M15 18l-6-6 6-6"/></svg></button><button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M9 18l6-6-6-6"/></svg></button></div>
+    </div>
+    <div class="cal-weekdays"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div>
+    <div class="cal-grid" id="calGrid"></div>
+  </div>
+  <div class="records">
+    <h3>最近打卡记录</h3>
+    <div class="record-item">
+      <div class="r-icon">📖</div>
+      <div class="r-info"><div class="r-date">6月4日 星期三</div><div class="r-detail">Charlotte's Web · 第10-12页</div></div>
+      <div class="r-duration">25 分钟</div>
+    </div>
+    <div class="record-item">
+      <div class="r-icon">📖</div>
+      <div class="r-info"><div class="r-date">6月3日 星期二</div><div class="r-detail">Fantastic Mr. Fox · 第8-13页</div></div>
+      <div class="r-duration">32 分钟</div>
+    </div>
+    <div class="record-item">
+      <div class="r-icon">📖</div>
+      <div class="r-info"><div class="r-date">6月2日 星期一</div><div class="r-detail">Charlotte's Web · 第6-9页</div></div>
+      <div class="r-duration">20 分钟</div>
+    </div>
+  </div>
+  <!-- share poster button -->
+  <button class="share-btn" onclick="alert('正在生成打卡海报...')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg>
+    生成打卡海报
+  </button>
+  <nav class="bottom-nav">
+    <a class="nav-item" href="home.html"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>首页</a>
+    <a class="nav-item" href="books.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>图书</a>
+    <a class="nav-item" href="my-books.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>书架</a>
+    <a class="nav-item active" href="checkin.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>打卡</a>
+    <a class="nav-item" href="member.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>会员</a>
+  </nav>
+  <script>
+    const checkedDays = [1,2,3,4];
+    const today = 4;
+    const grid = document.getElementById('calGrid');
+    for (let i = 0; i < 30; i++) {
+      const d = document.createElement('div');
+      d.className = 'cal-day';
+      d.textContent = i + 1;
+      if (checkedDays.includes(i+1)) d.classList.add('checked');
+      if (i+1 === today) d.classList.add('today');
+      if (i+1 > today) d.classList.add('future');
+      grid.appendChild(d);
+    }
+  </script>
+</body>
+</html>

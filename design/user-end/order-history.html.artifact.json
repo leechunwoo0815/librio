@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "order-history.html",
+  "entry": "order-history.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-06-05T05:11:41.019Z",
+  "updatedAt": "2026-06-05T05:11:41.019Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}

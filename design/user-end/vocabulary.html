@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>生词本 · MegaWords</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.003 250); --surface: oklch(100% 0 0);
+      --fg: oklch(20% 0.015 275); --muted: oklch(48% 0.02 250);
+      --border: oklch(90% 0.008 250); --accent: oklch(54% 0.17 275);
+      --accent-soft: oklch(54% 0.17 275 / 0.1); --accent-hover: oklch(48% 0.17 275);
+      --secondary: oklch(86% 0.20 135); --secondary-soft: oklch(86% 0.20 135 / 0.12);
+      --success: oklch(72% 0.20 145); --warning: oklch(78% 0.16 85);
+      --error: oklch(62% 0.22 25); --radius: 16px; --radius-sm: 10px; --radius-lg: 20px;
+      --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+      --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--fg); font-family: var(--font-body);
+      font-size: 15px; line-height: 1.5; max-width: 430px; margin: 0 auto;
+      min-height: 100vh; padding-bottom: 80px; -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; }
+    .nav-bar {
+      display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 10;
+    }
+    .nav-bar .back { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 10px; }
+    .nav-bar .back svg { width: 20px; height: 20px; }
+    .nav-bar .title { font-family: var(--font-display); font-size: 17px; font-weight: 600; }
+    .nav-bar .right-btn { font-size: 13px; color: var(--accent); font-weight: 500; }
+    .stats-row { display: flex; gap: 8px; margin: 12px 16px; }
+    .stats-row .st { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; text-align: center; }
+    .st .st-val { font-family: var(--font-display); font-size: 20px; font-weight: 700; }
+    .st .st-label { font-size: 11px; color: var(--muted); }
+    .st.learning .st-val { color: var(--accent); }
+    .st.mastered .st-val { color: var(--success); }
+    .tabs { display: flex; gap: 0; margin: 0 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+    .tab-btn { flex: 1; padding: 9px; font-size: 13px; font-weight: 500; color: var(--muted); text-align: center; }
+    .tab-btn.active { background: var(--accent); color: white; }
+    .sort-bar { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; }
+    .sort-bar .count { font-size: 12px; color: var(--muted); }
+    .sort-bar select { font-size: 12px; border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; background: var(--surface); color: var(--fg); }
+    .word-list { padding: 0 16px; display: flex; flex-direction: column; gap: 8px; }
+    .word-item {
+      display: flex; align-items: center; gap: 12px; background: var(--surface);
+      border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px;
+      transition: transform 0.12s;
+    }
+    .word-item:active { transform: scale(0.98); }
+    .word-main { flex: 1; min-width: 0; }
+    .word-main .w-word { font-family: var(--font-display); font-size: 16px; font-weight: 600; }
+    .word-main .w-phonetic { font-size: 12px; color: var(--muted); }
+    .word-main .w-def { font-size: 13px; color: var(--fg); margin-top: 2px; }
+    .word-tag { font-size: 10px; padding: 3px 8px; border-radius: 999px; font-weight: 500; white-space: nowrap; }
+    .word-tag.learning { background: var(--accent-soft); color: var(--accent); }
+    .word-tag.mastered { background: oklch(72% 0.20 145 / 0.1); color: var(--success); }
+    .word-actions { display: flex; gap: 4px; }
+    .word-actions button { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 8px; color: var(--muted); }
+    .word-actions button:hover { background: var(--accent-soft); color: var(--accent); }
+    .word-actions button svg { width: 16px; height: 16px; }
+    .flashcard-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 30;
+      display: none; align-items: center; justify-content: center;
+    }
+    .flashcard-overlay.show { display: flex; }
+    .flashcard {
+      width: 300px; height: 380px; background: var(--surface); border-radius: var(--radius-lg);
+      padding: 24px; display: flex; flex-direction: column; align-items: center;
+      justify-content: center; text-align: center; gap: 12px;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.15); cursor: pointer;
+      perspective: 1000px;
+    }
+    .flashcard .fc-word { font-family: var(--font-display); font-size: 32px; font-weight: 700; }
+    .flashcard .fc-phonetic { font-size: 16px; color: var(--muted); }
+    .flashcard .fc-def { font-size: 18px; color: var(--fg); }
+    .flashcard .fc-hint { font-size: 12px; color: var(--muted); margin-top: 8px; }
+    .fc-actions { display: flex; gap: 12px; margin-top: 16px; }
+    .fc-btn { padding: 10px 20px; border-radius: 999px; font-size: 14px; font-weight: 600; }
+    .fc-btn.again { background: var(--accent-soft); color: var(--accent); }
+    .fc-btn.got { background: var(--success); color: white; }
+    .fc-close { position: absolute; top: 12px; right: 12px; width: 32px; height: 32px; border-radius: 50%; background: rgba(0,0,0,0.3); color: white; display: grid; place-items: center; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <div class="nav-bar">
+    <a class="back" href="reader.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a>
+    <span class="title">生词本 <span style="font-size:12px;font-weight:400;color:var(--muted)">基于 ECDICT 770K 词库</span></span>
+    <button class="right-btn" onclick="startReview()">闪卡复习</button>
+  </div>
+  <div class="stats-row">
+    <div class="st learning"><div class="st-val">47</div><div class="st-label">学习中</div></div>
+    <div class="st mastered"><div class="st-val">23</div><div class="st-label">已掌握</div></div>
+    <div class="st"><div class="st-val">70</div><div class="st-label">总计</div></div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab(this,'all')">全部</button>
+    <button class="tab-btn" onclick="switchTab(this,'learning')">学习中</button>
+    <button class="tab-btn" onclick="switchTab(this,'mastered')">已掌握</button>
+  </div>
+  <div class="sort-bar">
+    <span class="count">共 70 个单词</span>
+    <select onchange="sortWords(this.value)"><option value="time">按时间</option><option value="book">按书籍</option><option value="alpha">按字母</option></select>
+  </div>
+  <div class="word-list">
+    <a class="word-item" href="word-detail.html">
+      <div class="word-main"><div class="w-word">ax</div><div class="w-phonetic">/æks/</div><div class="w-def">n. 斧头</div></div>
+      <span class="word-tag learning">学习中</span>
+      <div class="word-actions"><button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/></svg></button></div>
+    </a>
+    <a class="word-item" href="word-detail.html">
+      <div class="word-main"><div class="w-word">runt</div><div class="w-phonetic">/rʌnt/</div><div class="w-def">n. 一窝中最小的动物</div></div>
+      <span class="word-tag learning">学习中</span>
+      <div class="word-actions"><button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/></svg></button></div>
+    </a>
+    <a class="word-item" href="word-detail.html">
+      <div class="word-main"><div class="w-word">sobbed</div><div class="w-phonetic">/sɑbd/</div><div class="w-def">v. 哭泣，呜咽（sob 的过去式）</div></div>
+      <span class="word-tag learning">学习中</span>
+      <div class="word-actions"><button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/></svg></button></div>
+    </a>
+    <div class="word-item">
+      <div class="word-main"><div class="w-word">caterpillar</div><div class="w-phonetic">/ˈkætərpɪlər/</div><div class="w-def">n. 毛毛虫</div></div>
+      <span class="word-tag mastered">已掌握</span>
+      <div class="word-actions"><button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/></svg></button></div>
+    </div>
+    <div class="word-item">
+      <div class="word-main"><div class="w-word">burrow</div><div class="w-phonetic">/ˈbɜːroʊ/</div><div class="w-def">n. 洞穴 v. 挖掘</div></div>
+      <span class="word-tag mastered">已掌握</span>
+      <div class="word-actions"><button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/></svg></button></div>
+    </div>
+  </div>
+  <div class="flashcard-overlay" id="flashcardOverlay">
+    <div class="flashcard" id="flashcard" onclick="flipCard()">
+      <div class="fc-word" id="fcWord">ax</div>
+      <div class="fc-phonetic" id="fcPhonetic">/æks/</div>
+      <div class="fc-def" id="fcDef" style="display:none">n. 斧头</div>
+      <div class="fc-hint" id="fcHint">点击翻转查看释义</div>
+      <div class="fc-actions" id="fcActions" style="display:none">
+        <button class="fc-btn again" onclick="event.stopPropagation();reviewResult('again')">再练一次</button>
+        <button class="fc-btn got" onclick="event.stopPropagation();reviewResult('got')">已掌握</button>
+      </div>
+    </div>
+    <button class="fc-close" onclick="closeReview()">✕</button>
+  </div>
+  <script>
+    function switchTab(btn, tab) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+    function sortWords(by) { /* sort logic */ }
+    const words = [
+      { word: 'ax', phonetic: '/æks/', def: 'n. 斧头' },
+      { word: 'runt', phonetic: '/rʌnt/', def: 'n. 一窝中最小的动物' },
+      { word: 'sobbed', phonetic: '/sɑbd/', def: 'v. 哭泣，呜咽' },
+      { word: 'caterpillar', phonetic: '/ˈkætərpɪlər/', def: 'n. 毛毛虫' },
+    ];
+    let reviewIdx = 0, flipped = false;
+    function startReview() {
+      reviewIdx = 0; flipped = false;
+      document.getElementById('flashcardOverlay').classList.add('show');
+      showCard();
+    }
+    function showCard() {
+      const w = words[reviewIdx % words.length];
+      document.getElementById('fcWord').textContent = w.word;
+      document.getElementById('fcPhonetic').textContent = w.phonetic;
+      document.getElementById('fcDef').textContent = w.def;
+      document.getElementById('fcDef').style.display = 'none';
+      document.getElementById('fcHint').style.display = '';
+      document.getElementById('fcActions').style.display = 'none';
+      flipped = false;
+    }
+    function flipCard() {
+      if (flipped) return;
+      flipped = true;
+      document.getElementById('fcDef').style.display = '';
+      document.getElementById('fcHint').style.display = 'none';
+      document.getElementById('fcActions').style.display = '';
+    }
+    function reviewResult(r) {
+      reviewIdx++;
+      if (reviewIdx >= words.length) { closeReview(); alert('复习完成！'); return; }
+      showCard();
+    }
+    function closeReview() { document.getElementById('flashcardOverlay').classList.remove('show'); }
+  </script>
+</body>
+</html>

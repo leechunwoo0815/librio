@@ -1,89 +1,129 @@
 # backend/utils/wechat.py
 """
-[What] 微信工具类
-[Why] 封装微信API调用
-[How] 使用requests调用微信接口
+[What] 微信API工具类
+[Why] 封装微信登录和支付接口
+[How] 使用httpx异步请求微信API
 """
 
-import httpx
+import hashlib
 import logging
+import time
+import uuid
+
+import httpx
+
 from backend.config import get_settings
+from backend.common.exceptions import ValidationError
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
+WECHAT_API_BASE = "https://api.weixin.qq.com"
+WECHAT_PAY_BASE = "https://api.mch.weixin.qq.com"
 
-class WeChatPay:
+
+async def code2session(code: str) -> dict[str, str]:
     """
-    [What] 微信支付工具类
-    [Why] 封装微信支付相关API
-    [How] 调用微信支付接口
+    [What] 微信小程序登录
+    [Why] 用临时code换取openid和session_key
+    [How] GET https://api.weixin.qq.com/sns/jscode2session
     """
+    if not settings.WECHAT_APP_ID or not settings.WECHAT_APP_SECRET:
+        logger.warning("WeChat credentials not configured, using dev mode")
+        return {"openid": f"dev_{code[:16]}", "session_key": "dev_session_key"}
 
-    def __init__(self):
-        self.appid = settings.WECHAT_APPID if hasattr(settings, 'WECHAT_APPID') else ""
-        self.mch_id = settings.WECHAT_MCH_ID if hasattr(settings, 'WECHAT_MCH_ID') else ""
-        self.api_key = settings.WECHAT_API_KEY if hasattr(settings, 'WECHAT_API_KEY') else ""
+    url = f"{WECHAT_API_BASE}/sns/jscode2session"
+    params = {
+        "appid": settings.WECHAT_APP_ID,
+        "secret": settings.WECHAT_APP_SECRET,
+        "js_code": code,
+        "grant_type": "authorization_code",
+    }
 
-    async def create_prepay(self, order_no: str, amount: int, description: str) -> dict:
-        """
-        [What] 创建预支付订单
-        [Why] 调用微信支付统一下单接口
-        [How] 使用httpx调用微信API
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.get(url, params=params)
+            data = resp.json()
+    except (httpx.RequestError, httpx.TimeoutException) as e:
+        logger.error(f"WeChat API request failed: {e}")
+        raise ValidationError("微信服务请求失败，请稍后重试")
 
-        参数:
-            order_no: 商户订单号
-            amount: 金额（分）
-            description: 商品描述
+    if "errcode" in data and data["errcode"] != 0:
+        logger.error(f"WeChat login failed: {data}")
+        raise ValidationError(f"微信登录失败: {data.get('errmsg', '未知错误')}")
 
-        返回:
-            微信支付返回的预支付信息
-        """
-        # TODO: 实现真实的微信支付接口调用
-        # 临时返回模拟数据
-        logger.info(f"Creating prepay for order {order_no}, amount={amount}")
+    logger.info(f"WeChat login success: openid={data.get('openid', '?')[:8]}...")
+    return {
+        "openid": data["openid"],
+        "session_key": data.get("session_key", ""),
+        "unionid": data.get("unionid"),
+    }
+
+
+def generate_pay_params(
+    openid: str, order_no: str, amount: float, description: str
+) -> dict:
+    """
+    [What] 生成微信支付统一下单参数
+    [Why] 小程序支付需要prepay_id
+    [How] POST https://api.mch.weixin.qq.com/pay/unifiedorder (XML)
+    """
+    if not settings.WECHAT_APP_ID or not settings.WECHAT_MCH_ID:
+        logger.warning("WeChat pay not configured, returning mock params")
         return {
-            "prepay_id": f"wx{order_no}",
-            "nonce_str": "mock_nonce",
-            "sign": "mock_sign",
+            "prepay_id": f"prepay_mock_{order_no}",
+            "package": "prepay_id=mock",
+            "nonceStr": uuid.uuid4().hex[:16],
+            "timeStamp": str(int(time.time())),
+            "signType": "MD5",
+            "paySign": "mock_sign",
         }
 
-    async def verify_payment(self, payment_no: str) -> bool:
-        """
-        [What] 验证支付结果
-        [Why] 确认支付是否成功
-        [How] 调用微信支付查询接口
+    params = {
+        "appid": settings.WECHAT_APP_ID,
+        "mch_id": settings.WECHAT_MCH_ID,
+        "nonce_str": uuid.uuid4().hex[:16],
+        "body": description,
+        "out_trade_no": order_no,
+        "total_fee": int(amount * 100),  # 金额：分
+        "spbill_create_ip": "127.0.0.1",
+        "notify_url": f"{settings.SERVER_HOST}:{settings.SERVER_PORT}/order/payment-callback"
+        if settings.SERVER_HOST
+        else "",
+        "trade_type": "JSAPI",
+        "openid": openid,
+    }
+    params["sign"] = _make_sign(params)
+    return params
 
-        参数:
-            payment_no: 微信支付流水号
 
-        返回:
-            支付是否成功
-        """
-        # TODO: 实现真实的支付验证
-        # 临时返回True
-        logger.info(f"Verifying payment {payment_no}")
+def verify_pay_callback(data: dict) -> bool:
+    """
+    [What] 验证微信支付回调签名
+    [Why] 防止伪造回调
+    [How] 用API密钥验证MD5签名
+    """
+    if not settings.WECHAT_API_KEY:
+        logger.warning("WeChat API key not configured, skipping signature verification")
         return True
 
-    async def refund(self, order_no: str, payment_no: str, amount: int) -> bool:
-        """
-        [What] 申请退款
-        [Why] 订单退款
-        [How] 调用微信支付退款接口
-
-        参数:
-            order_no: 商户订单号
-            payment_no: 微信支付流水号
-            amount: 退款金额（分）
-
-        返回:
-            退款是否成功
-        """
-        # TODO: 实现真实的退款接口
-        # 临时返回True
-        logger.info(f"Refunding order {order_no}, payment_no={payment_no}, amount={amount}")
-        return True
+    sign = data.pop("sign", "")
+    calculated = _make_sign(data)
+    return sign == calculated
 
 
-# 创建全局实例
-wechat_pay = WeChatPay()
+def _make_sign(params: dict) -> str:
+    """
+    [What] 生成微信支付签名
+    [Why] 微信支付要求MD5签名
+    [How] 按key排序→拼接→加key→MD5→大写
+    """
+    # 过滤空值和sign字段
+    filtered = {k: v for k, v in params.items() if v and k != "sign"}
+    # 按key排序
+    sorted_items = sorted(filtered.items())
+    # 拼接字符串
+    sign_str = "&".join(f"{k}={v}" for k, v in sorted_items)
+    sign_str += f"&key={settings.WECHAT_API_KEY}"
+    # MD5并大写
+    return hashlib.md5(sign_str.encode()).hexdigest().upper()

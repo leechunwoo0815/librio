@@ -1,0 +1,146 @@
+{% extends "admin/base.html" %}
+{% block title %}审核队列{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="/static/admin/css/pages/submissions.css" />
+{% endblock %}
+{% block page_title %}审核队列{% endblock %}
+
+{% block content %}
+<!-- Stats -->
+<div class="stats-grid">
+  <div class="stat-card"><div class="stat-label">待审核</div><div class="stat-value" id="statPending">--</div><div class="stat-change">等待处理</div></div>
+  <div class="stat-card"><div class="stat-label">已通过</div><div class="stat-value" id="statApproved">--</div><div class="stat-change up">已完成</div></div>
+  <div class="stat-card"><div class="stat-label">已打回</div><div class="stat-value" id="statRejected">--</div><div class="stat-change down">需修改</div></div>
+  <div class="stat-card"><div class="stat-label">今日提交</div><div class="stat-value" id="statToday">--</div><div class="stat-change">新增</div></div>
+</div>
+
+<!-- Tab Bar -->
+<div class="tab-bar">
+  <button class="tab-item active" onclick="switchTab(this,'pending')">待审核</button>
+  <button class="tab-item" onclick="switchTab(this,'reviewed')">已审核</button>
+  <button class="tab-item" onclick="switchTab(this,'all')">全部</button>
+</div>
+
+<!-- Search -->
+<div class="search-bar">
+  <input class="search-input" placeholder="搜索孩子姓名或书名…" id="searchInput" />
+  <select class="filter-select" id="statusFilter"><option value="">全部状态</option><option value="0">待审核</option><option value="1">已通过</option><option value="2">已打回</option></select>
+</div>
+
+<!-- Table -->
+<div class="table-card">
+  <table>
+    <thead><tr><th>孩子</th><th>书名</th><th>提交时间</th><th>阅读页数</th><th>状态</th><th>操作</th></tr></thead>
+    <tbody id="subBody">
+      <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted);">加载中...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Review Modal -->
+<div class="modal-overlay" id="reviewModal">
+  <div class="modal">
+    <h3>审核阅读提交</h3>
+    <div style="display:flex;gap:16px;margin-bottom:16px;padding:12px;background:var(--bg);border-radius:var(--radius-sm)">
+      <div style="flex:1"><div style="font-size:12px;color:var(--muted)">孩子</div><div style="font-weight:600" id="reviewChild">--</div></div>
+      <div style="flex:1"><div style="font-size:12px;color:var(--muted)">书名</div><div style="font-weight:600" id="reviewBook">--</div></div>
+      <div style="flex:1"><div style="font-size:12px;color:var(--muted)">提交时间</div><div style="font-weight:600" id="reviewTime">--</div></div>
+    </div>
+    <div class="form-group">
+      <label>老师评语</label>
+      <textarea class="form-textarea" id="reviewComment" placeholder="填写评语…"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-danger" onclick="doReview(2)">打回</button>
+      <button class="btn btn-success" onclick="doReview(1)">通过</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  var currentReviewId = null;
+  var currentTab = 'pending';
+
+  function switchTab(btn, tab) {
+    currentTab = tab;
+    document.querySelectorAll('.tab-item').forEach(function(t) { t.classList.remove('active'); });
+    btn.classList.add('active');
+    loadSubmissions();
+  }
+
+  async function loadSubmissions() {
+    try {
+      var data = await api.get('/admin/api/submissions');
+      var items = data || [];
+      updateStats(items);
+      if (currentTab === 'pending') items = items.filter(function(s) { return s.status === 0; });
+      else if (currentTab === 'reviewed') items = items.filter(function(s) { return s.status !== 0; });
+      renderSubmissions(items);
+    } catch (e) {
+      document.getElementById('subBody').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--error);">加载失败</td></tr>';
+    }
+  }
+
+  function updateStats(items) {
+    document.getElementById('statPending').textContent = items.filter(function(s) { return s.status === 0; }).length;
+    document.getElementById('statApproved').textContent = items.filter(function(s) { return s.status === 1; }).length;
+    document.getElementById('statRejected').textContent = items.filter(function(s) { return s.status === 2; }).length;
+    var today = new Date().toISOString().slice(0, 10);
+    document.getElementById('statToday').textContent = items.filter(function(s) { return (s.submitted_at||'').slice(0,10) === today; }).length;
+  }
+
+  function renderSubmissions(items) {
+    if (!items.length) {
+      document.getElementById('subBody').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted);">暂无提交</td></tr>';
+      return;
+    }
+    var statusMap = { 0: 'status-pending', 1: 'status-approved', 2: 'status-rejected' };
+    var statusText = { 0: '待审核', 1: '已通过', 2: '已打回' };
+    document.getElementById('subBody').innerHTML = items.map(function(s) {
+      return '<tr>' +
+        '<td><strong>' + escapeHtml(s.child_name||'--') + '</strong><br><span style="color:var(--muted);font-size:12px">' + escapeHtml(s.level||'') + '</span></td>' +
+        '<td>' + escapeHtml(s.book_title||'--') + '</td>' +
+        '<td>' + formatDateTime(s.submitted_at) + '</td>' +
+        '<td>' + (s.total_pages ? s.total_pages + ' 页' : '-') + '</td>' +
+        '<td><span class="status ' + (statusMap[s.status]||'') + '">' + (statusText[s.status]||'--') + '</span></td>' +
+        '<td>' + (s.status === 0 ? '<button class="btn btn-primary btn-sm" onclick="openReview(' + s.id + ',\'' + escapeHtml(s.child_name||'') + '\',\'' + escapeHtml(s.book_title||'') + '\',\'' + escapeHtml((s.submitted_at||'').slice(0,16)) + '\')">审核</button>' : '<button class="btn btn-outline btn-sm">查看</button>') + '</td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  function openReview(id, child, book, time) {
+    currentReviewId = id;
+    document.getElementById('reviewChild').textContent = child;
+    document.getElementById('reviewBook').textContent = book;
+    document.getElementById('reviewTime').textContent = time;
+    document.getElementById('reviewComment').value = '';
+    document.getElementById('reviewModal').classList.add('show');
+  }
+
+  async function doReview(status) {
+    if (!currentReviewId) return;
+    try {
+      await api.put('/admin/api/advancement/submissions/' + currentReviewId + '/review', {
+        status: status,
+        comment: document.getElementById('reviewComment').value
+      });
+      showToast(status === 1 ? '审核通过' : '已打回');
+      document.getElementById('reviewModal').classList.remove('show');
+      loadSubmissions();
+    } catch (e) {
+      showToast('操作失败: ' + e.message, 'error');
+    }
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    var div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  document.addEventListener('DOMContentLoaded', loadSubmissions);
+</script>
+{% endblock %}

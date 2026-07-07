@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "leaderboard.html",
+  "entry": "leaderboard.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-06-09T11:57:13.453Z",
+  "updatedAt": "2026-06-09T11:57:13.453Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}

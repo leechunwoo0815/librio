@@ -1,0 +1,70 @@
+<testsuite name="level_certificate.晋级证书" tests="5" errors="0" failures="0" skipped="0" time="0.04792" timestamp="2026-06-15T16:08:34.377910" hostname="litianyudeMacBook-Air.local"><testcase classname="level_certificate.晋级证书" name="晋级后自动生成证书" status="passed" time="0.011666"><system-out>
+<![CDATA[
+@scenario.begin
+  场景: 晋级后自动生成证书
+    假如 用户已登录小程序 ... passed in 0.001s
+    并且 用户的孩子是正式会员 ... passed in 0.001s
+    假如 孩子从A级晋级到B级 ... passed in 0.004s
+    当 系统生成晋级证书 ... passed in 0.005s
+    那么 生成一张证书 ... passed in 0.000s
+    并且 证书包含孩子姓名 ... passed in 0.000s
+    并且 证书包含级别信息"B" ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="level_certificate.晋级证书" name="不重复生成同级证书" status="passed" time="0.010388"><system-out>
+<![CDATA[
+@scenario.begin
+  场景: 不重复生成同级证书
+    假如 用户已登录小程序 ... passed in 0.002s
+    并且 用户的孩子是正式会员 ... passed in 0.001s
+    假如 孩子已有B级证书 ... passed in 0.008s
+    当 再次请求生成B级证书 ... passed in 0.000s
+    那么 返回已有的证书 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="level_certificate.晋级证书" name="证书包含完整信息" status="passed" time="0.010088"><system-out>
+<![CDATA[
+@scenario.begin
+  场景: 证书包含完整信息
+    假如 用户已登录小程序 ... passed in 0.002s
+    并且 用户的孩子是正式会员 ... passed in 0.001s
+    假如 孩子已获得晋级证书 ... passed in 0.007s
+    当 查看证书详情 ... passed in 0.001s
+    那么 证书包含孩子英文名 ... passed in 0.000s
+    并且 证书包含晋级日期 ... passed in 0.000s
+    并且 证书包含徽章 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="level_certificate.晋级证书" name="查询孩子所有证书" status="passed" time="0.011799"><system-out>
+<![CDATA[
+@scenario.begin
+  场景: 查询孩子所有证书
+    假如 用户已登录小程序 ... passed in 0.001s
+    并且 用户的孩子是正式会员 ... passed in 0.001s
+    假如 孩子已获得2张晋级证书 ... passed in 0.009s
+    当 查询孩子的证书列表 ... passed in 0.001s
+    那么 返回2张证书 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="level_certificate.晋级证书" name="无证书时返回空列表" status="passed" time="0.003979"><system-out>
+<![CDATA[
+@scenario.begin
+  场景: 无证书时返回空列表
+    假如 用户已登录小程序 ... passed in 0.002s
+    并且 用户的孩子是正式会员 ... passed in 0.001s
+    假如 孩子尚无晋级证书 ... passed in 0.000s
+    当 查询孩子的证书列表 ... passed in 0.001s
+    那么 返回空列表 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

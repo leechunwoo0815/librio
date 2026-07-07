@@ -1,0 +1,103 @@
+<!-- frontend/pages/member-pkg/leaderboard/leaderboard.wxml -->
+<view class="page-bg">
+  <view style="display:none" class="active back nav-bar podium-score spacer title"></view>
+  <!-- 周期标签 -->
+  <view class="period-tabs">
+    <scroll-view scroll-x enable-flex class="period-scroll">
+      <view
+        class="period-tab {{period === item.value ? 'active' : ''}}"
+        wx:for="{{tabs}}" wx:key="value"
+        data-value="{{item.value}}"
+        bindtap="onPeriodChange"
+      >{{item.label}}</view>
+    </scroll-view>
+  </view>
+
+  <!-- 级别筛选 -->
+  <view class="filter-bar">
+    <text class="filter-label">级别筛选</text>
+    <picker mode="selector" range="{{levelNames}}" value="{{levelIndex}}" bindchange="onLevelChange">
+      <view class="level-select">
+        <text>{{levelIndex > 0 ? levelNames[levelIndex] : '全部级别'}}</text>
+        <text class="filter-arrow">▾</text>
+      </view>
+    </picker>
+  </view>
+
+  <!-- 加载态 -->
+  <view class="loading" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty-state" wx:if="{{!loading && list.length === 0}}">
+    <view class="emoji">🏆</view>
+    <view class="text">暂无排行数据</view>
+  </view>
+
+  <!-- 排行内容 -->
+  <view wx:if="{{!loading && list.length > 0}}">
+    <!-- 前三名领奖台 -->
+    <view class="podium">
+      <!-- 第 2 名 -->
+      <view class="podium-card silver" wx:if="{{list.length > 1}}" data-index="1" bindtap="onItemTap">
+        <view class="rank-badge">🥈</view>
+        <view class="podium-avatar">{{list[1].display_name[0] || '?'}}</view>
+        <text class="podium-name">{{list[1].display_name}}</text>
+        <text class="podium-words">{{list[1].total_words}} 词</text>
+      </view>
+      <!-- 第 1 名 -->
+      <view class="podium-card gold" wx:if="{{list.length > 0}}" data-index="0" bindtap="onItemTap">
+        <view class="rank-badge">🥇</view>
+        <view class="podium-avatar">{{list[0].display_name[0] || '?'}}</view>
+        <text class="podium-name">{{list[0].display_name}}</text>
+        <text class="podium-words">{{list[0].total_words}} 词</text>
+      </view>
+      <!-- 第 3 名 -->
+      <view class="podium-card bronze" wx:if="{{list.length > 2}}" data-index="2" bindtap="onItemTap">
+        <view class="rank-badge">🥉</view>
+        <view class="podium-avatar">{{list[2].display_name[0] || '?'}}</view>
+        <text class="podium-name">{{list[2].display_name}}</text>
+        <text class="podium-words">{{list[2].total_words}} 词</text>
+      </view>
+    </view>
+
+    <!-- 更多排名 -->
+    <view class="section-label" wx:if="{{list.length > 3}}">更多排名</view>
+    <view class="rank-list" wx:if="{{list.length > 3}}">
+      <view
+        class="rank-item {{item.child_id === myChildId ? 'rank-item-me' : ''}}"
+        wx:for="{{list}}" wx:key="child_id"
+        data-index="{{index}}"
+        bindtap="onItemTap"
+        wx:if="{{index >= 3}}"
+      >
+        <text class="rank-num">{{item.rank || index + 1}}</text>
+        <view class="rank-avatar">{{item.display_name[0] || '?'}}</view>
+        <view class="rank-info">
+          <text class="rank-name">{{item.display_name}}</text>
+          <text class="rank-words" wx:if="{{item.level_name}}">{{item.level_name}} · {{item.total_words}}词</text>
+        </view>
+        <text class="rank-score">{{item.total_words}}</text>
+      </view>
+    </view>
+
+    <!-- 排行规则 -->
+    <view class="rules-card">
+      <view class="rules-title">
+        <text>ℹ️ 排行榜规则</text>
+      </view>
+      <text class="rules-text">测评通过后，该本书的阅读词数计入排行榜积分。同一本书不重复计分，仅首次通过的测验有效。积分按自然周期统计，切换时间范围可查看不同维度排名。</text>
+    </view>
+  </view>
+
+  <!-- 底部：我的排名 -->
+  <view class="my-rank-bar" wx:if="{{myRank > 0 && myTotalWords > 0}}">
+    <view class="my-avatar">{{myName[0] || '?'}}</view>
+    <view class="my-info">
+      <text class="my-label">你的排名</text>
+      <text class="my-detail">第<text class="my-highlight"> {{myRank}} </text>名 · {{myTotalWords}} 词</text>
+    </view>
+    <text class="my-position">#{{myRank}}</text>
+  </view>
+</view>

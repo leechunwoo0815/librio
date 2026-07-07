@@ -1,0 +1,88 @@
+/* certificates.css — 晋级证书管理页面专属样式 */
+
+/* Stats grid */
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; }
+.stat-card .stat-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+.stat-card .stat-value { font-family: var(--font-display); font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.stat-card .stat-change { font-size: 12px; margin-top: 4px; color: var(--muted); }
+.stat-card .stat-change.up { color: var(--success); }
+.stat-card .stat-change.down { color: var(--error); }
+.stat-card-accent { border-top: 3px solid var(--accent); }
+.stat-card-success { border-top: 3px solid var(--success); }
+.stat-card-secondary { border-top: 3px solid var(--secondary); }
+.stat-card-warning { border-top: 3px solid var(--warning); }
+
+/* Table card */
+.table-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 20px; }
+.table-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+.table-header h3 { font-family: var(--font-display); font-size: 15px; font-weight: 600; }
+.table-card table { width: 100%; border-collapse: collapse; }
+.table-card thead { background: var(--bg); }
+.table-card th { padding: 10px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+.table-card td { padding: 12px 16px; font-size: 13px; border-top: 1px solid var(--border); }
+.table-card tr:hover td { background: var(--bg); }
+
+/* Buttons */
+.btn { padding: 8px 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; cursor: pointer; }
+.btn-primary { background: var(--accent); color: white; border: none; }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-outline { border: 1px solid var(--border); color: var(--fg); background: var(--surface); }
+.btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+
+/* Level badges */
+.level-badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+.level-1 { background: rgba(57,195,75,0.15); color: #2a8a38; }
+.level-2 { background: rgba(88,160,200,0.15); color: #3a7a9a; }
+.level-3 { background: rgba(85,96,207,0.12); color: var(--accent); }
+.level-4 { background: rgba(140,60,200,0.12); color: #7a3aaa; }
+.level-5 { background: rgba(200,100,50,0.12); color: #b05020; }
+.level-6 { background: rgba(200,50,50,0.12); color: #b03030; }
+.level-7 { background: rgba(50,150,150,0.12); color: #2a8888; }
+.level-8 { background: rgba(150,120,50,0.12); color: #8a7020; }
+.level-9 { background: rgba(100,50,180,0.12); color: #6030a0; }
+.level-10 { background: rgba(200,50,100,0.12); color: #b03060; }
+
+/* Certificate ID */
+.cert-id { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+
+/* Search bar */
+.search-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.search-input { flex: 1; min-width: 200px; height: 38px; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0 12px; font: inherit; font-size: 13px; outline: none; background: var(--surface); color: var(--fg); }
+.search-input:focus { border-color: var(--accent); }
+.search-input::placeholder { color: var(--muted); }
+.filter-select { height: 38px; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0 12px; font: inherit; font-size: 13px; outline: none; background: var(--surface); color: var(--fg); min-width: 120px; cursor: pointer; }
+
+/* Certificate Modal */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 100; align-items: center; justify-content: center; }
+.modal-overlay.show { display: flex; }
+.cert-preview { width: 600px; background: #fffdf5; border: 6px solid; border-image: linear-gradient(135deg, #d4a843, #f5d98a, #d4a843, #b8860b, #d4a843) 1; border-radius: 0; position: relative; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+.cert-inner { border: 2px solid #c8a060; margin: 16px; padding: 40px 36px; text-align: center; position: relative; }
+.cert-inner::before, .cert-inner::after { content: ''; position: absolute; width: 30px; height: 30px; border: 2px solid #c8a060; }
+.cert-inner::before { top: -2px; left: -2px; border-right: none; border-bottom: none; }
+.cert-inner::after { bottom: -2px; right: -2px; border-left: none; border-top: none; }
+.cert-corner-bl, .cert-corner-tr { position: absolute; width: 30px; height: 30px; border: 2px solid #c8a060; }
+.cert-corner-bl { bottom: -2px; left: -2px; border-right: none; border-top: none; }
+.cert-corner-tr { top: -2px; right: -2px; border-left: none; border-bottom: none; }
+.cert-logo { font-size: 28px; margin-bottom: 4px; }
+.cert-brand { font-family: var(--font-display); font-size: 14px; font-weight: 700; color: #8a7040; letter-spacing: 0.08em; margin-bottom: 20px; }
+.cert-title { font-family: var(--font-display); font-size: 26px; font-weight: 700; color: #6a5a30; margin-bottom: 6px; letter-spacing: 0.06em; }
+.cert-subtitle { font-size: 13px; color: #8a7a50; margin-bottom: 28px; }
+.cert-name { font-family: var(--font-display); font-size: 36px; font-weight: 700; color: var(--fg); margin-bottom: 8px; border-bottom: 2px solid #c8a060; display: inline-block; padding: 0 24px 6px; }
+.cert-desc { font-size: 14px; color: var(--muted); line-height: 1.8; margin-bottom: 24px; max-width: 400px; margin-left: auto; margin-right: auto; }
+.cert-level { display: inline-block; padding: 6px 24px; background: linear-gradient(135deg, #d4b870, #e8d090); border-radius: 999px; font-family: var(--font-display); font-size: 16px; font-weight: 700; color: #5a4a20; margin-bottom: 24px; }
+.cert-stats { display: flex; justify-content: center; gap: 32px; margin-bottom: 24px; }
+.cert-stats .cs { text-align: center; }
+.cert-stats .cs-val { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: #7a6a40; }
+.cert-stats .cs-lbl { font-size: 11px; color: var(--muted); }
+.cert-seal { width: 64px; height: 64px; border-radius: 50%; border: 2px solid #a89060; display: grid; place-items: center; margin: 0 auto 12px; background: rgba(200,180,120,0.15); }
+.cert-seal-inner { font-size: 24px; }
+.cert-date { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+.cert-number { font-family: var(--font-mono); font-size: 11px; color: #9a8a60; }
+.cert-close { position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; border-radius: 50%; background: rgba(0,0,0,0.08); display: grid; place-items: center; color: var(--muted); z-index: 5; border: none; cursor: pointer; }
+.cert-close:hover { background: rgba(0,0,0,0.15); color: var(--fg); }
+
+/* Responsive */
+@media (max-width: 1024px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 768px) { .stats-grid { grid-template-columns: 1fr; } }

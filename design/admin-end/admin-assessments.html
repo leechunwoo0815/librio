@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>评估管理 · MegaWords</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.003 250);
+      --surface: oklch(100% 0 0);
+      --fg: oklch(20% 0.015 275);
+      --muted: oklch(48% 0.02 250);
+      --border: oklch(90% 0.008 250);
+      --accent: oklch(54% 0.17 275);
+      --accent-soft: oklch(54% 0.17 275 / 0.1);
+      --accent-hover: oklch(48% 0.17 275);
+      --secondary: oklch(86% 0.20 135);
+      --secondary-soft: oklch(86% 0.20 135 / 0.12);
+      --success: oklch(72% 0.20 145);
+      --success-soft: oklch(72% 0.20 145 / 0.1);
+      --warning: oklch(78% 0.16 85);
+      --warning-soft: oklch(78% 0.16 85 / 0.1);
+      --error: oklch(62% 0.22 25);
+      --radius: 12px; --radius-sm: 8px; --radius-lg: 16px;
+      --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+      --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 14px; line-height: 1.5; min-height: 100vh; display: flex; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; }
+    input, select, textarea { font: inherit; }
+    .main { margin-left: 240px; flex: 1; min-height: 100vh; }
+    .top-bar { display: flex; align-items: center; justify-content: space-between; padding: 16px 28px; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; }
+    .top-bar h1 { font-family: var(--font-display); font-size: 18px; font-weight: 600; }
+    .top-bar .right { display: flex; align-items: center; gap: 16px; font-size: 13px; color: var(--muted); }
+    .top-bar .right .name { color: var(--fg); font-weight: 500; }
+    .logout-btn { color: var(--accent); font-size: 13px; }
+    .content { padding: 24px 28px; }
+    /* stats */
+    .assess-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+    .astat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+    .astat-label { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+    .astat-value { font-family: var(--font-display); font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    /* toolbar */
+    .toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; gap: 12px; flex-wrap: wrap; }
+    .toolbar-left { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .search-box { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); width: 260px; }
+    .search-box svg { width: 16px; height: 16px; color: var(--muted); flex-shrink: 0; }
+    .search-box input { border: none; outline: none; background: none; font-size: 13px; width: 100%; color: var(--fg); }
+    .filter-select { padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; color: var(--fg); background: var(--surface); cursor: pointer; }
+    .btn-primary { padding: 8px 18px; border-radius: var(--radius-sm); background: var(--accent); color: white; font-size: 13px; font-weight: 500; transition: background 0.15s ease; display: flex; align-items: center; gap: 6px; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-primary svg { width: 16px; height: 16px; }
+    /* table */
+    .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; }
+    thead { background: oklch(97% 0.004 250); }
+    th { padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: 0.02em; border-bottom: 1px solid var(--border); }
+    td { padding: 12px 16px; font-size: 13px; border-bottom: 1px solid var(--border); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: oklch(97% 0.004 250); }
+    .student-cell { display: flex; align-items: center; gap: 10px; }
+    .student-mini-avatar { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 600; color: white; flex-shrink: 0; }
+    .student-mini-avatar.sa1 { background: oklch(54% 0.17 275); }
+    .student-mini-avatar.sa2 { background: oklch(58% 0.16 200); }
+    .student-mini-avatar.sa3 { background: oklch(62% 0.18 145); }
+    .student-mini-avatar.sa4 { background: oklch(65% 0.14 85); }
+    .student-mini-avatar.sa5 { background: oklch(55% 0.15 330); }
+    .level-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 500; background: var(--accent-soft); color: var(--accent); font-variant-numeric: tabular-nums; }
+    .level-up { color: var(--success); font-weight: 600; }
+    .score-bar-wrap { display: flex; align-items: center; gap: 8px; }
+    .score-bar { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; max-width: 80px; }
+    .score-bar-fill { height: 100%; border-radius: 3px; }
+    .score-bar-fill.high { background: var(--success); }
+    .score-bar-fill.mid { background: var(--warning); }
+    .score-bar-fill.low { background: var(--error); }
+    .score-text { font-size: 12px; font-variant-numeric: tabular-nums; font-weight: 500; min-width: 32px; }
+    .status-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 500; }
+    .status-completed { background: var(--success-soft); color: var(--success); }
+    .status-pending { background: var(--warning-soft); color: oklch(55% 0.14 85); }
+    .status-scheduled { background: var(--accent-soft); color: var(--accent); }
+    .action-btns { display: flex; gap: 6px; }
+    .action-btn { padding: 5px 10px; border-radius: var(--radius-sm); font-size: 12px; color: var(--muted); border: 1px solid var(--border); background: var(--surface); transition: all 0.12s ease; }
+    .action-btn:hover { border-color: var(--accent); color: var(--accent); }
+    /* pagination */
+    .pagination { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-top: 1px solid var(--border); }
+    .pagination .info { font-size: 12px; color: var(--muted); }
+    .pagination .pages { display: flex; gap: 4px; }
+    .page-btn { width: 32px; height: 32px; border-radius: var(--radius-sm); display: grid; place-items: center; font-size: 13px; color: var(--muted); border: 1px solid var(--border); background: var(--surface); }
+    .page-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+    /* responsive */
+    @media (max-width: 1024px) { .main { margin-left: 200px; } .assess-stats { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 768px) { .assess-stats { grid-template-columns: 1fr; } .toolbar { flex-direction: column; align-items: stretch; } .search-box { width: 100%; } }
+  </style>
+    <link rel="stylesheet" href="admin-sidebar.css">
+  </head>
+<body>
+  <div id="sidebar-root"></div>
+<div class="main">
+    <div class="top-bar">
+      <h1>老师工作台</h1>
+      <div class="right">
+        <span class="name">管理员</span>
+        <button class="logout-btn">退出登录</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="assess-stats" data-od-id="assess-stats">
+        <div class="astat-card">
+          <div class="astat-label">本月评估数</div>
+          <div class="astat-value">156</div>
+        </div>
+        <div class="astat-card">
+          <div class="astat-label">待评估</div>
+          <div class="astat-value">23</div>
+        </div>
+        <div class="astat-card">
+          <div class="astat-label">平均 AR 提升</div>
+          <div class="astat-value">+0.8</div>
+        </div>
+        <div class="astat-card">
+          <div class="astat-label">平均理解正确率</div>
+          <div class="astat-value">82%</div>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <div class="search-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <input type="text" placeholder="搜索学员姓名…" />
+          </div>
+          <select class="filter-select">
+            <option>全部状态</option>
+            <option>已完成</option>
+            <option>待评估</option>
+            <option>已安排</option>
+          </select>
+          <select class="filter-select">
+            <option>全部场馆</option>
+            <option>人广馆</option>
+            <option>徐汇馆</option>
+            <option>陆家嘴馆</option>
+          </select>
+        </div>
+        <button class="btn-primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          新建评估
+        </button>
+      </div>
+
+      <div class="table-wrap" data-od-id="assess-table">
+        <table>
+          <thead>
+            <tr>
+              <th>学员</th>
+              <th>场馆</th>
+              <th>评估日期</th>
+              <th>当前 AR</th>
+              <th>上次 AR</th>
+              <th>AR 变化</th>
+              <th>理解正确率</th>
+              <th>状态</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><div class="student-cell"><div class="student-mini-avatar sa1">L</div><span>Lucy · 7岁</span></div></td>
+              <td>人广馆</td>
+              <td>2026-06-03</td>
+              <td><span class="level-badge">AR 3.8</span></td>
+              <td><span class="level-badge">AR 3.0</span></td>
+              <td><span class="level-up">+0.8</span></td>
+              <td>
+                <div class="score-bar-wrap">
+                  <div class="score-bar"><div class="score-bar-fill high" style="width:88%"></div></div>
+                  <span class="score-text">88%</span>
+                </div>
+              </td>
+              <td><span class="status-badge status-completed">已完成</span></td>
+              <td><div class="action-btns"><button class="action-btn">报告</button><button class="action-btn">详情</button></div></td>
+            </tr>
+            <tr>
+              <td><div class="student-cell"><div class="student-mini-avatar sa2">T</div><span>Tom · 10岁</span></div></td>
+              <td>人广馆</td>
+              <td>2026-06-02</td>
+              <td><span class="level-badge">AR 6.2</span></td>
+              <td><span class="level-badge">AR 5.5</span></td>
+              <td><span class="level-up">+0.7</span></td>
+              <td>
+                <div class="score-bar-wrap">
+                  <div class="score-bar"><div class="score-bar-fill high" style="width:92%"></div></div>
+                  <span class="score-text">92%</span>
+                </div>
+              </td>
+              <td><span class="status-badge status-completed">已完成</span></td>
+              <td><div class="action-btns"><button class="action-btn">报告</button><button class="action-btn">详情</button></div></td>
+            </tr>
+            <tr>
+              <td><div class="student-cell"><div class="student-mini-avatar sa3">M</div><span>Mia · 5岁</span></div></td>
+              <td>徐汇馆</td>
+              <td>2026-06-05</td>
+              <td>—</td>
+              <td><span class="level-badge">AR 1.2</span></td>
+              <td>—</td>
+              <td>—</td>
+              <td><span class="status-badge status-scheduled">已安排</span></td>
+              <td><div class="action-btns"><button class="action-btn">编辑</button><button class="action-btn">详情</button></div></td>
+            </tr>
+            <tr>
+              <td><div class="student-cell"><div class="student-mini-avatar sa4">L</div><span>Leo · 12岁</span></div></td>
+              <td>陆家嘴馆</td>
+              <td>—</td>
+              <td>—</td>
+              <td><span class="level-badge">AR 7.5</span></td>
+              <td>—</td>
+              <td>—</td>
+              <td><span class="status-badge status-pending">待评估</span></td>
+              <td><div class="action-btns"><button class="action-btn">安排</button><button class="action-btn">详情</button></div></td>
+            </tr>
+            <tr>
+              <td><div class="student-cell"><div class="student-mini-avatar sa5">E</div><span>Emma · 8岁</span></div></td>
+              <td>人广馆</td>
+              <td>2026-06-01</td>
+              <td><span class="level-badge">AR 4.2</span></td>
+              <td><span class="level-badge">AR 3.6</span></td>
+              <td><span class="level-up">+0.6</span></td>
+              <td>
+                <div class="score-bar-wrap">
+                  <div class="score-bar"><div class="score-bar-fill mid" style="width:75%"></div></div>
+                  <span class="score-text">75%</span>
+                </div>
+              </td>
+              <td><span class="status-badge status-completed">已完成</span></td>
+              <td><div class="action-btns"><button class="action-btn">报告</button><button class="action-btn">详情</button></div></td>
+            </tr>
+            <tr>
+              <td><div class="student-cell"><div class="student-mini-avatar sa1">A</div><span>Amy · 6岁</span></div></td>
+              <td>徐汇馆</td>
+              <td>2026-05-28</td>
+              <td><span class="level-badge">AR 2.1</span></td>
+              <td><span class="level-badge">AR 1.5</span></td>
+              <td><span class="level-up">+0.6</span></td>
+              <td>
+                <div class="score-bar-wrap">
+                  <div class="score-bar"><div class="score-bar-fill high" style="width:82%"></div></div>
+                  <span class="score-text">82%</span>
+                </div>
+              </td>
+              <td><span class="status-badge status-completed">已完成</span></td>
+              <td><div class="action-btns"><button class="action-btn">报告</button><button class="action-btn">详情</button></div></td>
+            </tr>
+            <tr>
+              <td><div class="student-cell"><div class="student-mini-avatar sa3">K</div><span>Kevin · 9岁</span></div></td>
+              <td>人广馆</td>
+              <td>—</td>
+              <td>—</td>
+              <td><span class="level-badge">AR 4.8</span></td>
+              <td>—</td>
+              <td>—</td>
+              <td><span class="status-badge status-pending">待评估</span></td>
+              <td><div class="action-btns"><button class="action-btn">安排</button><button class="action-btn">详情</button></div></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="pagination">
+          <span class="info">共 156 条评估记录 · 显示 1–7</span>
+          <div class="pages">
+            <button class="page-btn active">1</button>
+            <button class="page-btn">2</button>
+            <button class="page-btn">3</button>
+            <button class="page-btn">…</button>
+            <button class="page-btn">23</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="admin-sidebar.js"></script>
+</body>
+</html>

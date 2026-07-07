@@ -1,0 +1,153 @@
+<!-- frontend/pages/reading-pkg/quiz-result/quiz-result.wxml -->
+<view class="page-bg flex-center result-page">
+  <view style="display:none" class="pass wrong-q wrong-review"></view>
+  <error-view wx:if="{{loadError}}" visible="{{loadError}}" icon="😵" title="加载失败" desc="数据加载出错了，请稍后重试" showRetry="{{true}}" retryText="重试" bind:onRetry="onRetry" />
+  <loading-skeleton wx:elif="{{loading}}" />
+  <block wx:if="{{!loadError && !loading}}">
+  <!-- Confetti (pass only) -->
+  <view class="confetti-container" wx:if="{{passed}}">
+    <view class="confetti-piece" wx:for="{{confettiPieces}}" wx:key="index"
+      style="left: {{item.left}}%; background: {{item.color}}; animation-delay: {{item.delay}}s; animation-duration: {{item.duration}}s; width: {{item.size}}rpx; height: {{item.size}}rpx;">
+    </view>
+  </view>
+
+  <view class="result-card">
+    <!-- Pass Icon -->
+    <view class="result-icon result-icon-pass" wx:if="{{passed}}">
+      <text class="icon-check">✓</text>
+    </view>
+    <!-- Fail Icon -->
+    <view class="result-icon result-icon-fail" wx:else>
+      <text class="icon-warning">!</text>
+    </view>
+
+    <!-- Badge -->
+    <view class="result-badge {{passed ? 'badge-pass' : 'badge-fail'}}">
+      {{passed ? '测验通过' : '未通过'}}
+    </view>
+
+    <!-- Score Circle -->
+    <view class="score-circle">
+      <view class="score-ring {{passed ? 'ring-pass' : 'ring-fail'}}">
+        <view class="score-inner">
+          <text class="score-value score-text">{{score}}</text>
+          <text class="score-unit">%</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- Result Title -->
+    <view class="result-title {{passed ? 'title-pass' : 'title-fail'}}">
+      {{passed ? '测验通过！' : '再试一次！'}}
+    </view>
+    <view class="result-sub text-secondary">
+      {{passed ? '太棒了，你对这本书理解得很好！' : '没关系，多读几遍再来挑战吧！'}}
+    </view>
+
+    <!-- Stats Row -->
+    <view class="stats-row">
+      <view class="stat-item">
+        <text class="stat-val text-primary">{{score}}</text>
+        <text class="stat-label text-secondary">本次得分</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-val text-primary">{{correct}}/{{total}}</text>
+        <text class="stat-label text-secondary">正确题数</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-val text-primary">{{wordsRead}}</text>
+        <text class="stat-label text-secondary">阅读词数</text>
+      </view>
+    </view>
+
+    <!-- Auto Actions (pass only) -->
+    <view class="auto-actions" wx:if="{{passed}}">
+      <view class="aa-title">已自动完成</view>
+      <view class="aa-item">
+        <text class="aa-check check">✓</text>
+        <text>本书已从书架归还</text>
+      </view>
+      <view class="aa-item">
+        <text class="aa-check check">✓</text>
+        <text>积分已更新</text>
+      </view>
+      <view class="aa-item">
+        <text class="aa-check check">✓</text>
+        <text>晋级检测完成</text>
+      </view>
+    </view>
+
+    <!-- Level Up Banner (pass + can advance) -->
+    <view class="level-up-banner" wx:if="{{passed && canAdvance}}">
+      <text class="lu-emoji">🏆</text>
+      <view class="lu-text text-primary text-bold">恭喜晋级！</view>
+      <view class="lu-sub text-secondary text-sm">你已达到晋级标准，继续加油！</view>
+    </view>
+
+    <!-- 鼓励文案 -->
+    <view class="encourage-box" wx:if="{{!passed}}">
+      <text wx:if="{{score < 60}}">💡 再听一遍故事，下次一定能做得更好！</text>
+      <text wx:elif="{{score < 80}}">💡 差一点点就通过了，再试试吧！</text>
+      <text wx:else>💡 就差一道题！再试一次？</text>
+    </view>
+  </view>
+
+  <!-- 错题回顾 -->
+  <view class="wrong-review-section" wx:if="{{wrongQuestions.length > 0}}">
+    <view class="wrong-toggle" bindtap="toggleWrongReview">
+      <text>📝 查看错题 ({{wrongQuestions.length}} 道)</text>
+      <text class="toggle-arrow">{{showWrongReview ? '▲' : '▼'}}</text>
+    </view>
+    <view wx:if="{{showWrongReview}}" class="wrong-list">
+      <view class="wrong-item" wx:for="{{wrongQuestions}}" wx:key="index">
+        <view class="wrong-q-num">第 {{index + 1}} 题</view>
+        <view class="wrong-q-text">{{item.question_text}}</view>
+        <view class="wrong-answers">
+          <text class="wrong-user-answer">你的答案：{{item.user_answer}}</text>
+          <text class="wrong-correct-answer">正确答案：{{item.correct_answer}}</text>
+        </view>
+        <view class="wrong-explanation" wx:if="{{item.explanation}}">
+          <text class="explain-label">解析：</text>{{item.explanation}}
+        </view>
+        <view class="wrong-a correct" wx:if="{{item.correct_answer}}">
+          <text class="correct">正确答案：{{item.correct_answer}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- Promotion Celebration Card (shown when level up) -->
+  <view class="promo-card" wx:if="{{passed && canAdvance}}">
+    <view class="promo-emoji">🎓</view>
+    <view class="promo-title">恭喜晋级！</view>
+    <view class="promo-sub text-secondary">你已成功晋级，快来查看你的晋级证书吧！</view>
+    <view class="promo-link" bindtap="viewCertificate">查看晋级证书</view>
+  </view>
+
+  <!-- Level Up Celebration Overlay -->
+  <view class="level-up-overlay" wx:if="{{showLevelUp}}">
+    <view class="level-up-card">
+      <text class="level-up-emoji">🎉</text>
+      <text class="level-up-title">恭喜晋级！</text>
+      <text class="level-up-desc">你已晋升到 {{newLevel}} 级</text>
+      <button class="btn-primary" bindtap="closeLevelUp">太棒了！</button>
+    </view>
+  </view>
+
+  <!-- Buttons -->
+  <view class="btn-group">
+    <!-- Pass buttons -->
+    <block wx:if="{{passed}}">
+      <button class="btn-primary btn-block" bindtap="viewCertificate">查看晋级证书</button>
+      <button class="btn-outline btn-block" bindtap="goBackToReader">继续阅读</button>
+      <button class="btn-outline btn-block" bindtap="goBackToShelf">返回书架</button>
+    </block>
+    <!-- Fail buttons -->
+    <block wx:else>
+      <button class="btn-primary btn-block" bindtap="retakeQuiz">重新测评</button>
+      <button class="btn-outline btn-secondary btn-block" bindtap="goBackToReader">继续阅读</button>
+      <button class="btn-outline btn-secondary btn-block" bindtap="goBackToShelf">返回书架</button>
+    </block>
+  </view>
+  </block>
+</view>

@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "learning-report.html",
+  "entry": "learning-report.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-06-04T13:34:36.533Z",
+  "updatedAt": "2026-06-04T13:34:36.533Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}

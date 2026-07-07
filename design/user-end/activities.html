@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>活动中心 · MegaWords</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.003 250);
+      --surface: oklch(100% 0 0);
+      --fg: oklch(20% 0.015 275);
+      --muted: oklch(48% 0.02 250);
+      --border: oklch(90% 0.008 250);
+      --accent: oklch(54% 0.17 275);
+      --accent-soft: oklch(54% 0.17 275 / 0.1);
+      --accent-hover: oklch(48% 0.17 275);
+      --secondary: oklch(86% 0.20 135);
+      --secondary-soft: oklch(86% 0.20 135 / 0.12);
+      --success: oklch(72% 0.20 145);
+      --success-soft: oklch(72% 0.20 145 / 0.1);
+      --error: oklch(62% 0.22 25);
+      --radius: 16px; --radius-sm: 10px; --radius-lg: 20px;
+      --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--fg); font-family: var(--font-body);
+      font-size: 15px; line-height: 1.5; max-width: 430px; margin: 0 auto;
+      min-height: 100vh; padding-bottom: 80px; -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; }
+    .nav-bar {
+      display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 10;
+    }
+    .nav-bar .back { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 10px; }
+    .nav-bar .back svg { width: 20px; height: 20px; }
+    .nav-bar .title { font-family: var(--font-display); font-size: 17px; font-weight: 600; }
+    /* tabs */
+    .tabs {
+      display: flex; background: var(--surface); border-bottom: 1px solid var(--border);
+      position: sticky; top: 49px; z-index: 9;
+    }
+    .tab {
+      flex: 1; padding: 12px; text-align: center; font-size: 14px; font-weight: 500;
+      color: var(--muted); position: relative; transition: color 0.15s ease;
+    }
+    .tab.active { color: var(--accent); font-weight: 600; }
+    .tab.active::after {
+      content: ''; position: absolute; bottom: 0; left: 20%; right: 20%;
+      height: 2px; background: var(--accent); border-radius: 1px;
+    }
+    /* activity list */
+    .activity-list { padding: 12px 16px; }
+    .activity-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 12px;
+    }
+    .activity-banner {
+      height: 140px; position: relative;
+      display: grid; place-items: center;
+    }
+    .activity-card:nth-child(1) .activity-banner {
+      background: linear-gradient(135deg, oklch(54% 0.17 275 / 0.12), oklch(86% 0.20 135 / 0.1));
+    }
+    .activity-card:nth-child(2) .activity-banner {
+      background: linear-gradient(135deg, oklch(72% 0.20 145 / 0.1), oklch(54% 0.17 275 / 0.08));
+    }
+    .activity-card:nth-child(3) .activity-banner {
+      background: linear-gradient(135deg, oklch(78% 0.16 85 / 0.12), oklch(54% 0.17 275 / 0.08));
+    }
+    .activity-banner-text {
+      font-family: var(--font-display); font-size: 20px; font-weight: 700; color: var(--accent);
+      text-align: center; padding: 16px;
+    }
+    .activity-body { padding: 14px 16px; }
+    .activity-title {
+      font-family: var(--font-display); font-size: 16px; font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .activity-meta {
+      display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 10px;
+      font-size: 12px; color: var(--muted);
+    }
+    .activity-meta span { display: flex; align-items: center; gap: 4px; }
+    .activity-meta svg { width: 14px; height: 14px; }
+    .activity-footer {
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .activity-status {
+      padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 600;
+    }
+    .status-open { background: var(--success-soft); color: var(--success); }
+    .status-full { background: oklch(62% 0.22 25 / 0.08); color: var(--error); }
+    .status-past { background: oklch(48% 0.02 250 / 0.1); color: var(--muted); }
+    .enroll-btn {
+      padding: 7px 16px; border-radius: 999px;
+      background: var(--accent); color: white; font-size: 13px; font-weight: 600;
+      transition: transform 0.1s ease;
+    }
+    .enroll-btn:active { transform: scale(0.96); }
+    .enroll-btn.disabled { opacity: 0.4; pointer-events: none; }
+    .enroll-btn.cancel-btn {
+      background: var(--surface); color: var(--muted);
+      border: 1px solid var(--border);
+    }
+    .enroll-btn.cancel-btn:hover { border-color: var(--error); color: var(--error); }
+    /* registration status badges */
+    .reg-status {
+      padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 600;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .reg-enrolled { background: var(--accent-soft); color: var(--accent); }
+    .reg-pending { background: var(--secondary-soft); color: oklch(50% 0.18 135); }
+    .reg-checked { background: var(--success-soft); color: var(--success); }
+    /* QR code placeholder */
+    .qr-section {
+      margin-top: 12px; padding: 14px; border-radius: var(--radius-sm);
+      background: var(--bg); border: 1px dashed var(--border);
+      text-align: center;
+    }
+    .qr-placeholder {
+      width: 120px; height: 120px; margin: 0 auto 8px;
+      border-radius: var(--radius-sm);
+      background: repeating-conic-gradient(
+        oklch(20% 0.015 275) 0% 25%, var(--surface) 0% 50%
+      ) 50% / 12px 12px;
+      display: grid; place-items: center;
+      border: 2px solid oklch(20% 0.015 275);
+      position: relative;
+    }
+    .qr-placeholder::after {
+      content: '📷'; font-size: 24px;
+      background: var(--surface); padding: 6px; border-radius: 4px;
+    }
+    .qr-hint { font-size: 12px; color: var(--muted); }
+    .past-list { padding: 12px 16px; display: none; }
+    .past-list.active { display: block; }
+    .upcoming-list.active { display: block; }
+    /* bottom nav */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 430px;
+      background: color-mix(in oklch, var(--surface) 92%, transparent);
+      backdrop-filter: blur(12px); border-top: 1px solid var(--border);
+      display: flex; padding: 6px 0 env(safe-area-inset-bottom, 8px); z-index: 30;
+    }
+    .nav-item {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      padding: 6px 0 2px; color: var(--muted); font-size: 10px; transition: color 0.15s ease;
+    }
+    .nav-item svg { width: 24px; height: 24px; margin-bottom: 2px; }
+    .nav-item.active { color: var(--accent); }
+    @media (min-width: 768px) { body { max-width: 430px; border-left: 1px solid var(--border); border-right: 1px solid var(--border); } }
+    @media (min-width: 1024px) { body { max-width: 430px; margin: 0 auto; box-shadow: 0 0 40px oklch(20% 0.015 275 / 0.06); } }
+  </style>
+</head>
+<body>
+  <div class="nav-bar">
+    <a class="back" href="home.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg></a>
+    <span class="title">活动中心</span>
+  </div>
+
+  <div class="tabs" data-od-id="tabs">
+    <button class="tab active" onclick="switchTab('upcoming')">即将举办</button>
+    <button class="tab" onclick="switchTab('past')">往期回顾</button>
+  </div>
+
+  <div class="activity-list upcoming-list active" id="upcoming" data-od-id="upcoming">
+    <div class="activity-card">
+      <div class="activity-banner">
+        <div class="activity-banner-text">英文绘本故事会</div>
+      </div>
+      <div class="activity-body">
+        <div class="activity-title">「好饿的毛毛虫」主题故事会</div>
+        <div class="activity-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>6月14日（周六）10:00</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>人广馆</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>已报名 12/15</span>
+        </div>
+        <div class="activity-footer">
+          <span class="reg-status reg-enrolled">✅ 已报名</span>
+          <button class="enroll-btn cancel-btn" onclick="cancelEnroll(this)">取消报名</button>
+        </div>
+        <div class="qr-section">
+          <div class="qr-placeholder"></div>
+          <div class="qr-hint">到场后出示此二维码签到</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="activity-card">
+      <div class="activity-banner">
+        <div class="activity-banner-text">AR 阅读挑战赛</div>
+      </div>
+      <div class="activity-body">
+        <div class="activity-title">暑期 AR 阅读 30 天挑战</div>
+        <div class="activity-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>7月1日–7月30日</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>全场馆</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>已报名 38/50</span>
+        </div>
+        <div class="activity-footer">
+          <span class="reg-status reg-pending">⏳ 待签到</span>
+          <button class="enroll-btn cancel-btn" onclick="cancelEnroll(this)">取消报名</button>
+        </div>
+        <div class="qr-section">
+          <div class="qr-placeholder"></div>
+          <div class="qr-hint">7月1日活动开始后可扫码签到</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="activity-card">
+      <div class="activity-banner" style="background: linear-gradient(135deg, oklch(72% 0.20 145 / 0.12), oklch(78% 0.16 85 / 0.1));">
+        <div class="activity-banner-text">自然拼读工作坊</div>
+      </div>
+      <div class="activity-body">
+        <div class="activity-title">Phonics Fun 自然拼读启蒙课</div>
+        <div class="activity-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>6月15日（周日）14:00</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>静安馆</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>已报名 8/12</span>
+        </div>
+        <div class="activity-footer">
+          <span class="reg-status reg-checked">✅ 已签到</span>
+          <span style="font-size: 12px; color: var(--success);">今日 14:05 完成签到</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="activity-list past-list" id="past" data-od-id="past">
+    <div class="activity-card">
+      <div class="activity-banner">
+        <div class="activity-banner-text">母亲节特别活动</div>
+      </div>
+      <div class="activity-body">
+        <div class="activity-title">「Love You Forever」母亲节亲子阅读</div>
+        <div class="activity-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>5月11日（周日）</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>人广馆</span>
+        </div>
+        <div class="activity-footer">
+          <span class="activity-status status-past">已结束</span>
+          <button class="enroll-btn disabled">已结束</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <a class="nav-item" href="home.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+      首页
+    </a>
+    <a class="nav-item" href="books.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+      图书
+    </a>
+    <a class="nav-item active" href="activities.html">
+      <svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      活动
+    </a>
+    <a class="nav-item" href="member.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      会员
+    </a>
+  </nav>
+
+  <script>
+    function switchTab(tab) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.getElementById('upcoming').classList.toggle('active', tab === 'upcoming');
+      document.getElementById('past').classList.toggle('active', tab === 'past');
+      event.target.classList.add('active');
+    }
+    function cancelEnroll(btn) {
+      if (confirm('确定要取消报名吗？')) {
+        const card = btn.closest('.activity-card');
+        const footer = card.querySelector('.activity-footer');
+        const qrSection = card.querySelector('.qr-section');
+        footer.innerHTML = '<span class="activity-status status-open">报名中</span><button class="enroll-btn" onclick="alert(\'报名成功！\')">立即报名</button>';
+        if (qrSection) qrSection.remove();
+      }
+    }
+  </script>
+</body>
+</html>

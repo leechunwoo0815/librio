@@ -1,0 +1,126 @@
+{% extends "admin/base.html" %}
+{% block title %}押金管理{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="/static/admin/css/pages/deposit.css" />
+{% endblock %}
+{% block page_title %}押金管理{% endblock %}
+{% block content %}
+<!-- Stats -->
+<div class="stats-grid">
+  <div class="stat-card"><div class="stat-label">总押金</div><div class="stat-value" id="statTotal">--</div></div>
+  <div class="stat-card"><div class="stat-label">待退</div><div class="stat-value" id="statRefunding">--</div></div>
+  <div class="stat-card"><div class="stat-label">已扣除</div><div class="stat-value" id="statDeducted">--</div></div>
+  <div class="stat-card"><div class="stat-label">未结罚款</div><div class="stat-value" id="statFine" style="color:var(--error);">--</div></div>
+</div>
+
+<!-- Filter Tabs -->
+<div class="tabs">
+  <div class="tab active" onclick="filterTab(this,'')">全部</div>
+  <div class="tab" onclick="filterTab(this,'PAID')">已缴纳</div>
+  <div class="tab" onclick="filterTab(this,'REFUNDING')">退款中</div>
+  <div class="tab" onclick="filterTab(this,'REFUNDED')">已退</div>
+  <div class="tab" onclick="filterTab(this,'DEDUCTED')">已扣</div>
+</div>
+
+<!-- Table -->
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>孩子</th><th>押金状态</th><th>余额</th><th>罚款</th><th>缴纳日期</th><th>操作</th></tr></thead>
+    <tbody id="depositBody">
+      <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted);">加载中...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="pagination" id="pagination"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  var allDeposits = [];
+  var currentFilter = '';
+
+  document.addEventListener('DOMContentLoaded', function() { loadDeposits(); });
+
+  async function loadDeposits() {
+    try {
+      var data = await api.get('/admin/api/deposits');
+      allDeposits = data.items || data || [];
+      updateStats(allDeposits);
+      renderDeposits(allDeposits);
+    } catch (err) {
+      document.getElementById('depositBody').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--error);">加载失败</td></tr>';
+    }
+  }
+
+  function updateStats(items) {
+    var total = 0, refunding = 0, deducted = 0, fine = 0;
+    items.forEach(function(d) {
+      var amt = Number(d.amount || 0);
+      if (d.status === 'PAID' || d.status === 'paid') total += amt;
+      if (d.status === 'REFUNDING' || d.status === 'refunding') refunding += amt;
+      if (d.status === 'DEDUCTED' || d.status === 'deducted') deducted += amt;
+      if (d.fine_amount) fine += Number(d.fine_amount);
+    });
+    document.getElementById('statTotal').textContent = formatMoney(total);
+    document.getElementById('statRefunding').textContent = formatMoney(refunding);
+    document.getElementById('statDeducted').textContent = formatMoney(deducted);
+    document.getElementById('statFine').textContent = formatMoney(fine);
+  }
+
+  function filterTab(btn, status) {
+    currentFilter = status;
+    document.querySelectorAll('.tabs .tab').forEach(function(t) { t.classList.remove('active'); });
+    btn.classList.add('active');
+    var filtered = status ? allDeposits.filter(function(d) { return d.status === status || d.status === status.toLowerCase(); }) : allDeposits;
+    renderDeposits(filtered);
+  }
+
+  function renderDeposits(items) {
+    if (!items.length) {
+      document.getElementById('depositBody').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted);">暂无押金记录</td></tr>';
+      return;
+    }
+    var statusMap = {
+      PAID: { cls: 'status-paid', text: '已缴纳' },
+      UNPAID: { cls: 'status-pending', text: '未缴纳' },
+      REFUNDING: { cls: 'status-refunding', text: '退款中' },
+      REFUNDED: { cls: 'status-returned', text: '已退' },
+      DEDUCTED: { cls: 'status-deducted', text: '已扣' },
+    };
+    document.getElementById('depositBody').innerHTML = items.map(function(d) {
+      var s = statusMap[(d.status||'').toUpperCase()] || { cls: '', text: d.status };
+      var actions = '';
+      if ((d.status||'').toUpperCase() === 'PAID') actions = '<span class="action-link" onclick="submitRefund(' + d.child_id + ')">退款</span>';
+      else if ((d.status||'').toUpperCase() === 'REFUNDING') actions = '<span class="action-link" onclick="submitRefund(' + d.child_id + ')">审核</span>';
+      else actions = '<span class="action-link" style="color:var(--muted);">--</span>';
+      return '<tr>' +
+        '<td>' + escapeHtml(d.child_name || d.child_id || '--') + '</td>' +
+        '<td><span class="status-badge ' + s.cls + '">' + s.text + '</span></td>' +
+        '<td class="amount">' + formatMoney(d.amount) + '</td>' +
+        '<td class="amount" style="color:' + (d.fine_amount ? 'var(--error)' : 'var(--muted)') + '">' + formatMoney(d.fine_amount || 0) + '</td>' +
+        '<td style="font-family:var(--font-mono)">' + formatDateTime(d.create_time) + '</td>' +
+        '<td>' + actions + '</td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  async function submitRefund(childId) {
+    if (!confirm('确认审核退款孩子 ' + childId + '？')) return;
+    try {
+      await api.post('/admin/api/deposits/refund', { child_id: childId });
+      showToast('退款审核成功');
+      loadDeposits();
+    } catch (e) {
+      showToast('退款失败: ' + e.message, 'error');
+    }
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    var div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+</script>
+{% endblock %}

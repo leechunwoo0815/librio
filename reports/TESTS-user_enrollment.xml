@@ -1,0 +1,1269 @@
+<testsuite name="user_enrollment.用户报名流程" tests="9" errors="7" failures="0" skipped="0" time="0.114598" timestamp="2026-06-15T16:08:35.657873" hostname="litianyudeMacBook-Air.local"><testcase classname="user_enrollment.用户报名流程" name="家长为孩子报名99元亲子课程 -- @1.1 " status="error" time="0.015871"><error type="AttributeError" message="type object 'OrderType' has no attribute 'OFFICIAL_MEMBER'">
+<![CDATA[
+Failing step: 当 用户点击"立即支付99元"按钮 ... error in 0.014s
+Location: features/user_enrollment.feature:20
+Traceback (most recent call last):
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/behave/model.py", line 1991, in run
+    match.run(runner.context)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/behave/matchers.py", line 105, in run
+    self.func(context, *args, **kwargs)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "features/steps/user_enrollment_steps.py", line 61, in step_click_pay_99
+    context.response = context.client.post(
+                       ~~~~~~~~~~~~~~~~~~~^
+        "/order/",
+        ^^^^^^^^^^
+        json={"child_id": context.child_id, "type": Order.TYPE_PARENT_COURSE, "amount": 99.00},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        headers=context.headers,
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/testclient.py", line 560, in post
+    return super().post(
+           ~~~~~~~~~~~~^
+        url,
+        ^^^^
+    ...<10 lines>...
+        extensions=extensions,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/httpx/_client.py", line 1144, in post
+    return self.request(
+           ~~~~~~~~~~~~^
+        "POST",
+        ^^^^^^^
+    ...<11 lines>...
+        extensions=extensions,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/testclient.py", line 459, in request
+    return super().request(
+           ~~~~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<11 lines>...
+        extensions=extensions,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/httpx/_client.py", line 825, in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/httpx/_client.py", line 914, in send
+    response = self._send_handling_auth(
+        request,
+    ...<2 lines>...
+        history=[],
+    )
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/httpx/_client.py", line 942, in _send_handling_auth
+    response = self._send_handling_redirects(
+        request,
+        follow_redirects=follow_redirects,
+        history=history,
+    )
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/httpx/_client.py", line 979, in _send_handling_redirects
+    response = self._send_single_request(request)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/httpx/_client.py", line 1014, in _send_single_request
+    response = transport.handle_request(request)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/testclient.py", line 362, in handle_request
+    raise exc
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/testclient.py", line 359, in handle_request
+    portal.call(self.app, scope, receive, send)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/anyio/from_thread.py", line 334, in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.13/3.13.2/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py", line 456, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.13/3.13.2/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/anyio/from_thread.py", line 259, in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/fastapi/applications.py", line 1159, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/applications.py", line 90, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 88, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ~~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.13/3.13.2/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/_utils.py", line 87, in collapse_excgroups
+    raise exc
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/features/../backend/main.py", line 74, in add_trace_id
+    return await trace_middleware(request, call_next)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/features/../backend/middleware/trace.py", line 24, in trace_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/routing.py", line 680, in app
+    await route.handle(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/routing.py", line 276, in handle
+    await self.app(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/fastapi/routing.py", line 134, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/fastapi/routing.py", line 120, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/fastapi/routing.py", line 674, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/fastapi/routing.py", line 328, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/features/../backend/domain/order/router.py", line 24, in create_order
+    return order_service.create_order(current_user.id, order_data)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/features/../backend/domain/order/service.py", line 50, in create_order
+    final_amount = self._apply_discount(user_id, order_data.type, order_data.amount)
+  File "/Users/litianyu/cc-projects/librio/features/../backend/domain/order/service.py", line 67, in _apply_discount
+    if order_type not in (OrderType.OBSERVATION, OrderType.OFFICIAL_MEMBER):
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'OrderType' has no attribute 'OFFICIAL_MEMBER'
+]]>
+</error><system-out>
+<![CDATA[
+@scenario.begin
+  场景大纲: 家长为孩子报名99元亲子课程 -- @1.1 
+    假如 用户已登录小程序 ... passed in 0.002s
+    并且 用户位于首页 ... passed in 0.000s
+    假如 用户选择场馆为"人广馆" ... passed in 0.000s
+    并且 用户选择上课时间为"2026-06-07 周六 10:00-11:15" ... passed in 0.000s
+    并且 用户填写家长姓名为"张三" ... passed in 0.000s
+    并且 用户填写手机号为"13800138000" ... passed in 0.000s
+    并且 用户填写孩子姓名为"小明" ... passed in 0.000s
+    并且 用户填写孩子年龄为7 ... passed in 0.000s
+    并且 用户选择孩子年级为"二年级" ... passed in 0.000s
+    当 用户点击"立即支付99元"按钮 ... error in 0.014s
+    那么 系统应调用微信支付 ... skipped in 0.000s
+    并且 支付成功后生成订单 ... skipped in 0.000s
+    并且 订单状态应为"已支付" ... skipped in 0.000s
+    并且 生成电子凭证 ... skipped in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="user_enrollment.用户报名流程" name="家长为孩子报名99元亲子课程 -- @1.2 " status="error" time="0.014822"><error type="AttributeError" message="type object 'OrderType' has no attribute 'OFFICIAL_MEMBER'">
+<![CDATA[
+Failing step: 当 用户点击"立即支付99元"按钮 ... error in 0.013s
+Location: features/user_enrollment.feature:20
+Traceback (most recent call last):
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/behave/model.py", line 1991, in run
+    match.run(runner.context)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/behave/matchers.py", line 105, in run
+    self.func(context, *args, **kwargs)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "features/steps/user_enrollment_steps.py", line 61, in step_click_pay_99
+    context.response = context.client.post(
+                       ~~~~~~~~~~~~~~~~~~~^
+        "/order/",
+        ^^^^^^^^^^
+        json={"child_id": context.child_id, "type": Order.TYPE_PARENT_COURSE, "amount": 99.00},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        headers=context.headers,
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/testclient.py", line 560, in post
+    return super().post(
+           ~~~~~~~~~~~~^
+        url,
+        ^^^^
+    ...<10 lines>...
+        extensions=extensions,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/httpx/_client.py", line 1144, in post
+    return self.request(
+           ~~~~~~~~~~~~^
+        "POST",
+        ^^^^^^^
+    ...<11 lines>...
+        extensions=extensions,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/testclient.py", line 459, in request
+    return super().request(
+           ~~~~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<11 lines>...
+        extensions=extensions,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/httpx/_client.py", line 825, in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/httpx/_client.py", line 914, in send
+    response = self._send_handling_auth(
+        request,
+    ...<2 lines>...
+        history=[],
+    )
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/httpx/_client.py", line 942, in _send_handling_auth
+    response = self._send_handling_redirects(
+        request,
+        follow_redirects=follow_redirects,
+        history=history,
+    )
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/httpx/_client.py", line 979, in _send_handling_redirects
+    response = self._send_single_request(request)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/httpx/_client.py", line 1014, in _send_single_request
+    response = transport.handle_request(request)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/testclient.py", line 362, in handle_request
+    raise exc
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/testclient.py", line 359, in handle_request
+    portal.call(self.app, scope, receive, send)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/anyio/from_thread.py", line 334, in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.13/3.13.2/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py", line 456, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.13/3.13.2/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/anyio/from_thread.py", line 259, in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/fastapi/applications.py", line 1159, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/applications.py", line 90, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 88, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ~~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.13/3.13.2/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/_utils.py", line 87, in collapse_excgroups
+    raise exc
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/features/../backend/main.py", line 74, in add_trace_id
+    return await trace_middleware(request, call_next)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/features/../backend/middleware/trace.py", line 24, in trace_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/routing.py", line 680, in app
+    await route.handle(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/routing.py", line 276, in handle
+    await self.app(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/fastapi/routing.py", line 134, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/fastapi/routing.py", line 120, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/fastapi/routing.py", line 674, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/fastapi/routing.py", line 328, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/features/../backend/domain/order/router.py", line 24, in create_order
+    return order_service.create_order(current_user.id, order_data)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/features/../backend/domain/order/service.py", line 50, in create_order
+    final_amount = self._apply_discount(user_id, order_data.type, order_data.amount)
+  File "/Users/litianyu/cc-projects/librio/features/../backend/domain/order/service.py", line 67, in _apply_discount
+    if order_type not in (OrderType.OBSERVATION, OrderType.OFFICIAL_MEMBER):
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'OrderType' has no attribute 'OFFICIAL_MEMBER'
+]]>
+</error><system-out>
+<![CDATA[
+@scenario.begin
+  场景大纲: 家长为孩子报名99元亲子课程 -- @1.2 
+    假如 用户已登录小程序 ... passed in 0.002s
+    并且 用户位于首页 ... passed in 0.000s
+    假如 用户选择场馆为"徐汇馆" ... passed in 0.000s
+    并且 用户选择上课时间为"2026-06-08 周日 14:00-15:15" ... passed in 0.000s
+    并且 用户填写家长姓名为"李四" ... passed in 0.000s
+    并且 用户填写手机号为"13900139000" ... passed in 0.000s
+    并且 用户填写孩子姓名为"小红" ... passed in 0.000s
+    并且 用户填写孩子年龄为5 ... passed in 0.000s
+    并且 用户选择孩子年级为"幼儿园大班" ... passed in 0.000s
+    当 用户点击"立即支付99元"按钮 ... error in 0.013s
+    那么 系统应调用微信支付 ... skipped in 0.000s
+    并且 支付成功后生成订单 ... skipped in 0.000s
+    并且 订单状态应为"已支付" ... skipped in 0.000s
+    并且 生成电子凭证 ... skipped in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="user_enrollment.用户报名流程" name="亲子课程报名表单验证失败" status="error" time="0.01398"><error type="AttributeError" message="type object 'OrderType' has no attribute 'OFFICIAL_MEMBER'">
+<![CDATA[
+Failing step: 当 用户点击"立即支付99元"按钮 ... error in 0.012s
+Location: features/user_enrollment.feature:33
+Traceback (most recent call last):
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/behave/model.py", line 1991, in run
+    match.run(runner.context)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/behave/matchers.py", line 105, in run
+    self.func(context, *args, **kwargs)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "features/steps/user_enrollment_steps.py", line 61, in step_click_pay_99
+    context.response = context.client.post(
+                       ~~~~~~~~~~~~~~~~~~~^
+        "/order/",
+        ^^^^^^^^^^
+        json={"child_id": context.child_id, "type": Order.TYPE_PARENT_COURSE, "amount": 99.00},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        headers=context.headers,
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/testclient.py", line 560, in post
+    return super().post(
+           ~~~~~~~~~~~~^
+        url,
+        ^^^^
+    ...<10 lines>...
+        extensions=extensions,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/httpx/_client.py", line 1144, in post
+    return self.request(
+           ~~~~~~~~~~~~^
+        "POST",
+        ^^^^^^^
+    ...<11 lines>...
+        extensions=extensions,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/testclient.py", line 459, in request
+    return super().request(
+           ~~~~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<11 lines>...
+        extensions=extensions,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/httpx/_client.py", line 825, in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/httpx/_client.py", line 914, in send
+    response = self._send_handling_auth(
+        request,
+    ...<2 lines>...
+        history=[],
+    )
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/httpx/_client.py", line 942, in _send_handling_auth
+    response = self._send_handling_redirects(
+        request,
+        follow_redirects=follow_redirects,
+        history=history,
+    )
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/httpx/_client.py", line 979, in _send_handling_redirects
+    response = self._send_single_request(request)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/httpx/_client.py", line 1014, in _send_single_request
+    response = transport.handle_request(request)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/testclient.py", line 362, in handle_request
+    raise exc
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/testclient.py", line 359, in handle_request
+    portal.call(self.app, scope, receive, send)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/anyio/from_thread.py", line 334, in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.13/3.13.2/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py", line 456, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.13/3.13.2/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/anyio/from_thread.py", line 259, in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/fastapi/applications.py", line 1159, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/applications.py", line 90, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 88, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ~~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.13/3.13.2/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/_utils.py", line 87, in collapse_excgroups
+    raise exc
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/features/../backend/main.py", line 74, in add_trace_id
+    return await trace_middleware(request, call_next)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/features/../backend/middleware/trace.py", line 24, in trace_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/routing.py", line 680, in app
+    await route.handle(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/routing.py", line 276, in handle
+    await self.app(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/fastapi/routing.py", line 134, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/fastapi/routing.py", line 120, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/fastapi/routing.py", line 674, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/fastapi/routing.py", line 328, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/features/../backend/domain/order/router.py", line 24, in create_order
+    return order_service.create_order(current_user.id, order_data)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/features/../backend/domain/order/service.py", line 50, in create_order
+    final_amount = self._apply_discount(user_id, order_data.type, order_data.amount)
+  File "/Users/litianyu/cc-projects/librio/features/../backend/domain/order/service.py", line 67, in _apply_discount
+    if order_type not in (OrderType.OBSERVATION, OrderType.OFFICIAL_MEMBER):
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'OrderType' has no attribute 'OFFICIAL_MEMBER'
+]]>
+</error><system-out>
+<![CDATA[
+@scenario.begin
+  场景: 亲子课程报名表单验证失败
+    假如 用户已登录小程序 ... passed in 0.002s
+    并且 用户位于首页 ... passed in 0.000s
+    假如 用户未填写家长姓名 ... passed in 0.000s
+    当 用户点击"立即支付99元"按钮 ... error in 0.012s
+    那么 支付按钮应置灰 ... skipped in 0.000s
+    并且 显示提示"请填写完整信息" ... skipped in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="user_enrollment.用户报名流程" name="亲子课程名额已满" status="error" time="0.017565"><error type="AttributeError" message="type object 'OrderType' has no attribute 'OFFICIAL_MEMBER'">
+<![CDATA[
+Failing step: 当 用户点击"立即支付99元"按钮 ... error in 0.016s
+Location: features/user_enrollment.feature:39
+Traceback (most recent call last):
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/behave/model.py", line 1991, in run
+    match.run(runner.context)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/behave/matchers.py", line 105, in run
+    self.func(context, *args, **kwargs)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "features/steps/user_enrollment_steps.py", line 61, in step_click_pay_99
+    context.response = context.client.post(
+                       ~~~~~~~~~~~~~~~~~~~^
+        "/order/",
+        ^^^^^^^^^^
+        json={"child_id": context.child_id, "type": Order.TYPE_PARENT_COURSE, "amount": 99.00},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        headers=context.headers,
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/testclient.py", line 560, in post
+    return super().post(
+           ~~~~~~~~~~~~^
+        url,
+        ^^^^
+    ...<10 lines>...
+        extensions=extensions,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/httpx/_client.py", line 1144, in post
+    return self.request(
+           ~~~~~~~~~~~~^
+        "POST",
+        ^^^^^^^
+    ...<11 lines>...
+        extensions=extensions,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/testclient.py", line 459, in request
+    return super().request(
+           ~~~~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<11 lines>...
+        extensions=extensions,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/httpx/_client.py", line 825, in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/httpx/_client.py", line 914, in send
+    response = self._send_handling_auth(
+        request,
+    ...<2 lines>...
+        history=[],
+    )
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/httpx/_client.py", line 942, in _send_handling_auth
+    response = self._send_handling_redirects(
+        request,
+        follow_redirects=follow_redirects,
+        history=history,
+    )
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/httpx/_client.py", line 979, in _send_handling_redirects
+    response = self._send_single_request(request)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/httpx/_client.py", line 1014, in _send_single_request
+    response = transport.handle_request(request)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/testclient.py", line 362, in handle_request
+    raise exc
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/testclient.py", line 359, in handle_request
+    portal.call(self.app, scope, receive, send)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/anyio/from_thread.py", line 334, in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.13/3.13.2/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py", line 456, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.13/3.13.2/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/anyio/from_thread.py", line 259, in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/fastapi/applications.py", line 1159, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/applications.py", line 90, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 88, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ~~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.13/3.13.2/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/_utils.py", line 87, in collapse_excgroups
+    raise exc
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/features/../backend/main.py", line 74, in add_trace_id
+    return await trace_middleware(request, call_next)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/features/../backend/middleware/trace.py", line 24, in trace_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/routing.py", line 680, in app
+    await route.handle(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/routing.py", line 276, in handle
+    await self.app(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/fastapi/routing.py", line 134, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/fastapi/routing.py", line 120, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/fastapi/routing.py", line 674, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/fastapi/routing.py", line 328, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/features/../backend/domain/order/router.py", line 24, in create_order
+    return order_service.create_order(current_user.id, order_data)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/features/../backend/domain/order/service.py", line 50, in create_order
+    final_amount = self._apply_discount(user_id, order_data.type, order_data.amount)
+  File "/Users/litianyu/cc-projects/librio/features/../backend/domain/order/service.py", line 67, in _apply_discount
+    if order_type not in (OrderType.OBSERVATION, OrderType.OFFICIAL_MEMBER):
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'OrderType' has no attribute 'OFFICIAL_MEMBER'
+]]>
+</error><system-out>
+<![CDATA[
+@scenario.begin
+  场景: 亲子课程名额已满
+    假如 用户已登录小程序 ... passed in 0.002s
+    并且 用户位于首页 ... passed in 0.000s
+    假如 用户选择的上课时间段名额已满 ... passed in 0.000s
+    当 用户点击"立即支付99元"按钮 ... error in 0.016s
+    那么 显示提示"该时间段名额已满，请选择其他时间" ... skipped in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="user_enrollment.用户报名流程" name="家长为孩子报名500元观察期" status="error" time="0.01222"><error type="AttributeError" message="type object 'OrderType' has no attribute 'OFFICIAL_MEMBER'">
+<![CDATA[
+Failing step: 当 用户点击"立即支付500元"按钮 ... error in 0.008s
+Location: features/user_enrollment.feature:46
+Traceback (most recent call last):
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/behave/model.py", line 1991, in run
+    match.run(runner.context)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/behave/matchers.py", line 105, in run
+    self.func(context, *args, **kwargs)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "features/steps/user_enrollment_steps.py", line 145, in step_click_pay_500
+    context.response = context.client.post(
+                       ~~~~~~~~~~~~~~~~~~~^
+        "/order/",
+        ^^^^^^^^^^
+        json={"child_id": context.child.id, "type": Order.TYPE_OBSERVATION, "amount": 500.00},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        headers=context.headers,
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/testclient.py", line 560, in post
+    return super().post(
+           ~~~~~~~~~~~~^
+        url,
+        ^^^^
+    ...<10 lines>...
+        extensions=extensions,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/httpx/_client.py", line 1144, in post
+    return self.request(
+           ~~~~~~~~~~~~^
+        "POST",
+        ^^^^^^^
+    ...<11 lines>...
+        extensions=extensions,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/testclient.py", line 459, in request
+    return super().request(
+           ~~~~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<11 lines>...
+        extensions=extensions,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/httpx/_client.py", line 825, in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/httpx/_client.py", line 914, in send
+    response = self._send_handling_auth(
+        request,
+    ...<2 lines>...
+        history=[],
+    )
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/httpx/_client.py", line 942, in _send_handling_auth
+    response = self._send_handling_redirects(
+        request,
+        follow_redirects=follow_redirects,
+        history=history,
+    )
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/httpx/_client.py", line 979, in _send_handling_redirects
+    response = self._send_single_request(request)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/httpx/_client.py", line 1014, in _send_single_request
+    response = transport.handle_request(request)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/testclient.py", line 362, in handle_request
+    raise exc
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/testclient.py", line 359, in handle_request
+    portal.call(self.app, scope, receive, send)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/anyio/from_thread.py", line 334, in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.13/3.13.2/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py", line 456, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.13/3.13.2/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/anyio/from_thread.py", line 259, in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/fastapi/applications.py", line 1159, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/applications.py", line 90, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 88, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ~~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.13/3.13.2/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/_utils.py", line 87, in collapse_excgroups
+    raise exc
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/features/../backend/main.py", line 74, in add_trace_id
+    return await trace_middleware(request, call_next)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/features/../backend/middleware/trace.py", line 24, in trace_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/routing.py", line 680, in app
+    await route.handle(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/routing.py", line 276, in handle
+    await self.app(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/fastapi/routing.py", line 134, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/fastapi/routing.py", line 120, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/fastapi/routing.py", line 674, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/fastapi/routing.py", line 328, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/features/../backend/domain/order/router.py", line 24, in create_order
+    return order_service.create_order(current_user.id, order_data)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/features/../backend/domain/order/service.py", line 50, in create_order
+    final_amount = self._apply_discount(user_id, order_data.type, order_data.amount)
+  File "/Users/litianyu/cc-projects/librio/features/../backend/domain/order/service.py", line 67, in _apply_discount
+    if order_type not in (OrderType.OBSERVATION, OrderType.OFFICIAL_MEMBER):
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'OrderType' has no attribute 'OFFICIAL_MEMBER'
+]]>
+</error><system-out>
+<![CDATA[
+@scenario.begin
+  场景: 家长为孩子报名500元观察期
+    假如 用户已登录小程序 ... passed in 0.002s
+    并且 用户位于首页 ... passed in 0.000s
+    假如 用户的孩子已完成亲子课程并获得测评报告 ... passed in 0.002s
+    并且 用户选择观察期开始日期为"2026-06-10" ... passed in 0.000s
+    当 用户点击"立即支付500元"按钮 ... error in 0.008s
+    那么 系统应调用微信支付 ... skipped in 0.000s
+    并且 支付成功后生成观察期订单 ... skipped in 0.000s
+    并且 自动分配一对一指导老师 ... skipped in 0.000s
+    并且 孩子状态变为"观察期会员" ... skipped in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="user_enrollment.用户报名流程" name="观察期报名前置条件不满足" status="passed" time="0.006293"><system-out>
+<![CDATA[
+@scenario.begin
+  场景: 观察期报名前置条件不满足
+    假如 用户已登录小程序 ... passed in 0.001s
+    并且 用户位于首页 ... passed in 0.000s
+    假如 用户的孩子未完成亲子课程 ... passed in 0.001s
+    当 用户尝试访问观察期报名页 ... passed in 0.004s
+    那么 显示提示"请先完成亲子课程并获得测评报告" ... passed in 0.000s
+    并且 无法进入报名页面 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="user_enrollment.用户报名流程" name="家长为孩子报名5400元正式会员" status="error" time="0.011657"><error type="AttributeError" message="type object 'OrderType' has no attribute 'OFFICIAL_MEMBER'">
+<![CDATA[
+Failing step: 当 用户点击"立即支付5400元"按钮 ... error in 0.007s
+Location: features/user_enrollment.feature:62
+Traceback (most recent call last):
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/behave/model.py", line 1991, in run
+    match.run(runner.context)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/behave/matchers.py", line 105, in run
+    self.func(context, *args, **kwargs)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "features/steps/user_enrollment_steps.py", line 224, in step_click_pay_5400
+    context.response = context.client.post(
+                       ~~~~~~~~~~~~~~~~~~~^
+        "/order/",
+        ^^^^^^^^^^
+        json={"child_id": context.child.id, "type": Order.TYPE_OFFICIAL_MEMBER, "amount": 5400.00},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        headers=context.headers,
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/testclient.py", line 560, in post
+    return super().post(
+           ~~~~~~~~~~~~^
+        url,
+        ^^^^
+    ...<10 lines>...
+        extensions=extensions,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/httpx/_client.py", line 1144, in post
+    return self.request(
+           ~~~~~~~~~~~~^
+        "POST",
+        ^^^^^^^
+    ...<11 lines>...
+        extensions=extensions,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/testclient.py", line 459, in request
+    return super().request(
+           ~~~~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<11 lines>...
+        extensions=extensions,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/httpx/_client.py", line 825, in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/httpx/_client.py", line 914, in send
+    response = self._send_handling_auth(
+        request,
+    ...<2 lines>...
+        history=[],
+    )
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/httpx/_client.py", line 942, in _send_handling_auth
+    response = self._send_handling_redirects(
+        request,
+        follow_redirects=follow_redirects,
+        history=history,
+    )
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/httpx/_client.py", line 979, in _send_handling_redirects
+    response = self._send_single_request(request)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/httpx/_client.py", line 1014, in _send_single_request
+    response = transport.handle_request(request)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/testclient.py", line 362, in handle_request
+    raise exc
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/testclient.py", line 359, in handle_request
+    portal.call(self.app, scope, receive, send)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/anyio/from_thread.py", line 334, in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.13/3.13.2/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py", line 456, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.13/3.13.2/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/anyio/from_thread.py", line 259, in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/fastapi/applications.py", line 1159, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/applications.py", line 90, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 88, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ~~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.13/3.13.2/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/_utils.py", line 87, in collapse_excgroups
+    raise exc
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/features/../backend/main.py", line 74, in add_trace_id
+    return await trace_middleware(request, call_next)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/features/../backend/middleware/trace.py", line 24, in trace_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/routing.py", line 680, in app
+    await route.handle(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/routing.py", line 276, in handle
+    await self.app(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/fastapi/routing.py", line 134, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/fastapi/routing.py", line 120, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/fastapi/routing.py", line 674, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/fastapi/routing.py", line 328, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/features/../backend/domain/order/router.py", line 24, in create_order
+    return order_service.create_order(current_user.id, order_data)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/features/../backend/domain/order/service.py", line 50, in create_order
+    final_amount = self._apply_discount(user_id, order_data.type, order_data.amount)
+  File "/Users/litianyu/cc-projects/librio/features/../backend/domain/order/service.py", line 67, in _apply_discount
+    if order_type not in (OrderType.OBSERVATION, OrderType.OFFICIAL_MEMBER):
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'OrderType' has no attribute 'OFFICIAL_MEMBER'
+]]>
+</error><system-out>
+<![CDATA[
+@scenario.begin
+  场景: 家长为孩子报名5400元正式会员
+    假如 用户已登录小程序 ... passed in 0.001s
+    并且 用户位于首页 ... passed in 0.000s
+    假如 用户的孩子观察期评估结果为"通过" ... passed in 0.003s
+    并且 用户未享受多孩优惠 ... passed in 0.000s
+    当 用户点击"立即支付5400元"按钮 ... error in 0.007s
+    那么 系统应调用微信支付 ... skipped in 0.000s
+    并且 支付成功后生成正式会员订单 ... skipped in 0.000s
+    并且 孩子状态变为"正式会员" ... skipped in 0.000s
+    并且 会员有效期为365天 ... skipped in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="user_enrollment.用户报名流程" name="正式会员报名享受多孩优惠" status="error" time="0.013752"><error type="AttributeError" message="type object 'OrderType' has no attribute 'OFFICIAL_MEMBER'">
+<![CDATA[
+Failing step: 当 用户进入正式会员报名页 ... error in 0.007s
+Location: features/user_enrollment.feature:71
+Traceback (most recent call last):
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/behave/model.py", line 1991, in run
+    match.run(runner.context)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/behave/matchers.py", line 105, in run
+    self.func(context, *args, **kwargs)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "features/steps/user_enrollment_steps.py", line 287, in step_enter_official_page
+    context.response = context.client.post(
+                       ~~~~~~~~~~~~~~~~~~~^
+        "/order/",
+        ^^^^^^^^^^
+        json={"child_id": context.child.id, "type": Order.TYPE_OFFICIAL_MEMBER, "amount": 5400.00},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        headers=context.headers,
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/testclient.py", line 560, in post
+    return super().post(
+           ~~~~~~~~~~~~^
+        url,
+        ^^^^
+    ...<10 lines>...
+        extensions=extensions,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/httpx/_client.py", line 1144, in post
+    return self.request(
+           ~~~~~~~~~~~~^
+        "POST",
+        ^^^^^^^
+    ...<11 lines>...
+        extensions=extensions,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/testclient.py", line 459, in request
+    return super().request(
+           ~~~~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<11 lines>...
+        extensions=extensions,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/httpx/_client.py", line 825, in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/httpx/_client.py", line 914, in send
+    response = self._send_handling_auth(
+        request,
+    ...<2 lines>...
+        history=[],
+    )
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/httpx/_client.py", line 942, in _send_handling_auth
+    response = self._send_handling_redirects(
+        request,
+        follow_redirects=follow_redirects,
+        history=history,
+    )
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/httpx/_client.py", line 979, in _send_handling_redirects
+    response = self._send_single_request(request)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/httpx/_client.py", line 1014, in _send_single_request
+    response = transport.handle_request(request)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/testclient.py", line 362, in handle_request
+    raise exc
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/testclient.py", line 359, in handle_request
+    portal.call(self.app, scope, receive, send)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/anyio/from_thread.py", line 334, in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.13/3.13.2/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py", line 456, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.13/3.13.2/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/anyio/from_thread.py", line 259, in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/fastapi/applications.py", line 1159, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/applications.py", line 90, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 88, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ~~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.13/3.13.2/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/_utils.py", line 87, in collapse_excgroups
+    raise exc
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/features/../backend/main.py", line 74, in add_trace_id
+    return await trace_middleware(request, call_next)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/features/../backend/middleware/trace.py", line 24, in trace_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/routing.py", line 680, in app
+    await route.handle(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/routing.py", line 276, in handle
+    await self.app(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/fastapi/routing.py", line 134, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/fastapi/routing.py", line 120, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/fastapi/routing.py", line 674, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/fastapi/routing.py", line 328, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/features/../backend/domain/order/router.py", line 24, in create_order
+    return order_service.create_order(current_user.id, order_data)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/features/../backend/domain/order/service.py", line 50, in create_order
+    final_amount = self._apply_discount(user_id, order_data.type, order_data.amount)
+  File "/Users/litianyu/cc-projects/librio/features/../backend/domain/order/service.py", line 67, in _apply_discount
+    if order_type not in (OrderType.OBSERVATION, OrderType.OFFICIAL_MEMBER):
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'OrderType' has no attribute 'OFFICIAL_MEMBER'
+]]>
+</error><system-out>
+<![CDATA[
+@scenario.begin
+  场景: 正式会员报名享受多孩优惠
+    假如 用户已登录小程序 ... passed in 0.002s
+    并且 用户位于首页 ... passed in 0.000s
+    假如 用户已有1个孩子是正式会员 ... passed in 0.004s
+    并且 用户的孩子观察期评估结果为"通过" ... passed in 0.001s
+    当 用户进入正式会员报名页 ... error in 0.007s
+    那么 价格应自动显示为4860元（9折） ... skipped in 0.000s
+    并且 显示提示"多孩优惠已应用" ... skipped in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="user_enrollment.用户报名流程" name="正式会员报名前置条件不满足" status="passed" time="0.008439"><system-out>
+<![CDATA[
+@scenario.begin
+  场景: 正式会员报名前置条件不满足
+    假如 用户已登录小程序 ... passed in 0.003s
+    并且 用户位于首页 ... passed in 0.000s
+    假如 用户的孩子观察期评估结果为"不通过" ... passed in 0.001s
+    当 用户尝试访问正式会员报名页 ... passed in 0.005s
+    那么 显示提示"观察期评估未通过，暂不能报名正式会员" ... passed in 0.000s
+    并且 无法进入报名页面 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "admin-assessments.html",
+  "entry": "admin-assessments.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-06-04T13:44:13.761Z",
+  "updatedAt": "2026-06-04T13:44:13.761Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}

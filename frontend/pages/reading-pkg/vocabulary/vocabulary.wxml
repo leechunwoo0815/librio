@@ -1,0 +1,127 @@
+<!-- frontend/pages/reading-pkg/vocabulary/vocabulary.wxml -->
+<view class="page-bg">
+
+  <error-view wx:if="{{loadError}}" visible="{{loadError}}" icon="😵" title="加载失败" desc="数据加载出错了，请稍后重试" showRetry="{{true}}" retryText="重试" bind:onRetry="onRetry" />
+  <loading-skeleton wx:elif="{{loading}}" />
+
+  <block wx:if="{{!loadError && !loading}}">
+
+  <!-- Nav Bar -->
+  <view class="nav-bar">
+    <navigator class="back" open-type="navigateBack" hover-class="none">
+      <text class="back-arrow">←</text>
+    </navigator>
+    <text class="title">生词本</text>
+    <text class="nav-subtitle">基于 ECDICT 770K 词库</text>
+    <view class="right-btn" bindtap="startReview">
+      <text class="right-btn-text">闪卡复习</text>
+    </view>
+  </view>
+
+  <!-- Stats Row -->
+  <view class="stats-row">
+    <view class="st learning">
+      <text class="st-val">{{learningCount || 0}}</text>
+      <text class="st-label">学习中</text>
+    </view>
+    <view class="st mastered">
+      <text class="st-val">{{masteredCount || 0}}</text>
+      <text class="st-label">已掌握</text>
+    </view>
+    <view class="st">
+      <text class="st-val">{{learningCount + masteredCount || 0}}</text>
+      <text class="st-label">总计</text>
+    </view>
+  </view>
+
+  <!-- Tabs -->
+  <view class="tabs">
+    <view class="tab-btn {{activeTab === 0 ? 'active' : ''}}" data-index="0" bindtap="onTabChange">
+      <text>全部</text>
+    </view>
+    <view class="tab-btn {{activeTab === 1 ? 'active' : ''}}" data-index="1" bindtap="onTabChange">
+      <text>学习中</text>
+    </view>
+    <view class="tab-btn {{activeTab === 2 ? 'active' : ''}}" data-index="2" bindtap="onTabChange">
+      <text>已掌握</text>
+    </view>
+  </view>
+
+  <!-- Sort Bar -->
+  <view class="sort-bar">
+    <text class="count">共 {{currentList.length}} 个单词</text>
+    <picker mode="selector" range="{{sortOptions}}" range-key="label" value="{{sortIndex}}" bindchange="onSortChange">
+      <text class="sort-select">{{sortOptions[sortIndex].label || '按时间'}}</text>
+    </picker>
+  </view>
+
+  <!-- Word List -->
+  <view class="word-list" wx:if="{{currentList.length > 0}}">
+    <view class="word-item" wx:for="{{currentList}}" wx:key="id" data-word="{{item.word}}" bindtap="onWordTap">
+      <view class="word-main">
+        <text class="w-word">{{item.word}}</text>
+        <text class="w-phonetic" wx:if="{{item.phonetic}}">{{item.phonetic}}</text>
+        <text class="w-def">{{item.part_of_speech || ''}} {{item.chinese_meaning}}</text>
+      </view>
+      <text class="word-tag {{item.status === 'mastered' ? 'mastered' : 'learning'}}">{{item.status === 'mastered' ? '已掌握' : '学习中'}}</text>
+      <view class="word-actions" wx:if="{{item.status === 'learning'}}" data-id="{{item.id}}" data-index="{{index}}" catchtap="onMarkMastered">
+        <view class="action-btn">
+          <text class="action-icon">🔊</text>
+        </view>
+      </view>
+      <view class="word-actions" wx:else>
+        <view class="action-btn">
+          <text class="action-icon">🔊</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- Empty State -->
+  <view class="empty-state" wx:if="{{currentList.length === 0}}">
+    <text class="emoji">{{activeTab === 2 ? '🏆' : '📖'}}</text>
+    <text class="text">{{activeTab === 2 ? '还没有已掌握的单词' : '暂无学习中的单词'}}</text>
+    <text class="text-sub" wx:if="{{activeTab !== 2}}">阅读时查词会自动加入生词本</text>
+  </view>
+
+  <!-- Flashcard Overlay -->
+  <view class="flashcard-overlay {{showFlashcard ? 'show' : ''}}" catchtap="closeReview">
+    <!-- Review Progress Bar -->
+    <view class="review-progress-bar" catchtap>
+      <view class="review-progress-track">
+        <view class="review-progress-fill" style="width: {{reviewTotal > 0 ? (reviewProgress / reviewTotal * 100) : 0}}%"></view>
+      </view>
+      <text class="review-progress-text">{{reviewProgress}} / {{reviewTotal}}</text>
+    </view>
+    <view class="flashcard" catchtap="flipCard">
+      <text class="fc-word">{{flashcard.word}}</text>
+      <text class="fc-phonetic">{{flashcard.phonetic}}</text>
+      <text class="fc-def" wx:if="{{flashcard.flipped}}">{{flashcard.def}}</text>
+      <text class="fc-hint" wx:if="{{!flashcard.flipped}}">点击翻转查看释义</text>
+      <view class="fc-actions" wx:if="{{flashcard.flipped}}">
+        <view class="fc-btn again" catchtap="reviewResult" data-result="again">
+          <text>再练一次</text>
+        </view>
+        <view class="fc-btn got" catchtap="reviewResult" data-result="got">
+          <text>已掌握</text>
+        </view>
+      </view>
+    </view>
+    <view class="fc-close" catchtap="closeReview">
+      <text class="fc-close-icon">✕</text>
+    </view>
+  </view>
+
+  <!-- Review Complete Overlay -->
+  <view class="review-complete-overlay {{showReviewComplete ? 'show' : ''}}">
+    <view class="review-complete-card">
+      <text class="review-complete-emoji">🎉</text>
+      <text class="review-complete-title">复习完成！</text>
+      <text class="review-complete-desc">你已复习完全部 {{reviewTotal}} 个单词</text>
+      <button class="review-complete-btn" bindtap="closeReviewComplete">太棒了！</button>
+    </view>
+  </view>
+
+  </block><!-- end !loadError && !loading -->
+
+</view>

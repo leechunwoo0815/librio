@@ -1,0 +1,245 @@
+<!--frontend/pages/member/member.wxml-->
+<!--Design translation from design/user-end/member.html-->
+<view class="page-bg">
+
+  <!-- Profile Header profile-header -->
+  <view class="profile-header">
+    <view class="profile-top">
+      <view class="profile-avatar">
+        <text>👧</text>
+      </view>
+      <view class="profile-info">
+        <text class="profile-name">{{child.name || userInfo.nickname || '用户'}} {{child.english_name || ''}}</text>
+        <text class="profile-level">🌱 {{child.levelName || 'A级'}}</text>
+      </view>
+      <view class="profile-settings">⚙️</view>
+    </view>
+  </view>
+
+  <!-- 会员状态卡片 member-card -->
+  <view class="member-card {{statusClass}}">
+    <view class="mc-deco"></view>
+    <view class="mc-top">
+      <text class="mc-status">{{statusText || '体验用户'}}</text>
+      <text class="mc-badge" wx:if="{{child.status === 2}}">正式会员</text>
+      <text class="mc-badge" wx:elif="{{child.status === 1}}">观察期</text>
+      <text class="mc-badge" wx:else>体验</text>
+    </view>
+    <view class="mc-countdown" wx:if="{{countdownText}}">{{countdownText}}</view>
+    <view class="mc-countdown-label" wx:if="{{countdownText}}">距离到期</view>
+    <view class="mc-expires" wx:if="{{expireText}}">到期时间：{{expireText}}</view>
+  </view>
+
+  <!-- Quick Stats quick-stats -->
+  <view class="quick-stats">
+    <view class="qs-item">
+      <text class="qs-val">{{child.total_reading_minutes || '0'}}</text>
+      <text class="qs-label">累计阅读分钟</text>
+    </view>
+    <view class="qs-item">
+      <text class="qs-val">{{child.total_words_read || '0'}}</text>
+      <text class="qs-label">累计词</text>
+    </view>
+    <view class="qs-item">
+      <text class="qs-val">{{child.total_books_finished || '0'}}</text>
+      <text class="qs-label">本书</text>
+    </view>
+    <view class="qs-item">
+      <text class="qs-val">{{child.current_streak_days || '0'}}</text>
+      <text class="qs-label">连续打卡天</text>
+    </view>
+  </view>
+
+  <!-- 身份卡片 -->
+  <view class="id-card">
+    <view class="id-top">
+      <view class="id-avatar">
+        <text class="id-avatar-icon">👤</text>
+      </view>
+      <view class="id-info">
+        <text class="id-name">{{child.name || userInfo.nickname || '用户'}} {{child.english_name || ''}}</text>
+        <text class="id-role" wx:if="{{child.status === 2}}">正式会员</text>
+        <text class="id-role" wx:elif="{{child.status === 1}}">观察期会员</text>
+        <text class="id-role" wx:else>体验用户</text>
+      </view>
+    </view>
+    <view class="id-meta">
+      <text class="id-meta-item">📅 有效期至 {{expireText || '--'}}</text>
+      <text class="id-meta-item">📚 累计阅读 {{child.total_books_finished || 0}} 本</text>
+    </view>
+  </view>
+
+  <!-- 孩子切换 -->
+  <view class="child-switch" wx:if="{{children.length > 1}}">
+    <text class="cs-label">当前孩子</text>
+    <picker mode="selector" range="{{children}}" range-key="name" bindchange="switchChild">
+      <view class="cs-picker">
+        <text>{{child.name}} · Level {{child.level || '?'}}</text>
+        <text class="cs-arrow">▼</text>
+      </view>
+    </picker>
+    <navigator url="/pages/order-pkg/child-manage/child-manage" class="cs-manage">管理</navigator>
+  </view>
+
+  <!-- 等级信息 -->
+  <view class="level-section">
+    <text class="ls-emoji">⭐</text>
+    <view class="ls-info">
+      <text class="ls-name">Level {{child.level || 1}} · {{child.levelName || '阅读新手'}}</text>
+      <text class="ls-sub">再读 {{child.booksToNext || 8}} 本晋级 Level {{(child.level || 1) + 1}}</text>
+      <view class="ls-bar">
+        <view class="ls-bar-fill" style="width: {{child.levelProgress || 60}}%"></view>
+      </view>
+    </view>
+    <navigator url="/pages/member-pkg/achievement/achievement" class="ls-link">成就</navigator>
+  </view>
+
+  <!-- 续费提醒 -->
+  <view class="alert-card warning" wx:if="{{countdownText}}">
+    <text class="alert-icon">⚠️</text>
+    <view class="alert-text">
+      <text class="alert-strong">会员即将到期</text>
+      <text> · 距离到期还有 {{countdownText}}</text>
+    </view>
+    <button class="alert-btn" bindtap="goTier" data-type="{{child.status === 1 ? 2 : 3}}">续费</button>
+  </view>
+
+  <!-- 会员方案 section-title -->
+  <view class="section-title">会员方案</view>
+  <view class="tier-grid">
+    <view class="tier-card {{item.tag === '推荐' ? 'recommended' : ''}}" wx:for="{{tiers}}" wx:key="type">
+      <text class="tier-tag" wx:if="{{item.tag}}">{{item.tag}}</text>
+      <text class="tier-name">{{item.name}}</text>
+      <view class="tier-price-row">
+        <text class="tier-price">{{item.price}}</text>
+        <text class="tier-unit">{{item.unit}}</text>
+      </view>
+      <view class="tier-features">
+        <view class="tier-feature-item" wx:for="{{item.features}}" wx:for-item="feat" wx:key="*this">
+          <text class="tier-dot">·</text>
+          <text class="tier-feat-text">{{feat}}</text>
+        </view>
+      </view>
+      <button class="btn-primary btn-block tier-btn" bindtap="goTier" data-type="{{item.type}}">
+        {{item.cta}}
+      </button>
+    </view>
+  </view>
+
+  <!-- 多孩优惠提示 -->
+  <view class="discount-note">
+    <text>👨‍👩‍👧‍👦 第 2 孩起享 9 折优惠（4860 元/年）</text>
+  </view>
+
+  <!-- 功能入口 func-grid -->
+  <view class="section-title">功能入口</view>
+  <view class="func-grid">
+    <navigator url="/pages/order-pkg/order-history/order-history" class="func-item">
+      <view class="fi-icon fi-icon-1">
+        <text class="fi-emoji">📋</text>
+      </view>
+      <text class="fi-label">📋 订单</text>
+    </navigator>
+    <navigator url="/pages/reading-pkg/vocabulary/vocabulary" class="func-item">
+      <view class="fi-icon fi-icon-2">
+        <text class="fi-emoji">📝</text>
+      </view>
+      <text class="fi-label">📝 生词本</text>
+    </navigator>
+    <navigator url="/pages/member-pkg/learning-report/learning-report" class="func-item">
+      <view class="fi-icon fi-icon-3">
+        <text class="fi-emoji">📊</text>
+      </view>
+      <text class="fi-label">📊 统计</text>
+    </navigator>
+    <navigator url="/pages/member-pkg/reading-stats/reading-stats" class="func-item">
+      <view class="fi-icon fi-icon-4">
+        <text class="fi-emoji">⏱️</text>
+      </view>
+      <text class="fi-label">⏱️ 时长</text>
+    </navigator>
+    <navigator url="/pages/member-pkg/achievement/achievement" class="func-item">
+      <view class="fi-icon fi-icon-5">
+        <text class="fi-emoji">🏆</text>
+      </view>
+      <text class="fi-label">🏆 成就</text>
+    </navigator>
+    <navigator url="/pages/member-pkg/checkin/checkin" class="func-item">
+      <view class="fi-icon fi-icon-6">
+        <text class="fi-emoji">✅</text>
+      </view>
+      <text class="fi-label">✅ 打卡</text>
+    </navigator>
+    <navigator url="/pages/order-pkg/child-manage/child-manage" class="func-item">
+      <view class="fi-icon fi-icon-7">
+        <text class="fi-emoji">👨‍👩‍👧</text>
+      </view>
+      <text class="fi-label">👨‍👩‍👧 多孩</text>
+    </navigator>
+    <navigator url="/pages/activity-pkg/activity/activity" class="func-item">
+      <view class="fi-icon fi-icon-8">
+        <text class="fi-emoji">📅</text>
+      </view>
+      <text class="fi-label">📅 预约</text>
+    </navigator>
+    <navigator url="/pages/order-pkg/refund-apply/refund-apply" class="func-item">
+      <view class="fi-icon fi-icon-9">
+        <text class="fi-emoji">💰</text>
+      </view>
+      <text class="fi-label">💰 押金</text>
+    </navigator>
+    <navigator url="/pages/order-pkg/messages/messages" class="func-item">
+      <view class="fi-icon fi-icon-10">
+        <text class="fi-emoji">🔔</text>
+      </view>
+      <text class="fi-label">🔔 消息</text>
+    </navigator>
+  </view>
+
+  <!-- 底部链接 bottom-links -->
+  <view class="bottom-links">
+    <view class="link-item" bindtap="goOrderHistory">
+      <view class="lk-left">
+        <text class="lk-icon">📋</text>
+        <text class="lk-text">订单历史</text>
+      </view>
+      <text class="lk-arrow">›</text>
+    </view>
+    <view class="link-item">
+      <view class="lk-left">
+        <text class="lk-icon">💬</text>
+        <text class="lk-text">联系客服</text>
+      </view>
+      <text class="lk-arrow">›</text>
+    </view>
+    <view class="link-item">
+      <view class="lk-left">
+        <text class="lk-icon">ℹ️</text>
+        <text class="lk-text">关于我们</text>
+      </view>
+      <text class="lk-arrow">›</text>
+    </view>
+  </view>
+
+  <!-- Bottom Nav bottom-nav -->
+  <view class="bottom-nav">
+    <navigator class="nav-item" url="/pages/index/index" open-type="switchTab">
+      <text class="nav-icon">🏠</text>
+      首页
+    </navigator>
+    <navigator class="nav-item" url="/pages/books/books" open-type="switchTab">
+      <text class="nav-icon">📚</text>
+      图书馆
+    </navigator>
+    <navigator class="nav-item" url="/pages/shelf/shelf" open-type="switchTab">
+      <text class="nav-icon">📖</text>
+      书架
+    </navigator>
+    <navigator class="nav-item active" url="/pages/member/member" open-type="switchTab">
+      <text class="nav-icon">👤</text>
+      我的
+    </navigator>
+  </view>
+
+  <view class="safe-bottom"></view>
+</view>

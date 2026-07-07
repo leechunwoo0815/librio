@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "vocabulary.html",
+  "entry": "vocabulary.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-06-04T13:34:36.527Z",
+  "updatedAt": "2026-06-04T13:34:36.527Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}

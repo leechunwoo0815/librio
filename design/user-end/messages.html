@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>消息中心 · MegaWords</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.003 250);
+      --surface: oklch(100% 0 0);
+      --fg: oklch(20% 0.015 275);
+      --muted: oklch(48% 0.02 250);
+      --border: oklch(90% 0.008 250);
+      --accent: oklch(54% 0.17 275);
+      --accent-soft: oklch(54% 0.17 275 / 0.1);
+      --accent-hover: oklch(48% 0.17 275);
+      --secondary: oklch(86% 0.20 135);
+      --success: oklch(72% 0.20 145);
+      --error: oklch(62% 0.22 25);
+      --radius: 16px; --radius-sm: 10px; --radius-lg: 20px;
+      --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--fg); font-family: var(--font-body);
+      font-size: 15px; line-height: 1.5; max-width: 430px; margin: 0 auto;
+      min-height: 100vh; -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; }
+    .nav-bar {
+      display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 10;
+    }
+    .nav-bar .back { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 10px; }
+    .nav-bar .back svg { width: 20px; height: 20px; }
+    .nav-bar .title { font-family: var(--font-display); font-size: 17px; font-weight: 600; }
+    .nav-bar .read-all {
+      margin-left: auto; font-size: 13px; color: var(--accent); font-weight: 500;
+    }
+    /* category tabs */
+    .cat-tabs {
+      display: flex; gap: 8px; padding: 12px 16px;
+      overflow-x: auto; scrollbar-width: none;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+    }
+    .cat-tabs::-webkit-scrollbar { display: none; }
+    .cat-tab {
+      padding: 7px 14px; border-radius: 999px; font-size: 13px;
+      border: 1px solid var(--border); background: var(--surface);
+      white-space: nowrap; color: var(--muted); transition: all 0.15s ease;
+      position: relative;
+    }
+    .cat-tab.active { background: var(--accent); color: white; border-color: var(--accent); }
+    .cat-tab .dot {
+      position: absolute; top: 4px; right: 4px;
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--error);
+    }
+    .cat-tab.active .dot { background: white; }
+    /* message list */
+    .msg-list { padding: 0 16px; }
+    .msg-date {
+      font-size: 12px; color: var(--muted); text-align: center;
+      padding: 14px 0 8px;
+    }
+    .msg-item {
+      display: flex; gap: 12px; padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .msg-item:last-child { border-bottom: none; }
+    .msg-icon {
+      width: 40px; height: 40px; border-radius: 12px;
+      display: grid; place-items: center; flex-shrink: 0;
+    }
+    .msg-icon svg { width: 20px; height: 20px; }
+    .msg-icon.system { background: var(--accent-soft); }
+    .msg-icon.system svg { color: var(--accent); }
+    .msg-icon.borrow { background: oklch(72% 0.20 145 / 0.1); }
+    .msg-icon.borrow svg { color: var(--success); }
+    .msg-icon.event { background: oklch(78% 0.16 85 / 0.12); }
+    .msg-icon.event svg { color: oklch(55% 0.14 85); }
+    .msg-icon.teacher { background: oklch(86% 0.20 135 / 0.12); }
+    .msg-icon.teacher svg { color: oklch(45% 0.15 135); }
+    .msg-content { flex: 1; min-width: 0; }
+    .msg-title-row { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
+    .msg-title { font-size: 14px; font-weight: 600; }
+    .msg-unread {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--error); flex-shrink: 0;
+    }
+    .msg-body { font-size: 13px; color: var(--muted); line-height: 1.4; }
+    .msg-time { font-size: 11px; color: oklch(70% 0.01 250); margin-top: 4px; }
+    .msg-item.read { opacity: 0.6; }
+    @media (min-width: 768px) { body { max-width: 430px; border-left: 1px solid var(--border); border-right: 1px solid var(--border); } }
+    @media (min-width: 1024px) { body { max-width: 430px; margin: 0 auto; box-shadow: 0 0 40px oklch(20% 0.015 275 / 0.06); } }
+  </style>
+</head>
+<body>
+  <div class="nav-bar">
+    <a class="back" href="home.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg></a>
+    <span class="title">消息中心</span>
+    <button class="read-all">全部已读</button>
+  </div>
+
+  <div class="cat-tabs" data-od-id="categories">
+    <button class="cat-tab active">全部<span class="dot"></span></button>
+    <button class="cat-tab">系统通知</button>
+    <button class="cat-tab">阅读提醒<span class="dot"></span></button>
+    <button class="cat-tab">活动通知</button>
+    <button class="cat-tab">老师消息</button>
+  </div>
+
+  <div class="msg-list" data-od-id="messages">
+    <div class="msg-date">今天</div>
+
+    <div class="msg-item">
+      <div class="msg-icon borrow">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+      </div>
+      <div class="msg-content">
+        <div class="msg-title-row">
+          <span class="msg-title">阅读提醒</span>
+          <span class="msg-unread"></span>
+        </div>
+        <div class="msg-body">《Charlotte's Web》已在您的书架中 27 天，记得继续阅读哦！完成测评后将自动移出书架。</div>
+        <div class="msg-time">10:30</div>
+      </div>
+    </div>
+
+    <div class="msg-item">
+      <div class="msg-icon teacher">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      </div>
+      <div class="msg-content">
+        <div class="msg-title-row">
+          <span class="msg-title">王老师</span>
+          <span class="msg-unread"></span>
+        </div>
+        <div class="msg-body">Lucy 这周的阅读表现非常棒！建议可以尝试 AR 3.5 级别的读物了。</div>
+        <div class="msg-time">09:15</div>
+      </div>
+    </div>
+
+    <div class="msg-date">昨天</div>
+
+    <div class="msg-item">
+      <div class="msg-icon system">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      </div>
+      <div class="msg-content">
+        <div class="msg-title-row">
+          <span class="msg-title">系统通知</span>
+          <span class="msg-unread"></span>
+        </div>
+        <div class="msg-body">您的会员将于 2027 年 3 月 15 日到期，建议提前续费以免中断阅读服务。</div>
+        <div class="msg-time">昨天 16:40</div>
+      </div>
+    </div>
+
+    <div class="msg-item read">
+      <div class="msg-icon event">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      </div>
+      <div class="msg-content">
+        <div class="msg-title-row">
+          <span class="msg-title">活动报名成功</span>
+        </div>
+        <div class="msg-body">您已成功报名「好饿的毛毛虫」主题故事会，活动时间为 6月14日 10:00。</div>
+        <div class="msg-time">昨天 14:20</div>
+      </div>
+    </div>
+
+    <div class="msg-date">6月1日</div>
+
+    <div class="msg-item read">
+      <div class="msg-icon borrow">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+      </div>
+      <div class="msg-content">
+        <div class="msg-title-row">
+          <span class="msg-title">还书成功</span>
+        </div>
+        <div class="msg-body">您已成功归还《Goodnight Moon》，感谢您的爱护。</div>
+        <div class="msg-time">6月1日 11:00</div>
+      </div>
+    </div>
+
+    <div class="msg-item read">
+      <div class="msg-icon system">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      </div>
+      <div class="msg-content">
+        <div class="msg-title-row">
+          <span class="msg-title">月度报告已生成</span>
+        </div>
+        <div class="msg-body">5 月份阅读报告已生成，Lucy 本月共阅读 22 本英文原版书。</div>
+        <div class="msg-time">6月1日 08:00</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.querySelectorAll('.cat-tab').forEach(tab => {
+      tab.addEventListener('click', function() {
+        document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>

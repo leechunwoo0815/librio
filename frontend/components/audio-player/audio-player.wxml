@@ -1,0 +1,8 @@
+<view class="audio-player">
+  <view class="audio-btn" bindtap="togglePlay">
+    <text class="audio-icon">{{playing ? '⏸' : '▶'}}</text>
+  </view>
+  <view class="audio-info">
+    <text class="audio-title">{{title}}</text>
+  </view>
+</view>

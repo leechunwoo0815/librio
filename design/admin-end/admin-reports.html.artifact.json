@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "admin-reports.html",
+  "entry": "admin-reports.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-06-09T11:56:58.068Z",
+  "updatedAt": "2026-06-09T11:56:58.068Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}

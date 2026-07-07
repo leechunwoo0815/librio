@@ -1,0 +1,105 @@
+<!-- frontend/pages/order-pkg/benefit-transfer/benefit-transfer.wxml -->
+<view class="page">
+  <view style="display:none" class="a b pass"></view>
+
+  <!-- Nav Bar -->
+  <view class="nav-bar">
+    <navigator class="back" open-type="navigateBack" delta="1">
+      <text class="back-icon">←</text>
+    </navigator>
+    <text class="title">权益转让</text>
+  </view>
+
+  <!-- Loading -->
+  <view class="loading-wrap" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+
+  <block wx:if="{{!loading}}">
+
+    <!-- Source Child (Transferor) -->
+    <view class="transfer-card">
+      <text class="transfer-heading">转让方（当前孩子）</text>
+      <view class="child-select selected" wx:if="{{sourceChild}}">
+        <view class="avatar {{sourceChild.avatarClass || 'a'}}">
+          <text wx:if="{{sourceChild.avatar}}">{{sourceChild.avatar}}</text>
+          <text wx:else>{{sourceChild.name[0]}}</text>
+        </view>
+        <view class="info">
+          <text class="name">{{sourceChild.name}}</text>
+          <text class="meta">{{sourceChild.age}} 岁 · Level {{sourceChild.level || ''}}</text>
+        </view>
+        <view class="check-circle check checked">
+          <text class="check-icon">✓</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- Arrow -->
+    <view class="arrow-section">
+      <text class="arrow-icon">↓</text>
+    </view>
+
+    <!-- Target Child (Receiver) -->
+    <view class="transfer-card">
+      <text class="transfer-heading">接收方（选择孩子）</text>
+      <view class="child-select {{targetChild && targetChild.id === item.id ? 'selected' : ''}}"
+        wx:for="{{targetOptions}}" wx:key="id"
+        data-idx="{{index}}" bindtap="onTargetChange">
+        <view class="avatar {{item.avatarClass || 'b'}}">
+          <text wx:if="{{item.avatar}}">{{item.avatar}}</text>
+          <text wx:else>{{item.name[0]}}</text>
+        </view>
+        <view class="info">
+          <text class="name">{{item.name}}</text>
+          <text class="meta">{{item.age}} 岁 · Level {{item.level || ''}}</text>
+        </view>
+        <view class="check-circle check {{targetChild && targetChild.id === item.id ? 'checked' : ''}}">
+          <text class="check-icon">✓</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- Days Info -->
+    <view class="days-info" wx:if="{{daysUsed > 0 || daysRemaining > 0}}">
+      <text class="info-heading">权益信息</text>
+      <view class="days-row">
+        <text class="label">会员类型</text>
+        <text class="value">正式会员年卡</text>
+      </view>
+      <view class="days-row">
+        <text class="label">已使用</text>
+        <text class="value">{{daysUsed}} 天</text>
+      </view>
+      <view class="days-row highlight">
+        <text class="label">剩余天数</text>
+        <text class="value">{{daysRemaining}} 天</text>
+      </view>
+    </view>
+
+    <!-- Check List -->
+    <view class="check-list" wx:if="{{checks.length > 0}}">
+      <text class="check-heading">前置条件检查</text>
+      <view class="check-item" wx:for="{{checks}}" wx:key="index">
+        <view class="check-icon-wrap {{item.pass ? 'pass' : 'fail'}}">
+          <text class="check-result-icon">{{item.pass ? '✓' : '✗'}}</text>
+        </view>
+        <text class="check-text">{{item.text}}</text>
+      </view>
+    </view>
+
+    <!-- Tip Card -->
+    <view class="tip-card">
+      <text class="tip-icon">ℹ</text>
+      <text class="tip-text">转让申请提交后将由管理员审核，审核通过后权益即刻转移。转让后原孩子的阅读记录将保留。</text>
+    </view>
+
+    <!-- Submit Button -->
+    <view class="fixed-bottom-bar submit-wrap">
+      <view class="fixed-bottom-btn submit-btn {{submitting || !sourceChild || !targetChild ? 'disabled' : ''}}"
+        bindtap="onConfirmTransfer">
+        <text>{{submitting ? '转让中...' : '提交转让申请'}}</text>
+      </view>
+    </view>
+  </block>
+</view>

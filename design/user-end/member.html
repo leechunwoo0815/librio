@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>我的 · Librio</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.003 250);
+      --surface: oklch(100% 0 0);
+      --fg: oklch(20% 0.015 275);
+      --muted: oklch(48% 0.02 250);
+      --border: oklch(90% 0.008 250);
+      --accent: oklch(54% 0.17 275);
+      --accent-soft: oklch(54% 0.17 275 / 0.1);
+      --secondary: oklch(86% 0.20 135);
+      --success: oklch(72% 0.20 145);
+      --success-soft: oklch(72% 0.20 145 / 0.1);
+      --warning: oklch(78% 0.16 85);
+      --warning-soft: oklch(78% 0.16 85 / 0.1);
+      --error: oklch(62% 0.22 25);
+      --radius: 16px; --radius-sm: 10px; --radius-lg: 20px;
+      --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--fg); font-family: var(--font-body);
+      font-size: 15px; line-height: 1.5; max-width: 375px; margin: 0 auto;
+      min-height: 100vh; padding-bottom: 80px; -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; }
+
+    /* profile header */
+    .profile-header {
+      background: var(--surface); padding: 24px 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .profile-top {
+      display: flex; align-items: center; gap: 14px; margin-bottom: 12px;
+    }
+    .profile-avatar {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent-soft), oklch(54% 0.17 275 / 0.2));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; border: 2px solid oklch(54% 0.17 275 / 0.15);
+    }
+    .profile-info { flex: 1; }
+    .profile-name { font-family: var(--font-display); font-size: 18px; font-weight: 700; }
+    .profile-level {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 10px; border-radius: 999px; margin-top: 4px;
+      background: var(--success-soft); color: oklch(40% 0.15 145);
+      font-size: 12px; font-weight: 600;
+    }
+    .profile-settings {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--bg); display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+
+    /* member status card */
+    .member-card {
+      margin: 16px; border-radius: var(--radius-lg); padding: 20px;
+      position: relative; overflow: hidden;
+      background: linear-gradient(135deg, var(--accent), oklch(48% 0.17 275));
+      color: white;
+    }
+    .member-card::before {
+      content: ''; position: absolute; top: -30px; right: -30px;
+      width: 120px; height: 120px; border-radius: 50%;
+      background: rgba(255,255,255,0.08);
+    }
+    .member-card .mc-top {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .member-card .mc-status {
+      font-family: var(--font-display); font-size: 14px; font-weight: 600;
+    }
+    .member-card .mc-badge {
+      padding: 3px 10px; border-radius: 999px;
+      background: rgba(255,255,255,0.2); font-size: 11px; font-weight: 600;
+    }
+    .member-card .mc-countdown {
+      font-family: var(--font-display); font-size: 28px; font-weight: 700; line-height: 1;
+    }
+    .member-card .mc-countdown-label {
+      font-size: 13px; opacity: 0.85; margin-top: 4px;
+    }
+    .member-card .mc-expires {
+      font-size: 12px; opacity: 0.7; margin-top: 8px;
+    }
+
+    /* quick stats */
+    .quick-stats {
+      margin: 0 16px 16px;
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+    }
+    .qs-item {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 12px 6px; text-align: center;
+      box-shadow: 0 2px 6px oklch(20% 0.015 275 / 0.03);
+    }
+    .qs-item .qs-val {
+      font-family: var(--font-display); font-size: 17px; font-weight: 700;
+    }
+    .qs-item .qs-label {
+      font-size: 10px; color: var(--muted); margin-top: 2px;
+    }
+    .qs-item:nth-child(1) .qs-val { color: var(--accent); }
+    .qs-item:nth-child(2) .qs-val { color: var(--secondary); }
+    .qs-item:nth-child(3) .qs-val { color: var(--success); }
+    .qs-item:nth-child(4) .qs-val { color: var(--warning); }
+
+    /* section title */
+    .section-title {
+      margin: 16px 16px 10px;
+      font-family: var(--font-display); font-size: 15px; font-weight: 600;
+    }
+
+    /* function grid 5x2 */
+    .func-grid {
+      margin: 0 16px 16px;
+      display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;
+    }
+    .func-item {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 14px 4px 10px;
+      text-align: center; transition: transform 0.15s ease;
+      box-shadow: 0 2px 6px oklch(20% 0.015 275 / 0.03);
+    }
+    .func-item:active { transform: scale(0.95); }
+    .func-item .fi-icon {
+      width: 36px; height: 36px; border-radius: 10px; margin: 0 auto 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+    }
+    .func-item .fi-label {
+      font-size: 10px; font-weight: 500; line-height: 1.3;
+    }
+    .func-item:nth-child(1) .fi-icon { background: var(--accent-soft); }
+    .func-item:nth-child(2) .fi-icon { background: oklch(86% 0.20 135 / 0.1); }
+    .func-item:nth-child(3) .fi-icon { background: oklch(72% 0.20 145 / 0.1); }
+    .func-item:nth-child(4) .fi-icon { background: oklch(78% 0.16 85 / 0.12); }
+    .func-item:nth-child(5) .fi-icon { background: oklch(62% 0.22 25 / 0.08); }
+    .func-item:nth-child(6) .fi-icon { background: oklch(48% 0.02 250 / 0.1); }
+    .func-item:nth-child(7) .fi-icon { background: oklch(72% 0.20 145 / 0.12); }
+    .func-item:nth-child(8) .fi-icon { background: oklch(78% 0.16 85 / 0.1); }
+    .func-item:nth-child(9) .fi-icon { background: oklch(54% 0.17 275 / 0.08); }
+    .func-item:nth-child(10) .fi-icon { background: oklch(86% 0.20 135 / 0.12); }
+
+    /* bottom links */
+    .bottom-links {
+      margin: 0 16px 16px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
+      box-shadow: 0 2px 6px oklch(20% 0.015 275 / 0.03);
+    }
+    .link-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 16px; border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+    .link-item:last-child { border-bottom: none; }
+    .link-item .lk-left { display: flex; align-items: center; gap: 10px; }
+    .link-item .lk-left .lk-icon { font-size: 18px; }
+    .link-item .lk-arrow { color: var(--muted); font-size: 14px; }
+
+    /* bottom nav */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 375px;
+      background: color-mix(in oklch, var(--surface) 92%, transparent);
+      backdrop-filter: blur(12px); border-top: 1px solid var(--border);
+      display: flex; padding: 6px 0 env(safe-area-inset-bottom, 8px); z-index: 30;
+    }
+    .nav-item {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      padding: 6px 0 2px; color: var(--muted); font-size: 10px; transition: color 0.15s ease;
+    }
+    .nav-item .nav-icon { font-size: 22px; margin-bottom: 2px; }
+    .nav-item.active { color: var(--accent); }
+
+    @media (min-width: 768px) { body { max-width: 375px; border-left: 1px solid var(--border); border-right: 1px solid var(--border); } }
+    @media (min-width: 1024px) { body { max-width: 375px; margin: 0 auto; box-shadow: 0 0 40px oklch(20% 0.015 275 / 0.06); } }
+  </style>
+</head>
+<body>
+  <!-- Profile Header -->
+  <div class="profile-header">
+    <div class="profile-top">
+      <div class="profile-avatar">👧</div>
+      <div class="profile-info">
+        <div class="profile-name">Lucy</div>
+        <span class="profile-level">🌱 A级</span>
+      </div>
+      <a class="profile-settings" href="#">⚙️</a>
+    </div>
+  </div>
+
+  <!-- Member Status Card -->
+  <div class="member-card">
+    <div class="mc-top">
+      <span class="mc-status">正式会员</span>
+      <span class="mc-badge">人广馆</span>
+    </div>
+    <div class="mc-countdown">283 天</div>
+    <div class="mc-countdown-label">距离到期</div>
+    <div class="mc-expires">到期时间：2027 年 3 月 15 日</div>
+  </div>
+
+  <!-- Quick Stats -->
+  <div class="quick-stats">
+    <div class="qs-item">
+      <div class="qs-val">1,286</div>
+      <div class="qs-label">累计阅读分钟</div>
+    </div>
+    <div class="qs-item">
+      <div class="qs-val">12,450</div>
+      <div class="qs-label">累计词</div>
+    </div>
+    <div class="qs-item">
+      <div class="qs-val">17</div>
+      <div class="qs-label">本书</div>
+    </div>
+    <div class="qs-item">
+      <div class="qs-val">21</div>
+      <div class="qs-label">连续打卡天</div>
+    </div>
+  </div>
+
+  <!-- Function Grid -->
+  <div class="section-title">功能入口</div>
+  <div class="func-grid">
+    <a class="func-item" href="books.html">
+      <div class="fi-icon">📚</div>
+      <div class="fi-label">图书馆</div>
+    </a>
+    <a class="func-item" href="shelf.html">
+      <div class="fi-icon">📖</div>
+      <div class="fi-label">书架</div>
+    </a>
+    <a class="func-item" href="reading-stats.html">
+      <div class="fi-icon">📊</div>
+      <div class="fi-label">阅读统计</div>
+    </a>
+    <a class="func-item" href="achievement.html">
+      <div class="fi-icon">🏆</div>
+      <div class="fi-label">成就中心</div>
+    </a>
+    <a class="func-item" href="learning-report.html">
+      <div class="fi-icon">📝</div>
+      <div class="fi-label">学习报告</div>
+    </a>
+    <a class="func-item" href="vocabulary.html">
+      <div class="fi-icon">📋</div>
+      <div class="fi-label">生词本</div>
+    </a>
+    <a class="func-item" href="deposit.html">
+      <div class="fi-icon">💰</div>
+      <div class="fi-label">押金管理</div>
+    </a>
+    <a class="func-item" href="borrow-history.html">
+      <div class="fi-icon">📦</div>
+      <div class="fi-label">借阅记录</div>
+    </a>
+    <a class="func-item" href="reservation.html">
+      <div class="fi-icon">📅</div>
+      <div class="fi-label">预约管理</div>
+    </a>
+    <a class="func-item" href="child-manage.html">
+      <div class="fi-icon">👶</div>
+      <div class="fi-label">孩子管理</div>
+    </a>
+  </div>
+
+  <!-- Bottom Links -->
+  <div class="bottom-links">
+    <a class="link-item" href="#">
+      <div class="lk-left">
+        <span class="lk-icon">💬</span>
+        联系客服
+      </div>
+      <span class="lk-arrow">›</span>
+    </a>
+    <a class="link-item" href="#">
+      <div class="lk-left">
+        <span class="lk-icon">ℹ️</span>
+        关于我们
+      </div>
+      <span class="lk-arrow">›</span>
+    </a>
+  </div>
+
+  <!-- Bottom Nav -->
+  <nav class="bottom-nav">
+    <a class="nav-item" href="home.html">
+      <span class="nav-icon">🏠</span>
+      首页
+    </a>
+    <a class="nav-item" href="books.html">
+      <span class="nav-icon">📚</span>
+      图书馆
+    </a>
+    <a class="nav-item" href="shelf.html">
+      <span class="nav-icon">📖</span>
+      书架
+    </a>
+    <a class="nav-item active" href="member.html">
+      <span class="nav-icon">👤</span>
+      我的
+    </a>
+  </nav>
+</body>
+</html>

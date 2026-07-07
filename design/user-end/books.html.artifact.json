@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "books.html",
+  "entry": "books.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-06-04T13:37:08.901Z",
+  "updatedAt": "2026-06-04T13:37:08.901Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}

@@ -1,0 +1,162 @@
+<!--frontend/pages/books/books.wxml-->
+<view class="page-bg">
+
+  <error-view wx:if="{{loadError}}" visible="{{loadError}}" icon="😵" title="加载失败" desc="数据加载出错了，请稍后重试" showRetry="{{true}}" retryText="重试" bind:onRetry="onRetry" />
+  <loading-skeleton wx:elif="{{loading && books.length === 0}}" />
+
+  <block wx:if="{{!loadError}}">
+  <!-- nav-bar -->
+  <view class="nav-bar" wx:if="{{showNavBar}}">
+    <view class="back" bindtap="goBack">
+      <text class="title">图书馆</text>
+    </view>
+  </view>
+  <!-- 搜索栏 search-wrap -->
+  <view class="search-wrap">
+    <view class="search-icon-wrap search-icon">
+      <view class="search-icon-svg">
+        <view class="si-circle"></view>
+        <view class="si-line"></view>
+      </view>
+    </view>
+    <input
+      class="search-input"
+      type="text"
+      placeholder="搜索书名、作者或 AR 值"
+      placeholder-class="search-placeholder"
+      value="{{keyword}}"
+      bindinput="onSearchInput"
+      bindconfirm="onSearch"
+      confirm-type="search"
+    />
+    <view class="search-clear" wx:if="{{keyword}}" bindtap="onClearKeyword">
+      <text class="clear-icon">✕</text>
+    </view>
+  </view>
+
+  <!-- 筛选区域 filter-scroll -->
+  <scroll-view class="filter-scroll" scroll-x enable-flex>
+    <view
+      class="filter-chip {{arLevelIndex === 0 && ageRangeIndex === 0 ? 'active' : ''}}"
+      bindtap="onResetFilter"
+    >全部</view>
+    <view
+      class="filter-chip {{arLevelIndex === 1 ? 'active' : ''}}"
+      data-index="1"
+      bindtap="onTapAR"
+    >AR 0.5–2.0</view>
+    <view
+      class="filter-chip {{arLevelIndex === 2 ? 'active' : ''}}"
+      data-index="2"
+      bindtap="onTapAR"
+    >AR 2.0–4.0</view>
+    <view
+      class="filter-chip {{arLevelIndex === 3 ? 'active' : ''}}"
+      data-index="3"
+      bindtap="onTapAR"
+    >AR 4.0–6.0</view>
+    <view
+      class="filter-chip {{arLevelIndex === 4 ? 'active' : ''}}"
+      data-index="4"
+      bindtap="onTapAR"
+    >AR 6.0+</view>
+    <view
+      class="filter-chip {{ageRangeIndex === 1 ? 'active' : ''}}"
+      data-index="1"
+      bindtap="onTapAge"
+    >3–5 岁</view>
+    <view
+      class="filter-chip {{ageRangeIndex === 2 ? 'active' : ''}}"
+      data-index="2"
+      bindtap="onTapAge"
+    >6–8 岁</view>
+    <view
+      class="filter-chip {{ageRangeIndex === 3 ? 'active' : ''}}"
+      data-index="3"
+      bindtap="onTapAge"
+    >9–12 岁</view>
+  </scroll-view>
+
+  <!-- 图书列表 book-grid -->
+  <view class="book-list book-grid" wx:if="{{books.length > 0}}">
+    <view
+      class="book-item book-card"
+      wx:key="id"
+      wx:for="{{books}}"
+    >
+      <view class="book-cover card-cover" bindtap="goDetail" data-id="{{item.id}}">
+        <image wx:if="{{item.cover}}" class="book-cover-img" src="{{item.cover}}" mode="aspectFill" />
+        <text wx:else class="cover-letter">{{item.title[0]}}</text>
+        <text class="audio-badge" wx:if="{{item.has_audio}}">🔊</text>
+        <text class="series-badge" wx:if="{{item.series_name}}">{{item.series_name}}</text>
+      </view>
+      <view class="book-info card-body" bindtap="goDetail" data-id="{{item.id}}">
+        <view class="book-title card-title">{{item.title}}</view>
+        <view class="book-author card-author">{{item.author}}</view>
+        <view class="book-meta card-tags">
+          <text class="ar-tag tag tag-ar">AR {{item.ar_value}}</text>
+          <text class="age-tag tag">{{item.age_min}}–{{item.age_max}} 岁</text>
+        </view>
+        <view class="book-meta-row2 card-meta">
+          <text class="tag tag-words">{{item.word_count}} 词</text>
+          <text class="audio-tag audio-icon" wx:if="{{item.has_audio}}">🎧 有声</text>
+          <text class="inv-badge inv-label inv-available" wx:if="{{item.offline_available > 0}}">可借 {{item.offline_available}} 本</text>
+          <text class="inv-badge inv-label inv-empty" wx:elif="{{item.offline_available === 0}}">可借 0 本</text>
+        </view>
+        <view class="inv-status">
+          <text class="inv-label {{item.offline_available > 0 ? 'inv-available' : 'inv-empty'}}">
+            {{item.offline_available > 0 ? '可借 ' + item.offline_available + ' 本' : '无库存 · 排队中'}}
+          </text>
+          <view class="reserve-btn" wx:if="{{item.offline_available === 0}}" bindtap="onReserve" data-id="{{item.id}}">
+            <text>预约借书</text>
+          </view>
+        </view>
+      </view>
+      <view class="add-btn" wx:if="{{item.offline_available > 0}}" bindtap="onAddToShelf" data-id="{{item.id}}">
+        <text>{{item._adding ? '...' : '加入'}}</text>
+      </view>
+      <view class="reserve-btn" wx:elif="{{item.offline_available === 0}}" bindtap="onReserve" data-id="{{item.id}}">
+        <text>预约</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 加载更多 -->
+  <view class="loading" wx:if="{{loading && books.length > 0}}">
+    <text>加载更多...</text>
+  </view>
+
+  <!-- 没有更多 -->
+  <view class="no-more" wx:if="{{!hasMore && books.length > 0}}">
+    <text>— 已经到底了 —</text>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty-state" wx:if="{{!loading && books.length === 0}}">
+    <text class="emoji">📚</text>
+    <text class="text" wx:if="{{keyword || hasActiveFilter}}">没有找到符合条件的图书</text>
+    <text class="text" wx:else>暂无图书</text>
+  </view>
+
+  </block><!-- end !loadError -->
+
+  <!-- bottom-nav -->
+  <view class="bottom-nav">
+    <navigator class="nav-item" url="/pages/index/index" open-type="switchTab">
+      <text class="nav-icon">🏠</text>
+      首页
+    </navigator>
+    <navigator class="nav-item active" url="/pages/books/books" open-type="switchTab">
+      <text class="nav-icon">📚</text>
+      图书馆
+    </navigator>
+    <navigator class="nav-item" url="/pages/shelf/shelf" open-type="switchTab">
+      <text class="nav-icon">📖</text>
+      书架
+    </navigator>
+    <navigator class="nav-item" url="/pages/member/member" open-type="switchTab">
+      <text class="nav-icon">👤</text>
+      我的
+    </navigator>
+  </view>
+</view>

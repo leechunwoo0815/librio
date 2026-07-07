@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>单词详情 · MegaWords</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.003 250); --surface: oklch(100% 0 0);
+      --fg: oklch(20% 0.015 275); --muted: oklch(48% 0.02 250);
+      --border: oklch(90% 0.008 250); --accent: oklch(54% 0.17 275);
+      --accent-soft: oklch(54% 0.17 275 / 0.1); --accent-hover: oklch(48% 0.17 275);
+      --secondary: oklch(86% 0.20 135); --secondary-soft: oklch(86% 0.20 135 / 0.12);
+      --success: oklch(72% 0.20 145); --warning: oklch(78% 0.16 85);
+      --error: oklch(62% 0.22 25); --radius: 16px; --radius-sm: 10px; --radius-lg: 20px;
+      --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+      --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--fg); font-family: var(--font-body);
+      font-size: 15px; line-height: 1.5; max-width: 430px; margin: 0 auto;
+      min-height: 100vh; padding-bottom: 24px; -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; }
+    .nav-bar {
+      display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 10;
+    }
+    .nav-bar .back { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 10px; }
+    .nav-bar .back svg { width: 20px; height: 20px; }
+    .nav-bar .title { font-family: var(--font-display); font-size: 17px; font-weight: 600; }
+    .word-hero {
+      margin: 16px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 24px; text-align: center;
+    }
+    .word-hero .big-word { font-family: var(--font-display); font-size: 36px; font-weight: 700; color: var(--accent); }
+    .word-hero .phonetic { font-size: 16px; color: var(--muted); margin: 4px 0 8px; }
+    .word-hero .pos-tag {
+      display: inline-block; padding: 4px 12px; border-radius: 999px;
+      background: var(--accent-soft); color: var(--accent); font-size: 12px; font-weight: 500;
+    }
+    .play-btn {
+      width: 48px; height: 48px; border-radius: 50%; background: var(--accent);
+      color: white; display: grid; place-items: center; margin: 12px auto 0;
+    }
+    .play-btn svg { width: 22px; height: 22px; }
+    .def-card {
+      margin: 0 16px 12px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px;
+    }
+    .def-card h3 { font-family: var(--font-display); font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--muted); }
+    .def-list { display: flex; flex-direction: column; gap: 6px; }
+    .def-item { font-size: 15px; line-height: 1.5; }
+    .def-item .def-num { color: var(--muted); font-size: 12px; margin-right: 4px; }
+    .example { margin-top: 6px; font-size: 13px; color: var(--muted); font-style: italic; padding-left: 12px; border-left: 2px solid var(--accent-soft); }
+    .example .ex-bold { font-weight: 600; color: var(--accent); }
+    .synonyms { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+    .syn-tag { padding: 4px 10px; background: var(--secondary-soft); border-radius: 999px; font-size: 12px; color: oklch(40% 0.15 135); }
+    .source-card {
+      margin: 0 16px 12px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px;
+    }
+    .source-card h3 { font-family: var(--font-display); font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--muted); }
+    .source-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
+    .source-item + .source-item { border-top: 1px solid var(--border); }
+    .source-item .s-book { font-size: 14px; font-weight: 500; }
+    .source-item .s-context { font-size: 12px; color: var(--muted); }
+    .action-bar {
+      margin: 0 16px; display: flex; gap: 8px;
+    }
+    .action-btn {
+      flex: 1; padding: 14px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .action-btn.primary { background: var(--accent); color: white; }
+    .action-btn.secondary { background: var(--surface); border: 1px solid var(--border); color: var(--fg); }
+  </style>
+</head>
+<body>
+  <div class="nav-bar">
+    <a class="back" href="vocabulary.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a>
+    <span class="title">单词详情</span>
+  </div>
+  <div class="word-hero">
+    <div class="big-word">ax</div>
+    <div class="phonetic">/æks/ &nbsp; <button onclick="playWord()" style="color:var(--accent);font-size:16px">🔊</button></div>
+    <span class="pos-tag">noun · 名词</span>
+    <button class="play-btn" onclick="playWord()"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>
+  </div>
+  <div class="def-card">
+    <h3>释义</h3>
+    <div class="def-list">
+      <div class="def-item"><span class="def-num">1.</span>a tool used for cutting down trees and splitting wood, consisting of a heavy metal blade attached to a long handle</div>
+      <div class="example">He swung the <span class="ex-bold">ax</span> and split the log in two.</div>
+      <div class="def-item" style="margin-top:8px"><span class="def-num">2.</span>砍伐树木或劈开木材的工具，由装在长柄上的重金属刀片组成</div>
+      <div class="example">他挥动<span class="ex-bold">斧头</span>，把木头劈成了两半。</div>
+      <div class="synonyms"><span class="syn-tag">hatchet 短柄斧</span><span class="syn-tag">chopper 砍刀</span></div>
+    </div>
+  </div>
+  <div class="source-card">
+    <h3>来源书籍</h3>
+    <div class="source-item">
+      <span style="font-size:24px">🐷</span>
+      <div><div class="s-book">Charlotte's Web</div><div class="s-context">"Where's Papa going with that ax?"</div></div>
+    </div>
+  </div>
+  <div class="action-bar">
+    <button class="action-btn secondary" onclick="alert('已标记为已掌握')">✅ 已掌握</button>
+    <button class="action-btn primary" onclick="alert('已加入生词本')">+ 加入生词本</button>
+  </div>
+  <script>
+    function playWord() {
+      const btn = event.target.closest('button');
+      btn.style.transform = 'scale(0.9)';
+      setTimeout(() => { if(btn) btn.style.transform = ''; }, 150);
+    }
+  </script>
+</body>
+</html>

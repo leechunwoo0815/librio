@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>借阅记录 · MegaWords</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.003 250);
+      --surface: oklch(100% 0 0);
+      --fg: oklch(20% 0.015 275);
+      --muted: oklch(48% 0.02 250);
+      --border: oklch(90% 0.008 250);
+      --accent: oklch(54% 0.17 275);
+      --accent-soft: oklch(54% 0.17 275 / 0.1);
+      --accent-hover: oklch(48% 0.17 275);
+      --secondary: oklch(86% 0.20 135);
+      --secondary-soft: oklch(86% 0.20 135 / 0.12);
+      --success: oklch(72% 0.20 145);
+      --success-soft: oklch(72% 0.20 145 / 0.1);
+      --warning: oklch(78% 0.16 85);
+      --error: oklch(62% 0.22 25);
+      --error-soft: oklch(62% 0.22 25 / 0.08);
+      --radius: 16px; --radius-sm: 10px; --radius-lg: 20px;
+      --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+      --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--fg); font-family: var(--font-body);
+      font-size: 15px; line-height: 1.5; max-width: 430px; margin: 0 auto;
+      min-height: 100vh; padding-bottom: 32px; -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; }
+
+    /* nav bar */
+    .nav-bar {
+      display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 10;
+    }
+    .nav-bar .back { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 10px; }
+    .nav-bar .back svg { width: 20px; height: 20px; }
+    .nav-bar .title { font-family: var(--font-display); font-size: 17px; font-weight: 600; }
+
+    /* tabs */
+    .tabs {
+      display: flex; background: var(--surface); border-bottom: 1px solid var(--border);
+      position: sticky; top: 49px; z-index: 9;
+    }
+    .tab {
+      flex: 1; padding: 12px; text-align: center; font-size: 14px; font-weight: 500;
+      color: var(--muted); position: relative; transition: color 0.15s ease;
+      cursor: pointer;
+    }
+    .tab.active { color: var(--accent); font-weight: 600; }
+    .tab.active::after {
+      content: ''; position: absolute; bottom: 0; left: 20%; right: 20%;
+      height: 2px; background: var(--accent); border-radius: 1px;
+    }
+
+    /* summary bar */
+    .summary-bar {
+      display: flex; gap: 12px; padding: 12px 16px;
+    }
+    .summary-card {
+      flex: 1; background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 12px; text-align: center;
+    }
+    .summary-num {
+      font-family: var(--font-display); font-size: 22px; font-weight: 700; color: var(--accent);
+    }
+    .summary-label { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    /* record list */
+    .record-list { padding: 0 16px; }
+    .record-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 14px;
+      margin-bottom: 10px; display: flex; gap: 12px;
+      transition: box-shadow 0.15s ease;
+    }
+    .record-card:hover { box-shadow: 0 2px 12px oklch(20% 0.015 275 / 0.05); }
+
+    .record-cover {
+      width: 56px; height: 72px; border-radius: 8px; flex-shrink: 0;
+      display: grid; place-items: center; font-size: 24px;
+      border: 1px solid var(--border); position: relative; overflow: hidden;
+    }
+    .record-cover::before {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(135deg, oklch(95% 0.01 250), oklch(90% 0.02 250));
+    }
+    .record-cover span { position: relative; z-index: 1; }
+
+    .record-info { flex: 1; min-width: 0; }
+    .record-title {
+      font-family: var(--font-display); font-size: 15px; font-weight: 600;
+      margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .record-dates {
+      font-size: 12px; color: var(--muted); margin-bottom: 6px; line-height: 1.6;
+    }
+    .record-dates span { display: inline-flex; align-items: center; gap: 3px; }
+    .record-tags { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .record-status {
+      padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .st-borrowed { background: var(--success-soft); color: var(--success); }
+    .st-returned { background: oklch(48% 0.02 250 / 0.1); color: var(--muted); }
+    .st-overdue { background: var(--error-soft); color: var(--error); }
+    .st-lost { background: oklch(48% 0.02 250 / 0.15); color: oklch(30% 0.01 250); }
+
+    .record-test {
+      padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 500;
+      background: var(--accent-soft); color: var(--accent);
+    }
+    .record-fine {
+      padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 600;
+      background: var(--error-soft); color: var(--error);
+    }
+
+    /* section divider */
+    .date-divider {
+      padding: 12px 16px 6px; font-size: 12px; color: var(--muted); font-weight: 500;
+    }
+
+    /* empty state */
+    .empty-state {
+      text-align: center; padding: 48px 16px; color: var(--muted);
+    }
+    .empty-state .emoji { font-size: 40px; margin-bottom: 12px; }
+    .empty-state p { font-size: 14px; }
+
+    /* content sections */
+    .content-section { display: none; }
+    .content-section.active { display: block; }
+
+    @media (min-width: 768px) {
+      body { max-width: 430px; border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
+    }
+    @media (min-width: 1024px) {
+      body { max-width: 430px; margin: 0 auto; box-shadow: 0 0 40px oklch(20% 0.015 275 / 0.06); }
+    }
+  </style>
+</head>
+<body>
+  <div class="nav-bar">
+    <a class="back" href="member.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg></a>
+    <span class="title">借阅记录</span>
+  </div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab active" onclick="switchTab('borrowing', this)">借阅中</button>
+    <button class="tab" onclick="switchTab('returned', this)">已归还</button>
+    <button class="tab" onclick="switchTab('all', this)">全部</button>
+  </div>
+
+  <div class="summary-bar">
+    <div class="summary-card">
+      <div class="summary-num">3</div>
+      <div class="summary-label">当前借阅</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num">28</div>
+      <div class="summary-label">累计借阅</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num">0</div>
+      <div class="summary-label">逾期记录</div>
+    </div>
+  </div>
+
+  <!-- 借阅中 -->
+  <div class="content-section active" id="borrowing">
+    <div class="record-list">
+      <div class="record-card">
+        <div class="record-cover"><span>📖</span></div>
+        <div class="record-info">
+          <div class="record-title">The Cat in the Hat</div>
+          <div class="record-dates">
+            <span>📅 借出：2026-06-01</span><br>
+            <span>⏰ 应还：2026-06-15</span>
+          </div>
+          <div class="record-tags">
+            <span class="record-status st-borrowed">🟢 借出</span>
+            <span class="record-test">AR 通过 ✅</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="record-card">
+        <div class="record-cover"><span>🕷️</span></div>
+        <div class="record-info">
+          <div class="record-title">Charlotte's Web</div>
+          <div class="record-dates">
+            <span>📅 借出：2026-06-05</span><br>
+            <span>⏰ 应还：2026-06-19</span>
+          </div>
+          <div class="record-tags">
+            <span class="record-status st-borrowed">🟢 借出</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="record-card">
+        <div class="record-cover"><span>🧙</span></div>
+        <div class="record-info">
+          <div class="record-title">Harry Potter and the Sorcerer's Stone</div>
+          <div class="record-dates">
+            <span>📅 借出：2026-05-28</span><br>
+            <span>⏰ 应还：2026-06-11</span>
+          </div>
+          <div class="record-tags">
+            <span class="record-status st-overdue">🔴 逾期 4 天</span>
+            <span class="record-fine">罚款 ¥20</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 已归还 -->
+  <div class="content-section" id="returned">
+    <div class="record-list">
+      <div class="date-divider">2026年5月</div>
+
+      <div class="record-card">
+        <div class="record-cover"><span>🐻</span></div>
+        <div class="record-info">
+          <div class="record-title">Brown Bear, Brown Bear, What Do You See?</div>
+          <div class="record-dates">
+            <span>📅 借出：2026-05-10</span><br>
+            <span>📅 归还：2026-05-22</span>
+          </div>
+          <div class="record-tags">
+            <span class="record-status st-returned">⚪ 已还</span>
+            <span class="record-test">AR 通过 ✅</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="record-card">
+        <div class="record-cover"><span>🌙</span></div>
+        <div class="record-info">
+          <div class="record-title">Goodnight Moon</div>
+          <div class="record-dates">
+            <span>📅 借出：2026-05-08</span><br>
+            <span>📅 归还：2026-05-18</span>
+          </div>
+          <div class="record-tags">
+            <span class="record-status st-returned">⚪ 已还</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="date-divider">2026年4月</div>
+
+      <div class="record-card">
+        <div class="record-cover"><span>🌳</span></div>
+        <div class="record-info">
+          <div class="record-title">The Giving Tree</div>
+          <div class="record-dates">
+            <span>📅 借出：2026-04-12</span><br>
+            <span>📅 归还：2026-04-25</span>
+          </div>
+          <div class="record-tags">
+            <span class="record-status st-returned">⚪ 已还</span>
+            <span class="record-test">AR 通过 ✅</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="record-card">
+        <div class="record-cover"><span>🦁</span></div>
+        <div class="record-info">
+          <div class="record-title">Where the Wild Things Are</div>
+          <div class="record-dates">
+            <span>📅 借出：2026-04-01</span><br>
+            <span>📅 归还：2026-04-10</span>
+          </div>
+          <div class="record-tags">
+            <span class="record-status st-returned">⚪ 已还</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="date-divider">2026年3月</div>
+
+      <div class="record-card">
+        <div class="record-cover"><span>📓</span></div>
+        <div class="record-info">
+          <div class="record-title">Diary of a Wimpy Kid</div>
+          <div class="record-dates">
+            <span>📅 借出：2026-03-05</span><br>
+            <span>📅 归还：2026-03-28</span>
+          </div>
+          <div class="record-tags">
+            <span class="record-status st-lost">⚫ 丢失</span>
+            <span class="record-fine">赔偿 ¥45</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 全部 -->
+  <div class="content-section" id="all">
+    <div class="record-list">
+      <div class="date-divider">2026年6月</div>
+
+      <div class="record-card">
+        <div class="record-cover"><span>📖</span></div>
+        <div class="record-info">
+          <div class="record-title">The Cat in the Hat</div>
+          <div class="record-dates">
+            <span>📅 借出：2026-06-01</span><br>
+            <span>⏰ 应还：2026-06-15</span>
+          </div>
+          <div class="record-tags">
+            <span class="record-status st-borrowed">🟢 借出</span>
+            <span class="record-test">AR 通过 ✅</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="record-card">
+        <div class="record-cover"><span>🕷️</span></div>
+        <div class="record-info">
+          <div class="record-title">Charlotte's Web</div>
+          <div class="record-dates">
+            <span>📅 借出：2026-06-05</span><br>
+            <span>⏰ 应还：2026-06-19</span>
+          </div>
+          <div class="record-tags">
+            <span class="record-status st-borrowed">🟢 借出</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="record-card">
+        <div class="record-cover"><span>🧙</span></div>
+        <div class="record-info">
+          <div class="record-title">Harry Potter and the Sorcerer's Stone</div>
+          <div class="record-dates">
+            <span>📅 借出：2026-05-28</span><br>
+            <span>⏰ 应还：2026-06-11</span>
+          </div>
+          <div class="record-tags">
+            <span class="record-status st-overdue">🔴 逾期 4 天</span>
+            <span class="record-fine">罚款 ¥20</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="date-divider">2026年5月</div>
+
+      <div class="record-card">
+        <div class="record-cover"><span>🐻</span></div>
+        <div class="record-info">
+          <div class="record-title">Brown Bear, Brown Bear, What Do You See?</div>
+          <div class="record-dates">
+            <span>📅 借出：2026-05-10</span><br>
+            <span>📅 归还：2026-05-22</span>
+          </div>
+          <div class="record-tags">
+            <span class="record-status st-returned">⚪ 已还</span>
+            <span class="record-test">AR 通过 ✅</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="record-card">
+        <div class="record-cover"><span>🌙</span></div>
+        <div class="record-info">
+          <div class="record-title">Goodnight Moon</div>
+          <div class="record-dates">
+            <span>📅 借出：2026-05-08</span><br>
+            <span>📅 归还：2026-05-18</span>
+          </div>
+          <div class="record-tags">
+            <span class="record-status st-returned">⚪ 已还</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="date-divider">2026年4月</div>
+
+      <div class="record-card">
+        <div class="record-cover"><span>🌳</span></div>
+        <div class="record-info">
+          <div class="record-title">The Giving Tree</div>
+          <div class="record-dates">
+            <span>📅 借出：2026-04-12</span><br>
+            <span>📅 归还：2026-04-25</span>
+          </div>
+          <div class="record-tags">
+            <span class="record-status st-returned">⚪ 已还</span>
+            <span class="record-test">AR 通过 ✅</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="record-card">
+        <div class="record-cover"><span>🦁</span></div>
+        <div class="record-info">
+          <div class="record-title">Where the Wild Things Are</div>
+          <div class="record-dates">
+            <span>📅 借出：2026-04-01</span><br>
+            <span>📅 归还：2026-04-10</span>
+          </div>
+          <div class="record-tags">
+            <span class="record-status st-returned">⚪ 已还</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="date-divider">2026年3月</div>
+
+      <div class="record-card">
+        <div class="record-cover"><span>📓</span></div>
+        <div class="record-info">
+          <div class="record-title">Diary of a Wimpy Kid</div>
+          <div class="record-dates">
+            <span>📅 借出：2026-03-05</span><br>
+            <span>📅 归还：2026-03-28</span>
+          </div>
+          <div class="record-tags">
+            <span class="record-status st-lost">⚫ 丢失</span>
+            <span class="record-fine">赔偿 ¥45</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function switchTab(tab, el) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+      document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+      document.getElementById(tab).classList.add('active');
+    }
+  </script>
+</body>
+</html>

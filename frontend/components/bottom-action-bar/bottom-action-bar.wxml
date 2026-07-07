@@ -1,0 +1,11 @@
+<view class="bottom-action-bar">
+  <view
+    wx:for="{{actions}}"
+    wx:key="index"
+    class="action-btn {{item.type === 'primary' ? 'action-primary' : 'action-default'}}"
+    data-index="{{index}}"
+    bindtap="onAction"
+  >
+    {{item.text}}
+  </view>
+</view>

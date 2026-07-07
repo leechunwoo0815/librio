@@ -1,0 +1,5 @@
+<view class="stat-card" bindtap="onTap">
+  <image wx:if="{{icon}}" class="stat-icon" src="{{icon}}" mode="aspectFit" />
+  <text class="stat-value">{{value}}<text wx:if="{{unit}}" class="stat-unit">{{unit}}</text></text>
+  <text class="stat-title">{{title}}</text>
+</view>

@@ -1,0 +1,211 @@
+{% extends "admin/base.html" %}
+{% block title %}馆藏管理{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="/static/admin/css/pages/bookcopy.css" />
+{% endblock %}
+{% block page_title %}馆藏管理{% endblock %}
+{% block content %}
+
+<!-- Toolbar -->
+<div class="toolbar">
+  <input class="scan-input" type="text" id="barcodeInput" placeholder="扫描或输入条码..." />
+  <button class="btn-scan" onclick="scanBarcode()">&#x1F4F7; 扫码</button>
+  <input class="search-input" type="text" id="searchInput" placeholder="搜索书名 / ISBN" oninput="filterTable()" />
+  <select class="filter-select" id="statusFilter" onchange="filterTable()">
+    <option>全部状态</option>
+    <option>在馆</option>
+    <option>借出</option>
+    <option>丢失</option>
+    <option>损坏</option>
+  </select>
+  <select class="filter-select" id="venueFilter" onchange="filterTable()">
+    <option>全部场馆</option>
+    <option>人广馆</option>
+    <option>徐汇馆</option>
+    <option>浦东馆</option>
+  </select>
+  <div class="toolbar-spacer"></div>
+  <button class="btn-action btn-outline" onclick="exportExcel()">导出 Excel</button>
+</div>
+
+<!-- Add Form (hidden) -->
+<div class="card" id="addForm" style="display:none;margin-bottom:16px">
+  <h3>新增副本</h3>
+  <form onsubmit="return addItem(event)">
+    <label>图书ID <input type="number" id="fBookId" required class="form-input"></label>
+    <label>条码 <input type="text" id="fBarcode" required class="form-input"></label>
+    <label>位置 <input type="text" id="fLocation" class="form-input" placeholder="如：1号书架A层"></label>
+    <label>备注 <input type="text" id="fNote" class="form-input"></label>
+    <div style="margin-top:12px">
+      <button type="submit" class="btn-action btn-primary">入库</button>
+      <button type="button" class="btn-action btn-outline" onclick="toggleForm('addForm')">取消</button>
+    </div>
+  </form>
+</div>
+
+<!-- Table -->
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>条码</th><th>书名</th><th>ISBN</th><th>AR 值</th><th>状态</th><th>存放位置</th><th>当前借阅人</th><th>操作</th></tr></thead>
+    <tbody id="dataBody"><tr><td colspan="8">加载中...</td></tr></tbody>
+  </table>
+</div>
+
+<!-- Status Badge Samples (CSS class reference) -->
+<span class="status-badge status-available" style="display:none"></span>
+<span class="status-badge status-borrowed" style="display:none"></span>
+<span class="status-badge status-lost" style="display:none"></span>
+<span class="status-badge status-damaged" style="display:none"></span>
+
+<!-- Pagination -->
+<div class="pagination">
+  <span id="paginationInfo">共 0 条记录</span>
+  <div class="page-btns" id="paginationPages">
+    <button class="page-btn active">1</button>
+    <button class="page-btn">2</button>
+    <button class="page-btn">3</button>
+  </div>
+</div>
+
+<script>
+const STATUS_MAP = {0:'可借',1:'已借出',2:'维修中',3:'已丢失'};
+const STATUS_CLASS = {0:'status-available',1:'status-borrowed',2:'status-damaged',3:'status-lost'};
+const STATUS_TEXT = {0:'在馆',1:'借出',2:'损坏',3:'丢失'};
+let allData = [];
+
+function toggleForm(id) {
+  document.getElementById(id).style.display = document.getElementById(id).style.display === 'none' ? 'block' : 'none';
+}
+
+async function loadData() {
+  try {
+    const r = await api.get('/admin/api/bookcopy');
+    allData = r || [];
+    renderTable(allData);
+  } catch(e) {
+    document.getElementById('dataBody').innerHTML = '<tr><td colspan="8">加载失败: '+e.message+'</td></tr>';
+  }
+}
+
+function renderTable(data) {
+  const tb = document.getElementById('dataBody');
+  document.getElementById('paginationInfo').textContent = '共 ' + data.length + ' 条记录';
+  if (!data || data.length === 0) {
+    tb.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--muted);">暂无副本</td></tr>';
+    return;
+  }
+  tb.innerHTML = data.map(c => {
+    var statusKey = c.status || 0;
+    var statusCls = STATUS_CLASS[statusKey] || 'status-available';
+    var statusText = STATUS_TEXT[statusKey] || STATUS_MAP[statusKey] || statusKey;
+    return '<tr>' +
+      '<td style="font-family:var(--font-mono);font-size:12px;">' + (c.barcode || '-') + '</td>' +
+      '<td>' + (c.book_title || c.book_id || '-') + '</td>' +
+      '<td style="font-family:var(--font-mono);font-size:12px;">' + (c.isbn || '-') + '</td>' +
+      '<td>' + (c.ar_value || '-') + '</td>' +
+      '<td><span class="status-badge ' + statusCls + '">' + statusText + '</span></td>' +
+      '<td>' + (c.location || '-') + '</td>' +
+      '<td' + (!c.borrower_name ? ' style="color:var(--muted);"' : '') + '>' + (c.borrower_name || '--') + '</td>' +
+      '<td><span class="action-link" onclick="viewDetail(\'' + c.id + '\')">详情</span>' +
+      (statusKey === 1 ? ' · <span class="action-link" onclick="doReturn(\'' + c.id + '\')">归还</span>' : '') +
+      (statusKey === 0 ? ' · <span class="action-link" onclick="editCopy(\'' + c.id + '\')">编辑</span>' : '') +
+      '</td>' +
+    '</tr>';
+  }).join('');
+}
+
+function filterTable() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const statusVal = document.getElementById('statusFilter').value;
+  const venueVal = document.getElementById('venueFilter').value;
+  const statusRev = {'在馆':0,'借出':1,'丢失':3,'损坏':2};
+  renderTable(allData.filter(c => {
+    var matchSearch = !q || (c.barcode||'').toLowerCase().includes(q) || (c.book_title||'').toLowerCase().includes(q) || (c.isbn||'').toLowerCase().includes(q) || String(c.book_id).includes(q);
+    var matchStatus = statusVal === '全部状态' || c.status === statusRev[statusVal];
+    var matchVenue = venueVal === '全部场馆' || (c.location||'').includes(venueVal.replace('馆',''));
+    return matchSearch && matchStatus && matchVenue;
+  }));
+}
+
+function scanBarcode() {
+  var barcode = document.getElementById('barcodeInput').value.trim();
+  if (!barcode) return;
+  document.getElementById('searchInput').value = barcode;
+  filterTable();
+}
+
+function viewDetail(id) {
+  var copy = allData.find(function(c) { return c.id === id; });
+  if (!copy) {
+    showToast('副本不存在', 'error');
+    return;
+  }
+  var html = '<div style="padding:20px">';
+  html += '<h3 style="margin-bottom:16px">副本详情</h3>';
+  html += '<table style="width:100%;border-collapse:collapse">';
+  html += '<tr><td style="padding:8px;color:var(--muted);width:80px">条码</td><td style="font-family:var(--font-mono)">' + escapeHtml(copy.barcode || '-') + '</td></tr>';
+  html += '<tr><td style="padding:8px;color:var(--muted)">书名</td><td>' + escapeHtml(copy.book_title || '-') + '</td></tr>';
+  html += '<tr><td style="padding:8px;color:var(--muted)">ISBN</td><td style="font-family:var(--font-mono)">' + escapeHtml(copy.isbn || '-') + '</td></tr>';
+  html += '<tr><td style="padding:8px;color:var(--muted)">状态</td><td>' + escapeHtml(STATUS_TEXT[copy.status] || copy.status) + '</td></tr>';
+  html += '<tr><td style="padding:8px;color:var(--muted)">位置</td><td>' + escapeHtml(copy.location || '-') + '</td></tr>';
+  html += '<tr><td style="padding:8px;color:var(--muted)">借阅人</td><td>' + escapeHtml(copy.borrower_name || '-') + '</td></tr>';
+  html += '</table></div>';
+  showConfirm('副本详情', html, null, '关闭');
+}
+
+function editCopy(id) {
+  var copy = allData.find(function(c) { return c.id === id; });
+  if (!copy) {
+    showToast('副本不存在', 'error');
+    return;
+  }
+  document.getElementById('fBookId').value = copy.book_id || '';
+  document.getElementById('fBarcode').value = copy.barcode || '';
+  document.getElementById('fLocation').value = copy.location || '';
+  document.getElementById('fNote').value = '';
+  toggleForm('addForm');
+}
+
+async function doReturn(id) {
+  showConfirm('归还图书', '确定将副本 #' + id + ' 标记为归还？', async function() {
+    try {
+      // 查找对应的借阅记录
+      var copy = allData.find(function(c) { return c.id === id; });
+      if (copy && copy.borrow_record_id) {
+        await api.post('/admin/api/borrows/return', { borrow_record_id: copy.borrow_record_id });
+        showToast('归还成功');
+        loadData();
+      } else {
+        showToast('未找到借阅记录', 'error');
+      }
+    } catch (err) {
+      showToast('归还失败: ' + err.message, 'error');
+    }
+  });
+}
+
+function exportExcel() {
+  var headers = ['条码', '书名', 'ISBN', 'AR值', '状态', '位置', '借阅人'];
+  var rows = (allData || []).map(c => [c.barcode, c.book_title, c.isbn, c.ar_value, STATUS_TEXT[c.status]||c.status, c.location, c.borrower_name || '--']);
+  exportCSV('bookcopy_export.csv', headers, rows);
+  showToast('已导出 ' + rows.length + ' 条记录');
+}
+
+async function addItem(e) {
+  e.preventDefault();
+  await api.post('/admin/api/bookcopy/' + document.getElementById('fBookId').value + '/copies', {
+    barcode: document.getElementById('fBarcode').value,
+    location: document.getElementById('fLocation').value,
+    condition_note: document.getElementById('fNote').value,
+  });
+  toggleForm('addForm');
+  loadData();
+}
+
+document.getElementById('barcodeInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') scanBarcode();
+});
+
+loadData();
+</script>
+{% endblock %}

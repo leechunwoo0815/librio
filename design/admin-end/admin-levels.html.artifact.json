@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "admin-levels.html",
+  "entry": "admin-levels.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-06-05T05:18:46.940Z",
+  "updatedAt": "2026-06-05T05:18:46.940Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "observation.html",
+  "entry": "observation.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-06-09T11:56:59.635Z",
+  "updatedAt": "2026-06-09T11:56:59.635Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}

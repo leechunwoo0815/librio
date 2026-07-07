@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "admin-questions.html",
+  "entry": "admin-questions.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-06-05T05:18:46.939Z",
+  "updatedAt": "2026-06-05T05:18:46.939Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}

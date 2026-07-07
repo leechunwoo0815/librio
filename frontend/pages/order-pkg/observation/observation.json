@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "观察期报名",
+  "usingComponents": {
+    "pay-button": "/components/pay-button/pay-button"
+  }
+}

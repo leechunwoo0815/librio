@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>观察期报告 · MegaWords</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.003 250); --surface: oklch(100% 0 0);
+      --fg: oklch(20% 0.015 275); --muted: oklch(48% 0.02 250);
+      --border: oklch(90% 0.008 250); --accent: oklch(54% 0.17 275);
+      --accent-soft: oklch(54% 0.17 275 / 0.1); --accent-hover: oklch(48% 0.17 275);
+      --secondary: oklch(86% 0.20 135); --secondary-soft: oklch(86% 0.20 135 / 0.12);
+      --success: oklch(72% 0.20 145); --success-soft: oklch(72% 0.20 145 / 0.1);
+      --warning: oklch(78% 0.16 85); --warning-soft: oklch(78% 0.16 85 / 0.12);
+      --error: oklch(62% 0.22 25); --radius: 16px; --radius-sm: 10px; --radius-lg: 20px;
+      --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+      --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--fg); font-family: var(--font-body);
+      font-size: 15px; line-height: 1.5; max-width: 430px; margin: 0 auto;
+      min-height: 100vh; padding-bottom: 40px; -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; }
+    /* nav bar */
+    .nav-bar {
+      display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 10;
+    }
+    .nav-bar .back { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 10px; }
+    .nav-bar .back svg { width: 20px; height: 20px; }
+    .nav-bar .title { font-family: var(--font-display); font-size: 17px; font-weight: 600; }
+    .nav-bar .spacer { flex: 1; }
+    /* report header */
+    .report-header {
+      margin: 16px 16px 0; padding: 20px;
+      background: linear-gradient(135deg, var(--accent), oklch(46% 0.15 290));
+      border-radius: var(--radius-lg); color: white;
+      position: relative; overflow: hidden;
+    }
+    .report-header::before {
+      content: ''; position: absolute; top: -20px; right: -20px;
+      width: 100px; height: 100px; border-radius: 50%;
+      background: rgba(255,255,255,0.08);
+    }
+    .report-header .rh-icon { font-size: 32px; margin-bottom: 8px; }
+    .report-header .rh-title {
+      font-family: var(--font-display); font-size: 18px; font-weight: 700;
+    }
+    .report-header .rh-child {
+      font-size: 14px; margin-top: 4px; opacity: 0.9;
+    }
+    .report-header .rh-period {
+      display: inline-flex; align-items: center; gap: 6px;
+      margin-top: 10px; padding: 6px 12px;
+      background: rgba(255,255,255,0.15); border-radius: 999px;
+      font-size: 12px; font-weight: 500;
+    }
+    .report-header .rh-period svg { width: 14px; height: 14px; opacity: 0.8; }
+    /* section label */
+    .section-label {
+      display: flex; align-items: center; gap: 6px;
+      font-family: var(--font-display); font-size: 15px; font-weight: 600;
+      padding: 20px 16px 10px;
+    }
+    .section-label svg { width: 18px; height: 18px; color: var(--accent); }
+    /* stat cards grid */
+    .stat-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 10px; padding: 0 16px;
+    }
+    .stat-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px 10px; text-align: center;
+    }
+    .stat-card .sc-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      margin: 0 auto 8px; display: grid; place-items: center; font-size: 18px;
+    }
+    .stat-card .sc-val {
+      font-family: var(--font-display); font-size: 22px; font-weight: 700;
+      line-height: 1.2;
+    }
+    .stat-card .sc-label {
+      font-size: 11px; color: var(--muted); margin-top: 4px;
+    }
+    .stat-card .sc-unit {
+      font-size: 12px; font-weight: 400; color: var(--muted);
+    }
+    /* color variants for icon bg */
+    .sc-icon.blue { background: var(--accent-soft); }
+    .sc-icon.green { background: var(--success-soft); }
+    .sc-icon.yellow { background: var(--warning-soft); }
+    .sc-icon.purple { background: oklch(54% 0.17 300 / 0.1); }
+    /* current level card */
+    .level-card {
+      margin: 0 16px; padding: 16px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius);
+      display: flex; align-items: center; gap: 14px;
+    }
+    .level-card .lc-badge {
+      width: 52px; height: 52px; border-radius: 14px;
+      background: linear-gradient(135deg, var(--accent), oklch(46% 0.15 290));
+      display: grid; place-items: center;
+      color: white; font-family: var(--font-display);
+      font-size: 24px; font-weight: 800;
+      box-shadow: 0 4px 16px var(--accent-soft);
+      flex-shrink: 0;
+    }
+    .level-card .lc-info { flex: 1; }
+    .level-card .lc-name {
+      font-family: var(--font-display); font-size: 16px; font-weight: 700;
+    }
+    .level-card .lc-desc {
+      font-size: 12px; color: var(--muted); margin-top: 2px;
+    }
+    .level-card .lc-progress { margin-top: 8px; }
+    .lc-progress-bar {
+      height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden;
+    }
+    .lc-progress-fill { height: 100%; background: var(--accent); border-radius: 3px; }
+    .lc-progress-text {
+      display: flex; justify-content: space-between;
+      font-size: 11px; color: var(--muted); margin-top: 4px;
+    }
+    /* teacher comment */
+    .comment-card {
+      margin: 0 16px; padding: 16px;
+      background: var(--warning-soft);
+      border: 1px solid oklch(78% 0.16 85 / 0.25);
+      border-radius: var(--radius);
+    }
+    .comment-card .cc-header {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+    }
+    .comment-card .cc-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: oklch(78% 0.16 85 / 0.2);
+      display: grid; place-items: center; font-size: 14px;
+    }
+    .comment-card .cc-meta { flex: 1; }
+    .comment-card .cc-name {
+      font-family: var(--font-display); font-size: 13px; font-weight: 600;
+    }
+    .comment-card .cc-role { font-size: 11px; color: var(--muted); }
+    .comment-card .cc-text {
+      font-size: 14px; line-height: 1.7; color: var(--fg);
+    }
+    .comment-card .cc-quote {
+      display: inline-block; margin-right: 4px; color: oklch(68% 0.16 85);
+      font-size: 18px; font-weight: 700; line-height: 1;
+      vertical-align: -2px;
+    }
+    /* reading chart */
+    .chart-card {
+      margin: 0 16px; padding: 16px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+    .chart-title {
+      font-family: var(--font-display); font-size: 14px; font-weight: 600;
+      margin-bottom: 14px;
+    }
+    .chart-bars {
+      display: flex; align-items: flex-end; gap: 6px; height: 100px;
+    }
+    .chart-bar-col {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; gap: 4px; height: 100%;
+      justify-content: flex-end;
+    }
+    .chart-bar {
+      width: 100%; border-radius: 4px 4px 0 0;
+      background: var(--accent); opacity: 0.8; min-height: 4px;
+    }
+    .chart-bar-label { font-size: 10px; color: var(--muted); }
+    .chart-bar-val { font-size: 10px; font-weight: 600; }
+    /* cta section */
+    .cta-section {
+      margin: 20px 16px 0; padding: 20px;
+      background: linear-gradient(135deg, var(--secondary-soft), var(--accent-soft));
+      border: 1px solid oklch(54% 0.17 275 / 0.12);
+      border-radius: var(--radius-lg); text-align: center;
+    }
+    .cta-section .cta-icon { font-size: 40px; margin-bottom: 10px; }
+    .cta-section .cta-title {
+      font-family: var(--font-display); font-size: 17px; font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .cta-section .cta-desc {
+      font-size: 13px; color: var(--muted); margin-bottom: 16px; line-height: 1.6;
+    }
+    .cta-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 12px 32px; border-radius: 999px;
+      background: var(--accent); color: white;
+      font-size: 15px; font-weight: 600;
+    }
+    .cta-btn:active { background: var(--accent-hover); }
+    .cta-btn svg { width: 16px; height: 16px; }
+    /* bottom spacing */
+    .bottom-space { height: 20px; }
+  </style>
+</head>
+<body>
+  <div class="nav-bar">
+    <a class="back" href="member.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    </a>
+    <span class="title">观察期报告</span>
+    <div class="spacer"></div>
+  </div>
+
+  <!-- report header -->
+  <div class="report-header">
+    <div class="rh-icon">📋</div>
+    <div class="rh-title">观察期学习报告</div>
+    <div class="rh-child">学员：小明（Tom）</div>
+    <div class="rh-period">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      2026年05月01日 至 2026年06月09日
+    </div>
+  </div>
+
+  <!-- reading stats -->
+  <div class="section-label">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+    阅读统计
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="sc-icon blue">📖</div>
+      <div class="sc-val" style="color:var(--accent)">18</div>
+      <div class="sc-label">读完本数</div>
+    </div>
+    <div class="stat-card">
+      <div class="sc-icon green">📝</div>
+      <div class="sc-val" style="color:var(--success)">1,280</div>
+      <div class="sc-label">阅读词数</div>
+    </div>
+    <div class="stat-card">
+      <div class="sc-icon yellow">⏱</div>
+      <div class="sc-val" style="color:var(--warning)">320</div>
+      <div class="sc-label">阅读分钟</div>
+    </div>
+  </div>
+
+  <!-- quiz stats -->
+  <div class="section-label">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+    测验统计
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="sc-icon purple">📋</div>
+      <div class="sc-val" style="color:oklch(54% 0.17 300)">18</div>
+      <div class="sc-label">参加测验</div>
+    </div>
+    <div class="stat-card">
+      <div class="sc-icon green">✅</div>
+      <div class="sc-val" style="color:var(--success)">15</div>
+      <div class="sc-label">通过测验</div>
+    </div>
+    <div class="stat-card">
+      <div class="sc-icon blue">📊</div>
+      <div class="sc-val" style="color:var(--accent)">83<span class="sc-unit">%</span></div>
+      <div class="sc-label">通过率</div>
+    </div>
+  </div>
+
+  <!-- weekly reading chart -->
+  <div class="section-label">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+    每周阅读情况
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">近 6 周阅读词数</div>
+    <div class="chart-bars">
+      <div class="chart-bar-col">
+        <div class="chart-bar-val">80</div>
+        <div class="chart-bar" style="height:15%;background:var(--accent)"></div>
+        <div class="chart-bar-label">W1</div>
+      </div>
+      <div class="chart-bar-col">
+        <div class="chart-bar-val">150</div>
+        <div class="chart-bar" style="height:28%;background:var(--accent)"></div>
+        <div class="chart-bar-label">W2</div>
+      </div>
+      <div class="chart-bar-col">
+        <div class="chart-bar-val">220</div>
+        <div class="chart-bar" style="height:42%;background:var(--accent)"></div>
+        <div class="chart-bar-label">W3</div>
+      </div>
+      <div class="chart-bar-col">
+        <div class="chart-bar-val">180</div>
+        <div class="chart-bar" style="height:34%;background:var(--accent)"></div>
+        <div class="chart-bar-label">W4</div>
+      </div>
+      <div class="chart-bar-col">
+        <div class="chart-bar-val">300</div>
+        <div class="chart-bar" style="height:58%;background:var(--accent)"></div>
+        <div class="chart-bar-label">W5</div>
+      </div>
+      <div class="chart-bar-col">
+        <div class="chart-bar-val">350</div>
+        <div class="chart-bar" style="height:68%;background:var(--success)"></div>
+        <div class="chart-bar-label">W6</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- current level -->
+  <div class="section-label">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    当前级别
+  </div>
+  <div class="level-card">
+    <div class="lc-badge">B</div>
+    <div class="lc-info">
+      <div class="lc-name">B级 · 初学者</div>
+      <div class="lc-desc">Beginner Level</div>
+      <div class="lc-progress">
+        <div class="lc-progress-bar">
+          <div class="lc-progress-fill" style="width:65%"></div>
+        </div>
+        <div class="lc-progress-text">
+          <span>已完成 65%</span>
+          <span>距离 C 级还需 720 词</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- teacher comment -->
+  <div class="section-label">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+    老师评语
+  </div>
+  <div class="comment-card">
+    <div class="cc-header">
+      <div class="cc-avatar">👩‍🏫</div>
+      <div class="cc-meta">
+        <div class="cc-name">李老师</div>
+        <div class="cc-role">阅读指导老师</div>
+      </div>
+    </div>
+    <div class="cc-text">
+      <span class="cc-quote">"</span>小明在观察期表现非常好，阅读积极性很高，能够坚持每天完成阅读任务。词汇量稳步提升，测验通过率从第一周的60%提高到了现在的90%以上。建议继续保持良好的阅读习惯，争取早日升级到C级。老师为你加油！<span class="cc-quote">"</span>
+    </div>
+  </div>
+
+  <!-- CTA: convert to official member -->
+  <div class="cta-section">
+    <div class="cta-icon">🎉</div>
+    <div class="cta-title">小明表现很棒！</div>
+    <div class="cta-desc">观察期内阅读了18本书，累计1,280词，强烈建议转为正式会员继续学习</div>
+    <button class="cta-btn" onclick="convertMember()">
+      转为正式会员
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </button>
+  </div>
+
+  <div class="bottom-space"></div>
+
+  <script>
+    function convertMember() {
+      // In a real app, this would navigate to the membership purchase page
+      alert('正在跳转到会员开通页面...');
+    }
+  </script>
+</body>
+</html>

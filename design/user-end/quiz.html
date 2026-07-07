@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>答题 · MegaWords</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.003 250); --surface: oklch(100% 0 0);
+      --fg: oklch(20% 0.015 275); --muted: oklch(48% 0.02 250);
+      --border: oklch(90% 0.008 250); --accent: oklch(54% 0.17 275);
+      --accent-soft: oklch(54% 0.17 275 / 0.1);
+      --success: oklch(72% 0.20 145); --success-soft: oklch(72% 0.20 145 / 0.1);
+      --error: oklch(62% 0.22 25); --error-soft: oklch(62% 0.22 25 / 0.1);
+      --warning: oklch(78% 0.16 85); --warning-soft: oklch(78% 0.16 85 / 0.1);
+      --radius: 16px; --radius-sm: 10px; --radius-lg: 20px;
+      --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--fg); font-family: var(--font-body);
+      font-size: 15px; line-height: 1.5; max-width: 430px; margin: 0 auto;
+      min-height: 100vh; display: flex; flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; }
+    /* top */
+    .quiz-header {
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 16px; position: sticky; top: 0; z-index: 10;
+    }
+    .quiz-book-name { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+    .quiz-progress-row { display: flex; align-items: center; gap: 10px; }
+    .quiz-progress-bar {
+      flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;
+    }
+    .quiz-progress-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.3s ease; }
+    .quiz-progress-text { font-size: 13px; font-weight: 600; color: var(--accent); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    /* question */
+    .question-area {
+      flex: 1; padding: 24px 16px; display: flex; flex-direction: column;
+    }
+    .question-num {
+      font-size: 13px; color: var(--accent); font-weight: 600; margin-bottom: 8px;
+    }
+    .question-text {
+      font-family: var(--font-display); font-size: 22px; font-weight: 700;
+      line-height: 1.5; margin-bottom: 24px;
+    }
+    .question-text .en { color: var(--accent); }
+    /* options */
+    .options { display: flex; flex-direction: column; gap: 10px; }
+    .option {
+      display: flex; align-items: center; gap: 12px;
+      background: var(--surface); border: 2px solid var(--border);
+      border-radius: var(--radius); padding: 16px;
+      cursor: pointer; transition: all 0.15s ease;
+    }
+    .option:active { transform: scale(0.98); }
+    .option.selected { border-color: var(--accent); background: var(--accent-soft); }
+    .option.correct { border-color: var(--success); background: var(--success-soft); }
+    .option.wrong { border-color: var(--error); background: var(--error-soft); }
+    .option-letter {
+      width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+      display: grid; place-items: center; font-weight: 700; font-size: 14px;
+      background: var(--border); color: var(--muted);
+      transition: all 0.15s ease;
+    }
+    .option.selected .option-letter { background: var(--accent); color: white; }
+    .option.correct .option-letter { background: var(--success); color: white; }
+    .option.wrong .option-letter { background: var(--error); color: white; }
+    .option-text { flex: 1; font-size: 15px; line-height: 1.5; }
+    .option .check-icon {
+      width: 22px; height: 22px; flex-shrink: 0; opacity: 0; transition: opacity 0.15s;
+    }
+    .option.selected .check-icon { opacity: 1; }
+    .option.correct .check-icon { opacity: 1; }
+    .option.wrong .check-icon { opacity: 1; }
+    /* feedback */
+    .feedback {
+      margin-top: 16px; padding: 12px 16px; border-radius: var(--radius-sm);
+      font-size: 14px; display: none; gap: 8px;
+    }
+    .feedback.show { display: flex; }
+    .feedback.correct { background: var(--success-soft); color: oklch(40% 0.15 145); }
+    .feedback.wrong { background: var(--error-soft); color: oklch(40% 0.15 25); }
+    .feedback svg { width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; }
+    /* bottom */
+    .quiz-footer {
+      padding: 12px 16px 28px; background: var(--surface);
+      border-top: 1px solid var(--border);
+    }
+    .next-btn {
+      width: 100%; padding: 14px; border-radius: var(--radius);
+      background: var(--accent); color: white; font-size: 15px; font-weight: 600;
+    }
+    .next-btn:active { opacity: 0.85; }
+    .next-btn:disabled { opacity: 0.5; }
+    .submit-btn {
+      width: 100%; padding: 14px; border-radius: var(--radius);
+      background: linear-gradient(135deg, var(--accent), oklch(48% 0.17 275));
+      color: white; font-size: 15px; font-weight: 600;
+    }
+    /* confirm dialog */
+    .confirm-overlay {
+      position: fixed; inset: 0; z-index: 50;
+      background: oklch(0% 0 0 / 0.4); display: none;
+      align-items: center; justify-content: center;
+    }
+    .confirm-overlay.show { display: flex; }
+    .confirm-dialog {
+      background: var(--surface); border-radius: var(--radius-lg);
+      padding: 28px 24px; width: calc(100% - 48px); max-width: 340px;
+      text-align: center; box-shadow: 0 12px 40px oklch(0% 0 0 / 0.15);
+    }
+    .confirm-dialog .cd-emoji { font-size: 44px; margin-bottom: 8px; }
+    .confirm-dialog .cd-title { font-family: var(--font-display); font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+    .confirm-dialog .cd-sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
+    .confirm-dialog .cd-actions { display: flex; gap: 10px; }
+    .confirm-dialog .cd-btn {
+      flex: 1; padding: 13px; border-radius: var(--radius); font-size: 14px; font-weight: 600;
+    }
+    .cd-btn.cancel { background: var(--border); color: var(--muted); }
+    .cd-btn.confirm { background: linear-gradient(135deg, var(--accent), oklch(48% 0.17 275)); color: white; }
+  </style>
+</head>
+<body>
+  <div class="quiz-header">
+    <div class="quiz-book-name">The Magic Tree House #1: Dinosaurs Before Dark</div>
+    <div class="quiz-progress-row">
+      <div class="quiz-progress-bar">
+        <div class="quiz-progress-fill" id="progressFill" style="width: 20%"></div>
+      </div>
+      <span class="quiz-progress-text" id="progressText">1 / 5</span>
+    </div>
+  </div>
+
+  <div class="question-area">
+    <div class="question-num" id="qNum">第 1 题</div>
+    <div class="question-text" id="qText">
+      What did Jack find in the tree house?<br>
+      <span class="en">Jack 在树屋里发现了什么？</span>
+    </div>
+    <div class="options" id="options">
+      <div class="option" onclick="selectOption(this, 0)">
+        <span class="option-letter">A</span>
+        <span class="option-text">A lot of books</span>
+        <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
+      </div>
+      <div class="option" onclick="selectOption(this, 1)">
+        <span class="option-letter">B</span>
+        <span class="option-text">A magic wand</span>
+        <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
+      </div>
+      <div class="option" onclick="selectOption(this, 2)">
+        <span class="option-letter">C</span>
+        <span class="option-text">A treasure chest</span>
+        <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
+      </div>
+      <div class="option" onclick="selectOption(this, 3)">
+        <span class="option-letter">D</span>
+        <span class="option-text">A map of the world</span>
+        <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
+      </div>
+    </div>
+    <div class="feedback" id="feedback">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
+      <span id="feedbackText">正确！Jack 在树屋里发现了很多书。</span>
+    </div>
+  </div>
+
+  <div class="quiz-footer">
+    <button class="next-btn" id="nextBtn" disabled onclick="handleNext()">下一题</button>
+  </div>
+
+  <!-- Confirmation dialog -->
+  <div class="confirm-overlay" id="confirmOverlay">
+    <div class="confirm-dialog">
+      <div class="cd-emoji">📝</div>
+      <div class="cd-title">确认提交？</div>
+      <div class="cd-sub">还可以检查一遍哦！<br>你已作答全部 5 道题目。</div>
+      <div class="cd-actions">
+        <button class="cd-btn cancel" onclick="hideConfirm()">返回检查</button>
+        <button class="cd-btn confirm" onclick="doSubmit()">确认提交</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var currentQ = 0, score = 0, totalQ = 5;
+    var questions = [
+      { text: 'What did Jack find in the tree house?<br><span class="en">Jack 在树屋里发现了什么？</span>', options: ['A lot of books', 'A magic wand', 'A treasure chest', 'A map of the world'], answer: 0, explain: '正确！Jack 在树屋里发现了很多书。' },
+      { text: 'Where did the tree house take them?<br><span class="en">树屋把他们带到了哪里？</span>', options: ['To the moon', 'To the age of dinosaurs', 'To a fairy tale', 'To the ocean'], answer: 1, explain: '正确！树屋把他们带到了恐龙时代。' },
+      { text: 'What kind of dinosaur did Annie see first?<br><span class="en">Annie 最先看到了什么恐龙？</span>', options: ['A T-Rex', 'A Pteranodon', 'A Triceratops', 'A Stegosaurus'], answer: 1, explain: '正确！Annie 最先看到的是翼龙。' },
+      { text: 'What did Jack use to take notes?<br><span class="en">Jack 用什么做笔记？</span>', options: ['A phone', 'A notebook and pencil', 'A camera', 'A voice recorder'], answer: 1, explain: '正确！Jack 用笔记本和铅笔记录。' },
+      { text: 'How did they get back home?<br><span class="en">他们怎么回到家的？</span>', options: ['They walked', 'They wished on a medallion', 'They clicked their shoes', 'The tree house spun again'], answer: 3, explain: '正确！树屋再次旋转把他们带回了家。' }
+    ];
+
+    function selectOption(el, idx) {
+      if (el.classList.contains('correct') || el.classList.contains('wrong')) return;
+      var opts = document.querySelectorAll('.option');
+      var correct = questions[currentQ].answer;
+      opts[idx].classList.add(idx === correct ? 'correct' : 'wrong');
+      if (idx === correct) { score++; }
+      else { opts[correct].classList.add('correct'); }
+      var fb = document.getElementById('feedback');
+      fb.className = 'feedback show ' + (idx === correct ? 'correct' : 'wrong');
+      document.getElementById('feedbackText').textContent = questions[currentQ].explain;
+      var nextBtn = document.getElementById('nextBtn');
+      nextBtn.disabled = false;
+      if (currentQ === totalQ - 1) {
+        nextBtn.textContent = '提交答案';
+      } else {
+        nextBtn.textContent = '下一题';
+      }
+      // Auto-advance after delay (except last question)
+      if (currentQ < totalQ - 1) {
+        setTimeout(function() { nextQuestion(); }, 1200);
+      }
+    }
+
+    function handleNext() {
+      if (currentQ === totalQ - 1) {
+        showConfirm();
+      } else {
+        nextQuestion();
+      }
+    }
+
+    function showConfirm() {
+      document.getElementById('confirmOverlay').classList.add('show');
+    }
+    function hideConfirm() {
+      document.getElementById('confirmOverlay').classList.remove('show');
+    }
+    function doSubmit() {
+      hideConfirm();
+      location.href = 'quiz-result.html?score=' + score + '&total=' + totalQ;
+    }
+
+    function nextQuestion() {
+      currentQ++;
+      if (currentQ >= totalQ) { showConfirm(); return; }
+      var q = questions[currentQ];
+      document.getElementById('qNum').textContent = '第 ' + (currentQ+1) + ' 题';
+      document.getElementById('qText').innerHTML = q.text;
+      document.getElementById('progressFill').style.width = ((currentQ+1)/totalQ*100)+'%';
+      document.getElementById('progressText').textContent = (currentQ+1)+' / '+totalQ;
+      var opts = document.querySelectorAll('.option');
+      var letters = ['A','B','C','D'];
+      for (var i = 0; i < 4; i++) {
+        opts[i].className = 'option';
+        opts[i].querySelector('.option-letter').textContent = letters[i];
+        opts[i].querySelector('.option-text').textContent = q.options[i];
+      }
+      document.getElementById('feedback').className = 'feedback';
+      var nextBtn = document.getElementById('nextBtn');
+      nextBtn.disabled = true;
+      nextBtn.textContent = currentQ === totalQ - 1 ? '提交答案' : '下一题';
+    }
+  </script>
+</body>
+</html>

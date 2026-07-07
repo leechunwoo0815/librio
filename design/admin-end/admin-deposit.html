@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>押金管理 · MegaWords</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.003 250); --surface: oklch(100% 0 0); --fg: oklch(20% 0.015 275);
+      --muted: oklch(48% 0.02 250); --border: oklch(90% 0.008 250);
+      --accent: oklch(54% 0.17 275); --accent-soft: oklch(54% 0.17 275 / 0.1);
+      --accent-hover: oklch(48% 0.17 275);
+      --secondary: oklch(86% 0.20 135); --secondary-soft: oklch(86% 0.20 135 / 0.12);
+      --success: oklch(72% 0.20 145); --success-soft: oklch(72% 0.20 145 / 0.1);
+      --warning: oklch(78% 0.16 85); --warning-soft: oklch(78% 0.16 85 / 0.1);
+      --error: oklch(62% 0.22 25); --error-soft: oklch(62% 0.22 25 / 0.08);
+      --radius: 12px; --radius-sm: 8px; --radius-lg: 16px;
+      --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+      --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 14px; line-height: 1.5; min-height: 100vh; display: flex; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; }
+    .main { margin-left: 240px; flex: 1; min-height: 100vh; }
+    .top-bar { display: flex; align-items: center; justify-content: space-between; padding: 16px 28px; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; }
+    .top-bar h1 { font-family: var(--font-display); font-size: 18px; font-weight: 600; }
+    .top-bar .right { display: flex; align-items: center; gap: 16px; font-size: 13px; color: var(--muted); }
+    .top-bar .right .name { color: var(--fg); font-weight: 500; }
+    .logout-btn { color: var(--accent); font-size: 13px; }
+    .logout-btn:hover { text-decoration: underline; }
+    .content { padding: 24px 28px; }
+
+    /* stat cards */
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; }
+    .stat-card .stat-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    .stat-card .stat-value { font-family: var(--font-display); font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .stat-card:nth-child(1) { border-top: 3px solid var(--accent); }
+    .stat-card:nth-child(2) { border-top: 3px solid var(--warning); }
+    .stat-card:nth-child(3) { border-top: 3px solid var(--error); }
+    .stat-card:nth-child(4) { border-top: 3px solid oklch(62% 0.22 25 / 0.6); }
+
+    /* tabs */
+    .tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 0; }
+    .tab { padding: 9px 16px; font-size: 13px; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.12s ease; }
+    .tab:hover { color: var(--fg); }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
+
+    /* table */
+    .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; padding: 12px 16px; font-weight: 500; color: var(--muted); border-bottom: 1px solid var(--border); font-size: 12px; letter-spacing: 0.03em; }
+    td { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: oklch(54% 0.17 275 / 0.02); }
+    .status-badge { padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 500; }
+    .status-paid { background: var(--success-soft); color: var(--success); }
+    .status-refunding { background: var(--warning-soft); color: oklch(55% 0.14 85); }
+    .status-returned { background: var(--accent-soft); color: var(--accent); }
+    .status-deducted { background: var(--error-soft); color: var(--error); }
+    .status-pending { background: oklch(48% 0.02 250 / 0.1); color: var(--muted); }
+    .action-link { color: var(--accent); font-size: 12px; cursor: pointer; }
+    .action-link:hover { text-decoration: underline; }
+    .amount { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+    @media (max-width: 1024px) { .main { margin-left: 200px; } .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 768px) { .stats-grid { grid-template-columns: 1fr; } }
+  </style>
+    <link rel="stylesheet" href="admin-sidebar.css">
+  </head>
+<body>
+  <div id="sidebar-root"></div>
+<script>
+document.querySelectorAll('.nav-link').forEach(a => {
+  a.classList.remove('active');
+  if (a.getAttribute('href') === window.location.pathname.split('/').pop()) a.classList.add('active');
+});
+</script>
+  <script>
+    (function(){
+      var page = (location.pathname.split('/').pop()) || 'admin-dashboard.html';
+      document.querySelectorAll('.sidebar-nav .nav-link').forEach(function(l){
+        if (l.getAttribute('href') === page) l.classList.add('active');
+      });
+    })();
+  </script>
+
+  <div class="main">
+    <div class="top-bar"><h1>押金管理</h1><div class="right"><span class="name">管理员</span><button class="logout-btn">退出登录</button></div></div>
+    <div class="content">
+      <!-- Stats -->
+      <div class="stats-grid" data-od-id="stats">
+        <div class="stat-card">
+          <div class="stat-label">💰 总押金</div>
+          <div class="stat-value">¥120,000</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">⏳ 待退</div>
+          <div class="stat-value">¥2,400</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">✂️ 已扣除</div>
+          <div class="stat-value">¥1,200</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">⚠️ 未结罚款</div>
+          <div class="stat-value" style="color: var(--error);">¥360</div>
+        </div>
+      </div>
+
+      <!-- Filter Tabs -->
+      <div class="tabs" data-od-id="tabs">
+        <div class="tab active">全部</div>
+        <div class="tab">已缴纳</div>
+        <div class="tab">退款中</div>
+        <div class="tab">已退</div>
+        <div class="tab">已扣</div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-wrap" data-od-id="table">
+        <table>
+          <thead><tr><th>孩子</th><th>押金状态</th><th>余额</th><th>罚款</th><th>缴纳日期</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>张小明</td>
+              <td><span class="status-badge status-paid">已缴纳</span></td>
+              <td class="amount">¥500</td>
+              <td class="amount" style="color: var(--muted);">¥0</td>
+              <td style="font-family: var(--font-mono);">2026-01-15</td>
+              <td><span class="action-link">退款</span></td>
+            </tr>
+            <tr>
+              <td>李思涵</td>
+              <td><span class="status-badge status-paid">已缴纳</span></td>
+              <td class="amount">¥500</td>
+              <td class="amount" style="color: var(--muted);">¥0</td>
+              <td style="font-family: var(--font-mono);">2026-02-20</td>
+              <td><span class="action-link">退款</span></td>
+            </tr>
+            <tr>
+              <td>王语晨</td>
+              <td><span class="status-badge status-refunding">退款中</span></td>
+              <td class="amount">¥500</td>
+              <td class="amount" style="color: var(--muted);">¥0</td>
+              <td style="font-family: var(--font-mono);">2026-03-10</td>
+              <td><span class="action-link">审核</span></td>
+            </tr>
+            <tr>
+              <td>刘子涵</td>
+              <td><span class="status-badge status-returned">已退</span></td>
+              <td class="amount" style="color: var(--muted);">¥0</td>
+              <td class="amount" style="color: var(--muted);">¥0</td>
+              <td style="font-family: var(--font-mono);">2026-04-05</td>
+              <td><span class="action-link" style="color: var(--muted);">--</span></td>
+            </tr>
+            <tr>
+              <td>陈嘉怡</td>
+              <td><span class="status-badge status-deducted">已扣</span></td>
+              <td class="amount">¥300</td>
+              <td class="amount" style="color: var(--error);">¥200</td>
+              <td style="font-family: var(--font-mono);">2026-01-28</td>
+              <td><span class="action-link">详情</span></td>
+            </tr>
+            <tr>
+              <td>赵思远</td>
+              <td><span class="status-badge status-paid">已缴纳</span></td>
+              <td class="amount">¥500</td>
+              <td class="amount" style="color: var(--error);">¥60</td>
+              <td style="font-family: var(--font-mono);">2026-02-08</td>
+              <td><span class="action-link">退款</span> · <span class="action-link">收取罚款</span></td>
+            </tr>
+            <tr>
+              <td>孙雅琪</td>
+              <td><span class="status-badge status-refunding">退款中</span></td>
+              <td class="amount">¥500</td>
+              <td class="amount" style="color: var(--error);">¥100</td>
+              <td style="font-family: var(--font-mono);">2026-03-22</td>
+              <td><span class="action-link">审核</span></td>
+            </tr>
+            <tr>
+              <td>周浩然</td>
+              <td><span class="status-badge status-paid">已缴纳</span></td>
+              <td class="amount">¥500</td>
+              <td class="amount" style="color: var(--error);">¥200</td>
+              <td style="font-family: var(--font-mono);">2026-05-01</td>
+              <td><span class="action-link">退款</span> · <span class="action-link">收取罚款</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 16px; font-size: 13px; color: var(--muted);">
+        <span>共 240 条记录 · 第 1/30 页</span>
+        <div style="display: flex; gap: 4px;">
+          <button style="width: 32px; height: 32px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--accent); color: white; display: grid; place-items: center; font-size: 13px;">1</button>
+          <button style="width: 32px; height: 32px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); display: grid; place-items: center; font-size: 13px; color: var(--fg);">2</button>
+          <button style="width: 32px; height: 32px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); display: grid; place-items: center; font-size: 13px; color: var(--fg);">3</button>
+          <button style="width: 32px; height: 32px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); display: grid; place-items: center; font-size: 13px; color: var(--fg);">...</button>
+          <button style="width: 32px; height: 32px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); display: grid; place-items: center; font-size: 13px; color: var(--fg);">30</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="admin-sidebar.js"></script>
+</body>
+</html>

@@ -1,0 +1,213 @@
+{% extends "admin/base.html" %}
+{% block title %}消息管理{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="/static/admin/css/pages/message_manage.css" />
+{% endblock %}
+{% block page_title %}消息管理{% endblock %}
+{% block content %}
+
+<!-- Compose -->
+<div class="msg-compose">
+  <h2>发送消息</h2>
+  <form id="msgForm" onsubmit="return sendMessage(event)">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="msgTitle">标题</label>
+        <input type="text" id="msgTitle" placeholder="消息标题" maxlength="100" required />
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="msgContent">内容</label>
+        <textarea id="msgContent" placeholder="消息内容..." required></textarea>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group" style="max-width:200px">
+        <label for="msgType">消息类型</label>
+        <select id="msgType">
+          <option value="1">系统通知</option>
+          <option value="2">活动通知</option>
+          <option value="3">借阅通知</option>
+          <option value="4">老师消息</option>
+          <option value="5">阅读提醒</option>
+        </select>
+      </div>
+      <div class="form-group" style="max-width:200px">
+        <label for="msgPriority">优先级</label>
+        <select id="msgPriority">
+          <option value="0">低</option>
+          <option value="1">中</option>
+          <option value="2">高</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>发送目标</label>
+        <div class="target-row">
+          <select id="msgTarget" onchange="toggleTargetUser()">
+            <option value="all">全部用户</option>
+            <option value="user">指定用户</option>
+          </select>
+          <input type="number" id="msgTargetUserId" placeholder="用户ID" style="display:none" />
+        </div>
+      </div>
+    </div>
+    <div class="compose-actions">
+      <button type="submit" class="btn-send" id="btnSend">发送</button>
+    </div>
+  </form>
+</div>
+
+<!-- Messages History -->
+<div class="msg-table-section">
+  <div class="msg-table-header">
+    <h2>发送记录</h2>
+  </div>
+  <div class="table-wrap">
+    <div id="msgSkeleton"></div>
+    <table class="msg-table-wrap" id="msgTable" style="display:none">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>标题</th>
+          <th>内容</th>
+          <th>类型</th>
+          <th>优先级</th>
+          <th>用户ID</th>
+          <th>状态</th>
+          <th>发送时间</th>
+        </tr>
+      </thead>
+      <tbody id="msgTableBody"></tbody>
+    </table>
+  </div>
+  <div id="msgEmpty" class="msg-empty" style="display:none">暂无消息记录</div>
+  <div id="msgPagination" class="msg-pagination"></div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+  var typeNames = {1:'系统通知', 2:'活动通知', 3:'借阅通知', 4:'老师消息', 5:'阅读提醒'};
+  var priorityNames = {0:'低', 1:'中', 2:'高'};
+  var currentPage = 1;
+  var pageSize = 20;
+
+  window.toggleTargetUser = function() {
+    var sel = document.getElementById('msgTarget').value;
+    var inp = document.getElementById('msgTargetUserId');
+    inp.style.display = sel === 'user' ? 'block' : 'none';
+    if (sel === 'user') inp.required = true;
+    else { inp.required = false; inp.value = ''; }
+  };
+
+  window.sendMessage = function(e) {
+    e.preventDefault();
+    var title = document.getElementById('msgTitle').value.trim();
+    var content = document.getElementById('msgContent').value.trim();
+    var msgType = parseInt(document.getElementById('msgType').value);
+    var priority = parseInt(document.getElementById('msgPriority').value);
+    var target = document.getElementById('msgTarget').value;
+    var targetUserId = document.getElementById('msgTargetUserId').value;
+
+    if (!title || !content) { showToast('请填写标题和内容', 'error'); return false; }
+    if (target === 'user' && !targetUserId) { showToast('请输入用户ID', 'error'); return false; }
+
+    var btn = document.getElementById('btnSend');
+    btn.disabled = true;
+    btn.textContent = '发送中...';
+
+    var body = {
+      title: title,
+      content: content,
+      msg_type: msgType,
+      priority: priority,
+      target: target,
+    };
+    if (target === 'user') body.target_user_id = parseInt(targetUserId);
+
+    api.post('/admin/api/messages/send', body).then(function(data) {
+      btn.disabled = false;
+      btn.textContent = '发送';
+      if (data.success) {
+        showToast('发送成功，共 ' + data.sent_count + ' 条', 'success');
+        document.getElementById('msgTitle').value = '';
+        document.getElementById('msgContent').value = '';
+        document.getElementById('msgTargetUserId').value = '';
+        loadMessages();
+      } else {
+        showToast(data.detail || '发送失败', 'error');
+      }
+    }).catch(function(err) {
+      btn.disabled = false;
+      btn.textContent = '发送';
+      showToast('发送失败: ' + (err.message || '网络错误'), 'error');
+    });
+
+    return false;
+  };
+
+  function loadMessages() {
+    showSkeleton('msgSkeleton', 8);
+    document.getElementById('msgTable').style.display = 'none';
+    document.getElementById('msgEmpty').style.display = 'none';
+
+    api.get('/admin/api/messages?page=' + currentPage + '&page_size=' + pageSize)
+      .then(function(data) {
+        hideSkeleton('msgSkeleton');
+        var items = data.items || [];
+        var tbody = document.getElementById('msgTableBody');
+        tbody.innerHTML = '';
+
+        if (items.length === 0) {
+          document.getElementById('msgEmpty').style.display = 'block';
+          document.getElementById('msgPagination').innerHTML = '';
+          return;
+        }
+
+        document.getElementById('msgTable').style.display = '';
+
+        items.forEach(function(m) {
+          var tr = document.createElement('tr');
+          var shortContent = m.content.length > 40 ? m.content.substring(0, 40) + '...' : m.content;
+          var time = m.create_time ? m.create_time.replace('T', ' ').substring(0, 19) : '-';
+          tr.innerHTML =
+            '<td>' + m.id + '</td>' +
+            '<td>' + escHtml(m.title) + '</td>' +
+            '<td title="' + escHtml(m.content) + '">' + escHtml(shortContent) + '</td>' +
+            '<td><span class="msg-type-badge type-' + m.msg_type + '">' + (typeNames[m.msg_type] || m.msg_type) + '</span></td>' +
+            '<td><span class="priority-badge priority-' + m.priority + '">' + (priorityNames[m.priority] || m.priority) + '</span></td>' +
+            '<td>' + m.user_id + '</td>' +
+            '<td>' + (m.is_read ? '已读' : '未读') + '</td>' +
+            '<td>' + time + '</td>';
+          tbody.appendChild(tr);
+        });
+
+        renderPagination('msgPagination', data.total, data.page, data.page_size, 'goPage');
+      })
+      .catch(function() {
+        hideSkeleton('msgSkeleton');
+        document.getElementById('msgEmpty').style.display = 'block';
+        showToast('加载消息列表失败', 'error');
+      });
+  }
+
+  window.goPage = function(p) {
+    currentPage = p;
+    loadMessages();
+  };
+
+  function escHtml(s) {
+    if (!s) return '';
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // Initial load
+  loadMessages();
+})();
+</script>
+{% endblock %}

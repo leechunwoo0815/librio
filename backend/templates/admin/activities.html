@@ -1,0 +1,81 @@
+{% extends "admin/base.html" %}
+{% block title %}活动管理{% endblock %}
+{% block page_title %}活动管理{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/admin/css/pages/activities.css" />
+{% endblock %}
+
+{% block content %}
+<div class="toolbar">
+  <button class="btn-action btn-primary" onclick="window.activitiesPage.showCreateModal()">+ 创建活动</button>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>活动名称</th><th>时间</th><th>类型</th><th>报名人数</th><th>状态</th><th>操作</th></tr></thead>
+    <tbody id="actBody">
+      <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted);">加载中...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 创建/编辑活动弹窗 -->
+<div class="modal-overlay" id="createModal">
+  <div class="modal" style="max-width:600px;">
+    <h3 id="modalTitle">创建活动</h3>
+    <input type="hidden" id="editActivityId" value="" />
+    <div class="form-group"><label>标题 <span style="color:var(--error)">*</span></label><input class="form-input" id="actTitle" placeholder="活动标题" required /></div>
+    <div class="form-group"><label>类型</label><select class="form-input" id="actType" onchange="window.activitiesPage.onTypeChange()">
+      <option value="1">读书交流</option><option value="2">讲座</option><option value="3">CityWalk</option><option value="4">郊游</option><option value="5">大会</option><option value="6">其他</option>
+    </select></div>
+    <div class="form-group"><label>开始时间 <span style="color:var(--error)">*</span></label><input class="form-input" id="actStart" type="datetime-local" required /></div>
+    <div class="form-group"><label>结束时间 <span style="color:var(--error)">*</span></label><input class="form-input" id="actEnd" type="datetime-local" required /></div>
+    <div class="form-group"><label>地点</label><input class="form-input" id="actVenue" placeholder="活动地点" /></div>
+    <div class="form-group"><label>最大参与人数</label><input class="form-input" id="actMax" type="number" value="30" min="1" /></div>
+    <div class="form-group"><label>是否免费</label><select class="form-input" id="actFree" onchange="window.activitiesPage.onFreeChange()"><option value="1">免费</option><option value="0">收费</option></select></div>
+    <div class="form-group" id="priceGroup" style="display:none;"><label>收费金额 (元) <span style="color:var(--error)">*</span></label><input class="form-input" id="actPrice" type="number" min="0" step="0.01" placeholder="请输入金额" /></div>
+    <div class="form-group"><label>活动描述</label><textarea class="form-input" id="actDesc" rows="3" placeholder="活动详细描述"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn-outline" onclick="window.activitiesPage.hideCreateModal()">取消</button>
+      <button class="btn-primary" id="submitBtn" onclick="window.activitiesPage.submitActivity()">创建</button>
+    </div>
+  </div>
+</div>
+
+<!-- 报名管理弹窗 -->
+<div id="signinModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:12px;width:560px;max-height:80vh;overflow-y:auto;padding:28px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <h2 style="margin:0;font-size:20px;">报名管理</h2>
+      <button onclick="window.activitiesPage.hideSigninModal()" style="border:none;background:none;font-size:24px;cursor:pointer;color:var(--muted);">&times;</button>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label style="font-size:13px;cursor:pointer;">
+        <input type="checkbox" id="signinCheckAll" onchange="window.activitiesPage.toggleSigninAll()" /> 全选
+      </label>
+    </div>
+    <div id="signinList" style="max-height:400px;overflow-y:auto;">加载中...</div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;">
+      <button class="btn-outline" onclick="window.activitiesPage.hideSigninModal()">取消</button>
+      <button class="btn-primary" onclick="window.activitiesPage.submitSignin()">确认签到</button>
+    </div>
+  </div>
+</div>
+
+<!-- 确认弹窗 -->
+<div id="confirmModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:12px;width:420px;padding:24px;">
+    <h3 id="confirmTitle" style="margin:0 0 12px;font-size:18px;">确认操作</h3>
+    <p id="confirmMsg" style="margin:0 0 20px;font-size:14px;color:var(--fg);"></p>
+    <div style="display:flex;justify-content:flex-end;gap:8px;">
+      <button class="btn-outline" onclick="hideConfirm()">取消</button>
+      <button class="btn-primary" id="confirmBtn">确认</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/admin/js/pages/activities.js"></script>
+{% endblock %}

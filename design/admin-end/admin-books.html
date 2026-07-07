@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>图书管理 — MegaWords 管理后台</title>
+<style>
+:root {
+  --bg: oklch(98% 0.003 250);
+  --surface: oklch(100% 0 0);
+  --fg: oklch(20% 0.015 275);
+  --muted: oklch(48% 0.02 250);
+  --border: oklch(90% 0.008 250);
+  --accent: oklch(54% 0.17 275);
+  --accent-soft: oklch(54% 0.17 275 / 0.1);
+  --accent-hover: oklch(48% 0.17 275);
+  --secondary: oklch(86% 0.20 135);
+  --secondary-soft: oklch(86% 0.20 135 / 0.12);
+  --success: oklch(72% 0.20 145);
+  --success-soft: oklch(72% 0.20 145 / 0.1);
+  --warning: oklch(78% 0.16 85);
+  --warning-soft: oklch(78% 0.16 85 / 0.1);
+  --error: oklch(62% 0.22 25);
+  --radius: 12px; --radius-sm: 8px; --radius-lg: 16px;
+  --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+}
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: var(--font-body); background: var(--bg); color: var(--fg); display: flex; min-height: 100vh; }
+a { text-decoration: none; color: inherit; }
+
+/* Sidebar */
+.logo-icon { font-size: 28px; }
+.logo-text { font-size: 17px; font-weight: 700; color: var(--accent); font-family: var(--font-display); }
+.logo-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+/* Main */
+.main { margin-left: 240px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+.top-bar { display: flex; align-items: center; justify-content: space-between; padding: 16px 32px; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50; }
+.top-bar h1 { font-size: 18px; font-weight: 700; font-family: var(--font-display); }
+.top-bar .right { display: flex; align-items: center; gap: 16px; font-size: 13px; color: var(--muted); }
+.logout-btn { color: var(--error); font-size: 13px; }
+.content { padding: 24px 32px; flex: 1; }
+
+/* Stats */
+.stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; display: flex; align-items: center; gap: 14px; }
+.stat-icon { width: 44px; height: 44px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 22px; }
+.stat-icon.blue { background: var(--accent-soft); }
+.stat-icon.green { background: var(--success-soft); }
+.stat-icon.orange { background: var(--warning-soft); }
+.stat-info .stat-value { font-size: 24px; font-weight: 700; font-family: var(--font-display); }
+.stat-info .stat-label { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+/* Toolbar */
+.toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+.toolbar input[type="text"], .toolbar select { height: 36px; padding: 0 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; background: var(--surface); color: var(--fg); font-family: var(--font-body); outline: none; }
+.toolbar input[type="text"]:focus, .toolbar select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.toolbar input[type="text"] { width: 220px; }
+.toolbar select { width: 140px; }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 0 16px; height: 36px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; border: none; cursor: pointer; font-family: var(--font-body); transition: all 0.15s; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-secondary { background: var(--secondary-soft); color: var(--fg); border: 1px solid var(--border); }
+.btn-secondary:hover { background: var(--secondary); }
+.btn-sm { height: 28px; padding: 0 10px; font-size: 12px; border-radius: 6px; }
+.btn-danger-sm { background: none; color: var(--error); border: 1px solid var(--error); height: 28px; padding: 0 10px; font-size: 12px; border-radius: 6px; cursor: pointer; font-family: var(--font-body); }
+.btn-danger-sm:hover { background: oklch(62% 0.22 25 / 0.08); }
+
+/* Table */
+.table-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.table-card table { width: 100%; border-collapse: collapse; }
+.table-card th { background: oklch(97% 0.005 250); padding: 10px 12px; font-size: 12px; font-weight: 600; color: var(--muted); text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.table-card td { padding: 10px 12px; font-size: 13px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.table-card tr:last-child td { border-bottom: none; }
+.table-card tr:hover td { background: oklch(97% 0.005 250); }
+.cover-thumb { width: 36px; height: 50px; border-radius: 4px; background: var(--border); display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--muted); overflow: hidden; }
+.cover-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 500; }
+.badge-accent { background: var(--accent-soft); color: var(--accent); }
+.badge-success { background: var(--success-soft); color: var(--success); }
+.badge-warning { background: var(--warning-soft); color: var(--warning); }
+.badge-muted { background: oklch(92% 0.005 250); color: var(--muted); }
+.ops { display: flex; gap: 6px; align-items: center; white-space: nowrap; }
+.ops a { font-size: 12px; color: var(--accent); }
+.ops a:hover { text-decoration: underline; }
+.ops .sep { color: var(--border); }
+
+/* Pagination */
+.pagination { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; }
+.pagination-info { font-size: 12px; color: var(--muted); }
+.pagination-pages { display: flex; gap: 4px; }
+.pagination-pages a { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-sm); font-size: 13px; color: var(--muted); border: 1px solid var(--border); background: var(--surface); }
+.pagination-pages a:hover { border-color: var(--accent); color: var(--accent); }
+.pagination-pages a.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+</style>
+    <link rel="stylesheet" href="admin-sidebar.css">
+  </head>
+<body>
+  <div id="sidebar-root"></div>
+<script>
+document.querySelectorAll('.nav-link').forEach(a => {
+  a.classList.remove('active');
+  if (a.getAttribute('href') === window.location.pathname.split('/').pop()) a.classList.add('active');
+});
+</script>
+
+<div class="main">
+  <div class="top-bar"><h1>图书管理</h1><div class="right"><span>管理员</span><a class="logout-btn" href="admin-login.html">退出</a></div></div>
+
+  <div class="content">
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-icon blue">📚</div>
+        <div class="stat-info"><div class="stat-value">386</div><div class="stat-label">总图书（本）</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green">🎧</div>
+        <div class="stat-info"><div class="stat-value">128</div><div class="stat-label">有音频（本）</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon orange">📝</div>
+        <div class="stat-info"><div class="stat-value">95</div><div class="stat-label">有测验题（本）</div></div>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <input type="text" placeholder="🔍 搜索书名 / ISBN / 作者...">
+      <select><option>AR等级：全部</option><option>AR 0.0 - 2.0</option><option>AR 2.1 - 4.0</option><option>AR 4.1 - 6.0</option><option>AR 6.1 - 8.0</option><option>AR 8.1+</option></select>
+      <select><option>年龄：全部</option><option>3-5 岁</option><option>6-8 岁</option><option>9-12 岁</option><option>13+ 岁</option></select>
+      <div style="flex:1"></div>
+      <button class="btn btn-secondary">📥 批量导入</button>
+      <button class="btn btn-primary">＋ 新增图书</button>
+    </div>
+
+    <!-- Table -->
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr>
+            <th>ISBN</th>
+            <th>封面</th>
+            <th>书名</th>
+            <th>作者</th>
+            <th>AR等级</th>
+            <th>词数</th>
+            <th>系列</th>
+            <th>音频</th>
+            <th>题目数</th>
+            <th>库存 (总/可借)</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="font-family:var(--font-mono);font-size:12px;color:var(--muted)">978-0-06-112495-2</td>
+            <td><div class="cover-thumb">📕</div></td>
+            <td><strong>Charlotte's Web</strong></td>
+            <td>E.B. White</td>
+            <td><span class="badge badge-accent">4.4</span></td>
+            <td>32,248</td>
+            <td><span class="badge badge-muted">-</span></td>
+            <td><span class="badge badge-success">有</span></td>
+            <td>12</td>
+            <td>5 / 3</td>
+            <td><div class="ops"><a href="#">编辑</a><span class="sep">|</span><a href="#">上传PDF</a><span class="sep">|</span><a href="#">上传音频</a><span class="sep">|</span><a href="#" style="color:var(--error)">删除</a></div></td>
+          </tr>
+          <tr>
+            <td style="font-family:var(--font-mono);font-size:12px;color:var(--muted)">978-0-15-601219-5</td>
+            <td><div class="cover-thumb">📗</div></td>
+            <td><strong>The Little Prince</strong></td>
+            <td>Antoine de Saint-Exupery</td>
+            <td><span class="badge badge-accent">5.0</span></td>
+            <td>17,468</td>
+            <td><span class="badge badge-muted">-</span></td>
+            <td><span class="badge badge-success">有</span></td>
+            <td>8</td>
+            <td>4 / 2</td>
+            <td><div class="ops"><a href="#">编辑</a><span class="sep">|</span><a href="#">上传PDF</a><span class="sep">|</span><a href="#">上传音频</a><span class="sep">|</span><a href="#" style="color:var(--error)">删除</a></div></td>
+          </tr>
+          <tr>
+            <td style="font-family:var(--font-mono);font-size:12px;color:var(--muted)">978-0-14-130106-8</td>
+            <td><div class="cover-thumb">📘</div></td>
+            <td><strong>Matilda</strong></td>
+            <td>Roald Dahl</td>
+            <td><span class="badge badge-accent">5.0</span></td>
+            <td>29,108</td>
+            <td><span class="badge badge-muted">-</span></td>
+            <td><span class="badge badge-muted">无</span></td>
+            <td>10</td>
+            <td>3 / 3</td>
+            <td><div class="ops"><a href="#">编辑</a><span class="sep">|</span><a href="#">上传PDF</a><span class="sep">|</span><a href="#">上传音频</a><span class="sep">|</span><a href="#" style="color:var(--error)">删除</a></div></td>
+          </tr>
+          <tr>
+            <td style="font-family:var(--font-mono);font-size:12px;color:var(--muted)">978-0-375-86902-0</td>
+            <td><div class="cover-thumb">📙</div></td>
+            <td><strong>Wonder</strong></td>
+            <td>R.J. Palacio</td>
+            <td><span class="badge badge-accent">4.8</span></td>
+            <td>73,053</td>
+            <td><span class="badge badge-accent">Wonder系列</span></td>
+            <td><span class="badge badge-success">有</span></td>
+            <td>15</td>
+            <td>6 / 4</td>
+            <td><div class="ops"><a href="#">编辑</a><span class="sep">|</span><a href="#">上传PDF</a><span class="sep">|</span><a href="#">上传音频</a><span class="sep">|</span><a href="#" style="color:var(--error)">删除</a></div></td>
+          </tr>
+          <tr>
+            <td style="font-family:var(--font-mono);font-size:12px;color:var(--muted)">978-0-545-01022-1</td>
+            <td><div class="cover-thumb">📕</div></td>
+            <td><strong>Diary of a Wimpy Kid</strong></td>
+            <td>Jeff Kinney</td>
+            <td><span class="badge badge-accent">5.2</span></td>
+            <td>19,756</td>
+            <td><span class="badge badge-accent">小屁孩日记</span></td>
+            <td><span class="badge badge-muted">无</span></td>
+            <td>6</td>
+            <td>8 / 5</td>
+            <td><div class="ops"><a href="#">编辑</a><span class="sep">|</span><a href="#">上传PDF</a><span class="sep">|</span><a href="#">上传音频</a><span class="sep">|</span><a href="#" style="color:var(--error)">删除</a></div></td>
+          </tr>
+          <tr>
+            <td style="font-family:var(--font-mono);font-size:12px;color:var(--muted)">978-0-06-440055-8</td>
+            <td><div class="cover-thumb">📗</div></td>
+            <td><strong>Where the Wild Things Are</strong></td>
+            <td>Maurice Sendak</td>
+            <td><span class="badge badge-accent">3.4</span></td>
+            <td>338</td>
+            <td><span class="badge badge-muted">-</span></td>
+            <td><span class="badge badge-success">有</span></td>
+            <td>4</td>
+            <td>4 / 1</td>
+            <td><div class="ops"><a href="#">编辑</a><span class="sep">|</span><a href="#">上传PDF</a><span class="sep">|</span><a href="#">上传音频</a><span class="sep">|</span><a href="#" style="color:var(--error)">删除</a></div></td>
+          </tr>
+          <tr>
+            <td style="font-family:var(--font-mono);font-size:12px;color:var(--muted)">978-0-316-26214-4</td>
+            <td><div class="cover-thumb">📘</div></td>
+            <td><strong>The Giver</strong></td>
+            <td>Lois Lowry</td>
+            <td><span class="badge badge-accent">5.7</span></td>
+            <td>43,617</td>
+            <td><span class="badge badge-accent">记忆传授人</span></td>
+            <td><span class="badge badge-success">有</span></td>
+            <td>14</td>
+            <td>5 / 2</td>
+            <td><div class="ops"><a href="#">编辑</a><span class="sep">|</span><a href="#">上传PDF</a><span class="sep">|</span><a href="#">上传音频</a><span class="sep">|</span><a href="#" style="color:var(--error)">删除</a></div></td>
+          </tr>
+          <tr>
+            <td style="font-family:var(--font-mono);font-size:12px;color:var(--muted)">978-0-14-241031-8</td>
+            <td><div class="cover-thumb">📙</div></td>
+            <td><strong>Charlie and the Chocolate Factory</strong></td>
+            <td>Roald Dahl</td>
+            <td><span class="badge badge-accent">4.8</span></td>
+            <td>30,644</td>
+            <td><span class="badge badge-muted">-</span></td>
+            <td><span class="badge badge-muted">无</span></td>
+            <td>9</td>
+            <td>6 / 6</td>
+            <td><div class="ops"><a href="#">编辑</a><span class="sep">|</span><a href="#">上传PDF</a><span class="sep">|</span><a href="#">上传音频</a><span class="sep">|</span><a href="#" style="color:var(--error)">删除</a></div></td>
+          </tr>
+          <tr>
+            <td style="font-family:var(--font-mono);font-size:12px;color:var(--muted)">978-0-439-02352-8</td>
+            <td><div class="cover-thumb">📕</div></td>
+            <td><strong>The Hunger Games</strong></td>
+            <td>Suzanne Collins</td>
+            <td><span class="badge badge-accent">5.3</span></td>
+            <td>99,750</td>
+            <td><span class="badge badge-accent">饥饿游戏</span></td>
+            <td><span class="badge badge-success">有</span></td>
+            <td>18</td>
+            <td>4 / 0</td>
+            <td><div class="ops"><a href="#">编辑</a><span class="sep">|</span><a href="#">上传PDF</a><span class="sep">|</span><a href="#">上传音频</a><span class="sep">|</span><a href="#" style="color:var(--error)">删除</a></div></td>
+          </tr>
+          <tr>
+            <td style="font-family:var(--font-mono);font-size:12px;color:var(--muted)">978-0-06-093546-7</td>
+            <td><div class="cover-thumb">📗</div></td>
+            <td><strong>To Kill a Mockingbird</strong></td>
+            <td>Harper Lee</td>
+            <td><span class="badge badge-accent">5.6</span></td>
+            <td>100,388</td>
+            <td><span class="badge badge-muted">-</span></td>
+            <td><span class="badge badge-success">有</span></td>
+            <td>20</td>
+            <td>3 / 1</td>
+            <td><div class="ops"><a href="#">编辑</a><span class="sep">|</span><a href="#">上传PDF</a><span class="sep">|</span><a href="#">上传音频</a><span class="sep">|</span><a href="#" style="color:var(--error)">删除</a></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination">
+      <div class="pagination-info">共 386 条，第 1/39 页</div>
+      <div class="pagination-pages">
+        <a href="#">&lt;</a>
+        <a href="#" class="active">1</a>
+        <a href="#">2</a>
+        <a href="#">3</a>
+        <a href="#">4</a>
+        <a href="#">5</a>
+        <a href="#">...</a>
+        <a href="#">39</a>
+        <a href="#">&gt;</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+  <script src="admin-sidebar.js"></script>
+</body>
+</html>

@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MegaWords 英文原版阅读 · 原型导航</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.003 250);
+      --surface: oklch(100% 0 0);
+      --fg: oklch(20% 0.015 275);
+      --muted: oklch(48% 0.02 250);
+      --border: oklch(90% 0.008 250);
+      --accent: oklch(54% 0.17 275);
+      --accent-soft: oklch(54% 0.17 275 / 0.1);
+      --secondary: oklch(86% 0.20 135);
+      --success: oklch(72% 0.20 145);
+      --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--fg); font-family: var(--font-body); min-height: 100vh; padding: 40px 20px 80px; }
+    .header { text-align: center; margin-bottom: 48px; }
+    .header h1 { font-family: var(--font-display); font-size: 32px; font-weight: 700; color: var(--accent); margin-bottom: 8px; }
+    .header p { color: var(--muted); font-size: 15px; }
+    .group { max-width: 900px; margin: 0 auto 40px; }
+    .group-title { font-family: var(--font-display); font-size: 18px; font-weight: 600; color: var(--fg); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); display: inline-block; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+    .card { display: block; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; text-decoration: none; color: var(--fg); transition: transform 0.15s ease, box-shadow 0.15s ease; }
+    .card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px oklch(20% 0.015 275 / 0.08); }
+    .card .num { font-size: 12px; font-weight: 600; color: var(--accent); margin-bottom: 4px; font-variant-numeric: tabular-nums; }
+    .card .title { font-family: var(--font-display); font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+    .card .desc { font-size: 13px; color: var(--muted); line-height: 1.4; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 500; margin-top: 8px; }
+    .badge-user { background: var(--accent-soft); color: var(--accent); }
+    .badge-admin { background: oklch(86% 0.20 135 / 0.15); color: oklch(45% 0.15 135); }
+    .badge-new { background: oklch(62% 0.22 25 / 0.1); color: oklch(50% 0.18 25); }
+    .badge-omo { background: oklch(72% 0.20 145 / 0.12); color: oklch(40% 0.15 145); }
+    .stats { display: flex; gap: 16px; justify-content: center; margin-bottom: 32px; flex-wrap: wrap; }
+    .stats .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 20px; text-align: center; }
+    .stats .stat .val { font-family: var(--font-display); font-size: 24px; font-weight: 700; color: var(--accent); }
+    .stats .stat .lbl { font-size: 12px; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>MegaWords</h1>
+    <p>英文原版阅读小程序 · 原型设计导航 · V3.1 OMO</p>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="val">29</div><div class="lbl">用户端页面</div></div>
+    <div class="stat"><div class="val">31</div><div class="lbl">管理端页面</div></div>
+    <div class="stat"><div class="val">60</div><div class="lbl">总计页面</div></div>
+  </div>
+
+  <div class="group">
+    <div class="group-title">用户端 · 小程序（29页）</div>
+    <div class="grid">
+      <a class="card" href="login.html"><div class="num">01</div><div class="title">登录授权</div><div class="desc">微信一键登录、手机号验证码登录</div><span class="badge badge-user">用户端</span></a>
+      <a class="card" href="books.html"><div class="num">02</div><div class="title">图书馆</div><div class="desc">搜索、AR筛选、库存状态、预约按钮、音频标识</div><span class="badge badge-omo">V3.1 更新</span></a>
+      <a class="card" href="shelf.html"><div class="num">03</div><div class="title">我的书架</div><div class="desc">正在阅读/收藏夹/已读完、借阅到期倒计时</div><span class="badge badge-new">🆕 新增</span></a>
+      <a class="card" href="member.html"><div class="num">04</div><div class="title">我的</div><div class="desc">会员状态、10项功能入口、押金/借阅/预约管理</div><span class="badge badge-omo">V3.1 更新</span></a>
+      <a class="card" href="activity.html"><div class="num">05</div><div class="title">活动详情</div><div class="desc">活动报名、签到二维码、取消报名</div><span class="badge badge-new">🆕 新增</span></a>
+      <a class="card" href="book-detail.html"><div class="num">06</div><div class="title">图书详情</div><div class="desc">库存状态、加入书架/预约借书、音频试听</div><span class="badge badge-omo">V3.1 更新</span></a>
+      <a class="card" href="reader.html"><div class="num">07</div><div class="title">听读器</div><div class="desc">音频伴读、查词、倍速、逾期锁定、完成结算</div><span class="badge badge-omo">V3.1 更新</span></a>
+      <a class="card" href="quiz.html"><div class="num">08</div><div class="title">测验</div><div class="desc">5道选择题、进度条、即时反馈</div><span class="badge badge-user">用户端</span></a>
+      <a class="card" href="quiz-result.html"><div class="num">09</div><div class="title">测验结果</div><div class="desc">通过/未通过、晋级检测、错题回顾</div><span class="badge badge-user">用户端</span></a>
+      <a class="card" href="observation.html"><div class="num">10</div><div class="title">观察期报名</div><div class="desc">500元/30天、权益说明、FAQ</div><span class="badge badge-user">用户端</span></a>
+      <a class="card" href="official.html"><div class="num">11</div><div class="title">正式会员报名</div><div class="desc">5400元/年、多孩优惠、权益对比</div><span class="badge badge-user">用户端</span></a>
+      <a class="card" href="deposit.html"><div class="num">12</div><div class="title">押金管理</div><div class="desc">押金状态、余额、罚款、缴纳/退款按钮</div><span class="badge badge-omo">V3.1 更新</span></a>
+      <a class="card" href="borrow-history.html"><div class="num">13</div><div class="title">借阅记录</div><div class="desc">借阅中/已归还、到期日、逾期罚款</div><span class="badge badge-omo">V3.1 更新</span></a>
+      <a class="card" href="reservation.html"><div class="num">14</div><div class="title">预约管理</div><div class="desc">取书倒计时、队列位置、取消按钮</div><span class="badge badge-omo">V3.1 更新</span></a>
+      <a class="card" href="order-history.html"><div class="num">15</div><div class="title">我的订单</div><div class="desc">全部/待支付/已支付/已退款</div><span class="badge badge-user">用户端</span></a>
+      <a class="card" href="messages.html"><div class="num">16</div><div class="title">消息中心</div><div class="desc">系统通知、借阅通知、老师消息</div><span class="badge badge-user">用户端</span></a>
+      <a class="card" href="vocabulary.html"><div class="num">17</div><div class="title">生词本</div><div class="desc">学习中/已掌握、闪卡复习、按书排序</div><span class="badge badge-user">用户端</span></a>
+      <a class="card" href="word-detail.html"><div class="num">18</div><div class="title">单词详情</div><div class="desc">释义、音标、发音、例句、加入生词本</div><span class="badge badge-user">用户端</span></a>
+      <a class="card" href="checkin.html"><div class="num">19</div><div class="title">阅读打卡</div><div class="desc">月日历视图、连续打卡、自动打卡</div><span class="badge badge-user">用户端</span></a>
+      <a class="card" href="reading-stats.html"><div class="num">20</div><div class="title">阅读统计</div><div class="desc">阅读时长柱状图、词数折线图、排行榜</div><span class="badge badge-user">用户端</span></a>
+      <a class="card" href="learning-report.html"><div class="num">21</div><div class="title">学习报告</div><div class="desc">周报/月报、AR变化趋势、分享按钮</div><span class="badge badge-user">用户端</span></a>
+      <a class="card" href="observation-report.html"><div class="num">22</div><div class="title">观察期报告</div><div class="desc">老师评语、阅读统计、测验统计</div><span class="badge badge-user">用户端</span></a>
+      <a class="card" href="profile-card.html"><div class="num">23</div><div class="title">个人名片</div><div class="desc">可分享卡片、统计信息、成就徽章</div><span class="badge badge-user">用户端</span></a>
+      <a class="card" href="certificate.html"><div class="num">24</div><div class="title">晋级证书</div><div class="desc">金色边框、等级变化、保存/分享</div><span class="badge badge-user">用户端</span></a>
+      <a class="card" href="achievement.html"><div class="num">25</div><div class="title">成就中心</div><div class="desc">级别卡片、徽章墙、排行榜</div><span class="badge badge-user">用户端</span></a>
+      <a class="card" href="leaderboard.html"><div class="num">26</div><div class="title">排行榜</div><div class="desc">7天/15天/30天/月榜/年榜/总榜</div><span class="badge badge-user">用户端</span></a>
+      <a class="card" href="refund-apply.html"><div class="num">27</div><div class="title">退款申请</div><div class="desc">退款金额计算、原因填写、提交审核</div><span class="badge badge-user">用户端</span></a>
+      <a class="card" href="benefit-transfer.html"><div class="num">28</div><div class="title">权益转让</div><div class="desc">选择孩子、剩余天数、前置条件</div><span class="badge badge-user">用户端</span></a>
+      <a class="card" href="child-manage.html"><div class="num">29</div><div class="title">孩子管理</div><div class="desc">多孩切换、添加孩子、快捷入口</div><span class="badge badge-user">用户端</span></a>
+    </div>
+  </div>
+
+  <div class="group">
+    <div class="group-title">管理端 · PC Web（31页）</div>
+    <div class="grid">
+      <a class="card" href="admin-achievements.html"><div class="num">01</div><div class="title">成就管理</div><div class="desc">徽章CRUD、触发条件、授予记录</div><span class="badge badge-user">用户端</span></a>
+      <a class="card" href="admin-activities.html"><div class="num">02</div><div class="title">活动管理</div><div class="desc">活动CRUD、签到统计、取消</div><span class="badge badge-omo">V3.1 更新</span></a>
+      <a class="card" href="admin-activity-checkin.html"><div class="num">03</div><div class="title">活动签到</div><div class="desc">QR扫描、签到进度、手动签到</div><span class="badge badge-omo">V3.1 更新</span></a>
+      <a class="card" href="admin-assessments.html"><div class="num">04</div><div class="title">评估管理</div><div class="desc">老师工作台、待审核+待出卷</div><span class="badge badge-user">用户端</span></a>
+      <a class="card" href="admin-audio.html"><div class="num">05</div><div class="title">音频管理</div><div class="desc">音频上传、关联图书、朗读者</div><span class="badge badge-user">用户端</span></a>
+      <a class="card" href="admin-base.html"><div class="num">06</div><div class="title">基础布局</div><div class="desc">设计系统参考、色彩/排版/间距</div><span class="badge badge-new">🆕 新增</span></a>
+      <a class="card" href="admin-bookcopy.html"><div class="num">07</div><div class="title">馆藏管理</div><div class="desc">扫码入库、副本列表、状态</div><span class="badge badge-omo">V3.1 更新</span></a>
+      <a class="card" href="admin-booklist.html"><div class="num">08</div><div class="title">图书列表</div><div class="desc">图书元数据、条码、库存、音频</div><span class="badge badge-omo">V3.1 更新</span></a>
+      <a class="card" href="admin-books.html"><div class="num">09</div><div class="title">图书管理</div><div class="desc">完整图书管理、PDF/音频上传</div><span class="badge badge-new">🆕 新增</span></a>
+      <a class="card" href="admin-borrow.html"><div class="num">10</div><div class="title">扫码借还</div><div class="desc">条码扫描、借出/归还/丢失</div><span class="badge badge-omo">V3.1 更新</span></a>
+      <a class="card" href="admin-certificates.html"><div class="num">11</div><div class="title">证书管理</div><div class="desc">晋级证书、查看/重新生成</div><span class="badge badge-user">用户端</span></a>
+      <a class="card" href="admin-content.html"><div class="num">12</div><div class="title">内容管理</div><div class="desc">PDF页面管理、音频绑定</div><span class="badge badge-user">用户端</span></a>
+      <a class="card" href="admin-dashboard.html"><div class="num">13</div><div class="title">数据概览</div><div class="desc">核心指标概览、OMO统计卡片</div><span class="badge badge-omo">V3.1 更新</span></a>
+      <a class="card" href="admin-deposit.html"><div class="num">14</div><div class="title">押金管理</div><div class="desc">押金状态列表、退款审核、扣除</div><span class="badge badge-omo">V3.1 更新</span></a>
+      <a class="card" href="admin-dictionary.html"><div class="num">15</div><div class="title">词库管理</div><div class="desc">词典CRUD、批量导入、等级筛选</div><span class="badge badge-user">用户端</span></a>
+      <a class="card" href="admin-levels.html"><div class="num">16</div><div class="title">级别管理</div><div class="desc">A-Z 26级配置、晋级要求</div><span class="badge badge-user">用户端</span></a>
+      <a class="card" href="admin-operation-logs.html"><div class="num">17</div><div class="title">操作日志</div><div class="desc">按模块/操作人/时间筛选、日志列表</div><span class="badge badge-new">🆕 新增</span></a>
+      <a class="card" href="admin-orders.html"><div class="num">18</div><div class="title">订单管理</div><div class="desc">订单列表、押金订单、退款审核</div><span class="badge badge-omo">V3.1 更新</span></a>
+      <a class="card" href="admin-profile.html"><div class="num">19</div><div class="title">管理员</div><div class="desc">管理员账号、权限设置</div><span class="badge badge-user">用户端</span></a>
+      <a class="card" href="admin-questions.html"><div class="num">20</div><div class="title">题库管理</div><div class="desc">题目CRUD、选项、解析</div><span class="badge badge-user">用户端</span></a>
+      <a class="card" href="admin-quiz.html"><div class="num">21</div><div class="title">测验管理</div><div class="desc">选孩子→选书→勾选题目→出卷</div><span class="badge badge-user">用户端</span></a>
+      <a class="card" href="admin-reading-data.html"><div class="num">22</div><div class="title">阅读数据</div><div class="desc">用户排行、图书排行、日活趋势</div><span class="badge badge-user">用户端</span></a>
+      <a class="card" href="admin-recycle-bin.html"><div class="num">23</div><div class="title">回收站</div><div class="desc">已删除项列表、恢复、永久删除</div><span class="badge badge-new">🆕 新增</span></a>
+      <a class="card" href="admin-reports.html"><div class="num">24</div><div class="title">报告管理</div><div class="desc">观察期报告、查看/评语/导出</div><span class="badge badge-user">用户端</span></a>
+      <a class="card" href="admin-reservation.html"><div class="num">25</div><div class="title">预约管理</div><div class="desc">有效预约、扫码取书、取消</div><span class="badge badge-omo">V3.1 更新</span></a>
+      <a class="card" href="admin-settings.html"><div class="num">26</div><div class="title">系统设置</div><div class="desc">V3.1动态配置、借阅/押金设置</div><span class="badge badge-omo">V3.1 更新</span></a>
+      <a class="card" href="admin-submissions.html"><div class="num">27</div><div class="title">审核队列</div><div class="desc">待审核/已审核、评语、通过/打回</div><span class="badge badge-user">用户端</span></a>
+      <a class="card" href="admin-teachers.html"><div class="num">28</div><div class="title">老师管理</div><div class="desc">老师信息、排班、评分</div><span class="badge badge-user">用户端</span></a>
+      <a class="card" href="admin-users.html"><div class="num">29</div><div class="title">用户管理</div><div class="desc">家长列表、押金/借阅/罚款状态</div><span class="badge badge-omo">V3.1 更新</span></a>
+      <a class="card" href="admin-venues.html"><div class="num">30</div><div class="title">场馆管理</div><div class="desc">场馆配置、地址、联系方式</div><span class="badge badge-user">用户端</span></a>
+    </div>
+  </div>
+</body>
+</html>

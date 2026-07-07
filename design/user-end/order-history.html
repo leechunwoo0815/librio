@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>我的订单 · MegaWords</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.003 250); --surface: oklch(100% 0 0);
+      --fg: oklch(20% 0.015 275); --muted: oklch(48% 0.02 250);
+      --border: oklch(90% 0.008 250); --accent: oklch(54% 0.17 275);
+      --accent-soft: oklch(54% 0.17 275 / 0.1);
+      --secondary: oklch(86% 0.20 135); --secondary-soft: oklch(86% 0.20 135 / 0.12);
+      --success: oklch(72% 0.20 145); --success-soft: oklch(72% 0.20 145 / 0.1);
+      --warning: oklch(78% 0.16 85); --warning-soft: oklch(78% 0.16 85 / 0.1);
+      --error: oklch(62% 0.22 25); --error-soft: oklch(62% 0.22 25 / 0.1);
+      --radius: 16px; --radius-sm: 10px; --radius-lg: 20px;
+      --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+      --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--fg); font-family: var(--font-body);
+      font-size: 15px; line-height: 1.5; max-width: 430px; margin: 0 auto;
+      min-height: 100vh; padding-bottom: 80px; -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; }
+    .nav-bar {
+      display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 10;
+    }
+    .nav-bar .back { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 10px; }
+    .nav-bar .back svg { width: 20px; height: 20px; }
+    .nav-bar .title { font-family: var(--font-display); font-size: 17px; font-weight: 600; }
+    /* tabs */
+    .tabs {
+      display: flex; background: var(--surface); border-bottom: 1px solid var(--border);
+      position: sticky; top: 48px; z-index: 9;
+    }
+    .tab {
+      flex: 1; padding: 12px 0; text-align: center; font-size: 14px;
+      color: var(--muted); font-weight: 500; position: relative;
+    }
+    .tab.active { color: var(--accent); }
+    .tab.active::after {
+      content: ''; position: absolute; bottom: 0; left: 20%; right: 20%;
+      height: 2px; background: var(--accent); border-radius: 1px;
+    }
+    /* order cards */
+    .order-list { padding: 12px 16px; display: flex; flex-direction: column; gap: 12px; }
+    .order-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px;
+    }
+    .order-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 12px;
+    }
+    .order-id { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+    .order-status {
+      padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600;
+    }
+    .status-paid { background: var(--success-soft); color: var(--success); }
+    .status-pending { background: var(--warning-soft); color: var(--warning); }
+    .status-refund { background: var(--error-soft); color: var(--error); }
+    .order-body { display: flex; align-items: center; gap: 12px; }
+    .order-icon {
+      width: 44px; height: 44px; border-radius: var(--radius-sm);
+      display: grid; place-items: center; font-size: 22px; flex-shrink: 0;
+    }
+    .order-icon.course { background: var(--accent-soft); }
+    .order-icon.observe { background: var(--secondary-soft); }
+    .order-icon.member { background: var(--success-soft); }
+    .order-info { flex: 1; }
+    .order-type { font-weight: 600; font-size: 15px; }
+    .order-time { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .order-amount {
+      font-family: var(--font-display); font-size: 18px; font-weight: 700;
+      color: var(--accent);
+    }
+    .order-footer {
+      margin-top: 12px; padding-top: 12px;
+      border-top: 1px solid var(--border);
+      display: flex; justify-content: flex-end; gap: 8px;
+    }
+    .btn-sm {
+      padding: 6px 14px; border-radius: var(--radius-sm);
+      font-size: 12px; font-weight: 500;
+    }
+    .btn-outline { border: 1px solid var(--border); color: var(--muted); }
+    .btn-danger { background: var(--error-soft); color: var(--error); }
+    .empty-state {
+      text-align: center; padding: 60px 20px; color: var(--muted);
+    }
+    .empty-state svg { width: 48px; height: 48px; margin: 0 auto 12px; opacity: 0.4; }
+    .empty-state p { font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="nav-bar">
+    <a class="back" href="member.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+    </a>
+    <div class="title">我的订单</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab(this)">全部</button>
+    <button class="tab" onclick="switchTab(this)">待支付</button>
+    <button class="tab" onclick="switchTab(this)">已支付</button>
+    <button class="tab" onclick="switchTab(this)">已退款</button>
+  </div>
+
+  <div class="order-list">
+    <div class="order-card">
+      <div class="order-header">
+        <span class="order-id">MW20250601001</span>
+        <span class="order-status status-paid">已支付</span>
+      </div>
+      <div class="order-body">
+        <div class="order-icon member">👑</div>
+        <div class="order-info">
+          <div class="order-type">正式会员年卡</div>
+          <div class="order-time">2025-06-01 14:30</div>
+        </div>
+        <div class="order-amount">¥5,400</div>
+      </div>
+      <div class="order-footer">
+        <a class="btn-sm btn-outline" href="refund-apply.html">申请退款</a>
+      </div>
+    </div>
+
+    <div class="order-card">
+      <div class="order-header">
+        <span class="order-id">MW20250601002</span>
+        <span class="order-status status-paid">已支付</span>
+      </div>
+      <div class="order-body">
+        <div class="order-icon member">🎓</div>
+        <div class="order-info">
+          <div class="order-type">观察期 · 升级正式会员</div>
+          <div class="order-time">2025-06-01 14:32</div>
+        </div>
+        <div class="order-amount">¥4,900</div>
+      </div>
+    </div>
+
+    <div class="order-card">
+      <div class="order-header">
+        <span class="order-id">MW20250515003</span>
+        <span class="order-status status-paid">已支付</span>
+      </div>
+      <div class="order-body">
+        <div class="order-icon observe">🔍</div>
+        <div class="order-info">
+          <div class="order-type">观察期 · 1个月</div>
+          <div class="order-time">2025-05-15 10:00</div>
+        </div>
+        <div class="order-amount">¥500</div>
+      </div>
+    </div>
+
+    <div class="order-card">
+      <div class="order-header">
+        <span class="order-id">MW20250501004</span>
+        <span class="order-status status-refund">已退款</span>
+      </div>
+      <div class="order-body">
+        <div class="order-icon course">🎒</div>
+        <div class="order-info">
+          <div class="order-type">亲子课程体验课</div>
+          <div class="order-time">2025-05-01 09:15</div>
+        </div>
+        <div class="order-amount" style="text-decoration:line-through;color:var(--muted)">¥99</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function switchTab(el) {
+      document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+      el.classList.add('active');
+    }
+  </script>
+</body>
+</html>

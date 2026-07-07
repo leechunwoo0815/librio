@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>图书馆 · Librio</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.003 250);
+      --surface: oklch(100% 0 0);
+      --fg: oklch(20% 0.015 275);
+      --muted: oklch(48% 0.02 250);
+      --border: oklch(90% 0.008 250);
+      --accent: oklch(54% 0.17 275);
+      --accent-soft: oklch(54% 0.17 275 / 0.1);
+      --secondary: oklch(86% 0.20 135);
+      --success: oklch(72% 0.20 145);
+      --success-soft: oklch(72% 0.20 145 / 0.1);
+      --warning: oklch(78% 0.16 85);
+      --warning-soft: oklch(78% 0.16 85 / 0.1);
+      --error: oklch(62% 0.22 25);
+      --radius: 16px; --radius-sm: 10px; --radius-lg: 20px;
+      --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--fg); font-family: var(--font-body);
+      font-size: 15px; line-height: 1.5; max-width: 375px; margin: 0 auto;
+      min-height: 100vh; padding-bottom: 80px; -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; }
+
+    /* nav bar */
+    .nav-bar {
+      display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 10;
+    }
+    .nav-bar .back { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 10px; }
+    .nav-bar .back svg { width: 20px; height: 20px; }
+    .nav-bar .title { font-family: var(--font-display); font-size: 17px; font-weight: 600; }
+
+    /* search */
+    .search-wrap { margin: 12px 16px; position: relative; }
+    .search-icon {
+      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+      font-size: 16px; pointer-events: none;
+    }
+    .search-input {
+      width: 100%; padding: 11px 14px 11px 40px;
+      border: 1px solid var(--border); border-radius: 999px;
+      background: var(--surface); color: var(--fg); font-size: 14px;
+      outline: none; transition: border-color 0.15s ease;
+    }
+    .search-input:focus { border-color: var(--accent); }
+    .search-input::placeholder { color: oklch(70% 0.01 250); }
+
+    /* filter chips */
+    .filter-scroll {
+      display: flex; gap: 8px; padding: 0 16px 12px;
+      overflow-x: auto; scrollbar-width: none;
+    }
+    .filter-scroll::-webkit-scrollbar { display: none; }
+    .filter-chip {
+      padding: 7px 14px; border-radius: 999px;
+      border: 1px solid var(--border); background: var(--surface);
+      font-size: 13px; white-space: nowrap; color: var(--fg);
+      transition: all 0.15s ease;
+    }
+    .filter-chip.active {
+      background: var(--accent); color: white; border-color: var(--accent);
+    }
+    .filter-chip:hover:not(.active) { border-color: var(--accent); }
+
+    /* 2-column grid */
+    .book-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+      padding: 0 16px 16px;
+    }
+
+    /* book card */
+    .book-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
+      display: flex; flex-direction: column;
+      box-shadow: 0 2px 8px oklch(20% 0.015 275 / 0.04);
+      transition: transform 0.15s ease;
+    }
+    .book-card:active { transform: scale(0.97); }
+    .card-cover {
+      width: 100%; aspect-ratio: 3 / 4;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 48px;
+      background: linear-gradient(135deg, oklch(96% 0.01 250), oklch(92% 0.02 250));
+      position: relative;
+    }
+    .card-cover .audio-badge {
+      position: absolute; top: 8px; right: 8px;
+      background: var(--accent-soft); color: var(--accent);
+      padding: 2px 6px; border-radius: 999px; font-size: 10px;
+    }
+    .card-cover .series-badge {
+      position: absolute; bottom: 8px; left: 8px;
+      background: var(--warning-soft); color: oklch(45% 0.12 85);
+      padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 500;
+    }
+    .card-body { padding: 10px 10px 12px; flex: 1; display: flex; flex-direction: column; }
+    .card-title {
+      font-family: var(--font-display); font-size: 13px; font-weight: 600;
+      margin-bottom: 2px;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .card-author { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+    .card-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 6px; }
+    .card-tags .tag {
+      padding: 2px 6px; border-radius: 999px; font-size: 10px; font-weight: 600;
+    }
+    .tag-ar { background: var(--accent-soft); color: var(--accent); }
+    .tag-words { background: oklch(48% 0.02 250 / 0.1); color: var(--muted); }
+    .tag-time { background: oklch(86% 0.20 135 / 0.1); color: oklch(50% 0.12 135); }
+    .card-meta { font-size: 10px; color: var(--muted); margin-bottom: 8px; }
+    .card-meta .audio-icon { color: var(--accent); }
+
+    /* inventory status */
+    .inv-status {
+      margin-top: auto; display: flex; align-items: center; justify-content: space-between;
+      gap: 6px;
+    }
+    .inv-label {
+      font-size: 11px; font-weight: 600;
+      padding: 3px 8px; border-radius: 999px;
+    }
+    .inv-available { background: var(--success-soft); color: var(--success); }
+    .inv-empty { background: oklch(48% 0.02 250 / 0.1); color: var(--muted); }
+    .reserve-btn {
+      padding: 5px 10px; border-radius: 999px;
+      border: 1.5px solid var(--accent); color: var(--accent);
+      font-size: 10px; font-weight: 600; white-space: nowrap;
+      background: transparent; transition: all 0.15s ease;
+    }
+    .reserve-btn:hover { background: var(--accent-soft); }
+
+    /* bottom nav */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 375px;
+      background: color-mix(in oklch, var(--surface) 92%, transparent);
+      backdrop-filter: blur(12px); border-top: 1px solid var(--border);
+      display: flex; padding: 6px 0 env(safe-area-inset-bottom, 8px); z-index: 30;
+    }
+    .nav-item {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      padding: 6px 0 2px; color: var(--muted); font-size: 10px; transition: color 0.15s ease;
+    }
+    .nav-item .nav-icon { font-size: 22px; margin-bottom: 2px; }
+    .nav-item.active { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="nav-bar">
+    <a class="back" href="home.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+    </a>
+    <span class="title">图书馆</span>
+  </div>
+
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input class="search-input" type="text" placeholder="搜索书名、作者或关键词" />
+  </div>
+
+  <div class="filter-scroll">
+    <button class="filter-chip active">全部</button>
+    <button class="filter-chip">AR 0.5–2.0</button>
+    <button class="filter-chip">AR 2.0–4.0</button>
+    <button class="filter-chip">AR 4.0–6.0</button>
+    <button class="filter-chip">AR 6.0+</button>
+    <button class="filter-chip">3–5 岁</button>
+    <button class="filter-chip">6–8 岁</button>
+    <button class="filter-chip">9–12 岁</button>
+    <button class="filter-chip">故事</button>
+    <button class="filter-chip">科普</button>
+    <button class="filter-chip">有声书</button>
+  </div>
+
+  <div class="book-grid">
+    <!-- Book 1: available -->
+    <a class="book-card" href="book-detail.html">
+      <div class="card-cover">
+        🐱
+        <span class="audio-badge">🔊</span>
+        <span class="series-badge">Dr. Seuss 系列</span>
+      </div>
+      <div class="card-body">
+        <div class="card-title">The Cat in the Hat</div>
+        <div class="card-author">Dr. Seuss</div>
+        <div class="card-tags">
+          <span class="tag tag-ar">AR 2.1</span>
+          <span class="tag tag-words">1,625 词</span>
+        </div>
+        <div class="card-meta">预计15分钟</div>
+        <div class="inv-status">
+          <span class="inv-label inv-available">可借 3本</span>
+        </div>
+      </div>
+    </a>
+
+    <!-- Book 2: available -->
+    <a class="book-card" href="book-detail.html">
+      <div class="card-cover">
+        🕷️
+        <span class="audio-badge">🔊</span>
+        <span class="series-badge">经典文学</span>
+      </div>
+      <div class="card-body">
+        <div class="card-title">Charlotte's Web</div>
+        <div class="card-author">E.B. White</div>
+        <div class="card-tags">
+          <span class="tag tag-ar">AR 4.4</span>
+          <span class="tag tag-words">3,218 词</span>
+        </div>
+        <div class="card-meta">预计15分钟</div>
+        <div class="inv-status">
+          <span class="inv-label inv-available">可借 3本</span>
+        </div>
+      </div>
+    </a>
+
+    <!-- Book 3: available -->
+    <a class="book-card" href="book-detail.html">
+      <div class="card-cover">
+        🧙
+        <span class="audio-badge">🔊</span>
+        <span class="series-badge">Harry Potter 系列</span>
+      </div>
+      <div class="card-body">
+        <div class="card-title">Harry Potter and the Sorcerer's Stone</div>
+        <div class="card-author">J.K. Rowling</div>
+        <div class="card-tags">
+          <span class="tag tag-ar">AR 5.5</span>
+          <span class="tag tag-words">7,692 词</span>
+        </div>
+        <div class="card-meta">预计15分钟</div>
+        <div class="inv-status">
+          <span class="inv-label inv-available">可借 3本</span>
+        </div>
+      </div>
+    </a>
+
+    <!-- Book 4: available -->
+    <a class="book-card" href="book-detail.html">
+      <div class="card-cover">
+        🐻
+        <span class="audio-badge">🔊</span>
+        <span class="series-badge">绘本系列</span>
+      </div>
+      <div class="card-body">
+        <div class="card-title">Brown Bear, Brown Bear, What Do You See?</div>
+        <div class="card-author">Bill Martin Jr.</div>
+        <div class="card-tags">
+          <span class="tag tag-ar">AR 0.9</span>
+          <span class="tag tag-words">198 词</span>
+        </div>
+        <div class="card-meta">预计15分钟</div>
+        <div class="inv-status">
+          <span class="inv-label inv-available">可借 3本</span>
+        </div>
+      </div>
+    </a>
+
+    <!-- Book 5: no inventory -->
+    <a class="book-card" href="book-detail.html">
+      <div class="card-cover">
+        📓
+        <span class="series-badge">Wimpy Kid 系列</span>
+      </div>
+      <div class="card-body">
+        <div class="card-title">Diary of a Wimpy Kid</div>
+        <div class="card-author">Jeff Kinney</div>
+        <div class="card-tags">
+          <span class="tag tag-ar">AR 5.2</span>
+          <span class="tag tag-words">4,520 词</span>
+        </div>
+        <div class="card-meta">预计15分钟</div>
+        <div class="inv-status">
+          <span class="inv-label inv-empty">无库存 · 排队中</span>
+          <button class="reserve-btn" onclick="event.preventDefault(); alert('预约成功！图书到馆后将通知您')">预约借书</button>
+        </div>
+      </div>
+    </a>
+
+    <!-- Book 6: available -->
+    <a class="book-card" href="book-detail.html">
+      <div class="card-cover">
+        🌙
+        <span class="audio-badge">🔊</span>
+        <span class="series-badge">绘本系列</span>
+      </div>
+      <div class="card-body">
+        <div class="card-title">Goodnight Moon</div>
+        <div class="card-author">Margaret Wise Brown</div>
+        <div class="card-tags">
+          <span class="tag tag-ar">AR 0.8</span>
+          <span class="tag tag-words">131 词</span>
+        </div>
+        <div class="card-meta">预计15分钟</div>
+        <div class="inv-status">
+          <span class="inv-label inv-available">可借 3本</span>
+        </div>
+      </div>
+    </a>
+
+    <!-- Book 7: available -->
+    <a class="book-card" href="book-detail.html">
+      <div class="card-cover">
+        🌳
+        <span class="audio-badge">🔊</span>
+        <span class="series-badge">经典绘本</span>
+      </div>
+      <div class="card-body">
+        <div class="card-title">The Giving Tree</div>
+        <div class="card-author">Shel Silverstein</div>
+        <div class="card-tags">
+          <span class="tag tag-ar">AR 3.1</span>
+          <span class="tag tag-words">621 词</span>
+        </div>
+        <div class="card-meta">预计15分钟</div>
+        <div class="inv-status">
+          <span class="inv-label inv-available">可借 3本</span>
+        </div>
+      </div>
+    </a>
+
+    <!-- Book 8: available -->
+    <a class="book-card" href="book-detail.html">
+      <div class="card-cover">
+        🐺
+        <span class="audio-badge">🔊</span>
+        <span class="series-badge">绘本经典</span>
+      </div>
+      <div class="card-body">
+        <div class="card-title">Where the Wild Things Are</div>
+        <div class="card-author">Maurice Sendak</div>
+        <div class="card-tags">
+          <span class="tag tag-ar">AR 3.4</span>
+          <span class="tag tag-words">338 词</span>
+        </div>
+        <div class="card-meta">预计15分钟</div>
+        <div class="inv-status">
+          <span class="inv-label inv-available">可借 3本</span>
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <nav class="bottom-nav">
+    <a class="nav-item" href="home.html">
+      <span class="nav-icon">🏠</span>
+      首页
+    </a>
+    <a class="nav-item active" href="books.html">
+      <span class="nav-icon">📚</span>
+      图书馆
+    </a>
+    <a class="nav-item" href="shelf.html">
+      <span class="nav-icon">📖</span>
+      书架
+    </a>
+    <a class="nav-item" href="member.html">
+      <span class="nav-icon">👤</span>
+      我的
+    </a>
+  </nav>
+
+  <script>
+    document.querySelectorAll('.filter-chip').forEach(chip => {
+      chip.addEventListener('click', function() {
+        document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>

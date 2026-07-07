@@ -1,0 +1,278 @@
+/* pages/settings.css — 系统设置页专属样式 */
+
+/* ===== Content Constrained Width ===== */
+.settings-content {
+  max-width: 860px;
+}
+
+/* ===== Setting Section Card ===== */
+.setting-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+.setting-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.setting-header h2 {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 600;
+}
+.setting-header .section-badge {
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.setting-body {
+  padding: 20px;
+}
+
+/* ===== Setting Item Row ===== */
+.setting-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+.setting-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.setting-item:first-child {
+  padding-top: 0;
+}
+.setting-label {
+  width: 160px;
+  flex-shrink: 0;
+}
+.setting-label .label-text {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+.setting-label .label-desc {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+.setting-control {
+  flex: 1;
+  min-width: 0;
+}
+.setting-control input[type="text"],
+.setting-control input[type="number"],
+.setting-control input[type="email"],
+.setting-control input[type="tel"],
+.setting-control input[type="url"],
+.setting-control select,
+.setting-control textarea {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--fg);
+  background: var(--bg);
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+.setting-control input:focus,
+.setting-control select:focus,
+.setting-control textarea:focus {
+  border-color: var(--accent);
+}
+.setting-control textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+.setting-control .input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.setting-control .input-hint {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* ===== Toggle Switch ===== */
+.toggle-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.toggle {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+}
+.toggle.on {
+  background: var(--accent);
+}
+.toggle::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+.toggle.on::after {
+  transform: translateX(20px);
+}
+.toggle-label {
+  font-size: 13px;
+}
+
+/* ===== Color Swatch ===== */
+.color-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.color-swatch {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.color-input {
+  flex: 1;
+}
+
+/* ===== Settings Action Buttons ===== */
+.settings-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 20px;
+}
+.btn-save {
+  padding: 10px 24px;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.15s ease;
+}
+.btn-save:hover {
+  background: var(--accent-hover);
+}
+.btn-reset {
+  padding: 10px 24px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 14px;
+  color: var(--muted);
+}
+.btn-reset:hover {
+  color: var(--fg);
+}
+
+/* ===== Admin Accounts Table ===== */
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+}
+.admin-table th {
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+.admin-table td {
+  padding: 10px 12px;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border);
+}
+.admin-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* ===== Role Badges ===== */
+.role-badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+}
+.role-super {
+  background: var(--error-soft);
+  color: var(--error);
+}
+.role-editor {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.role-viewer {
+  background: var(--bg);
+  color: var(--muted);
+}
+
+/* ===== Config Badges ===== */
+.config-badge-critical {
+  background: var(--error-soft);
+  color: var(--error);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+.config-badge-important {
+  background: var(--warning-soft);
+  color: var(--warning);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+.config-badge-normal {
+  background: var(--success-soft);
+  color: var(--success);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+/* ===== Category Tabs ===== */
+.category-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  .setting-item {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .setting-label {
+    width: 100%;
+  }
+}

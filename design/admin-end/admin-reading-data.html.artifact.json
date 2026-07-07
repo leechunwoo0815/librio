@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "admin-reading-data.html",
+  "entry": "admin-reading-data.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-06-04T13:43:39.026Z",
+  "updatedAt": "2026-06-04T13:43:39.026Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}

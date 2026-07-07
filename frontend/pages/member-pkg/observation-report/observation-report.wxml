@@ -1,0 +1,159 @@
+<!--frontend/pages/member-pkg/observation-report/observation-report.wxml-->
+<view class="page-bg container">
+
+  <!-- Loading -->
+  <view class="loading" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+
+  <!-- Empty State -->
+  <view class="empty-state" wx:elif="{{!report}}">
+    <view class="emoji">📋</view>
+    <text class="text">暂无观察期报告</text>
+    <text class="text-sm text-secondary" style="margin-top:12rpx;">完成观察期后将自动生成报告</text>
+  </view>
+
+  <!-- Report Content -->
+  <block wx:elif="{{report}}">
+
+    <!-- nav-bar -->
+    <view class="nav-bar">
+      <view class="back" bindtap="goBack">
+        <text class="back-icon">←</text>
+      </view>
+      <text class="title">观察期报告</text>
+      <view class="spacer"></view>
+    </view>
+
+    <!-- Header report-header -->
+    <view class="report-header card">
+      <view class="rh-deco"></view>
+      <view class="rh-icon">📋</view>
+      <view class="rh-title">观察期学习报告</view>
+      <view class="rh-child">学员：{{child.name || '学员'}}（{{child.english_name || ''}}）</view>
+      <view class="rh-period">
+        {{report.observation_start}} 至 {{report.observation_end}}
+      </view>
+      <view class="flex-between">
+        <view>
+          <view class="text-bold text-lg">{{child.name || '学员'}}</view>
+          <view class="text-sm text-secondary" style="margin-top:8rpx;">
+            观察期：{{report.observation_start}} ~ {{report.observation_end}}
+          </view>
+        </view>
+        <view class="tag {{report.status === 'completed' ? 'tag-success' : 'tag-warning'}}">
+          {{report.status === 'completed' ? '已完成' : '进行中'}}
+        </view>
+      </view>
+    </view>
+
+    <!-- reading stats section-label + stat-grid -->
+    <view class="section-label">阅读统计</view>
+    <view class="grid-3 stat-grid">
+      <view class="card stat-card">
+        <view class="sc-icon blue">📖</view>
+        <view class="stat-value sc-val text-primary">{{report.total_books_read || 0}}</view>
+        <view class="stat-label sc-label">读完本数</view>
+      </view>
+      <view class="card stat-card">
+        <view class="sc-icon green">📝</view>
+        <view class="stat-value sc-val text-primary">{{report.total_words_read || 0}}</view>
+        <view class="stat-label sc-label">阅读词数</view>
+      </view>
+      <view class="card stat-card">
+        <view class="sc-icon yellow">⏱</view>
+        <view class="stat-value sc-val text-primary">{{report.total_reading_minutes || 0}}</view>
+        <view class="stat-label sc-label">阅读分钟</view>
+      </view>
+    </view>
+
+    <!-- Quiz Stats section-label + stat-grid -->
+    <view class="section-label">测验统计</view>
+    <view class="grid-3 stat-grid">
+      <view class="card stat-card">
+        <view class="sc-icon purple">📋</view>
+        <view class="stat-value sc-val text-success">{{report.quizzes_attempted || 0}}</view>
+        <view class="stat-label sc-label">参加测验</view>
+      </view>
+      <view class="card stat-card">
+        <view class="sc-icon green">✅</view>
+        <view class="stat-value sc-val text-success">{{report.quizzes_passed || 0}}</view>
+        <view class="stat-label sc-label">通过测验</view>
+      </view>
+      <view class="card stat-card">
+        <view class="sc-icon blue">📊</view>
+        <view class="stat-value sc-val text-success">{{passRate}}<text class="sc-unit">%</text></view>
+        <view class="stat-label sc-label">通过率</view>
+      </view>
+    </view>
+
+    <!-- Current Level level-card -->
+    <view class="section-label">当前级别</view>
+
+    <!-- weekly reading chart -->
+    <view class="section-label">每周阅读情况</view>
+    <view class="chart-card">
+      <view class="chart-title">近 6 周阅读词数</view>
+      <view class="chart-bars">
+        <view class="chart-bar-col" wx:for="{{weeklyData}}" wx:key="week">
+          <view class="chart-bar-val">{{item.words}}</view>
+          <view class="chart-bar" style="height:{{item.percent}}%"></view>
+          <view class="chart-bar-label">{{item.week}}</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="card level-card">
+      <view class="lc-badge">{{report.current_level || '-'}}</view>
+      <view class="lc-info">
+        <view class="lc-name">{{report.current_level || '未评级'}} · 初学者</view>
+        <view class="lc-desc">Beginner Level</view>
+        <view class="lc-progress">
+          <view class="lc-progress-bar">
+            <view class="lc-progress-fill" style="width:{{report.level_progress || 0}}%"></view>
+          </view>
+          <view class="lc-progress-text">
+            <text>已完成 {{report.level_progress || 0}}%</text>
+          </view>
+        </view>
+      </view>
+      <view class="flex-center gap-sm">
+        <view class="level-badge-tag">{{report.current_level || '-'}}</view>
+        <text class="text-bold">{{report.current_level || '未评级'}}</text>
+      </view>
+    </view>
+
+    <!-- Teacher Comment comment-card -->
+    <view class="section-label">老师评语</view>
+    <view class="card comment-card" wx:if="{{report.teacher_comment}}">
+      <view class="cc-header">
+        <view class="cc-avatar">👩‍🏫</view>
+        <view class="cc-meta">
+          <view class="cc-name">老师</view>
+          <view class="cc-role">阅读指导老师</view>
+        </view>
+      </view>
+      <view class="cc-text">
+        <text class="cc-quote">"</text>{{report.teacher_comment}}<text class="cc-quote">"</text>
+      </view>
+      <view class="comment-icon">💬</view>
+      <text class="comment-text">{{report.teacher_comment}}</text>
+    </view>
+    <view class="card" wx:else>
+      <text class="text-secondary">老师暂未点评</text>
+    </view>
+
+    <!-- CTA Button cta-section -->
+    <view class="cta-section">
+      <view class="cta-icon">🎉</view>
+      <view class="cta-title">表现很棒！</view>
+      <view class="cta-desc">强烈建议转为正式会员继续学习</view>
+      <button class="cta-btn btn-primary btn-block" bindtap="goToOfficial">
+        转为正式会员
+      </button>
+    </view>
+
+    <view class="bottom-space"></view>
+
+  </block>
+</view>

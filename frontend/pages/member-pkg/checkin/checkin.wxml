@@ -1,0 +1,114 @@
+<!-- frontend/pages/member-pkg/checkin/checkin.wxml -->
+<view class="page-bg">
+  <view style="display:none" class="active bottom-nav checked locked nav-item unlocked"></view>
+
+  <error-view wx:if="{{loadError}}" visible="{{loadError}}" icon="😵" title="加载失败" desc="数据加载出错了，请稍后重试" showRetry="{{true}}" retryText="重试" bind:onRetry="onRetry" />
+  <loading-skeleton wx:elif="{{loading}}" />
+  <block wx:if="{{!loadError && !loading}}">
+
+  <!-- Nav Bar -->
+  <view class="nav-bar">
+    <navigator class="back" open-type="navigateBack" hover-class="none">
+      <text class="back-arrow">←</text>
+    </navigator>
+    <text class="title">阅读打卡</text>
+  </view>
+
+  <!-- Streak Banner -->
+  <view class="streak-banner">
+    <text class="streak-num">{{streak.current_streak || 0}}</text>
+    <text class="streak-label">连续打卡天数</text>
+    <text class="streak-sub">🔥 再坚持 {{30 - (streak.current_streak || 0) > 0 ? 30 - (streak.current_streak || 0) : 0}} 天解锁 30 天徽章</text>
+    <view class="streak-stats">
+      <view class="ss-item">
+        <text class="ss-num">{{streak.current_streak || 0}}</text>
+        <text class="ss-label">当前连续</text>
+      </view>
+      <view class="ss-item">
+        <text class="ss-num">{{streak.longest_streak || 0}}</text>
+        <text class="ss-label">最长连续</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Badge Row -->
+  <view class="badge-row" wx:if="{{streakBadges.length > 0}}">
+    <view class="badge-item" wx:for="{{streakBadges}}" wx:key="target">
+      <view class="badge-icon {{item.unlocked ? 'unlocked' : 'locked'}}">
+        <text class="badge-emoji">{{item.icon}}</text>
+      </view>
+      <text class="b-name">{{item.name}}</text>
+    </view>
+  </view>
+
+  <!-- Today Status Card -->
+  <view class="today-card {{checkedToday ? 'checked' : 'unchecked'}}">
+    <view class="tc-icon">
+      <text>{{checkedToday ? '✅' : '⏰'}}</text>
+    </view>
+    <view class="tc-info">
+      <text class="tc-title">{{checkedToday ? '今日已打卡' : '今日未打卡'}}</text>
+      <text class="tc-sub">{{todayStats ? todayStats.book_name + ' · 阅读 ' + todayStats.reading_minutes + ' 分钟' : '阅读满 10 分钟自动打卡'}}</text>
+    </view>
+    <text class="tc-time" wx:if="{{checkedToday && todayStats}}">{{todayStats.checkin_time || ''}}</text>
+  </view>
+
+  <!-- Auto Trigger Explanation -->
+  <view class="auto-trigger">
+    <text class="auto-trigger-icon">ℹ️</text>
+    <text class="auto-trigger-text">阅读满 10 分钟自动打卡，无需手动操作</text>
+  </view>
+
+  <!-- Calendar Card -->
+  <view class="calendar-card">
+    <view class="cal-header">
+      <text class="month">{{yearMonth}}</text>
+      <view class="nav-btns">
+        <view class="cal-nav-btn" bindtap="prevMonth">
+          <text class="cal-nav-icon">◀</text>
+        </view>
+        <view class="cal-nav-btn" bindtap="nextMonth">
+          <text class="cal-nav-icon">▶</text>
+        </view>
+      </view>
+    </view>
+    <view class="cal-weekdays">
+      <text class="cal-weekday">一</text>
+      <text class="cal-weekday">二</text>
+      <text class="cal-weekday">三</text>
+      <text class="cal-weekday">四</text>
+      <text class="cal-weekday">五</text>
+      <text class="cal-weekday">六</text>
+      <text class="cal-weekday">日</text>
+    </view>
+    <view class="cal-grid">
+      <view wx:key="key" wx:for="{{gridCells}}" class="cal-day {{item.empty ? 'empty' : ''}} {{item.checked ? 'checked' : ''}} {{item.isToday ? 'today' : ''}}">
+        <text wx:if="{{!item.empty}}" class="cal-day-text">{{item.day}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Recent Check-in Records -->
+  <view class="records" wx:if="{{records.length > 0}}">
+    <text class="records-title">最近打卡记录</text>
+    <view class="record-item" wx:for="{{records}}" wx:key="index">
+      <view class="r-icon">
+        <text>📖</text>
+      </view>
+      <view class="r-info">
+        <text class="r-date">{{item.date}}</text>
+        <text class="r-detail">{{item.book_name}} · {{item.pages}}</text>
+      </view>
+      <text class="r-duration">{{item.duration}} 分钟</text>
+    </view>
+  </view>
+
+  <!-- Share Poster Button -->
+  <button class="share-btn" open-type="share">
+    <text class="share-icon">📋</text>
+    <text>生成打卡海报</text>
+  </button>
+
+  </block>
+
+</view>

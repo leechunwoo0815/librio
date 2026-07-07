@@ -1,0 +1,49 @@
+/* Page-specific styles for borrow — extracted from design prototype */
+/* scan area */
+    .scan-area { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+    .scan-input { padding: 12px 16px; border: 2px solid var(--border); border-radius: var(--radius-sm); font-size: 15px; background: var(--surface); color: var(--fg); outline: none; width: 360px; font-family: var(--font-mono); }
+    .scan-input:focus { border-color: var(--accent); }
+    .scan-input::placeholder { color: var(--muted); }
+    .btn-scan { padding: 12px 20px; border-radius: var(--radius-sm); font-size: 15px; font-weight: 500; background: var(--accent); color: white; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-scan:hover { background: var(--accent-hover); }
+
+    /* scan result card */
+    .scan-result { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; margin-bottom: 24px; display: flex; gap: 28px; align-items: flex-start; }
+    .scan-result .book-cover { width: 90px; height: 120px; border-radius: var(--radius-sm); background: var(--accent-soft); display: grid; place-items: center; font-size: 36px; flex-shrink: 0; }
+    .scan-result .book-info { flex: 1; }
+    .scan-result .book-info h3 { font-family: var(--font-display); font-size: 17px; font-weight: 600; margin-bottom: 8px; }
+    .scan-result .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 24px; font-size: 13px; margin-bottom: 16px; }
+    .scan-result .info-grid .label { color: var(--muted); }
+    .scan-result .info-grid .value { color: var(--fg); font-weight: 500; }
+    .scan-result .status-available { color: var(--success); font-weight: 600; }
+    .scan-result .status-borrowed { color: var(--warning); font-weight: 600; }
+    .scan-result .status-lost { color: var(--error); font-weight: 600; }
+    .scan-result .child-selector { margin-bottom: 16px; }
+    .scan-result .child-selector label { font-size: 13px; color: var(--muted); margin-right: 8px; }
+    .filter-select { padding: 9px 32px 9px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; background: var(--surface); color: var(--fg); outline: none; appearance: none; background-image: url("data:image/svg+xml,%3Csvg width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%238896ab' stroke-width='2.5' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; }
+    .filter-select:focus { border-color: var(--accent); }
+    .scan-result .action-btns { display: flex; gap: 10px; }
+    .btn-action { padding: 9px 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
+    
+    
+    
+    
+    .btn-warning { background: var(--warning); color: var(--fg); }
+    .btn-warning:hover { background: var(--warning); opacity: 0.85; }
+    
+    
+
+    /* section header */
+    .section-header { font-family: var(--font-display); font-size: 15px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    .section-header .count { font-size: 12px; color: var(--muted); font-weight: 400; }
+
+    /* table */
+    .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; padding: 12px 16px; font-weight: 500; color: var(--muted); border-bottom: 1px solid var(--border); font-size: 12px; }
+    td { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--accent-soft); }
+    .status-badge { padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 500; }
+    .status-borrow { background: var(--success-soft); color: var(--success); }
+    .status-return { background: var(--accent-soft); color: var(--accent); }

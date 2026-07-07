@@ -1,0 +1,265 @@
+/* pages/reports.css — 观察期报告页专属样式 */
+
+/* ===== Stats Grid ===== */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+.stat-card .stat-label {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.stat-card .stat-value {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.stat-card .stat-change {
+  font-size: 12px;
+  margin-top: 4px;
+}
+.stat-card .stat-change.up { color: var(--success); }
+.stat-card .stat-change.down { color: var(--error); }
+.stat-card:nth-child(1) { border-top: 3px solid var(--accent); }
+.stat-card:nth-child(2) { border-top: 3px solid var(--success); }
+.stat-card:nth-child(3) { border-top: 3px solid var(--secondary); }
+.stat-card:nth-child(4) { border-top: 3px solid var(--warning); }
+
+/* ===== Search Bar ===== */
+.search-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+/* ===== Filter Select ===== */
+.filter-select {
+  height: 38px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0 12px;
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+  background: var(--surface);
+  color: var(--fg);
+  min-width: 120px;
+}
+
+/* ===== Status Pills ===== */
+.status {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.status-generated {
+  background: var(--secondary-soft);
+  color: var(--secondary);
+}
+.status-viewed {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+/* ===== Table Card ===== */
+.table-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+.table-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ===== thead bg override ===== */
+thead {
+  background: var(--bg);
+}
+
+/* ===== Progress Row (inline in table cells) ===== */
+.progress-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.progress-label {
+  font-size: 13px;
+  min-width: 80px;
+  color: var(--muted);
+}
+.progress-bar {
+  flex: 1;
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.progress-bar .fill {
+  height: 100%;
+  border-radius: 3px;
+}
+.progress-value {
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 50px;
+  text-align: right;
+}
+
+/* ===== Side Panel (report detail) ===== */
+.panel-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 100;
+}
+.panel-overlay.show {
+  display: block;
+}
+.side-panel {
+  position: fixed;
+  top: 0;
+  right: -560px;
+  width: 560px;
+  height: 100vh;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  z-index: 101;
+  overflow-y: auto;
+  transition: right 0.25s ease;
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.08);
+}
+.side-panel.open {
+  right: 0;
+}
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  z-index: 2;
+}
+.panel-header h3 {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 600;
+}
+.panel-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  transition: all 0.15s;
+}
+.panel-close:hover {
+  background: var(--bg);
+  color: var(--fg);
+}
+.panel-body {
+  padding: 24px;
+}
+
+/* ===== Report Sections (inside side panel) ===== */
+.report-section {
+  margin-bottom: 24px;
+}
+.report-section h4 {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--fg);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.report-section h4 .icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+}
+.report-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.meta-item {
+  padding: 12px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+}
+.meta-item .label {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.meta-item .value {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* ===== Reading Bar ===== */
+.reading-bar {
+  height: 8px;
+  background: var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+.reading-bar .fill {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--accent);
+}
+
+/* ===== Comment Box ===== */
+.comment-box {
+  padding: 14px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  line-height: 1.7;
+  border-left: 3px solid var(--accent);
+}
+
+/* ===== Form Textarea ===== */
+.form-textarea {
+  width: 100%;
+  min-height: 120px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+  resize: vertical;
+}
+.form-textarea:focus {
+  border-color: var(--accent);
+}

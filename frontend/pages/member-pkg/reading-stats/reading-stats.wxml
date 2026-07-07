@@ -1,0 +1,198 @@
+<!-- frontend/pages/member-pkg/reading-stats/reading-stats.wxml -->
+<view class="page-bg">
+  <view style="display:none" class="active bottom-nav lb-me line-chart nav-item"></view>
+
+  <!-- Nav Bar -->
+  <view class="nav-bar">
+    <navigator class="back" open-type="navigateBack" hover-class="none">
+      <text class="back-arrow">←</text>
+    </navigator>
+    <text class="title">阅读统计</text>
+  </view>
+
+  <!-- Period Tabs -->
+  <view class="period-tabs">
+    <view class="period-btn {{period === 'day' ? 'active' : ''}}" bindtap="switchPeriod" data-period="day">
+      <text>今日</text>
+    </view>
+    <view class="period-btn {{period === 'week' ? 'active' : ''}}" bindtap="switchPeriod" data-period="week">
+      <text>本周</text>
+    </view>
+    <view class="period-btn {{period === 'month' ? 'active' : ''}}" bindtap="switchPeriod" data-period="month">
+      <text>本月</text>
+    </view>
+    <view class="period-btn {{period === 'total' ? 'active' : ''}}" bindtap="switchPeriod" data-period="total">
+      <text>累计</text>
+    </view>
+  </view>
+
+  <!-- Level Info Card -->
+  <view class="level-card" wx:if="{{summary}}">
+    <view class="level-badge">
+      <text class="level-badge-emoji">📗</text>
+    </view>
+    <view class="level-info">
+      <text class="level-label">当前级别</text>
+      <view class="level-name-row">
+        <text class="level-name">{{summary.level_name || '词汇新手'}}</text>
+        <text class="level-letter">{{summary.level_letter || 'B'}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Promotion Progress -->
+  <view class="progress-card" wx:if="{{summary}}">
+    <view class="prog-header">
+      <text class="prog-title">晋级进度</text>
+      <text class="prog-count">{{summary.books_finished || 0}} / {{summary.books_for_next_level || 8}} 本</text>
+    </view>
+    <view class="prog-bar-bg">
+      <view class="prog-bar-fill" style="width: {{summary.books_for_next_level ? (summary.books_finished / summary.books_for_next_level * 100) : 0}}%"></view>
+    </view>
+    <text class="prog-desc">还需再读 <text class="prog-highlight">{{(summary.books_for_next_level || 8) - (summary.books_finished || 0)}} 本书</text> 即可晋升至「{{summary.next_level_name || '故事探索者'}}」</text>
+  </view>
+
+  <!-- Achievement Row -->
+  <view class="achievement-row">
+    <view class="ach-item">
+      <text class="ach-icon">🏅</text>
+      <text class="ach-val">{{summary.badge_count || 0}}</text>
+      <text class="ach-label">获得徽章</text>
+    </view>
+    <view class="ach-item">
+      <text class="ach-icon">🔥</text>
+      <text class="ach-val">{{summary.streak_days || 0}}</text>
+      <text class="ach-label">连续打卡</text>
+    </view>
+    <view class="ach-item">
+      <text class="ach-icon">⭐</text>
+      <text class="ach-val">{{summary.perfect_quizzes || 0}}</text>
+      <text class="ach-label">满分测验</text>
+    </view>
+  </view>
+
+  <!-- Leaderboard Card -->
+  <view class="leaderboard-card" bindtap="goLeaderboard">
+    <view class="lb-header">
+      <text class="lb-header-icon">⭐</text>
+      <text class="lb-title">阅读排行榜</text>
+      <text class="lb-subtitle">按阅读词数排行</text>
+    </view>
+    <view class="lb-my-rank" wx:if="{{myRank}}">
+      <text class="lb-my-rank-text">你的当前排名：第 </text>
+      <text class="lb-my-rank-num">{{myRank}}</text>
+      <text class="lb-my-rank-text"> 名</text>
+    </view>
+    <!-- Podium Top 3 -->
+    <view class="lb-podium">
+      <!-- 2nd Place -->
+      <view class="lb-podium-item" wx:if="{{leaderboard.length >= 2}}">
+        <view class="lb-avatar rank-2">
+          <text class="lb-avatar-emoji">{{leaderboard[1].avatar || '👩'}}</text>
+        </view>
+        <text class="lb-name">{{leaderboard[1].child_name || 'Lily'}}</text>
+        <text class="lb-score">{{leaderboard[1].score || 0}} 词</text>
+        <text class="lb-medal">🥈</text>
+      </view>
+      <!-- 1st Place -->
+      <view class="lb-podium-item" wx:if="{{leaderboard.length >= 1}}">
+        <view class="lb-avatar rank-1">
+          <text class="lb-crown">👑</text>
+          <text class="lb-avatar-emoji">{{leaderboard[0].avatar || '🧑'}}</text>
+        </view>
+        <text class="lb-name">{{leaderboard[0].child_name || 'Tom'}}</text>
+        <text class="lb-score">{{leaderboard[0].score || 0}} 词</text>
+        <text class="lb-medal">🥇</text>
+      </view>
+      <!-- 3rd Place -->
+      <view class="lb-podium-item" wx:if="{{leaderboard.length >= 3}}">
+        <view class="lb-avatar rank-3">
+          <text class="lb-avatar-emoji">{{leaderboard[2].avatar || '👦'}}</text>
+        </view>
+        <text class="lb-name">{{leaderboard[2].child_name || '小明'}}</text>
+        <text class="lb-score">{{leaderboard[2].score || 0}} 词</text>
+        <text class="lb-medal">🥉</text>
+      </view>
+    </view>
+    <!-- Rest of leaderboard -->
+    <view class="lb-list" wx:if="{{restLeaderboard.length > 0}}">
+      <view class="lb-list-item {{item.isMe ? 'lb-me' : ''}}" wx:for="{{restLeaderboard}}" wx:key="rank">
+        <text class="lb-rank">{{item.rank}}</text>
+        <view class="lb-av">
+          <text class="lb-av-emoji">{{item.avatar || '🐶'}}</text>
+        </view>
+        <text class="lb-user-name">{{item.isMe ? '我 (' + item.child_name + ')' : item.child_name}}</text>
+        <text class="lb-user-score">{{item.score || 0}}</text>
+      </view>
+    </view>
+    <view class="lb-more">
+      <text class="lb-more-text">查看全部 ></text>
+    </view>
+  </view>
+
+  <!-- Today Stats -->
+  <view class="today-stats" wx:if="{{todayStats}}">
+    <view class="t-stat">
+      <text class="ts-val ts-accent">{{todayStats.reading_minutes || 0}}</text>
+      <text class="ts-label">今日阅读 (分钟)</text>
+    </view>
+    <view class="t-stat">
+      <text class="ts-val ts-success">{{todayStats.pages_read || 0}}</text>
+      <text class="ts-label">阅读页数</text>
+    </view>
+    <view class="t-stat">
+      <text class="ts-val ts-warning">{{todayStats.new_words || 0}}</text>
+      <text class="ts-label">新增生词</text>
+    </view>
+    <view class="t-stat">
+      <text class="ts-val ts-secondary">{{todayStats.words_read || 0}}</text>
+      <text class="ts-label">阅读词数</text>
+    </view>
+  </view>
+
+  <!-- Reading Duration Trend Chart -->
+  <view class="chart-card" wx:if="{{trend.length > 0}}">
+    <text class="chart-title">阅读时长趋势（近7天）</text>
+    <view class="bar-chart-wrap">
+      <view class="bar-col" wx:for="{{trend}}" wx:key="date">
+        <view class="bar-fill" style="height: {{item.barHeight * 2}}rpx; background: {{item.isToday ? '#39c34b' : '#5560cf'}}"></view>
+        <text class="bar-label">{{item.label}}</text>
+      </view>
+    </view>
+    <view class="legend">
+      <view class="legend-item">
+        <view class="dot" style="background: #5560cf"></view>
+        <text>已完成</text>
+      </view>
+      <view class="legend-item">
+        <view class="dot" style="background: #39c34b"></view>
+        <text>今日</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Word Count Trend (bar replacement for line chart) -->
+  <view class="chart-card" wx:if="{{wordTrend.length > 0}}">
+    <text class="chart-title">阅读词数趋势（近7天）</text>
+    <view class="bar-chart-wrap">
+      <view class="bar-col" wx:for="{{wordTrend}}" wx:key="date">
+        <view class="bar-fill word-bar" style="height: {{item.barHeight * 2}}rpx; background: {{item.isToday ? '#39c34b' : '#5560cf'}}"></view>
+        <text class="bar-label">{{item.label}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Books Read Shelf -->
+  <view class="chart-card" wx:if="{{booksRead.length > 0}}">
+    <text class="chart-title">已读书架</text>
+    <scroll-view class="books-read" scroll-x="true" enhanced="true" show-scrollbar="false">
+      <view class="br-item" wx:for="{{booksRead}}" wx:key="index">
+        <view class="br-cover" style="background: {{item.bgColor}}">
+          <text class="br-cover-emoji">{{item.emoji}}</text>
+        </view>
+        <text class="br-name">{{item.name}}</text>
+      </view>
+    </scroll-view>
+  </view>
+
+</view>

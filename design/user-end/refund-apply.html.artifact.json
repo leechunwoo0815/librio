@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "refund-apply.html",
+  "entry": "refund-apply.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-06-05T05:11:41.020Z",
+  "updatedAt": "2026-06-05T05:11:41.020Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}

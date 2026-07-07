@@ -1,0 +1,208 @@
+/* profile.css — 个人名片管理页面专属样式 */
+
+/* Stats grid — 4 columns specific to this page */
+.stats-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+@media (max-width: 1024px) { .stats-grid-4 { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 768px) { .stats-grid-4 { grid-template-columns: 1fr; } }
+
+/* Table card */
+.table-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+.table-card .table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.table-card .table-header h3 {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+}
+.table-card table { width: 100%; border-collapse: collapse; }
+.table-card thead { background: var(--bg); }
+.table-card th {
+  padding: 10px 16px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.table-card td {
+  padding: 12px 16px;
+  font-size: 13px;
+  border-top: 1px solid var(--border);
+}
+.table-card tr:hover td { background: rgba(85, 96, 207, 0.02); }
+
+/* Level badges */
+.level-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.level-1 { background: rgba(57, 195, 75, 0.15); color: #2a9d3a; }
+.level-2 { background: rgba(85, 96, 207, 0.12); color: #4a52b8; }
+.level-3 { background: var(--accent-soft); color: var(--accent); }
+.level-4 { background: rgba(148, 237, 90, 0.15); color: #5a9e2e; }
+.level-5 { background: var(--warning-soft); color: #b08800; }
+
+/* Search bar */
+.search-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.search-bar .search-input {
+  flex: 1;
+  height: 38px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0 12px;
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+  background: var(--surface);
+  color: var(--fg);
+}
+.search-bar .search-input:focus { border-color: var(--accent); }
+.search-bar .search-input::placeholder { color: var(--muted); }
+.search-bar .filter-select {
+  height: 38px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0 12px;
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+  background: var(--surface);
+  color: var(--fg);
+  min-width: 120px;
+}
+
+/* Card Preview Modal */
+.modal-overlay .profile-card-preview {
+  width: 400px;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+}
+.profile-card-banner {
+  height: 120px;
+  background: linear-gradient(135deg, var(--accent) 0%, #7c5ecf 100%);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.profile-card-banner .deco {
+  position: absolute;
+  font-size: 60px;
+  opacity: 0.1;
+}
+.profile-card-banner .deco-1 { top: -10px; left: 20px; transform: rotate(-15deg); }
+.profile-card-banner .deco-2 { bottom: -5px; right: 30px; transform: rotate(10deg); }
+.profile-card-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 4px solid var(--surface);
+  display: grid;
+  place-items: center;
+  font-size: 32px;
+  position: absolute;
+  bottom: -36px;
+  left: 50%;
+  transform: translateX(-50%);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.profile-card-body {
+  padding: 44px 24px 24px;
+  text-align: center;
+}
+.profile-card-name {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.profile-card-level {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 20px;
+}
+.profile-card-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  padding: 16px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+.profile-card-stats .stat { text-align: center; }
+.profile-card-stats .stat-num {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.profile-card-stats .stat-lbl {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.profile-card-badges {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.profile-card-badges .badge-tag {
+  padding: 4px 10px;
+  background: var(--bg);
+  border-radius: 999px;
+  font-size: 11px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.profile-card-badges .badge-tag .emoji { font-size: 13px; }
+.profile-card-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  display: grid;
+  place-items: center;
+  color: white;
+}
+.profile-card-close:hover { background: rgba(255,255,255,0.35); }
+
+/* Achievement display in table */
+.achievement-cell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}

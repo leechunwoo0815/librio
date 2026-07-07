@@ -1,0 +1,224 @@
+<testsuite name="online_reading.在线听读与阅读记录" tests="11" errors="10" failures="0" skipped="0" time="0.072189" timestamp="2026-06-15T16:08:34.754674" hostname="litianyudeMacBook-Air.local"><testcase classname="online_reading.在线听读与阅读记录" name="按等级筛选图书" status="error" time="0.016727"><error type="KeyError" message="'list'">
+<![CDATA[
+Failing step: 并且 每本书显示封面、词数、预计阅读时间和音频标识 ... error in 0.000s
+Location: features/online_reading.feature:16
+Traceback (most recent call last):
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/behave/model.py", line 1991, in run
+    match.run(runner.context)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/Users/litianyu/cc-projects/librio/venv/lib/python3.13/site-packages/behave/matchers.py", line 105, in run
+    self.func(context, *args, **kwargs)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "features/steps/online_reading_steps.py", line 41, in step_book_display_fields
+    for book in data["list"]:
+                ~~~~^^^^^^^^
+KeyError: 'list'
+]]>
+</error><system-out>
+<![CDATA[
+@scenario.begin
+  场景: 按等级筛选图书
+    假如 用户已登录小程序 ... passed in 0.001s
+    并且 用户的孩子是正式会员 ... passed in 0.001s
+    并且 用户位于线上图书馆页面 ... passed in 0.000s
+    当 用户选择AR等级"AR2-AR3" ... passed in 0.014s
+    那么 图书列表仅显示AR值在2.0-3.9之间的图书 ... passed in 0.000s
+    并且 每本书显示封面、词数、预计阅读时间和音频标识 ... error in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="online_reading.在线听读与阅读记录" name="按主题筛选图书" status="passed" time="0.007914"><system-out>
+<![CDATA[
+@scenario.begin
+  场景: 按主题筛选图书
+    假如 用户已登录小程序 ... passed in 0.002s
+    并且 用户的孩子是正式会员 ... passed in 0.001s
+    并且 用户位于线上图书馆页面 ... passed in 0.000s
+    当 用户选择主题"故事" ... passed in 0.005s
+    那么 图书列表仅显示故事类图书 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="online_reading.在线听读与阅读记录" name="查看图书详情" status="error" time="0.014542"><error type="NoneType" message="None">
+<![CDATA[
+Failing step: 并且 显示是否有音频标识 ... undefined in 0.000s
+Location: features/online_reading.feature:25
+None]]>
+</error><system-out>
+<![CDATA[
+@scenario.begin
+  场景: 查看图书详情
+    假如 用户已登录小程序 ... passed in 0.001s
+    并且 用户的孩子是正式会员 ... passed in 0.001s
+    并且 用户位于线上图书馆页面 ... passed in 0.000s
+    当 用户点击图书"Charlotte's Web" ... passed in 0.012s
+    那么 显示图书封面、简介、AR等级、词数、预计阅读时间 ... passed in 0.000s
+    并且 显示是否有音频标识 ... undefined in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="online_reading.在线听读与阅读记录" name="开始听读图书" status="error" time="0.013181"><error type="NoneType" message="None">
+<![CDATA[
+Failing step: 假如 图书"Charlotte's Web"配有音频 ... undefined in 0.000s
+Location: features/online_reading.feature:29
+None]]>
+</error><system-out>
+<![CDATA[
+@scenario.begin
+  场景: 开始听读图书
+    假如 用户已登录小程序 ... passed in 0.002s
+    并且 用户的孩子是正式会员 ... passed in 0.011s
+    并且 用户位于线上图书馆页面 ... passed in 0.000s
+    假如 图书"Charlotte's Web"配有音频 ... undefined in 0.000s
+    当 用户点击"开始听读" ... undefined in 0.000s
+    那么 进入听读页面 ... undefined in 0.000s
+    并且 音频播放器显示 ... undefined in 0.000s
+    并且 显示播放进度条 ... skipped in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="online_reading.在线听读与阅读记录" name="播放与暂停音频" status="error" time="0.00212"><error type="NoneType" message="None">
+<![CDATA[
+Failing step: 假如 用户正在听读"Charlotte's Web" ... undefined in 0.000s
+Location: features/online_reading.feature:36
+None]]>
+</error><system-out>
+<![CDATA[
+@scenario.begin
+  场景: 播放与暂停音频
+    假如 用户已登录小程序 ... passed in 0.001s
+    并且 用户的孩子是正式会员 ... passed in 0.001s
+    并且 用户位于线上图书馆页面 ... passed in 0.000s
+    假如 用户正在听读"Charlotte's Web" ... undefined in 0.000s
+    当 用户点击暂停按钮 ... undefined in 0.000s
+    那么 音频暂停播放 ... undefined in 0.000s
+    当 用户再次点击播放按钮 ... undefined in 0.000s
+    那么 音频从暂停位置继续播放 ... undefined in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="online_reading.在线听读与阅读记录" name="调整播放速度" status="error" time="0.002155"><error type="NoneType" message="None">
+<![CDATA[
+Failing step: 假如 用户正在听读"Charlotte's Web" ... undefined in 0.000s
+Location: features/online_reading.feature:43
+None]]>
+</error><system-out>
+<![CDATA[
+@scenario.begin
+  场景: 调整播放速度
+    假如 用户已登录小程序 ... passed in 0.001s
+    并且 用户的孩子是正式会员 ... passed in 0.001s
+    并且 用户位于线上图书馆页面 ... passed in 0.000s
+    假如 用户正在听读"Charlotte's Web" ... undefined in 0.000s
+    当 用户选择1.25倍速 ... skipped in 0.000s
+    那么 音频以1.25倍速播放 ... skipped in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="online_reading.在线听读与阅读记录" name="锁屏播放音频" status="error" time="0.003161"><error type="NoneType" message="None">
+<![CDATA[
+Failing step: 假如 用户正在听读"Charlotte's Web" ... undefined in 0.000s
+Location: features/online_reading.feature:48
+None]]>
+</error><system-out>
+<![CDATA[
+@scenario.begin
+  场景: 锁屏播放音频
+    假如 用户已登录小程序 ... passed in 0.002s
+    并且 用户的孩子是正式会员 ... passed in 0.001s
+    并且 用户位于线上图书馆页面 ... passed in 0.000s
+    假如 用户正在听读"Charlotte's Web" ... undefined in 0.000s
+    当 用户锁屏 ... undefined in 0.000s
+    那么 音频继续在后台播放 ... undefined in 0.000s
+    并且 锁屏界面显示播放控制 ... undefined in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="online_reading.在线听读与阅读记录" name="听读中查询单词" status="error" time="0.00339"><error type="NoneType" message="None">
+<![CDATA[
+Failing step: 假如 用户正在听读"Charlotte's Web" ... undefined in 0.000s
+Location: features/online_reading.feature:55
+None]]>
+</error><system-out>
+<![CDATA[
+@scenario.begin
+  场景: 听读中查询单词
+    假如 用户已登录小程序 ... passed in 0.002s
+    并且 用户的孩子是正式会员 ... passed in 0.001s
+    并且 用户位于线上图书馆页面 ... passed in 0.000s
+    假如 用户正在听读"Charlotte's Web" ... undefined in 0.000s
+    当 用户点击文本中的单词"gorgeous" ... undefined in 0.000s
+    那么 显示单词释义、音标和发音 ... undefined in 0.000s
+    并且 听读不中断 ... undefined in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="online_reading.在线听读与阅读记录" name="查词结果来源" status="error" time="0.002755"><error type="NoneType" message="None">
+<![CDATA[
+Failing step: 假如 用户查询单词"gorgeous" ... undefined in 0.000s
+Location: features/online_reading.feature:61
+None]]>
+</error><system-out>
+<![CDATA[
+@scenario.begin
+  场景: 查词结果来源
+    假如 用户已登录小程序 ... passed in 0.002s
+    并且 用户的孩子是正式会员 ... passed in 0.001s
+    并且 用户位于线上图书馆页面 ... passed in 0.000s
+    假如 用户查询单词"gorgeous" ... undefined in 0.000s
+    当 系统查询词典 ... undefined in 0.000s
+    那么 优先从本地ECDICT词库返回结果 ... undefined in 0.000s
+    并且 如果本地未命中则从Free Dictionary API查询 ... undefined in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="online_reading.在线听读与阅读记录" name="记录阅读时长" status="error" time="0.002881"><error type="NoneType" message="None">
+<![CDATA[
+Failing step: 假如 用户开始听读"Charlotte's Web" ... undefined in 0.000s
+Location: features/online_reading.feature:68
+None]]>
+</error><system-out>
+<![CDATA[
+@scenario.begin
+  场景: 记录阅读时长
+    假如 用户已登录小程序 ... passed in 0.002s
+    并且 用户的孩子是正式会员 ... passed in 0.001s
+    并且 用户位于线上图书馆页面 ... passed in 0.000s
+    假如 用户开始听读"Charlotte's Web" ... undefined in 0.000s
+    当 用户听读超过10分钟 ... undefined in 0.000s
+    那么 系统记录本次阅读时长 ... skipped in 0.000s
+    并且 更新累计阅读时间 ... skipped in 0.000s
+    并且 自动触发阅读打卡 ... skipped in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="online_reading.在线听读与阅读记录" name="听读中断恢复" status="error" time="0.003362"><error type="NoneType" message="None">
+<![CDATA[
+Failing step: 假如 用户正在听读"Charlotte's Web" ... undefined in 0.000s
+Location: features/online_reading.feature:75
+None]]>
+</error><system-out>
+<![CDATA[
+@scenario.begin
+  场景: 听读中断恢复
+    假如 用户已登录小程序 ... passed in 0.001s
+    并且 用户的孩子是正式会员 ... passed in 0.002s
+    并且 用户位于线上图书馆页面 ... passed in 0.000s
+    假如 用户正在听读"Charlotte's Web" ... undefined in 0.000s
+    当 用户退出小程序后重新打开 ... undefined in 0.000s
+    那么 可以继续从上次音频位置听读 ... undefined in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

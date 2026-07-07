@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>测验结果 · MegaWords</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.003 250); --surface: oklch(100% 0 0);
+      --fg: oklch(20% 0.015 275); --muted: oklch(48% 0.02 250);
+      --border: oklch(90% 0.008 250); --accent: oklch(54% 0.17 275);
+      --accent-soft: oklch(54% 0.17 275 / 0.1);
+      --secondary: oklch(86% 0.20 135); --secondary-soft: oklch(86% 0.20 135 / 0.12);
+      --success: oklch(72% 0.20 145); --success-soft: oklch(72% 0.20 145 / 0.1);
+      --warning: oklch(78% 0.16 85); --warning-soft: oklch(78% 0.16 85 / 0.1);
+      --error: oklch(62% 0.22 25); --error-soft: oklch(62% 0.22 25 / 0.1);
+      --radius: 16px; --radius-sm: 10px; --radius-lg: 20px;
+      --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--fg); font-family: var(--font-body);
+      font-size: 15px; line-height: 1.5; max-width: 430px; margin: 0 auto;
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; padding: 40px 24px;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; }
+
+    /* confetti */
+    .confetti-container {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 99; overflow: hidden;
+    }
+    .confetti-piece {
+      position: absolute; width: 10px; height: 10px; border-radius: 2px;
+      top: -20px; animation: confettiFall 2.5s ease-in forwards;
+    }
+    @keyframes confettiFall {
+      0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+    }
+
+    .result-card {
+      width: 100%; background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 32px 24px; text-align: center;
+      position: relative;
+    }
+    /* pass icon */
+    .result-icon-pass {
+      width: 88px; height: 88px; border-radius: 50%;
+      background: var(--success-soft); margin: 0 auto 16px;
+      display: grid; place-items: center; position: relative;
+      animation: popIn 0.4s ease;
+    }
+    .result-icon-pass svg { width: 44px; height: 44px; color: var(--success); }
+    .result-icon-pass .celebration {
+      position: absolute; font-size: 24px;
+      animation: floatUp 0.8s ease forwards;
+    }
+    @keyframes popIn {
+      0% { transform: scale(0); } 70% { transform: scale(1.15); } 100% { transform: scale(1); }
+    }
+    @keyframes floatUp {
+      0% { transform: translateY(0) scale(0); opacity: 0; }
+      50% { opacity: 1; }
+      100% { transform: translateY(-40px) scale(1); opacity: 0; }
+    }
+    /* fail icon */
+    .result-icon-fail {
+      width: 88px; height: 88px; border-radius: 50%;
+      background: var(--warning-soft); margin: 0 auto 16px;
+      display: grid; place-items: center; animation: popIn 0.4s ease;
+    }
+    .result-icon-fail svg { width: 44px; height: 44px; color: var(--warning); }
+
+    .result-badge {
+      display: inline-block; padding: 4px 16px; border-radius: 999px;
+      font-size: 13px; font-weight: 600; margin-bottom: 16px;
+    }
+    .result-badge.pass { background: var(--success-soft); color: var(--success); }
+    .result-badge.fail { background: var(--warning-soft); color: var(--warning); }
+
+    .score-circle {
+      width: 120px; height: 120px; border-radius: 50%; margin: 0 auto 16px;
+      display: grid; place-items: center; position: relative;
+    }
+    .score-circle svg { position: absolute; width: 120px; height: 120px; transform: rotate(-90deg); }
+    .score-circle .score-text {
+      position: relative; z-index: 1;
+      font-family: var(--font-display); font-size: 36px; font-weight: 700;
+    }
+    .score-circle .score-unit { font-size: 16px; font-weight: 400; }
+
+    .result-title {
+      font-family: var(--font-display); font-size: 22px; font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .result-title.pass { color: var(--success); }
+    .result-title.fail { color: var(--warning); }
+    .result-sub { font-size: 14px; color: var(--muted); margin-bottom: 4px; }
+
+    /* stats row */
+    .stats-row {
+      display: flex; justify-content: center; gap: 20px; margin: 16px 0;
+      padding: 12px; background: var(--bg); border-radius: var(--radius-sm);
+    }
+    .stat-item { text-align: center; }
+    .stat-item .stat-val { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: var(--accent); }
+    .stat-item .stat-label { font-size: 11px; color: var(--muted); }
+
+    /* wrong questions review */
+    .wrong-review {
+      text-align: left; margin-top: 16px; padding: 14px;
+      background: var(--bg); border-radius: var(--radius-sm);
+    }
+    .wrong-review h4 {
+      font-family: var(--font-display); font-size: 14px; font-weight: 600;
+      margin-bottom: 10px; color: var(--warning);
+    }
+    .wrong-item {
+      padding: 10px 0; border-bottom: 1px solid var(--border);
+    }
+    .wrong-item:last-child { border-bottom: none; }
+    .wrong-q { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+    .wrong-a { font-size: 12px; color: var(--muted); }
+    .wrong-a .correct { color: var(--success); font-weight: 600; }
+
+    /* promotion celebration card */
+    .promo-card {
+      margin-top: 16px; padding: 20px; border-radius: var(--radius);
+      background: linear-gradient(135deg, oklch(54% 0.17 275 / 0.12), oklch(86% 0.20 135 / 0.08));
+      border: 1px solid oklch(54% 0.17 275 / 0.15); text-align: center;
+      animation: shimmer 2s ease infinite;
+    }
+    @keyframes shimmer {
+      0%, 100% { box-shadow: 0 0 0 0 oklch(54% 0.17 275 / 0); }
+      50% { box-shadow: 0 0 20px 4px oklch(54% 0.17 275 / 0.15); }
+    }
+    .promo-card .promo-emoji { font-size: 40px; margin-bottom: 8px; }
+    .promo-card .promo-title {
+      font-family: var(--font-display); font-size: 20px; font-weight: 700;
+      color: var(--accent); margin-bottom: 4px;
+    }
+    .promo-card .promo-sub { font-size: 13px; color: var(--muted); margin-bottom: 12px; }
+    .promo-card .promo-link {
+      display: inline-block; padding: 8px 20px; border-radius: 999px;
+      background: var(--accent); color: white; font-size: 13px; font-weight: 600;
+    }
+
+    /* level up banner */
+    .level-up-banner {
+      margin-top: 16px; padding: 16px; border-radius: var(--radius);
+      background: linear-gradient(135deg, oklch(54% 0.17 275 / 0.12), oklch(86% 0.20 135 / 0.08));
+      border: 1px solid oklch(54% 0.17 275 / 0.15); text-align: center;
+    }
+    .level-up-banner .lu-emoji { font-size: 32px; margin-bottom: 8px; }
+    .level-up-banner .lu-text { font-family: var(--font-display); font-size: 16px; font-weight: 600; color: var(--accent); }
+    .level-up-banner .lu-sub { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+    /* auto actions */
+    .auto-actions {
+      margin-top: 12px; padding: 12px 14px; border-radius: var(--radius-sm);
+      background: var(--success-soft); border: 1px solid oklch(72% 0.20 145 / 0.2);
+      text-align: left;
+    }
+    .auto-actions .aa-title {
+      font-size: 13px; font-weight: 600; color: var(--success);
+      margin-bottom: 6px;
+    }
+    .auto-actions .aa-item {
+      font-size: 12px; color: var(--fg); padding: 2px 0;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .auto-actions .aa-item .check { color: var(--success); font-weight: 700; }
+
+    .btn-group {
+      width: 100%; display: flex; flex-direction: column; gap: 10px; margin-top: 24px;
+    }
+    .btn-primary {
+      width: 100%; padding: 14px; border-radius: var(--radius);
+      background: var(--accent); color: white; font-size: 15px; font-weight: 600;
+      text-align: center;
+    }
+    .btn-primary:active { opacity: 0.85; }
+    .btn-secondary {
+      width: 100%; padding: 14px; border-radius: var(--radius);
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--fg); font-size: 15px; font-weight: 500; text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <!-- confetti container -->
+  <div class="confetti-container" id="confettiBox"></div>
+
+  <div class="result-card">
+    <!-- Pass icon (shown for pass) -->
+    <div class="result-icon-pass" id="passIcon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <!-- Fail icon (hidden for pass) -->
+    <div class="result-icon-fail" id="failIcon" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    </div>
+
+    <span class="result-badge pass" id="badge">测验通过</span>
+
+    <div class="score-circle">
+      <svg viewBox="0 0 120 120">
+        <circle cx="60" cy="60" r="52" fill="none" stroke="oklch(90% 0.008 250)" stroke-width="8"/>
+        <circle cx="60" cy="60" r="52" fill="none" stroke="oklch(72% 0.20 145)" stroke-width="8"
+          stroke-dasharray="327" stroke-dashoffset="0" stroke-linecap="round" id="scoreRing"/>
+      </svg>
+      <span class="score-text" id="scoreText">100<span class="score-unit">%</span></span>
+    </div>
+
+    <div class="result-title pass" id="resultTitle">测验通过！</div>
+    <div class="result-sub" id="resultSub">太棒了，你对这本书理解得很好！</div>
+
+    <!-- stats row: score / correct / words -->
+    <div class="stats-row" id="statsRow">
+      <div class="stat-item">
+        <div class="stat-val" id="statScore">100</div>
+        <div class="stat-label">本次得分</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-val" id="statCorrect">5</div>
+        <div class="stat-label">正确题数</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-val" id="statWords">320</div>
+        <div class="stat-label">阅读词数</div>
+      </div>
+    </div>
+
+    <!-- auto actions (shown for pass) -->
+    <div class="auto-actions" id="autoActions">
+      <div class="aa-title">已自动完成</div>
+      <div class="aa-item"><span class="check">&#10003;</span> 本书已从书架归还</div>
+      <div class="aa-item"><span class="check">&#10003;</span> 积分已更新 (+15)</div>
+      <div class="aa-item"><span class="check">&#10003;</span> 晋级检测完成</div>
+    </div>
+
+    <!-- wrong questions review (shown for fail) -->
+    <div class="wrong-review" id="wrongReview" style="display:none">
+      <h4>错题回顾</h4>
+      <div class="wrong-item">
+        <div class="wrong-q">2. What did Charlotte write in her web?</div>
+        <div class="wrong-a">你的答案：B. Some pig &nbsp;|&nbsp; 正确答案：<span class="correct">C. Terrific</span></div>
+      </div>
+      <div class="wrong-item">
+        <div class="wrong-q">5. Who is Wilbur's best friend?</div>
+        <div class="wrong-a">你的答案：A. Templeton &nbsp;|&nbsp; 正确答案：<span class="correct">B. Charlotte</span></div>
+      </div>
+    </div>
+
+    <!-- level up banner -->
+    <div class="level-up-banner" id="levelUp" style="display:none">
+      <div class="lu-emoji">🏆</div>
+      <div class="lu-text">恭喜晋级！</div>
+      <div class="lu-sub">Level 2 → Level 3 · 故事探索者</div>
+    </div>
+
+    <!-- promotion celebration card (shown when level up) -->
+    <div class="promo-card" id="promoCard" style="display:none">
+      <div class="promo-emoji">🎓</div>
+      <div class="promo-title">恭喜晋级！</div>
+      <div class="promo-sub">你已成功晋级，快来查看你的晋级证书吧！</div>
+      <a class="promo-link" href="certificate.html">查看晋级证书</a>
+    </div>
+  </div>
+
+  <div class="btn-group" id="btnGroup">
+    <!-- Pass buttons -->
+    <a class="btn-primary" href="my-books.html" id="btnPassPrimary" style="text-align:center">返回书架</a>
+    <!-- Fail buttons -->
+    <a class="btn-primary" href="quiz.html" id="btnFailPrimary" style="display:none;text-align:center">重新测评</a>
+    <button class="btn-secondary" onclick="history.back()" id="btnFailSecondary" style="display:none">返回上一页</button>
+  </div>
+
+  <script>
+    var params = new URLSearchParams(location.search);
+    var score = parseInt(params.get('score')) || 5;
+    var total = parseInt(params.get('total')) || 5;
+    var pct = Math.round(score / total * 100);
+    var passed = score >= 4; // 4/5 or 5/5 passes
+    var wordsRead = 320;
+
+    // Update score
+    document.getElementById('scoreText').innerHTML = pct + '<span class="score-unit">%</span>';
+    document.getElementById('statScore').textContent = pct;
+    document.getElementById('statCorrect').textContent = score + '/' + total;
+    document.getElementById('statWords').textContent = wordsRead;
+
+    // Update ring
+    var ring = document.getElementById('scoreRing');
+    var circumference = 327;
+    ring.setAttribute('stroke-dashoffset', circumference - (circumference * pct / 100));
+
+    if (passed) {
+      ring.setAttribute('stroke', 'oklch(72% 0.20 145)');
+      document.getElementById('passIcon').style.display = 'grid';
+      document.getElementById('failIcon').style.display = 'none';
+      document.getElementById('badge').className = 'result-badge pass';
+      document.getElementById('badge').textContent = '测验通过';
+      document.getElementById('resultTitle').className = 'result-title pass';
+      document.getElementById('resultTitle').textContent = '测验通过！';
+      document.getElementById('resultSub').textContent = '太棒了，你对这本书理解得很好！';
+      document.getElementById('autoActions').style.display = 'block';
+      document.getElementById('wrongReview').style.display = 'none';
+      document.getElementById('btnPassPrimary').style.display = 'block';
+      document.getElementById('btnFailPrimary').style.display = 'none';
+      document.getElementById('btnFailSecondary').style.display = 'none';
+
+      // Trigger confetti
+      launchConfetti();
+
+      // Check for level up (simulate: if all 5 correct, trigger level up)
+      if (score === total) {
+        document.getElementById('levelUp').style.display = 'block';
+        document.getElementById('promoCard').style.display = 'block';
+      }
+    } else {
+      ring.setAttribute('stroke', 'oklch(78% 0.16 85)');
+      document.getElementById('passIcon').style.display = 'none';
+      document.getElementById('failIcon').style.display = 'grid';
+      document.getElementById('badge').className = 'result-badge fail';
+      document.getElementById('badge').textContent = '未通过';
+      document.getElementById('resultTitle').className = 'result-title fail';
+      document.getElementById('resultTitle').textContent = '再试一次！';
+      document.getElementById('resultSub').textContent = '没关系，多读几遍再来挑战吧！';
+      document.getElementById('autoActions').style.display = 'none';
+      document.getElementById('wrongReview').style.display = 'block';
+      document.getElementById('btnPassPrimary').style.display = 'none';
+      document.getElementById('btnFailPrimary').style.display = 'block';
+      document.getElementById('btnFailSecondary').style.display = 'block';
+    }
+
+    function launchConfetti() {
+      var box = document.getElementById('confettiBox');
+      var colors = [
+        'oklch(72% 0.20 145)', 'oklch(54% 0.17 275)', 'oklch(86% 0.20 135)',
+        'oklch(78% 0.16 85)', 'oklch(80% 0.15 300)'
+      ];
+      for (var i = 0; i < 50; i++) {
+        var piece = document.createElement('div');
+        piece.className = 'confetti-piece';
+        piece.style.left = Math.random() * 100 + '%';
+        piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+        piece.style.animationDelay = Math.random() * 1 + 's';
+        piece.style.animationDuration = (1.5 + Math.random() * 1.5) + 's';
+        piece.style.width = (6 + Math.random() * 8) + 'px';
+        piece.style.height = (6 + Math.random() * 8) + 'px';
+        box.appendChild(piece);
+      }
+      setTimeout(function() { box.innerHTML = ''; }, 3500);
+    }
+  </script>
+</body>
+</html>

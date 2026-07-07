@@ -1,0 +1,240 @@
+/* Page-specific styles for message_manage -- extracted from design prototype */
+
+/* ===== Compose Card ===== */
+.msg-compose {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.msg-compose h2 {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+.form-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.form-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 14px;
+  background: var(--surface);
+  color: var(--text);
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.form-group textarea {
+  min-height: 100px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.target-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.target-row select {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 14px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.target-row input[type="number"] {
+  width: 200px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 14px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.compose-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.btn-send {
+  padding: 8px 24px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btn-send:hover {
+  opacity: 0.85;
+}
+
+.btn-send:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ===== Messages Table ===== */
+.msg-table-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.msg-table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.msg-table-header h2 {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+.msg-table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.msg-table-wrap th,
+.msg-table-wrap td {
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border);
+}
+
+.msg-table-wrap th {
+  font-weight: 600;
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  background: var(--bg);
+}
+
+.msg-table-wrap td {
+  color: var(--text);
+}
+
+/* ===== Status Badges ===== */
+.msg-type-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.msg-type-badge.type-1 {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.msg-type-badge.type-2 {
+  background: var(--error-soft);
+  color: var(--error);
+}
+
+.msg-type-badge.type-3 {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.msg-type-badge.type-4 {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.msg-type-badge.type-5 {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.priority-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.priority-badge.priority-0 {
+  background: var(--bg);
+  color: var(--muted);
+}
+
+.priority-badge.priority-1 {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.priority-badge.priority-2 {
+  background: var(--error-soft);
+  color: var(--error);
+}
+
+/* ===== Empty State ===== */
+.msg-empty {
+  text-align: center;
+  padding: 48px 20px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* ===== Pagination ===== */
+.msg-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+}

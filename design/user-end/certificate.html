@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>晋级证书 · MegaWords</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.003 250); --surface: oklch(100% 0 0);
+      --fg: oklch(20% 0.015 275); --muted: oklch(48% 0.02 250);
+      --border: oklch(90% 0.008 250); --accent: oklch(54% 0.17 275);
+      --accent-soft: oklch(54% 0.17 275 / 0.1);
+      --secondary: oklch(86% 0.20 135); --secondary-soft: oklch(86% 0.20 135 / 0.12);
+      --success: oklch(72% 0.20 145);
+      --gold: oklch(75% 0.14 85); --gold-dark: oklch(55% 0.12 85); --gold-light: oklch(88% 0.10 85);
+      --radius: 16px; --radius-sm: 10px; --radius-lg: 20px;
+      --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--fg); font-family: var(--font-body);
+      font-size: 15px; line-height: 1.5; max-width: 430px; margin: 0 auto;
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; padding: 32px 20px 80px;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; }
+
+    /* confetti */
+    .confetti-top { font-size: 36px; margin-bottom: 12px; text-align: center; }
+
+    /* certificate outer wrapper with gold gradient border */
+    .cert-wrapper {
+      width: 100%; padding: 3px; border-radius: var(--radius-lg);
+      background: linear-gradient(135deg, var(--gold-light), var(--gold), var(--gold-dark), var(--gold), var(--gold-light));
+      position: relative;
+    }
+    .cert-wrapper::before {
+      content: ''; position: absolute; inset: -4px; border-radius: calc(var(--radius-lg) + 4px);
+      background: linear-gradient(135deg, var(--gold-light), var(--gold), var(--gold-dark), var(--gold), var(--gold-light));
+      opacity: 0.3; filter: blur(8px); z-index: -1;
+    }
+
+    /* certificate card */
+    .cert-card {
+      width: 100%; background: var(--surface);
+      border-radius: calc(var(--radius-lg) - 2px); padding: 36px 24px;
+      text-align: center; position: relative; overflow: hidden;
+    }
+    .cert-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      background:
+        radial-gradient(circle at 10% 10%, oklch(75% 0.14 85 / 0.04), transparent 50%),
+        radial-gradient(circle at 90% 90%, oklch(54% 0.17 275 / 0.04), transparent 50%);
+      pointer-events: none;
+    }
+    .cert-card::after {
+      content: ''; position: absolute; top: 12px; left: 12px; right: 12px; bottom: 12px;
+      border: 1px solid oklch(75% 0.14 85 / 0.2); border-radius: calc(var(--radius-lg) - 6px);
+      pointer-events: none;
+    }
+
+    /* ornamental corners */
+    .cert-corner {
+      position: absolute; width: 24px; height: 24px;
+      border-color: var(--gold); border-style: solid; z-index: 1;
+    }
+    .cert-corner.tl { top: 20px; left: 20px; border-width: 2px 0 0 2px; }
+    .cert-corner.tr { top: 20px; right: 20px; border-width: 2px 2px 0 0; }
+    .cert-corner.bl { bottom: 20px; left: 20px; border-width: 0 0 2px 2px; }
+    .cert-corner.br { bottom: 20px; right: 20px; border-width: 0 2px 2px 0; }
+
+    .cert-header {
+      font-size: 11px; color: var(--gold-dark); text-transform: uppercase;
+      letter-spacing: 0.15em; margin-bottom: 6px; position: relative;
+    }
+    .cert-logo {
+      font-family: var(--font-display); font-size: 20px; font-weight: 700;
+      background: linear-gradient(135deg, var(--gold-dark), var(--accent));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text; margin-bottom: 20px; position: relative;
+    }
+    .cert-title {
+      font-family: var(--font-display); font-size: 22px; font-weight: 700;
+      color: var(--fg); margin-bottom: 20px; letter-spacing: 0.05em; position: relative;
+    }
+    .cert-badge { font-size: 56px; margin-bottom: 16px; position: relative; }
+
+    /* child info */
+    .cert-child-name {
+      font-family: var(--font-display); font-size: 26px; font-weight: 700;
+      color: var(--accent); margin-bottom: 4px; position: relative;
+    }
+    .cert-english-name {
+      font-size: 15px; color: var(--muted); margin-bottom: 16px;
+      font-style: italic; position: relative;
+    }
+
+    /* promotion text */
+    .cert-promo {
+      font-family: var(--font-display); font-size: 16px; font-weight: 600;
+      color: var(--fg); margin-bottom: 8px; position: relative;
+    }
+    .cert-level-change {
+      display: flex; align-items: center; justify-content: center; gap: 12px;
+      margin-bottom: 16px; position: relative;
+    }
+    .cert-level {
+      padding: 6px 16px; border-radius: 999px;
+      font-size: 14px; font-weight: 600;
+    }
+    .cert-level.from { background: var(--border); color: var(--muted); }
+    .cert-level.to {
+      background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+      color: white;
+    }
+    .cert-arrow { font-size: 18px; color: var(--gold); }
+    .cert-level-name {
+      font-family: var(--font-display); font-size: 15px; font-weight: 600;
+      color: var(--fg); margin-bottom: 12px; position: relative;
+    }
+
+    /* divider */
+    .cert-divider {
+      width: 60%; height: 1px; margin: 0 auto 16px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      position: relative;
+    }
+
+    /* date and cert number */
+    .cert-meta {
+      font-size: 12px; color: var(--muted); position: relative;
+      line-height: 1.8;
+    }
+    .cert-number {
+      font-family: 'Courier New', monospace; font-size: 11px;
+      color: var(--gold-dark); letter-spacing: 0.05em;
+    }
+
+    /* seal */
+    .cert-seal {
+      position: absolute; bottom: 18px; right: 24px;
+      font-size: 40px; opacity: 0.12; transform: rotate(-15deg);
+    }
+
+    /* actions */
+    .cert-actions {
+      width: 100%; display: flex; flex-direction: column; gap: 10px; margin-top: 24px;
+    }
+    .btn-save {
+      width: 100%; padding: 14px; border-radius: var(--radius);
+      background: var(--accent); color: white; font-size: 15px; font-weight: 600;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-save:active { opacity: 0.85; }
+    .btn-save svg { width: 18px; height: 18px; }
+    .btn-share {
+      width: 100%; padding: 14px; border-radius: var(--radius);
+      background: var(--success); color: white; font-size: 15px; font-weight: 600;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-share:active { opacity: 0.85; }
+    .btn-share svg { width: 18px; height: 18px; }
+    .btn-back {
+      width: 100%; padding: 14px; border-radius: var(--radius);
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--fg); font-size: 15px; font-weight: 500; text-align: center;
+    }
+
+    /* share preview modal */
+    .share-modal {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: oklch(20% 0.015 275 / 0.5); z-index: 100;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
+    }
+    .share-modal.show { opacity: 1; pointer-events: auto; }
+    .share-card {
+      width: calc(100% - 48px); max-width: 340px; background: var(--surface);
+      border-radius: var(--radius-lg); padding: 24px; text-align: center;
+      transform: scale(0.9); transition: transform 0.25s ease;
+    }
+    .share-modal.show .share-card { transform: scale(1); }
+    .share-card .qr-placeholder {
+      width: 120px; height: 120px; margin: 0 auto 12px;
+      background: var(--border); border-radius: var(--radius-sm);
+      display: grid; place-items: center; font-size: 12px; color: var(--muted);
+    }
+    .share-card .share-hint { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+    .share-card .share-close {
+      padding: 8px 24px; border-radius: 999px; background: var(--accent);
+      color: white; font-size: 13px; font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="confetti-top">🎊</div>
+
+  <div class="cert-wrapper">
+    <div class="cert-card">
+      <!-- ornamental corners -->
+      <div class="cert-corner tl"></div>
+      <div class="cert-corner tr"></div>
+      <div class="cert-corner bl"></div>
+      <div class="cert-corner br"></div>
+
+      <div class="cert-header">Certificate of Achievement</div>
+      <div class="cert-logo">MegaWords</div>
+      <div class="cert-title">晋级证书</div>
+      <div class="cert-badge">🏆</div>
+      <div class="cert-child-name">Mega</div>
+      <div class="cert-english-name">Mega (英文名)</div>
+      <div class="cert-promo">成功晋级至 Level 3</div>
+      <div class="cert-level-change">
+        <span class="cert-level from">Level 2</span>
+        <span class="cert-arrow">→</span>
+        <span class="cert-level to">Level 3</span>
+      </div>
+      <div class="cert-level-name">⭐ 故事探索者</div>
+      <div class="cert-divider"></div>
+      <div class="cert-meta">
+        颁发日期：2025 年 6 月 5 日<br>
+        <span class="cert-number">证书编号：MW-2025-0605-0032</span>
+      </div>
+      <div class="cert-seal">🏅</div>
+    </div>
+  </div>
+
+  <div class="cert-actions">
+    <button class="btn-save" onclick="alert('证书已保存到相册')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      保存到相册
+    </button>
+    <button class="btn-share" onclick="document.getElementById('shareModal').classList.add('show')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+      分享给朋友
+    </button>
+    <a class="btn-back" href="achievement.html">返回成就中心</a>
+  </div>
+
+  <!-- share modal with QR code -->
+  <div class="share-modal" id="shareModal" onclick="if(this.id==='shareModal')this.classList.remove('show')">
+    <div class="share-card">
+      <div class="qr-placeholder">
+        <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3"/><rect x="18" y="18" width="3" height="3"/><rect x="14" y="18" width="3" height="3"/></svg>
+      </div>
+      <div class="share-hint">长按识别小程序码<br>查看晋级证书</div>
+      <button class="share-close" onclick="document.getElementById('shareModal').classList.remove('show')">关闭</button>
+    </div>
+  </div>
+</body>
+</html>

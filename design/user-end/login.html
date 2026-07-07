@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>登录 · MegaWords</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.003 250); --surface: oklch(100% 0 0);
+      --fg: oklch(20% 0.015 275); --muted: oklch(48% 0.02 250);
+      --border: oklch(90% 0.008 250); --accent: oklch(54% 0.17 275);
+      --accent-soft: oklch(54% 0.17 275 / 0.1);
+      --secondary: oklch(86% 0.20 135); --success: oklch(72% 0.20 145);
+      --radius: 16px; --radius-sm: 10px; --radius-lg: 20px;
+      --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--fg); font-family: var(--font-body);
+      font-size: 15px; line-height: 1.5; max-width: 430px; margin: 0 auto;
+      min-height: 100vh; display: flex; flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; }
+    .login-container {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      justify-content: center; padding: 40px 24px;
+    }
+    .logo-area { text-align: center; margin-bottom: 48px; }
+    .logo-icon {
+      width: 80px; height: 80px; border-radius: 20px; margin: 0 auto 16px;
+      background: linear-gradient(135deg, var(--accent), oklch(48% 0.17 275));
+      display: grid; place-items: center;
+      box-shadow: 0 8px 24px oklch(54% 0.17 275 / 0.25);
+    }
+    .logo-icon svg { width: 40px; height: 40px; color: white; }
+    .app-name { font-family: var(--font-display); font-size: 24px; font-weight: 700; color: var(--accent); }
+    .app-slogan { font-size: 14px; color: var(--muted); margin-top: 6px; }
+    .login-form { width: 100%; display: flex; flex-direction: column; gap: 12px; }
+    .wx-login-btn {
+      width: 100%; padding: 14px; border-radius: var(--radius);
+      background: #07C160; color: white; font-size: 16px; font-weight: 600;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: opacity 0.15s;
+    }
+    .wx-login-btn:active { opacity: 0.85; }
+    .wx-login-btn svg { width: 22px; height: 22px; }
+    .divider {
+      display: flex; align-items: center; gap: 12px;
+      margin: 20px 0; font-size: 12px; color: var(--muted);
+    }
+    .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+    .phone-form { display: flex; flex-direction: column; gap: 12px; }
+    .input-row {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 0 14px; height: 48px;
+    }
+    .input-row:focus-within { border-color: var(--accent); }
+    .input-row svg { width: 18px; height: 18px; color: var(--muted); flex-shrink: 0; }
+    .input-row input {
+      flex: 1; border: none; outline: none; font: inherit; font-size: 15px;
+      background: transparent; color: var(--fg);
+    }
+    .input-row input::placeholder { color: var(--muted); }
+    .sms-row { display: flex; gap: 8px; }
+    .sms-row .input-row { flex: 1; }
+    .sms-btn {
+      padding: 0 16px; height: 48px; border-radius: var(--radius-sm);
+      background: var(--accent-soft); color: var(--accent);
+      font-size: 13px; font-weight: 600; white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .sms-btn:disabled { opacity: 0.5; }
+    .login-btn {
+      width: 100%; padding: 14px; border-radius: var(--radius);
+      background: var(--accent); color: white; font-size: 16px; font-weight: 600;
+      margin-top: 4px; transition: opacity 0.15s;
+    }
+    .login-btn:active { opacity: 0.85; }
+    .footer {
+      padding: 20px 24px 32px; text-align: center;
+    }
+    .footer-links { display: flex; justify-content: center; gap: 4px; font-size: 12px; color: var(--muted); }
+    .footer-links a { color: var(--accent); }
+    .footer-links .sep { color: var(--border); }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="logo-area">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+      </div>
+      <div class="app-name">MegaWords</div>
+      <div class="app-slogan">英文原版阅读 · 让阅读成为习惯</div>
+    </div>
+
+    <div class="login-form">
+      <button class="wx-login-btn" onclick="alert('调用 wx.login 获取 code')">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 01.213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 00.167-.054l1.903-1.114a.864.864 0 01.717-.098 10.16 10.16 0 002.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.348-8.596-6.348zM5.785 5.991c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 01-1.162 1.178A1.17 1.17 0 014.623 7.17c0-.651.52-1.18 1.162-1.18zm5.813 0c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 01-1.162 1.178 1.17 1.17 0 01-1.162-1.178c0-.651.52-1.18 1.162-1.18zm3.418 3.75c-1.828-.089-3.763.46-5.21 1.66-1.554 1.29-2.403 3.36-1.67 5.57.731 2.21 3.006 3.6 5.46 3.6.443 0 .881-.045 1.309-.129.505-.1.877.067 1.072.288l1.1 1.182c.111.12.255.187.417.187a.42.42 0 00.219-.063l1.353-.792c.163-.095.31-.125.473-.042 1.466.733 3.076.913 4.598.482-.392-2.573-1.777-4.824-3.778-6.317-1.625-1.215-3.576-1.87-5.355-2.05zm-1.61 3.01c.507 0 .917.417.917.93a.924.924 0 01-.917.93.924.924 0 01-.917-.93c0-.513.41-.93.917-.93zm4.554 0c.507 0 .917.417.917.93a.924.924 0 01-.917.93.924.924 0 01-.917-.93c0-.513.41-.93.917-.93z"/></svg>
+        微信一键登录
+      </button>
+
+      <div class="divider">或手机号登录</div>
+
+      <div class="phone-form">
+        <div class="input-row">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          <input type="tel" placeholder="请输入手机号" maxlength="11" />
+        </div>
+        <div class="sms-row">
+          <div class="input-row">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+            <input type="text" placeholder="验证码" maxlength="6" />
+          </div>
+          <button class="sms-btn" id="smsBtn">获取验证码</button>
+        </div>
+        <button class="login-btn" onclick="alert('手机号登录')">登录</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="footer-links">
+      <a href="#">《服务协议》</a>
+      <span class="sep">和</span>
+      <a href="#">《隐私政策》</a>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('smsBtn').addEventListener('click', function() {
+      var btn = this; var s = 60;
+      btn.disabled = true; btn.textContent = s + 's';
+      var t = setInterval(function() { s--; btn.textContent = s + 's'; if(s<=0){clearInterval(t);btn.disabled=false;btn.textContent='获取验证码';} }, 1000);
+    });
+  </script>
+</body>
+</html>

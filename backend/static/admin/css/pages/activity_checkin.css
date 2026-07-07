@@ -1,0 +1,129 @@
+/* activity_checkin.css — 活动签到页面专属样式 */
+
+/* Activity selector */
+.activity-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.activity-selector label {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+/* QR scan area */
+.scan-area {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.scan-input {
+  padding: 12px 16px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  background: var(--surface);
+  color: var(--fg);
+  outline: none;
+  width: 320px;
+  font-family: var(--font-mono);
+}
+.scan-input:focus { border-color: var(--accent); }
+.btn-confirm {
+  padding: 12px 20px;
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  font-weight: 500;
+  background: var(--accent);
+  color: white;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn-confirm:hover { background: var(--accent-hover); }
+
+/* Stats row */
+.stats-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  align-items: center;
+}
+.stat-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px 24px;
+  flex: 1;
+}
+.stat-item .stat-label {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.stat-item .stat-value {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.stat-item:nth-child(1) .stat-value { color: var(--success); }
+.stat-item:nth-child(2) .stat-value { color: var(--muted); }
+.stat-item:nth-child(3) .stat-value { color: var(--accent); }
+
+/* Progress bar */
+.progress-wrap {
+  flex: 1.5;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px 24px;
+}
+.progress-wrap .progress-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.progress-wrap .progress-header .pct {
+  font-family: var(--font-mono);
+  color: var(--accent);
+  font-weight: 600;
+}
+.progress-bar {
+  height: 10px;
+  background: var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+  transition: width 0.6s ease;
+}
+
+/* Status badges */
+.status-badge { padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 500; }
+.status-checked { background: var(--success-soft); color: var(--success); }
+.status-unchecked { background: var(--warning-soft); color: var(--warning); }
+
+/* Action links */
+.action-link { color: var(--accent); font-size: 12px; cursor: pointer; }
+.action-link:hover { text-decoration: underline; }
+
+/* Table specific overrides */
+.checkin-table th {
+  font-weight: 500;
+  letter-spacing: 0.03em;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .stats-row { flex-wrap: wrap; }
+  .progress-wrap { flex-basis: 100%; }
+}

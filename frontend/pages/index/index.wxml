@@ -1,0 +1,326 @@
+<!-- frontend/pages/index/index.wxml -->
+<view class="page-root">
+
+  <error-view wx:if="{{loadError}}" visible="{{loadError}}" icon="😵" title="加载失败" desc="数据加载出错了，请稍后重试" showRetry="{{true}}" retryText="重试" bind:onRetry="onRetry" />
+  <loading-skeleton wx:elif="{{!child && !isTestMode}}" />
+
+  <block wx:if="{{!loadError}}">
+
+  <!-- Header -->
+  <view class="header">
+    <!-- Top Bar (sticky) -->
+    <view class="top-bar">
+      <view class="logo">
+        <view class="logo-icon">M</view>
+        <text class="logo-text">MegaWords</text>
+      </view>
+      <view class="right-actions">
+        <view class="venue-btn" bindtap="toggleVenue">
+          <text>{{currentVenue.name || '人广馆'}}</text>
+          <text class="arrow-down">▾</text>
+        </view>
+        <view class="msg-btn" bindtap="goMessages">
+          <text class="msg-icon">🔔</text>
+          <view class="msg-dot" wx:if="{{hasUnread}}"></view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- Child Switcher Bar -->
+  <view class="child-switcher" wx:if="{{showChildSwitcher && children.length > 1}}">
+    <view class="child-chip {{item.id === child.id ? 'active' : ''}}"
+      wx:for="{{children}}" wx:key="id"
+      bindtap="onSwitchChild" data-id="{{item.id}}">
+      {{item.english_name || item.name}}
+    </view>
+  </view>
+
+  <!-- 提醒横幅 -->
+  <view class="alert-banner" wx:if="{{alerts.length > 0}}">
+    <view class="alert-item alert-{{item.level}}" wx:for="{{alerts}}" wx:key="index"
+      bindtap="onAlertTap" data-url="{{item.url}}">
+      <text class="alert-icon">{{item.icon}}</text>
+      <text class="alert-text">{{item.text}}</text>
+      <text class="alert-arrow">›</text>
+    </view>
+  </view>
+
+  <!-- Scrollable Content -->
+  <scroll-view scroll-y class="content-scroll">
+
+    <!-- Stats -->
+    <view class="stats" wx:if="{{child}}">
+      <view class="stat">
+        <view class="val">{{todayStats.reading_minutes || 0}}</view>
+        <view class="lbl">今日分钟</view>
+      </view>
+      <view class="stat">
+        <view class="val">{{todayStats.words_read || 0}}</view>
+        <view class="lbl">今日词数</view>
+      </view>
+      <view class="stat">
+        <view class="val">{{todayStats.pages_read || 0}}</view>
+        <view class="lbl">今日页数</view>
+      </view>
+    </view>
+
+    <!-- Carousel / Banner -->
+    <view class="carousel-wrap">
+      <swiper class="carousel" indicator-dots indicator-color="rgba(255,255,255,0.4)" indicator-active-color="#fff" autoplay interval="4000" circular current="{{currentSlide}}" bindchange="onSlideChange">
+        <swiper-item>
+          <view class="carousel-slide slide-1">
+            <text class="slide-tag">MEGAWORDS</text>
+            <view class="slide-title">海量原版英文书库</view>
+            <view class="slide-sub">3000+ 原版分级读物，AR 值精准匹配</view>
+          </view>
+        </swiper-item>
+        <swiper-item>
+          <view class="carousel-slide slide-2">
+            <text class="slide-tag">成长数据</text>
+            <view class="slide-title">阅读效果一目了然</view>
+            <view class="slide-sub">AI 实时追踪阅读量、词汇量、理解力</view>
+          </view>
+        </swiper-item>
+        <swiper-item>
+          <view class="carousel-slide slide-3">
+            <text class="slide-tag">限时活动</text>
+            <view class="slide-title">99元亲子启蒙课</view>
+            <view class="slide-sub">专业老师一对一，零基础也能开始</view>
+          </view>
+        </swiper-item>
+      </swiper>
+    </view>
+
+    <!-- Child Profile Badge -->
+    <view class="child-badge" wx:if="{{child}}" bindtap="goAchievement">
+      <view class="child-avatar">
+        <text class="child-avatar-emoji">👦</text>
+      </view>
+      <view class="child-info">
+        <view class="child-name-row">
+          <text class="child-name">{{child.name}}</text>
+          <view class="level-tag" wx:if="{{currentLevel}}">
+            <text>{{currentLevel.badge_emoji}}</text>
+            <text>{{currentLevel.level_name}}级</text>
+          </view>
+        </view>
+        <view class="child-streak" wx:if="{{streak > 0}}">
+          <text>🔥 连续打卡 {{streak}} 天</text>
+        </view>
+      </view>
+      <view class="achievement-btn">成就</view>
+    </view>
+
+    <!-- Login Prompt (when not logged in) -->
+    <view class="child-badge login-prompt" wx:if="{{!child}}" bindtap="goLogin">
+      <view class="child-avatar">
+        <text class="child-avatar-emoji">👤</text>
+      </view>
+      <view class="child-info">
+        <text class="child-name">点击登录，开启阅读之旅</text>
+      </view>
+      <view class="achievement-btn">登录</view>
+    </view>
+
+    <!-- Recent Achievements -->
+    <view class="section-block" wx:if="{{achievements && achievements.length > 0}}">
+      <view class="section-label">最近成就</view>
+      <scroll-view scroll-x class="achievement-scroll">
+        <view class="achievement-item" wx:for="{{achievements}}" wx:key="id">
+          <text class="achievement-emoji">{{item.emoji}}</text>
+          <text class="achievement-name">{{item.name}}</text>
+        </view>
+        <navigator url="/pages/member-pkg/achievement/achievement" class="achievement-item achievement-more">
+          <text class="achievement-arrow">→</text>
+          <text class="achievement-name text-accent">全部成就</text>
+        </navigator>
+      </scroll-view>
+    </view>
+
+    <!-- Promotion Progress -->
+    <view class="promo-card" wx:if="{{currentLevel && advancement}}">
+      <view class="promo-icon-wrap">
+        <text class="promo-icon">🌱</text>
+      </view>
+      <view class="promo-body">
+        <view class="promo-header">
+          <text class="promo-title">我的晋级进度</text>
+          <text class="promo-count">{{advancement.books_read}}/{{advancement.books_required}}本</text>
+        </view>
+        <view class="promo-hint" wx:if="{{!advancement.can_advance}}">
+          当前级别：{{currentLevel.level_name}}级 · 再读{{advancement.books_required - advancement.books_read}}本晋级至下一级
+        </view>
+        <view class="promo-hint promo-hint-success" wx:if="{{advancement.can_advance}}">
+          已满足晋级条件 🎉
+        </view>
+        <view class="promo-progress-bar">
+          <view class="promo-progress-fill" style="width: {{advancement.progress || 0}}%"></view>
+        </view>
+      </view>
+    </view>
+
+    <!-- Today Stats Card -->
+    <view class="stats-card" wx:if="{{child}}">
+      <view class="stats-grid">
+        <view class="stat-item">
+          <view class="stat-num">{{todayStats.reading_minutes || 0}}</view>
+          <view class="stat-label">今日分钟</view>
+        </view>
+        <view class="stat-item">
+          <view class="stat-num">{{todayStats.words_read || 0}}</view>
+          <view class="stat-label">今日词数</view>
+        </view>
+        <view class="stat-item">
+          <view class="stat-num">{{todayStats.pages_read || 0}}</view>
+          <view class="stat-label">今日页数</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- Leaderboard Entry -->
+    <view class="leaderboard-card" bindtap="goLeaderboard">
+      <text class="leaderboard-medals">🥇🥈🥉</text>
+      <view class="leaderboard-info">
+        <view class="leaderboard-title">排行榜</view>
+        <view class="leaderboard-desc">看看你排第几名！</view>
+      </view>
+      <text class="leaderboard-arrow">›</text>
+    </view>
+
+    <!-- Core Entry Grid -->
+    <view class="group">
+      <view class="group-title">快速入口</view>
+      <view class="grid">
+        <view class="card entry-item" bindtap="goBooks">
+          <view class="num">01</view>
+          <view class="title entry-icon-wrap icon-purple">
+            <text class="entry-icon">📚</text>
+            海量原版书
+          </view>
+          <view class="desc">3000+ 英文原版读物</view>
+          <text class="badge badge-user">用户端</text>
+        </view>
+        <view class="card entry-item" bindtap="goLeaderboard">
+          <view class="num">02</view>
+          <view class="title entry-icon-wrap icon-green">
+            <text class="entry-icon">📈</text>
+            效果可量化
+          </view>
+          <view class="desc">月度阅读报告</view>
+          <text class="badge badge-omo">V3.1 更新</text>
+        </view>
+        <view class="card entry-item" bindtap="goVocab">
+          <view class="num">03</view>
+          <view class="title entry-icon-wrap icon-orange">
+            <text class="entry-icon">👩‍🏫</text>
+            一对一指导
+          </view>
+          <view class="desc">定制阅读计划</view>
+          <text class="badge badge-new">🆕 新增</text>
+        </view>
+        <view class="card entry-item" bindtap="goShelf">
+          <view class="num">04</view>
+          <view class="title entry-icon-wrap icon-pink">
+            <text class="entry-icon">💛</text>
+            家长轻松
+          </view>
+          <view class="desc">专业服务省心</view>
+          <text class="badge badge-omo">V3.1 更新</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- Venue Card -->
+    <view class="section-header">
+      <text class="section-title">线下场馆</text>
+      <view class="section-more" bindtap="toggleVenue">
+        <text>切换</text>
+        <text class="more-arrow">›</text>
+      </view>
+    </view>
+    <view class="venue-card">
+      <view class="venue-icon-wrap">
+        <text class="venue-pin">📍</text>
+      </view>
+      <view class="venue-info">
+        <text class="venue-name">{{currentVenue.name || '人广馆'}}</text>
+        <text class="venue-addr">{{currentVenue.address || '上海市黄浦区南京东路 800 号 3 楼'}}</text>
+        <text class="venue-hours">营业时间：{{currentVenue.hours || '周二至周日 10:00–18:00'}}</text>
+      </view>
+      <view class="venue-nav-btn" bindtap="goVenueNav">导航</view>
+    </view>
+
+    <!-- Featured Books -->
+    <view class="section-header">
+      <text class="section-title">推荐图书</text>
+      <view class="section-more" bindtap="goBooks">
+        <text>更多</text>
+        <text class="more-arrow">›</text>
+      </view>
+    </view>
+    <scroll-view scroll-x class="book-scroll" wx:if="{{featuredBooks.length > 0}}">
+      <view class="book-card" wx:for="{{featuredBooks}}" wx:key="id" bindtap="goDetail" data-id="{{item.id}}">
+        <view class="book-cover">
+          <text class="book-cover-emoji">📖</text>
+        </view>
+        <text class="book-title">{{item.title}}</text>
+        <text class="book-meta">AR {{item.ar_value}} · {{item.word_count}}词</text>
+      </view>
+    </scroll-view>
+
+    <!-- Students Showcase -->
+    <view class="section-header">
+      <text class="section-title">学员风采</text>
+      <view class="section-more">
+        <text>更多</text>
+        <text class="more-arrow">›</text>
+      </view>
+    </view>
+    <scroll-view scroll-x class="student-scroll">
+      <view class="student-card" wx:for="{{students}}" wx:key="name">
+        <view class="student-avatar avatar-purple">
+          <text class="student-avatar-emoji">👧</text>
+        </view>
+        <text class="student-name">{{item.name}} · {{item.age}}岁</text>
+        <view class="student-stat-tag">
+          <text>已读 {{item.books_read}} 本</text>
+        </view>
+      </view>
+    </scroll-view>
+
+    <!-- FAQ -->
+    <view class="section-header">
+      <text class="section-title">常见问题</text>
+    </view>
+    <view class="faq-list">
+      <view class="faq-item {{item.open ? 'faq-open' : ''}}" wx:for="{{faqs}}" wx:key="question" bindtap="toggleFaq" data-index="{{index}}">
+        <view class="faq-question">
+          <text>{{item.question}}</text>
+          <text class="faq-arrow {{item.open ? 'faq-arrow-up' : ''}}">▾</text>
+        </view>
+        <view class="faq-answer" wx:if="{{item.open}}">
+          <view class="faq-answer-inner">
+            <text>{{item.answer}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- Bottom spacer -->
+    <view class="bottom-spacer"></view>
+
+  </scroll-view>
+
+  <!-- Debug Nav (测试模式) -->
+  <view wx:if="{{isTestMode}}" style="position:fixed;bottom:200rpx;left:50%;transform:translateX(-50%);z-index:100;width:600rpx;max-width:calc(100% - 64rpx);padding:24rpx;background:rgba(107,92,231,0.15);border-radius:16rpx;text-align:center;box-sizing:border-box;" bindtap="goDebugNav">
+    <text style="font-size:28rpx;color:var(--accent);font-weight:600;">📋 查看全部 27 个页面</text>
+  </view>
+
+  <!-- FAB Button -->
+  <view class="fab" bindtap="goCourse">
+    <text>立即报名 99 元亲子课</text>
+  </view>
+
+  </block><!-- end !loadError -->
+</view>

@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>阅读数据 · MegaWords 管理后台</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.003 250); --surface: oklch(100% 0 0);
+      --fg: oklch(20% 0.015 275); --muted: oklch(48% 0.02 250);
+      --border: oklch(90% 0.008 250); --accent: oklch(54% 0.17 275);
+      --accent-soft: oklch(54% 0.17 275 / 0.1); --accent-hover: oklch(48% 0.17 275);
+      --secondary: oklch(86% 0.20 135); --secondary-soft: oklch(86% 0.20 135 / 0.12);
+      --success: oklch(72% 0.20 145); --warning: oklch(78% 0.16 85);
+      --error: oklch(62% 0.22 25); --radius: 12px; --radius-sm: 8px; --radius-lg: 16px;
+      --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+      --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 14px; line-height: 1.5; min-height: 100vh; display: flex; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; }
+    .main { margin-left: 240px; flex: 1; min-height: 100vh; }
+    .top-bar { display: flex; align-items: center; justify-content: space-between; padding: 16px 28px; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; }
+    .top-bar h1 { font-family: var(--font-display); font-size: 18px; font-weight: 600; }
+    .content { padding: 24px 28px; }
+    .period-tabs { display: flex; gap: 4px; margin-bottom: 20px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 3px; width: fit-content; }
+    .period-tabs button { padding: 6px 16px; border-radius: 6px; font-size: 13px; color: var(--muted); }
+    .period-tabs button.active { background: var(--accent); color: white; }
+    .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 24px; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+    .stat-card .sl { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+    .stat-card .sv { font-family: var(--font-display); font-size: 24px; font-weight: 700; }
+    .stat-card .sc { font-size: 12px; margin-top: 2px; }
+    .stat-card .sc.up { color: var(--success); }
+    .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+    .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; }
+    .chart-card h3 { font-family: var(--font-display); font-size: 15px; font-weight: 600; margin-bottom: 16px; }
+    .bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 200px; }
+    .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
+    .bar-fill { width: 100%; border-radius: 4px 4px 0 0; min-height: 4px; }
+    .bar-label { font-size: 10px; color: var(--muted); margin-top: 4px; }
+    table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+    th, td { padding: 12px 16px; text-align: left; font-size: 13px; }
+    th { background: var(--bg); font-weight: 600; font-size: 12px; color: var(--muted); border-bottom: 1px solid var(--border); }
+    td { border-bottom: 1px solid var(--border); }
+    tr:last-child td { border-bottom: none; }
+    .rank-num { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 600; }
+    .rank-num.top3 { background: var(--accent); color: white; }
+    .rank-num.other { background: var(--border); color: var(--muted); }
+    @media (max-width: 1024px) { .main { margin-left: 200px; } .stats-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 768px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } .charts-grid { grid-template-columns: 1fr; } }
+  </style>
+    <link rel="stylesheet" href="admin-sidebar.css">
+  </head>
+<body>
+  <div id="sidebar-root"></div>
+<div class="main">
+    <div class="top-bar"><h1>阅读数据</h1><div class="right"><span class="name">管理员</span><a href="admin-dashboard.html" class="logout-btn">退出</a></div></div>
+    <div class="content">
+      <div class="period-tabs"><button class="active">今日</button><button>本周</button><button>本月</button><button>全部</button></div>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="sl">今日在线人数</div><div class="sv">87</div><div class="sc up">↑ 12%</div></div>
+        <div class="stat-card"><div class="sl">今日阅读时长</div><div class="sv">38h</div><div class="sc up">↑ 8%</div></div>
+        <div class="stat-card"><div class="sl">活跃用户</div><div class="sv">342</div><div class="sc up">↑ 15%</div></div>
+        <div class="stat-card"><div class="sl">人均阅读</div><div class="sv">26m</div><div class="sc">持平</div></div>
+        <div class="stat-card"><div class="sl">打卡率</div><div class="sv">68%</div><div class="sc up">↑ 3%</div></div>
+      </div>
+      <div class="charts-grid">
+        <div class="chart-card">
+          <h3>用户阅读时长排行 (Top 10)</h3>
+          <div class="bar-chart">
+            <div class="bar-col"><div class="bar-fill" style="height:90%;background:var(--accent)"></div><div class="bar-label">张小明</div></div>
+            <div class="bar-col"><div class="bar-fill" style="height:82%;background:var(--accent)"></div><div class="bar-label">Lucy Li</div></div>
+            <div class="bar-col"><div class="bar-fill" style="height:75%;background:var(--accent)"></div><div class="bar-label">Tom Wang</div></div>
+            <div class="bar-col"><div class="bar-fill" style="height:68%;background:var(--accent)"></div><div class="bar-label">Emily Chen</div></div>
+            <div class="bar-col"><div class="bar-fill" style="height:60%;background:var(--accent)"></div><div class="bar-label">Jack Zhang</div></div>
+            <div class="bar-col"><div class="bar-fill" style="height:55%;background:var(--accent)"></div><div class="bar-label">Amy Liu</div></div>
+            <div class="bar-col"><div class="bar-fill" style="height:48%;background:var(--accent)"></div><div class="bar-label">David Wu</div></div>
+            <div class="bar-col"><div class="bar-fill" style="height:42%;background:var(--accent)"></div><div class="bar-label">Ruby Zhao</div></div>
+            <div class="bar-col"><div class="bar-fill" style="height:35%;background:var(--accent)"></div><div class="bar-label">Kevin Sun</div></div>
+            <div class="bar-col"><div class="bar-fill" style="height:28%;background:var(--accent)"></div><div class="bar-label">Lily Ma</div></div>
+          </div>
+        </div>
+        <div class="chart-card">
+          <h3>图书阅读量排行</h3>
+          <table>
+            <thead><tr><th>#</th><th>图书</th><th>阅读次数</th><th>完读率</th></tr></thead>
+            <tbody>
+              <tr><td><span class="rank-num top3">1</span></td><td>The Cat in the Hat</td><td>486</td><td>92%</td></tr>
+              <tr><td><span class="rank-num top3">2</span></td><td>Brown Bear, Brown Bear</td><td>415</td><td>88%</td></tr>
+              <tr><td><span class="rank-num top3">3</span></td><td>Charlotte's Web</td><td>372</td><td>76%</td></tr>
+              <tr><td><span class="rank-num other">4</span></td><td>Goodnight Moon</td><td>351</td><td>95%</td></tr>
+              <tr><td><span class="rank-num other">5</span></td><td>Fantastic Mr. Fox</td><td>298</td><td>71%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="chart-card">
+        <h3>日活跃用户趋势 (近14天)</h3>
+        <svg viewBox="0 0 800 200" style="width:100%;height:200px">
+          <polyline points="0,140 60,120 120,100 180,130 240,110 300,90 360,120 420,90 480,70 540,100 600,80 660,60 720,50 800,55" fill="none" stroke="oklch(54% 0.17 275)" stroke-width="2.5" stroke-linecap="round"/>
+          <polyline points="0,160 60,140 120,120 180,150 240,125 300,105 360,135 420,105 480,85 540,115 600,95 660,75 720,65 800,70" fill="none" stroke="oklch(86% 0.20 135)" stroke-width="2" stroke-linecap="round" stroke-dasharray="6,3"/>
+          <text x="0" y="185" font-size="11" fill="oklch(48% 0.02 250)">5/22</text>
+          <text x="200" y="185" font-size="11" fill="oklch(48% 0.02 250)">5/26</text>
+          <text x="400" y="185" font-size="11" fill="oklch(48% 0.02 250)">5/30</text>
+          <text x="600" y="185" font-size="11" fill="oklch(48% 0.02 250)">6/3</text>
+          <text x="800" y="185" font-size="11" fill="oklch(48% 0.02 250)" text-anchor="end">6/7</text>
+        </svg>
+        <div style="display:flex;gap:16px;margin-top:8px;font-size:12px;color:var(--muted);justify-content:center">
+          <span><span style="display:inline-block;width:12px;height:3px;background:oklch(54% 0.17 275);vertical-align:middle;margin-right:4px;border-radius:2px"></span>在线阅读人数</span>
+          <span><span style="display:inline-block;width:12px;height:3px;background:oklch(86% 0.20 135);vertical-align:middle;margin-right:4px;border-radius:2px;border-style:dashed"></span>打卡人数</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    document.querySelectorAll('.period-tabs button').forEach(b => b.addEventListener('click', function() {
+      document.querySelectorAll('.period-tabs button').forEach(x => x.classList.remove('active'));
+      this.classList.add('active');
+    }));
+  </script>
+  <script src="admin-sidebar.js"></script>
+</body>
+</html>

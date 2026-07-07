@@ -1,0 +1,135 @@
+{% extends "admin/base.html" %}
+{% block title %}操作日志{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="/static/admin/css/pages/operation_logs.css" />
+{% endblock %}
+{% block page_title %}操作日志{% endblock %}
+
+{% block content %}
+<!-- Filter bar -->
+<div class="filter-bar">
+  <select id="moduleFilter"><option value="">全部模块</option><option value="config">系统配置</option><option value="book">图书</option><option value="user">用户</option><option value="deposit">押金</option><option value="activity">活动</option></select>
+  <input type="text" id="operatorSearch" placeholder="搜索操作人..." />
+  <input type="date" id="dateFrom" />
+  <span class="date-sep">至</span>
+  <input type="date" id="dateTo" />
+  <button class="btn btn-primary" onclick="loadLogs(1)">查询</button>
+  <div style="flex:1"></div>
+  <button class="btn btn-secondary" style="background:var(--secondary-soft);border:1px solid var(--border)" onclick="exportLogs()">导出日志</button>
+</div>
+
+<!-- Table -->
+<div class="table-card">
+  <table>
+    <thead>
+      <tr><th>操作人ID</th><th>时间</th><th>模块</th><th>操作类型</th><th>内容摘要</th><th>IP地址</th></tr>
+    </thead>
+    <tbody id="logTable">
+      <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted);">加载中...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Pagination -->
+<div class="pagination" id="pagination"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  var currentPage = 1;
+  var pageSize = 20;
+
+  document.addEventListener('DOMContentLoaded', function() {
+    // Set default date range (last 30 days)
+    var now = new Date();
+    var from = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    document.getElementById('dateTo').value = now.toISOString().slice(0, 10);
+    document.getElementById('dateFrom').value = from.toISOString().slice(0, 10);
+    loadLogs(1);
+  });
+
+  async function loadLogs(page) {
+    currentPage = page;
+    var module = document.getElementById('moduleFilter').value;
+    var url = '/admin/operation-logs?page=' + page + '&page_size=' + pageSize;
+    if (module) url += '&module=' + module;
+
+    try {
+      var data = await api.get(url);
+      var items = data.items || [];
+      var total = data.total || 0;
+      renderTable(items);
+      renderPagination(total, page);
+    } catch (err) {
+      document.getElementById('logTable').innerHTML =
+        '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted);">加载失败：' + (err.message || '未知错误') + '</td></tr>';
+    }
+  }
+
+  function renderTable(items) {
+    var tbody = document.getElementById('logTable');
+    if (!items.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted);">暂无操作日志</td></tr>';
+      return;
+    }
+    var moduleBadges = {
+      config: 'badge-error', book: 'badge-accent', user: 'badge-accent',
+      deposit: 'badge-warning', activity: 'badge-success'
+    };
+    var moduleLabels = {
+      config: '系统', book: '图书', user: '用户', deposit: '押金', activity: '活动'
+    };
+    tbody.innerHTML = items.map(function(log) {
+      var mod = log.module || guessModule(log.content);
+      var badge = moduleBadges[mod] || 'badge-muted';
+      return '<tr>' +
+        '<td><strong>' + escapeHtml(String(log.admin_id || '--')) + '</strong></td>' +
+        '<td style="font-size:12px;color:var(--muted)">' + formatDateTime(log.create_time) + '</td>' +
+        '<td><span class="badge ' + badge + '">' + escapeHtml(moduleLabels[mod] || mod || '-') + '</span></td>' +
+        '<td>' + escapeHtml(log.operation || '-') + '</td>' +
+        '<td>' + escapeHtml(log.content || '-') + '</td>' +
+        '<td class="ip-addr">' + escapeHtml(log.ip || '--') + '</td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  function guessModule(key) {
+    if (!key) return 'system';
+    key = String(key).toLowerCase();
+    if (key.indexOf('config') >= 0 || key.indexOf('system') >= 0) return 'config';
+    if (key.indexOf('book') >= 0) return 'book';
+    if (key.indexOf('user') >= 0 || key.indexOf('admin') >= 0) return 'user';
+    if (key.indexOf('deposit') >= 0) return 'deposit';
+    if (key.indexOf('activity') >= 0) return 'activity';
+    return 'config';
+  }
+
+  function renderPagination(total, page) {
+    var el = document.getElementById('pagination');
+    var totalPages = Math.ceil(total / pageSize);
+    if (totalPages <= 1) { el.innerHTML = ''; return; }
+    var html = '<div class="pagination-info">共 ' + total + ' 条，第 ' + page + '/' + totalPages + ' 页</div>';
+    html += '<div class="pagination-pages">';
+    if (page > 1) html += '<a href="javascript:void(0)" onclick="loadLogs(' + (page-1) + ')">&lt;</a>';
+    var start = Math.max(1, page - 2);
+    var end = Math.min(totalPages, page + 2);
+    for (var i = start; i <= end; i++) {
+      html += '<a href="javascript:void(0)" class="' + (i === page ? 'active' : '') + '" onclick="loadLogs(' + i + ')">' + i + '</a>';
+    }
+    if (page < totalPages) html += '<a href="javascript:void(0)" onclick="loadLogs(' + (page+1) + ')">&gt;</a>';
+    html += '</div>';
+    el.innerHTML = html;
+  }
+
+  function exportLogs() {
+    window.location.href = '/admin/export/operation-logs';
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    var div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+</script>
+{% endblock %}

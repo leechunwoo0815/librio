@@ -1,72 +1,56 @@
 # tests/conftest.py
 """
-[What] 测试配置文件
-[Why] 提供测试所需的fixtures和配置
-[How] 使用pytest的conftest机制
+[What] pytest全局配置和共享fixtures
+[Why] 所有测试共享数据库和客户端配置
+[How] 使用SQLite内存数据库，每个测试独立会话
 """
 
 import pytest
-from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
+from fastapi.testclient import TestClient
 
-from backend.database import Base, get_db
+from backend.database import Base
 from backend.main import app
+# 禁用测试中的定时任务
+from backend.tasks.scheduler import scheduler
+if scheduler.running: scheduler.shutdown(wait=False)
 
 
-# [What] 创建测试数据库引擎
-# [Why] 测试使用SQLite内存数据库，避免依赖MySQL
-# [How] 使用StaticPool确保所有连接共享同一数据库
-engine = create_engine(
-    "sqlite://",
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool,
-)
-
-# [What] 创建测试会话工厂
-# [Why] 每个测试需要独立的数据库会话
-# [How] 使用sessionmaker绑定测试引擎
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-
-def override_get_db():
+@pytest.fixture
+def db_engine():
     """
-    [What] 覆盖数据库会话依赖
-    [Why] 测试时使用测试数据库而非生产数据库
-    [How] 使用FastAPI的dependency_overrides
+    [What] 创建测试数据库引擎
+    [Why] 使用SQLite内存数据库，测试间完全隔离
+    [How] 每次测试创建新引擎
     """
-    try:
-        db = TestingSessionLocal()
-        yield db
-    finally:
-        db.close()
-
-
-@pytest.fixture(scope="function")
-def db_session():
-    """
-    [What] 数据库会话fixture
-    [Why] 每个测试函数需要独立的数据库会话
-    [How] 创建会话，测试结束后回滚
-    """
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
     Base.metadata.create_all(bind=engine)
-    session = TestingSessionLocal()
+    yield engine
+    Base.metadata.drop_all(bind=engine)
+
+
+@pytest.fixture
+def db_session(db_engine):
+    """
+    [What] 创建测试数据库会话
+    [Why] 每个测试有独立的事务，测试结束自动回滚
+    [How] 使用sessionmaker创建会话
+    """
+    Session = sessionmaker(bind=db_engine)
+    session = Session()
     try:
         yield session
     finally:
+        session.rollback()
         session.close()
-        Base.metadata.drop_all(bind=engine)
 
 
-@pytest.fixture(scope="function")
-def client(db_session):
+@pytest.fixture
+def client():
     """
-    [What] 测试客户端fixture
-    [Why] 用于测试FastAPI端点
-    [How] 创建TestClient，覆盖数据库依赖
+    [What] 创建FastAPI测试客户端
+    [Why] 用于测试API端点
+    [How] 使用TestClient包装FastAPI app
     """
-    app.dependency_overrides[get_db] = override_get_db
-    with TestClient(app) as c:
-        yield c
-    app.dependency_overrides.clear()
+    return TestClient(app)

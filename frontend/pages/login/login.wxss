@@ -1,0 +1,216 @@
+/* login.wxss — aligned with design/user-end/login.html */
+
+.login-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80rpx 48rpx;
+}
+
+.logo-area {
+  text-align: center;
+  margin-bottom: 96rpx;
+}
+
+.logo-icon {
+  width: 160rpx;
+  height: 160rpx;
+  border-radius: 40rpx;
+  margin: 0 auto 32rpx;
+  background: linear-gradient(135deg, var(--accent), #3a3aaa);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 16rpx 48rpx rgba(85, 96, 207, 0.25);
+}
+
+.logo-emoji {
+  font-size: 80rpx;
+}
+
+.app-name {
+  font-family: var(--font-display);
+  font-size: 48rpx;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.app-slogan {
+  font-size: 28rpx;
+  color: var(--muted);
+  margin-top: 12rpx;
+}
+
+.login-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+
+.wx-login-btn {
+  width: 100%;
+  padding: 28rpx;
+  border-radius: var(--radius);
+  background: #07C160;
+  color: var(--surface);
+  font-size: 32rpx;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16rpx;
+  border: none;
+  line-height: 1.4;
+  min-height: auto;
+}
+
+.wx-login-btn::after {
+  border: none;
+}
+
+.wx-login-btn:active {
+  opacity: 0.85;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  margin: 40rpx 0;
+  font-size: 24rpx;
+  color: var(--muted);
+}
+
+.divider-line {
+  flex: 1;
+  height: 2rpx;
+  background: var(--border);
+}
+
+.phone-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+
+.input-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  background: var(--surface);
+  border: 2rpx solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0 28rpx;
+  height: 96rpx;
+}
+
+.input-icon {
+  font-size: 36rpx;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.input-field {
+  flex: 1;
+  font-size: 30rpx;
+  background: transparent;
+  color: var(--fg);
+  height: 96rpx;
+  line-height: 96rpx;
+}
+
+.sms-row {
+  display: flex;
+  gap: 16rpx;
+}
+
+.sms-row .input-row {
+  flex: 1;
+}
+
+.sms-btn {
+  padding: 0 32rpx;
+  height: 96rpx;
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 26rpx;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  line-height: 1.4;
+  min-height: auto;
+}
+
+.sms-btn::after {
+  border: none;
+}
+
+.sms-btn:disabled {
+  opacity: 0.5;
+}
+
+.login-btn {
+  width: 100%;
+  padding: 28rpx;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--surface);
+  font-size: 32rpx;
+  font-weight: 600;
+  margin-top: 8rpx;
+  border: none;
+  line-height: 1.4;
+  min-height: auto;
+}
+
+.login-btn::after {
+  border: none;
+}
+
+.login-btn:active {
+  opacity: 0.85;
+}
+
+/* Footer */
+.footer {
+  padding: 40rpx 48rpx 64rpx;
+  text-align: center;
+  padding-bottom: calc(64rpx + env(safe-area-inset-bottom));
+}
+
+.footer-links {
+  display: flex;
+  justify-content: center;
+  gap: 8rpx;
+  font-size: 24rpx;
+  color: var(--muted);
+}
+
+.footer-links .link {
+  color: var(--accent);
+}
+
+.footer-links .sep {
+  color: var(--border);
+}
+
+/* ===== 原型缺失选择器补全 ===== */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+.logo-icon svg { width: 40px; height: 40px; color: white; }
+.wx-login-btn svg { width: 22px; height: 22px; }
+.divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.input-row:focus-within { border-color: var(--accent); }
+.input-row svg { width: 18px; height: 18px; color: var(--muted); flex-shrink: 0; }
+.input-row input { flex: 1; border: none; outline: none; font: inherit; font-size: 15px;
+      background: transparent; color: var(--fg); }
+.input-row input::placeholder { color: var(--muted); }
+.footer-links a { color: var(--accent); }

@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>基础布局 — MegaWords 管理后台</title>
+<style>
+:root {
+  --bg: oklch(98% 0.003 250);
+  --surface: oklch(100% 0 0);
+  --fg: oklch(20% 0.015 275);
+  --muted: oklch(48% 0.02 250);
+  --border: oklch(90% 0.008 250);
+  --accent: oklch(54% 0.17 275);
+  --accent-soft: oklch(54% 0.17 275 / 0.1);
+  --accent-hover: oklch(48% 0.17 275);
+  --secondary: oklch(86% 0.20 135);
+  --secondary-soft: oklch(86% 0.20 135 / 0.12);
+  --success: oklch(72% 0.20 145);
+  --success-soft: oklch(72% 0.20 145 / 0.1);
+  --warning: oklch(78% 0.16 85);
+  --warning-soft: oklch(78% 0.16 85 / 0.1);
+  --error: oklch(62% 0.22 25);
+  --radius: 12px; --radius-sm: 8px; --radius-lg: 16px;
+  --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+}
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: var(--font-body); background: var(--bg); color: var(--fg); display: flex; min-height: 100vh; }
+a { text-decoration: none; color: inherit; }
+
+/* Sidebar */
+.logo-icon { font-size: 28px; }
+.logo-text { font-size: 17px; font-weight: 700; color: var(--accent); font-family: var(--font-display); }
+.logo-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+/* Main */
+.main { margin-left: 240px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+.top-bar { display: flex; align-items: center; justify-content: space-between; padding: 16px 32px; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50; }
+.top-bar h1 { font-size: 18px; font-weight: 700; font-family: var(--font-display); }
+.top-bar .right { display: flex; align-items: center; gap: 16px; font-size: 13px; color: var(--muted); }
+.logout-btn { color: var(--error); font-size: 13px; }
+.content { padding: 24px 32px; flex: 1; }
+
+/* Section */
+.section { margin-bottom: 32px; }
+.section-title { font-size: 16px; font-weight: 700; font-family: var(--font-display); margin-bottom: 4px; }
+.section-desc { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+
+/* Design tokens cards */
+.token-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+.token-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; }
+.token-swatch { width: 100%; height: 40px; border-radius: 6px; margin-bottom: 8px; }
+.token-name { font-size: 12px; font-weight: 600; font-family: var(--font-mono); color: var(--fg); }
+.token-value { font-size: 11px; font-family: var(--font-mono); color: var(--muted); margin-top: 2px; word-break: break-all; }
+
+/* Layout diagram */
+.layout-diagram { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; display: flex; gap: 16px; height: 240px; }
+.layout-sidebar-box { width: 240px; flex-shrink: 0; background: var(--accent-soft); border: 2px dashed var(--accent); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: var(--accent); }
+.layout-main-box { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+.layout-topbar-box { height: 52px; background: var(--secondary-soft); border: 2px dashed var(--secondary); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: oklch(48% 0.15 135); }
+.layout-content-box { flex: 1; background: oklch(97% 0.005 250); border: 2px dashed var(--border); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: var(--muted); }
+
+/* Component showcase */
+.showcase-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 16px; }
+.showcase-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 0 16px; height: 36px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; border: none; cursor: pointer; font-family: var(--font-body); transition: all 0.15s; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-secondary { background: var(--secondary-soft); color: var(--fg); border: 1px solid var(--border); }
+.btn-secondary:hover { background: var(--secondary); }
+.btn-danger { background: var(--error); color: #fff; }
+.btn-danger:hover { background: oklch(55% 0.22 25); }
+.btn-success { background: var(--success); color: #fff; }
+.btn-success:hover { background: oklch(65% 0.20 145); }
+.btn-ghost { background: none; color: var(--muted); border: 1px solid var(--border); }
+.btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+.btn-sm { height: 28px; padding: 0 10px; font-size: 12px; }
+.btn-lg { height: 44px; padding: 0 24px; font-size: 15px; }
+
+/* Badges */
+.badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 500; }
+.badge-accent { background: var(--accent-soft); color: var(--accent); }
+.badge-success { background: var(--success-soft); color: var(--success); }
+.badge-warning { background: var(--warning-soft); color: var(--warning); }
+.badge-error { background: oklch(62% 0.22 25 / 0.1); color: var(--error); }
+.badge-muted { background: oklch(92% 0.005 250); color: var(--muted); }
+
+/* Form inputs */
+.form-input { height: 36px; padding: 0 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; background: var(--surface); color: var(--fg); font-family: var(--font-body); outline: none; transition: all 0.15s; }
+.form-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.form-input::placeholder { color: oklch(75% 0.01 250); }
+.form-select { height: 36px; padding: 0 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; background: var(--surface); color: var(--fg); font-family: var(--font-body); outline: none; }
+.form-textarea { padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; background: var(--surface); color: var(--fg); font-family: var(--font-body); outline: none; resize: vertical; min-height: 80px; width: 100%; }
+.form-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+/* Sample table */
+.demo-table { width: 100%; border-collapse: collapse; border-radius: var(--radius-sm); overflow: hidden; }
+.demo-table th { background: oklch(97% 0.005 250); padding: 8px 12px; font-size: 12px; font-weight: 600; color: var(--muted); text-align: left; border-bottom: 1px solid var(--border); }
+.demo-table td { padding: 8px 12px; font-size: 13px; border-bottom: 1px solid var(--border); }
+.demo-table tr:last-child td { border-bottom: none; }
+
+/* Typography scale */
+.type-row { display: flex; align-items: baseline; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.type-row:last-child { border-bottom: none; }
+.type-label { width: 80px; flex-shrink: 0; font-size: 12px; font-family: var(--font-mono); color: var(--muted); }
+.type-sample { flex: 1; }
+
+/* Spacing scale */
+.spacing-row { display: flex; align-items: center; gap: 16px; padding: 6px 0; }
+.spacing-label { width: 50px; flex-shrink: 0; font-size: 12px; font-family: var(--font-mono); color: var(--muted); text-align: right; }
+.spacing-bar { height: 16px; background: var(--accent-soft); border: 1px solid oklch(54% 0.17 275 / 0.2); border-radius: 4px; }
+.spacing-value { font-size: 11px; font-family: var(--font-mono); color: var(--muted); margin-left: 8px; }
+</style>
+    <link rel="stylesheet" href="admin-sidebar.css">
+  </head>
+<body>
+  <div id="sidebar-root"></div>
+<div class="main">
+  <div class="top-bar"><h1>基础布局</h1><div class="right"><span>管理员</span><a class="logout-btn" href="admin-login.html">退出</a></div></div>
+
+  <div class="content">
+
+    <!-- Layout Diagram -->
+    <div class="section">
+      <div class="section-title">页面布局结构</div>
+      <div class="section-desc">管理后台采用固定侧边栏 + 顶部导航 + 主内容区域的经典三栏布局，整体宽度 1440px。</div>
+      <div class="layout-diagram">
+        <div class="layout-sidebar-box">sidebar<br>240px</div>
+        <div class="layout-main-box">
+          <div class="layout-topbar-box">top-bar (sticky)</div>
+          <div class="layout-content-box">content (scrollable)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Color Tokens -->
+    <div class="section">
+      <div class="section-title">颜色系统 (Color Tokens)</div>
+      <div class="section-desc">所有颜色均使用 oklch 色彩空间，通过 CSS 变量统一管理。</div>
+      <div class="token-grid">
+        <div class="token-card">
+          <div class="token-swatch" style="background:var(--bg)"></div>
+          <div class="token-name">--bg</div>
+          <div class="token-value">oklch(98% 0.003 250)</div>
+        </div>
+        <div class="token-card">
+          <div class="token-swatch" style="background:var(--surface);border:1px solid var(--border)"></div>
+          <div class="token-name">--surface</div>
+          <div class="token-value">oklch(100% 0 0)</div>
+        </div>
+        <div class="token-card">
+          <div class="token-swatch" style="background:var(--fg)"></div>
+          <div class="token-name">--fg</div>
+          <div class="token-value">oklch(20% 0.015 275)</div>
+        </div>
+        <div class="token-card">
+          <div class="token-swatch" style="background:var(--muted)"></div>
+          <div class="token-name">--muted</div>
+          <div class="token-value">oklch(48% 0.02 250)</div>
+        </div>
+        <div class="token-card">
+          <div class="token-swatch" style="background:var(--border)"></div>
+          <div class="token-name">--border</div>
+          <div class="token-value">oklch(90% 0.008 250)</div>
+        </div>
+        <div class="token-card">
+          <div class="token-swatch" style="background:var(--accent)"></div>
+          <div class="token-name">--accent</div>
+          <div class="token-value">oklch(54% 0.17 275)</div>
+        </div>
+        <div class="token-card">
+          <div class="token-swatch" style="background:var(--accent-soft)"></div>
+          <div class="token-name">--accent-soft</div>
+          <div class="token-value">oklch(54% 0.17 275 / 0.1)</div>
+        </div>
+        <div class="token-card">
+          <div class="token-swatch" style="background:var(--accent-hover)"></div>
+          <div class="token-name">--accent-hover</div>
+          <div class="token-value">oklch(48% 0.17 275)</div>
+        </div>
+        <div class="token-card">
+          <div class="token-swatch" style="background:var(--secondary)"></div>
+          <div class="token-name">--secondary</div>
+          <div class="token-value">oklch(86% 0.20 135)</div>
+        </div>
+        <div class="token-card">
+          <div class="token-swatch" style="background:var(--secondary-soft)"></div>
+          <div class="token-name">--secondary-soft</div>
+          <div class="token-value">oklch(86% 0.20 135 / 0.12)</div>
+        </div>
+        <div class="token-card">
+          <div class="token-swatch" style="background:var(--success)"></div>
+          <div class="token-name">--success</div>
+          <div class="token-value">oklch(72% 0.20 145)</div>
+        </div>
+        <div class="token-card">
+          <div class="token-swatch" style="background:var(--success-soft)"></div>
+          <div class="token-name">--success-soft</div>
+          <div class="token-value">oklch(72% 0.20 145 / 0.1)</div>
+        </div>
+        <div class="token-card">
+          <div class="token-swatch" style="background:var(--warning)"></div>
+          <div class="token-name">--warning</div>
+          <div class="token-value">oklch(78% 0.16 85)</div>
+        </div>
+        <div class="token-card">
+          <div class="token-swatch" style="background:var(--warning-soft)"></div>
+          <div class="token-name">--warning-soft</div>
+          <div class="token-value">oklch(78% 0.16 85 / 0.1)</div>
+        </div>
+        <div class="token-card">
+          <div class="token-swatch" style="background:var(--error)"></div>
+          <div class="token-name">--error</div>
+          <div class="token-value">oklch(62% 0.22 25)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Typography -->
+    <div class="section">
+      <div class="section-title">字体排版 (Typography Scale)</div>
+      <div class="section-desc">标题使用 PingFang SC / Display 字体，正文使用系统默认字体栈。</div>
+      <div class="showcase-card" style="max-width:720px">
+        <div class="type-row">
+          <div class="type-label">h1 / 18px</div>
+          <div class="type-sample" style="font-size:18px;font-weight:700;font-family:var(--font-display)">图书管理 — 页面主标题</div>
+        </div>
+        <div class="type-row">
+          <div class="type-label">h2 / 16px</div>
+          <div class="type-sample" style="font-size:16px;font-weight:700;font-family:var(--font-display)">颜色系统 — 章节标题</div>
+        </div>
+        <div class="type-row">
+          <div class="type-label">h3 / 14px</div>
+          <div class="type-sample" style="font-size:14px;font-weight:600;font-family:var(--font-display)">统计卡片 — 子标题</div>
+        </div>
+        <div class="type-row">
+          <div class="type-label">h4 / 13px</div>
+          <div class="type-sample" style="font-size:13px;font-weight:600">表格列头 / 分组标签</div>
+        </div>
+        <div class="type-row">
+          <div class="type-label">body / 13px</div>
+          <div class="type-sample" style="font-size:13px">正文内容，用于表格单元格、表单标签、按钮文字等。</div>
+        </div>
+        <div class="type-row">
+          <div class="type-label">small / 12px</div>
+          <div class="type-sample" style="font-size:12px">辅助信息：时间戳、ISBN 编号、分页信息。</div>
+        </div>
+        <div class="type-row">
+          <div class="type-label">muted / 12px</div>
+          <div class="type-sample" style="font-size:12px;color:var(--muted)">弱化文本：提示说明、次要描述信息</div>
+        </div>
+        <div class="type-row">
+          <div class="type-label">mono / 12px</div>
+          <div class="type-sample" style="font-size:12px;font-family:var(--font-mono)">978-0-06-112495-2  IP: 192.168.1.105</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="section">
+      <div class="section-title">按钮 (Buttons)</div>
+      <div class="section-desc">所有按钮均使用统一圆角和尺寸系统，支持多种语义化状态。</div>
+      <div class="showcase-card">
+        <div class="showcase-row">
+          <button class="btn btn-primary">主要按钮</button>
+          <button class="btn btn-secondary">次要按钮</button>
+          <button class="btn btn-success">成功按钮</button>
+          <button class="btn btn-danger">危险按钮</button>
+          <button class="btn btn-ghost">幽灵按钮</button>
+        </div>
+        <div class="showcase-row">
+          <button class="btn btn-primary btn-sm">小号主要</button>
+          <button class="btn btn-secondary btn-sm">小号次要</button>
+          <button class="btn btn-danger btn-sm">小号危险</button>
+          <button class="btn btn-ghost btn-sm">小号幽灵</button>
+        </div>
+        <div class="showcase-row">
+          <button class="btn btn-primary btn-lg">大号按钮</button>
+          <button class="btn btn-secondary btn-lg">大号次要</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Badges -->
+    <div class="section">
+      <div class="section-title">标签 (Badges)</div>
+      <div class="section-desc">用于表格中的状态标记和分类标签。</div>
+      <div class="showcase-card">
+        <div class="showcase-row">
+          <span class="badge badge-accent">主题标签</span>
+          <span class="badge badge-success">成功状态</span>
+          <span class="badge badge-warning">警告状态</span>
+          <span class="badge badge-error">错误状态</span>
+          <span class="badge badge-muted">灰色标签</span>
+          <span class="badge badge-accent">AR 4.4</span>
+          <span class="badge badge-success">有音频</span>
+          <span class="badge badge-muted">无音频</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Form Inputs -->
+    <div class="section">
+      <div class="section-title">表单控件 (Form Inputs)</div>
+      <div class="section-desc">输入框、下拉选择、文本域等表单组件。</div>
+      <div class="showcase-card" style="max-width:480px">
+        <div style="margin-bottom:12px">
+          <label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px">文本输入</label>
+          <input class="form-input" type="text" placeholder="请输入搜索关键词..." style="width:100%">
+        </div>
+        <div style="margin-bottom:12px">
+          <label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px">下拉选择</label>
+          <select class="form-select" style="width:100%">
+            <option>请选择一个选项</option>
+            <option>选项 A</option>
+            <option>选项 B</option>
+            <option>选项 C</option>
+          </select>
+        </div>
+        <div style="margin-bottom:12px">
+          <label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px">文本域</label>
+          <textarea class="form-textarea" placeholder="请输入详细描述..."></textarea>
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px">日期选择</label>
+          <input class="form-input" type="date" value="2026-06-24" style="width:100%">
+        </div>
+      </div>
+    </div>
+
+    <!-- Table Sample -->
+    <div class="section">
+      <div class="section-title">表格 (Table)</div>
+      <div class="section-desc">数据表格的标准样式，包含斑马纹悬停效果。</div>
+      <div class="showcase-card" style="max-width:720px">
+        <table class="demo-table">
+          <thead>
+            <tr><th>列名</th><th>数据类型</th><th>说明</th><th>状态</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>id</strong></td><td style="font-family:var(--font-mono);font-size:12px">INT</td><td>主键自增</td><td><span class="badge badge-success">已索引</span></td></tr>
+            <tr><td><strong>name</strong></td><td style="font-family:var(--font-mono);font-size:12px">VARCHAR(255)</td><td>名称字段</td><td><span class="badge badge-muted">普通</span></td></tr>
+            <tr><td><strong>created_at</strong></td><td style="font-family:var(--font-mono);font-size:12px">TIMESTAMP</td><td>创建时间</td><td><span class="badge badge-success">已索引</span></td></tr>
+            <tr><td><strong>is_deleted</strong></td><td style="font-family:var(--font-mono);font-size:12px">BOOLEAN</td><td>软删除标记</td><td><span class="badge badge-warning">需优化</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Spacing Scale -->
+    <div class="section">
+      <div class="section-title">间距系统 (Spacing Scale)</div>
+      <div class="section-desc">统一的间距值用于页面内元素间的留白，确保视觉一致性。</div>
+      <div class="showcase-card" style="max-width:560px">
+        <div class="spacing-row">
+          <div class="spacing-label">4px</div>
+          <div class="spacing-bar" style="width:4px"></div>
+          <div class="spacing-value">极小间距 — 行内元素间</div>
+        </div>
+        <div class="spacing-row">
+          <div class="spacing-label">8px</div>
+          <div class="spacing-bar" style="width:8px"></div>
+          <div class="spacing-value">小间距 — 图标与文字、按钮间距</div>
+        </div>
+        <div class="spacing-row">
+          <div class="spacing-label">12px</div>
+          <div class="spacing-bar" style="width:12px"></div>
+          <div class="spacing-value">中小间距 — 表单项间距、工具栏间距</div>
+        </div>
+        <div class="spacing-row">
+          <div class="spacing-label">16px</div>
+          <div class="spacing-bar" style="width:16px"></div>
+          <div class="spacing-value">中等间距 — 卡片内边距、分组间距</div>
+        </div>
+        <div class="spacing-row">
+          <div class="spacing-label">20px</div>
+          <div class="spacing-bar" style="width:20px"></div>
+          <div class="spacing-value">中大间距 — 区块间距</div>
+        </div>
+        <div class="spacing-row">
+          <div class="spacing-label">24px</div>
+          <div class="spacing-bar" style="width:24px"></div>
+          <div class="spacing-value">大间距 — 内容区内边距</div>
+        </div>
+        <div class="spacing-row">
+          <div class="spacing-label">32px</div>
+          <div class="spacing-bar" style="width:32px"></div>
+          <div class="spacing-value">极大间距 — 页面水平内边距</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Radius Scale -->
+    <div class="section">
+      <div class="section-title">圆角系统 (Radius Scale)</div>
+      <div class="section-desc">三级圆角用于不同层级的容器和组件。</div>
+      <div class="showcase-card">
+        <div class="showcase-row" style="gap:24px">
+          <div style="text-align:center">
+            <div style="width:64px;height:64px;background:var(--accent-soft);border:2px solid var(--accent);border-radius:var(--radius-sm)"></div>
+            <div style="font-size:12px;font-family:var(--font-mono);margin-top:6px;color:var(--muted)">--radius-sm</div>
+            <div style="font-size:11px;font-family:var(--font-mono);color:var(--muted)">8px</div>
+          </div>
+          <div style="text-align:center">
+            <div style="width:64px;height:64px;background:var(--accent-soft);border:2px solid var(--accent);border-radius:var(--radius)"></div>
+            <div style="font-size:12px;font-family:var(--font-mono);margin-top:6px;color:var(--muted)">--radius</div>
+            <div style="font-size:11px;font-family:var(--font-mono);color:var(--muted)">12px</div>
+          </div>
+          <div style="text-align:center">
+            <div style="width:64px;height:64px;background:var(--accent-soft);border:2px solid var(--accent);border-radius:var(--radius-lg)"></div>
+            <div style="font-size:12px;font-family:var(--font-mono);margin-top:6px;color:var(--muted)">--radius-lg</div>
+            <div style="font-size:11px;font-family:var(--font-mono);color:var(--muted)">16px</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('.nav-link').forEach(a => {
+  a.classList.remove('active');
+  if (a.getAttribute('href') === window.location.pathname.split('/').pop()) a.classList.add('active');
+});
+</script>
+  <script src="admin-sidebar.js"></script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+<testsuite name="personal_profile.个人名片" tests="3" errors="0" failures="0" skipped="0" time="0.027307" timestamp="2026-06-15T16:08:34.825396" hostname="litianyudeMacBook-Air.local"><testcase classname="personal_profile.个人名片" name="获取个人阅读名片" status="passed" time="0.008832"><system-out>
+<![CDATA[
+@scenario.begin
+  场景: 获取个人阅读名片
+    假如 用户已登录小程序 ... passed in 0.002s
+    并且 用户的孩子是正式会员 ... passed in 0.001s
+    假如 孩子已读完10本书共30000词 ... passed in 0.001s
+    当 请求生成个人名片 ... passed in 0.005s
+    那么 名片包含孩子姓名 ... passed in 0.000s
+    并且 名片包含阅读本数10 ... passed in 0.000s
+    并且 名片包含阅读词数30000 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="personal_profile.个人名片" name="名片包含级别信息" status="passed" time="0.007622"><system-out>
+<![CDATA[
+@scenario.begin
+  场景: 名片包含级别信息
+    假如 用户已登录小程序 ... passed in 0.002s
+    并且 用户的孩子是正式会员 ... passed in 0.001s
+    假如 孩子当前级别为A级 ... passed in 0.003s
+    当 请求生成个人名片 ... passed in 0.002s
+    那么 名片包含当前级别 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase><testcase classname="personal_profile.个人名片" name="名片包含成就信息" status="passed" time="0.010854"><system-out>
+<![CDATA[
+@scenario.begin
+  场景: 名片包含成就信息
+    假如 用户已登录小程序 ... passed in 0.002s
+    并且 用户的孩子是正式会员 ... passed in 0.001s
+    假如 孩子已获得2个成就 ... passed in 0.005s
+    当 请求生成个人名片 ... passed in 0.003s
+    那么 名片包含成就数量2 ... passed in 0.000s
+
+@scenario.end
+--------------------------------------------------------------------------------
+]]>
+</system-out></testcase></testsuite>

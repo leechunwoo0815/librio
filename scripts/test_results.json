@@ -1,0 +1,953 @@
+{
+  "timestamp": "2026-07-02T16:44:31.970787",
+  "total": 104,
+  "pass": 98,
+  "fail": 6,
+  "pass_rate": "94.2%",
+  "errors": [
+    "[管理员] 管理员登录: HTTP 401 - {\"detail\": \"用户名或密码错误\"}",
+    "[家长] 获取书架: HTTP 500 - \"Internal Server Error\"",
+    "[家长] 转让资格查询: HTTP 500 - \"Internal Server Error\"",
+    "[未登录] 无认证: GET /book/search: HTTP 200 - {\"items\": [{\"id\": 1, \"isbn\": \"978-0-06-440055-8\", \"title\": \"Charlotte's Web\", \"author\": \"E.B. White\", \"publisher\": null, \"ar_value\": \"4.4\", \"lexile_va",
+    "[未登录] 无认证: GET /reading/session?child_id=1: HTTP 404 - {\"detail\": \"Not Found\"}",
+    "[未登录] 无认证: GET /vocabulary/1/learning: HTTP 404 - {\"detail\": \"Not Found\"}"
+  ],
+  "results": [
+    {
+      "role": "管理员",
+      "name": "管理员登录",
+      "method": "POST",
+      "path": "/admin/login",
+      "status": 401,
+      "ok": false,
+      "body_preview": "{\"detail\": \"用户名或密码错误\"}"
+    },
+    {
+      "role": "管理员",
+      "name": "管理员登录-错误密码",
+      "method": "POST",
+      "path": "/admin/login",
+      "status": 401,
+      "ok": true,
+      "body_preview": "{\"detail\": \"用户名或密码错误\"}"
+    },
+    {
+      "role": "管理员",
+      "name": "无令牌访问管理接口",
+      "method": "GET",
+      "path": "/admin/dashboard",
+      "status": 401,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not authenticated\"}"
+    },
+    {
+      "role": "管理员",
+      "name": "仪表盘数据",
+      "method": "GET",
+      "path": "/admin/dashboard",
+      "status": 401,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not authenticated\"}"
+    },
+    {
+      "role": "管理员",
+      "name": "用户列表",
+      "method": "GET",
+      "path": "/admin/users?page=1&page_size=10",
+      "status": 401,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not authenticated\"}"
+    },
+    {
+      "role": "管理员",
+      "name": "用户搜索",
+      "method": "GET",
+      "path": "/admin/users?keyword=138",
+      "status": 401,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not authenticated\"}"
+    },
+    {
+      "role": "管理员",
+      "name": "图书列表(管理端)",
+      "method": "GET",
+      "path": "/book/search?page=1&page_size=5",
+      "status": 200,
+      "ok": true,
+      "body_preview": "{\"items\": [{\"id\": 1, \"isbn\": \"978-0-06-440055-8\", \"title\": \"Charlotte's Web\", \"author\": \"E.B. White\""
+    },
+    {
+      "role": "管理员",
+      "name": "创建图书",
+      "method": "POST",
+      "path": "/book/",
+      "status": 401,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not authenticated\"}"
+    },
+    {
+      "role": "管理员",
+      "name": "搜索测试图书",
+      "method": "GET",
+      "path": "/book/search?keyword=测试图书-正式测试",
+      "status": 200,
+      "ok": true,
+      "body_preview": "{\"items\": [], \"total\": 0, \"page\": 1, \"page_size\": 10, \"has_next\": false}"
+    },
+    {
+      "role": "管理员",
+      "name": "订单列表",
+      "method": "GET",
+      "path": "/order/?page=1&page_size=10",
+      "status": 401,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not authenticated\"}"
+    },
+    {
+      "role": "管理员",
+      "name": "订单列表(管理端API)",
+      "method": "GET",
+      "path": "/admin/orders?page=1&page_size=10",
+      "status": 401,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not authenticated\"}"
+    },
+    {
+      "role": "管理员",
+      "name": "借阅记录列表",
+      "method": "GET",
+      "path": "/admin/borrows?page=1&page_size=10",
+      "status": 404,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not Found\"}"
+    },
+    {
+      "role": "管理员",
+      "name": "押金记录列表",
+      "method": "GET",
+      "path": "/admin/deposits?page=1&page_size=10",
+      "status": 404,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not Found\"}"
+    },
+    {
+      "role": "管理员",
+      "name": "活动列表(管理端)",
+      "method": "GET",
+      "path": "/activity/?page=1&page_size=10",
+      "status": 401,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not authenticated\"}"
+    },
+    {
+      "role": "管理员",
+      "name": "创建活动",
+      "method": "POST",
+      "path": "/activity/",
+      "status": 405,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Method Not Allowed\"}"
+    },
+    {
+      "role": "管理员",
+      "name": "场馆列表",
+      "method": "GET",
+      "path": "/admin/venues",
+      "status": 401,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not authenticated\"}"
+    },
+    {
+      "role": "管理员",
+      "name": "创建场馆",
+      "method": "POST",
+      "path": "/admin/venues",
+      "status": 401,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not authenticated\"}"
+    },
+    {
+      "role": "管理员",
+      "name": "老师列表",
+      "method": "GET",
+      "path": "/admin/teachers",
+      "status": 401,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not authenticated\"}"
+    },
+    {
+      "role": "管理员",
+      "name": "创建老师",
+      "method": "POST",
+      "path": "/admin/teachers",
+      "status": 401,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not authenticated\"}"
+    },
+    {
+      "role": "管理员",
+      "name": "等级列表",
+      "method": "GET",
+      "path": "/advancement/levels",
+      "status": 401,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not authenticated\"}"
+    },
+    {
+      "role": "管理员",
+      "name": "系统配置列表",
+      "method": "GET",
+      "path": "/admin/config",
+      "status": 401,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not authenticated\"}"
+    },
+    {
+      "role": "管理员",
+      "name": "更新配置",
+      "method": "PUT",
+      "path": "/admin/config",
+      "status": 405,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Method Not Allowed\"}"
+    },
+    {
+      "role": "管理员",
+      "name": "成就列表",
+      "method": "GET",
+      "path": "/advancement/achievements",
+      "status": 401,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not authenticated\"}"
+    },
+    {
+      "role": "管理员",
+      "name": "页面: /admin/",
+      "method": "GET",
+      "path": "/admin/",
+      "status": 404,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not Found\"}"
+    },
+    {
+      "role": "管理员",
+      "name": "页面: admin/dashboard",
+      "method": "GET",
+      "path": "/admin/dashboard",
+      "status": 401,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not authenticated\"}"
+    },
+    {
+      "role": "管理员",
+      "name": "页面: admin/users",
+      "method": "GET",
+      "path": "/admin/users",
+      "status": 401,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not authenticated\"}"
+    },
+    {
+      "role": "管理员",
+      "name": "页面: admin/books",
+      "method": "GET",
+      "path": "/admin/books",
+      "status": 404,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not Found\"}"
+    },
+    {
+      "role": "管理员",
+      "name": "页面: admin/orders",
+      "method": "GET",
+      "path": "/admin/orders",
+      "status": 401,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not authenticated\"}"
+    },
+    {
+      "role": "管理员",
+      "name": "页面: admin/borrow",
+      "method": "GET",
+      "path": "/admin/borrow",
+      "status": 404,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not Found\"}"
+    },
+    {
+      "role": "管理员",
+      "name": "页面: admin/deposit",
+      "method": "GET",
+      "path": "/admin/deposit",
+      "status": 404,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not Found\"}"
+    },
+    {
+      "role": "管理员",
+      "name": "页面: admin/activities",
+      "method": "GET",
+      "path": "/admin/activities",
+      "status": 404,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not Found\"}"
+    },
+    {
+      "role": "管理员",
+      "name": "页面: admin/teachers",
+      "method": "GET",
+      "path": "/admin/teachers",
+      "status": 401,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not authenticated\"}"
+    },
+    {
+      "role": "管理员",
+      "name": "页面: admin/settings",
+      "method": "GET",
+      "path": "/admin/settings",
+      "status": 404,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not Found\"}"
+    },
+    {
+      "role": "管理员",
+      "name": "页面: admin/levels",
+      "method": "GET",
+      "path": "/admin/levels",
+      "status": 404,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not Found\"}"
+    },
+    {
+      "role": "管理员",
+      "name": "页面: admin/submissions",
+      "method": "GET",
+      "path": "/admin/submissions",
+      "status": 401,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not authenticated\"}"
+    },
+    {
+      "role": "管理员",
+      "name": "页面: admin/activity_checkin",
+      "method": "GET",
+      "path": "/admin/activity_checkin",
+      "status": 404,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not Found\"}"
+    },
+    {
+      "role": "管理员",
+      "name": "页面: admin/achievements",
+      "method": "GET",
+      "path": "/admin/achievements",
+      "status": 404,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not Found\"}"
+    },
+    {
+      "role": "管理员",
+      "name": "页面: admin/bookcopy",
+      "method": "GET",
+      "path": "/admin/bookcopy",
+      "status": 401,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not authenticated\"}"
+    },
+    {
+      "role": "管理员",
+      "name": "页面: admin/booklist",
+      "method": "GET",
+      "path": "/admin/booklist",
+      "status": 404,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not Found\"}"
+    },
+    {
+      "role": "管理员",
+      "name": "页面: admin/questions",
+      "method": "GET",
+      "path": "/admin/questions",
+      "status": 404,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not Found\"}"
+    },
+    {
+      "role": "管理员",
+      "name": "页面: admin/reports",
+      "method": "GET",
+      "path": "/admin/reports",
+      "status": 404,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not Found\"}"
+    },
+    {
+      "role": "管理员",
+      "name": "页面: admin/reservation",
+      "method": "GET",
+      "path": "/admin/reservation",
+      "status": 404,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not Found\"}"
+    },
+    {
+      "role": "管理员",
+      "name": "页面: admin/venues",
+      "method": "GET",
+      "path": "/admin/venues",
+      "status": 401,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not authenticated\"}"
+    },
+    {
+      "role": "家长",
+      "name": "获取孩子列表",
+      "method": "GET",
+      "path": "/child/",
+      "status": 200,
+      "ok": true,
+      "body_preview": "[{\"id\": 1, \"user_id\": 1, \"name\": \"小明\", \"english_name\": \"Tom\", \"age\": 7, \"grade\": \"二年级\", \"status\": 3,"
+    },
+    {
+      "role": "家长",
+      "name": "添加孩子",
+      "method": "POST",
+      "path": "/child/",
+      "status": 201,
+      "ok": true,
+      "body_preview": "{\"id\": 9, \"user_id\": 1, \"name\": \"测试小朋友\", \"english_name\": null, \"age\": 8, \"grade\": \"二年级\", \"status\": 0"
+    },
+    {
+      "role": "家长",
+      "name": "获取孩子列表(刷新)",
+      "method": "GET",
+      "path": "/child/",
+      "status": 200,
+      "ok": true,
+      "body_preview": "[{\"id\": 1, \"user_id\": 1, \"name\": \"小明\", \"english_name\": \"Tom\", \"age\": 7, \"grade\": \"二年级\", \"status\": 3,"
+    },
+    {
+      "role": "家长",
+      "name": "图书搜索",
+      "method": "GET",
+      "path": "/book/search?keyword=cat&page=1&page_size=5",
+      "status": 200,
+      "ok": true,
+      "body_preview": "{\"items\": [{\"id\": 2, \"isbn\": \"978-0-00-715106-4\", \"title\": \"The Cat in the Hat\", \"author\": \"Dr. Seus"
+    },
+    {
+      "role": "家长",
+      "name": "图书搜索(按等级)",
+      "method": "GET",
+      "path": "/book/search?ar_level=3&page=1&page_size=5",
+      "status": 200,
+      "ok": true,
+      "body_preview": "{\"items\": [{\"id\": 1, \"isbn\": \"978-0-06-440055-8\", \"title\": \"Charlotte's Web\", \"author\": \"E.B. White\""
+    },
+    {
+      "role": "家长",
+      "name": "获取书架",
+      "method": "GET",
+      "path": "/bookshelf/?child_id=None",
+      "status": 500,
+      "ok": false,
+      "body_preview": "Internal Server Error"
+    },
+    {
+      "role": "家长",
+      "name": "订单列表",
+      "method": "GET",
+      "path": "/order/?page=1&page_size=10",
+      "status": 200,
+      "ok": true,
+      "body_preview": "{\"items\": [{\"id\": 1, \"order_no\": \"MW17822173046806642\", \"user_id\": 1, \"child_id\": 1, \"type\": 2, \"amo"
+    },
+    {
+      "role": "家长",
+      "name": "消息列表",
+      "method": "GET",
+      "path": "/message/",
+      "status": 200,
+      "ok": true,
+      "body_preview": "{\"items\": [{\"id\": 1, \"user_id\": 1, \"title\": \"欢迎加入 MegaWords\", \"content\": \"欢迎成为正式会员！开始你的英文阅读之旅吧。\", \"m"
+    },
+    {
+      "role": "家长",
+      "name": "未读消息数",
+      "method": "GET",
+      "path": "/message/unread-count",
+      "status": 404,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not Found\"}"
+    },
+    {
+      "role": "家长",
+      "name": "退款预览",
+      "method": "GET",
+      "path": "/order/1/refund-preview",
+      "status": 422,
+      "ok": true,
+      "body_preview": "{\"detail\": [{\"type\": \"missing\", \"loc\": [\"query\", \"used_days\"], \"msg\": \"Field required\", \"input\": nul"
+    },
+    {
+      "role": "家长",
+      "name": "活动列表",
+      "method": "GET",
+      "path": "/activity/",
+      "status": 200,
+      "ok": true,
+      "body_preview": "[{\"id\": 1, \"title\": \"暑期阅读挑战赛\", \"description\": \"连续阅读30天，赢取精美奖品！\", \"start_time\": \"2026-06-24T14:42:42\""
+    },
+    {
+      "role": "家长",
+      "name": "转让资格查询",
+      "method": "GET",
+      "path": "/child/transfer-eligibility",
+      "status": 500,
+      "ok": false,
+      "body_preview": "Internal Server Error"
+    },
+    {
+      "role": "未登录",
+      "name": "无认证: GET /child/",
+      "method": "GET",
+      "path": "/child/",
+      "status": 401,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not authenticated\"}"
+    },
+    {
+      "role": "未登录",
+      "name": "无认证: GET /book/search",
+      "method": "GET",
+      "path": "/book/search",
+      "status": 200,
+      "ok": false,
+      "body_preview": "{\"items\": [{\"id\": 1, \"isbn\": \"978-0-06-440055-8\", \"title\": \"Charlotte's Web\", \"author\": \"E.B. White\""
+    },
+    {
+      "role": "未登录",
+      "name": "无认证: GET /order/",
+      "method": "GET",
+      "path": "/order/",
+      "status": 401,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not authenticated\"}"
+    },
+    {
+      "role": "未登录",
+      "name": "无认证: GET /message/",
+      "method": "GET",
+      "path": "/message/",
+      "status": 401,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not authenticated\"}"
+    },
+    {
+      "role": "未登录",
+      "name": "无认证: GET /reading/session?child_id=1",
+      "method": "GET",
+      "path": "/reading/session?child_id=1",
+      "status": 404,
+      "ok": false,
+      "body_preview": "{\"detail\": \"Not Found\"}"
+    },
+    {
+      "role": "未登录",
+      "name": "无认证: GET /vocabulary/1/learning",
+      "method": "GET",
+      "path": "/vocabulary/1/learning",
+      "status": 404,
+      "ok": false,
+      "body_preview": "{\"detail\": \"Not Found\"}"
+    },
+    {
+      "role": "未登录",
+      "name": "无认证: GET /advancement/levels",
+      "method": "GET",
+      "path": "/advancement/levels",
+      "status": 401,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not authenticated\"}"
+    },
+    {
+      "role": "未登录",
+      "name": "无认证: GET /admin/dashboard",
+      "method": "GET",
+      "path": "/admin/dashboard",
+      "status": 401,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not authenticated\"}"
+    },
+    {
+      "role": "未登录",
+      "name": "无认证: GET /admin/users",
+      "method": "GET",
+      "path": "/admin/users",
+      "status": 401,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not authenticated\"}"
+    },
+    {
+      "role": "权限隔离",
+      "name": "用户→管理: GET /admin/dashboard",
+      "method": "GET",
+      "path": "/admin/dashboard",
+      "status": 403,
+      "ok": true,
+      "body_preview": "{\"detail\": \"需要管理员权限\"}"
+    },
+    {
+      "role": "权限隔离",
+      "name": "用户→管理: GET /admin/users",
+      "method": "GET",
+      "path": "/admin/users",
+      "status": 403,
+      "ok": true,
+      "body_preview": "{\"detail\": \"需要管理员权限\"}"
+    },
+    {
+      "role": "权限隔离",
+      "name": "用户→管理: GET /admin/config",
+      "method": "GET",
+      "path": "/admin/config",
+      "status": 403,
+      "ok": true,
+      "body_preview": "{\"detail\": \"需要管理员权限\"}"
+    },
+    {
+      "role": "权限隔离",
+      "name": "用户→管理: POST /admin/venues",
+      "method": "POST",
+      "path": "/admin/venues",
+      "status": 403,
+      "ok": true,
+      "body_preview": "{\"detail\": \"需要管理员权限\"}"
+    },
+    {
+      "role": "权限隔离",
+      "name": "用户→管理: POST /admin/teachers",
+      "method": "POST",
+      "path": "/admin/teachers",
+      "status": 403,
+      "ok": true,
+      "body_preview": "{\"detail\": \"需要管理员权限\"}"
+    },
+    {
+      "role": "权限隔离",
+      "name": "用户→管理: GET /admin/orders",
+      "method": "GET",
+      "path": "/admin/orders",
+      "status": 403,
+      "ok": true,
+      "body_preview": "{\"detail\": \"需要管理员权限\"}"
+    },
+    {
+      "role": "边界",
+      "name": "不存在的资源",
+      "method": "GET",
+      "path": "/book/99999",
+      "status": 404,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Book(id=99999) 不存在\"}"
+    },
+    {
+      "role": "边界",
+      "name": "无效JSON",
+      "method": "POST",
+      "path": "/child/",
+      "status": 422,
+      "ok": true,
+      "body_preview": "{\"detail\": [{\"type\": \"missing\", \"loc\": [\"body\", \"name\"], \"msg\": \"Field required\", \"input\": {}}, {\"ty"
+    },
+    {
+      "role": "边界",
+      "name": "不存在的路由",
+      "method": "GET",
+      "path": "/nonexistent/path",
+      "status": 404,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not Found\"}"
+    },
+    {
+      "role": "边界",
+      "name": "无效token",
+      "method": "GET",
+      "path": "/child/",
+      "status": 401,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Token无效或已过期\"}"
+    },
+    {
+      "role": "边界",
+      "name": "超长keyword搜索",
+      "method": "GET",
+      "path": "/book/search?keyword=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "status": 200,
+      "ok": true,
+      "body_preview": "{\"items\": [], \"total\": 0, \"page\": 1, \"page_size\": 10, \"has_next\": false}"
+    },
+    {
+      "role": "边界",
+      "name": "负数page",
+      "method": "GET",
+      "path": "/book/search?page=-1",
+      "status": 422,
+      "ok": true,
+      "body_preview": "{\"detail\": [{\"type\": \"greater_than_equal\", \"loc\": [\"query\", \"page\"], \"msg\": \"Input should be greater"
+    },
+    {
+      "role": "边界",
+      "name": "超大page_size",
+      "method": "GET",
+      "path": "/book/search?page_size=9999",
+      "status": 422,
+      "ok": true,
+      "body_preview": "{\"detail\": [{\"type\": \"less_than_equal\", \"loc\": [\"query\", \"page_size\"], \"msg\": \"Input should be less "
+    },
+    {
+      "role": "API对齐",
+      "name": "前端API对齐: wxLogin",
+      "method": "POST",
+      "path": "/user/wx-login",
+      "status": 422,
+      "ok": true,
+      "body_preview": "{\"detail\": [{\"type\": \"missing\", \"loc\": [\"body\"], \"msg\": \"Field required\", \"input\": null}]}"
+    },
+    {
+      "role": "API对齐",
+      "name": "前端API对齐: getChildren",
+      "method": "GET",
+      "path": "/child/",
+      "status": 200,
+      "ok": true,
+      "body_preview": "[{\"id\": 1, \"user_id\": 1, \"name\": \"小明\", \"english_name\": \"Tom\", \"age\": 7, \"grade\": \"二年级\", \"status\": 3,"
+    },
+    {
+      "role": "API对齐",
+      "name": "前端API对齐: addChild",
+      "method": "POST",
+      "path": "/child/",
+      "status": 422,
+      "ok": true,
+      "body_preview": "{\"detail\": [{\"type\": \"missing\", \"loc\": [\"body\"], \"msg\": \"Field required\", \"input\": null}]}"
+    },
+    {
+      "role": "API对齐",
+      "name": "前端API对齐: searchBooks",
+      "method": "GET",
+      "path": "/book/search",
+      "status": 200,
+      "ok": true,
+      "body_preview": "{\"items\": [{\"id\": 1, \"isbn\": \"978-0-06-440055-8\", \"title\": \"Charlotte's Web\", \"author\": \"E.B. White\""
+    },
+    {
+      "role": "API对齐",
+      "name": "前端API对齐: getBookDetail",
+      "method": "GET",
+      "path": "/book/1",
+      "status": 200,
+      "ok": true,
+      "body_preview": "{\"id\": 1, \"isbn\": \"978-0-06-440055-8\", \"title\": \"Charlotte's Web\", \"author\": \"E.B. White\", \"publishe"
+    },
+    {
+      "role": "API对齐",
+      "name": "前端API对齐: getBookshelf",
+      "method": "GET",
+      "path": "/bookshelf/?child_id=1",
+      "status": 200,
+      "ok": true,
+      "body_preview": "[{\"id\": 11, \"child_id\": 1, \"book_id\": 1, \"status\": 0, \"book_title\": \"Charlotte's Web\", \"book_cover\":"
+    },
+    {
+      "role": "API对齐",
+      "name": "前端API对齐: addToBookshelf",
+      "method": "POST",
+      "path": "/bookshelf/",
+      "status": 422,
+      "ok": true,
+      "body_preview": "{\"detail\": [{\"type\": \"missing\", \"loc\": [\"body\"], \"msg\": \"Field required\", \"input\": null}]}"
+    },
+    {
+      "role": "API对齐",
+      "name": "前端API对齐: createOrder",
+      "method": "POST",
+      "path": "/order/",
+      "status": 422,
+      "ok": true,
+      "body_preview": "{\"detail\": [{\"type\": \"missing\", \"loc\": [\"body\"], \"msg\": \"Field required\", \"input\": null}]}"
+    },
+    {
+      "role": "API对齐",
+      "name": "前端API对齐: getOrders",
+      "method": "GET",
+      "path": "/order/",
+      "status": 200,
+      "ok": true,
+      "body_preview": "{\"items\": [{\"id\": 1, \"order_no\": \"MW17822173046806642\", \"user_id\": 1, \"child_id\": 1, \"type\": 2, \"amo"
+    },
+    {
+      "role": "API对齐",
+      "name": "前端API对齐: getBorrows",
+      "method": "GET",
+      "path": "/borrow/1",
+      "status": 200,
+      "ok": true,
+      "body_preview": "[]"
+    },
+    {
+      "role": "API对齐",
+      "name": "前端API对齐: getDepositStatus",
+      "method": "GET",
+      "path": "/deposit/status?child_id=1",
+      "status": 200,
+      "ok": true,
+      "body_preview": "{\"status\": 0, \"amount\": 0, \"message\": \"未缴纳押金\"}"
+    },
+    {
+      "role": "API对齐",
+      "name": "前端API对齐: startSession",
+      "method": "POST",
+      "path": "/reading/session",
+      "status": 404,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not Found\"}"
+    },
+    {
+      "role": "API对齐",
+      "name": "前端API对齐: getCheckin",
+      "method": "GET",
+      "path": "/reading/checkin/1",
+      "status": 422,
+      "ok": true,
+      "body_preview": "{\"detail\": [{\"type\": \"missing\", \"loc\": [\"query\", \"year\"], \"msg\": \"Field required\", \"input\": null}, {"
+    },
+    {
+      "role": "API对齐",
+      "name": "前端API对齐: getStreak",
+      "method": "GET",
+      "path": "/reading/streak/1",
+      "status": 200,
+      "ok": true,
+      "body_preview": "{\"current_streak\": 7, \"longest_streak\": 15}"
+    },
+    {
+      "role": "API对齐",
+      "name": "前端API对齐: getLearningVocab",
+      "method": "GET",
+      "path": "/vocabulary/1/learning",
+      "status": 404,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not Found\"}"
+    },
+    {
+      "role": "API对齐",
+      "name": "前端API对齐: getMasteredVocab",
+      "method": "GET",
+      "path": "/vocabulary/1/mastered",
+      "status": 404,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not Found\"}"
+    },
+    {
+      "role": "API对齐",
+      "name": "前端API对齐: startQuiz",
+      "method": "POST",
+      "path": "/advancement/quiz/start",
+      "status": 422,
+      "ok": true,
+      "body_preview": "{\"detail\": [{\"type\": \"missing\", \"loc\": [\"body\"], \"msg\": \"Field required\", \"input\": null}]}"
+    },
+    {
+      "role": "API对齐",
+      "name": "前端API对齐: getQuizQuestions",
+      "method": "GET",
+      "path": "/advancement/quiz/questions/1",
+      "status": 200,
+      "ok": true,
+      "body_preview": "[{\"id\": 1, \"question_text\": \"What did Fern's father have when he went out?\", \"option_a\": \"A rake\", \""
+    },
+    {
+      "role": "API对齐",
+      "name": "前端API对齐: getCurrentLevel",
+      "method": "GET",
+      "path": "/advancement/current?child_id=1",
+      "status": 404,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not Found\"}"
+    },
+    {
+      "role": "API对齐",
+      "name": "前端API对齐: getLevels",
+      "method": "GET",
+      "path": "/advancement/levels",
+      "status": 200,
+      "ok": true,
+      "body_preview": "[{\"id\": 1, \"name\": \"A\", \"badge_icon\": null, \"badge_emoji\": \"🌱\", \"sort_order\": 1, \"required_books\": 1"
+    },
+    {
+      "role": "API对齐",
+      "name": "前端API对齐: getAchievements",
+      "method": "GET",
+      "path": "/advancement/achievements",
+      "status": 200,
+      "ok": true,
+      "body_preview": "[{\"id\": 1, \"name\": \"读完10本书\", \"description\": null, \"type\": 2, \"badge_icon\": null, \"badge_emoji\": \"📚\"}"
+    },
+    {
+      "role": "API对齐",
+      "name": "前端API对齐: getLeaderboard",
+      "method": "GET",
+      "path": "/advancement/leaderboard",
+      "status": 200,
+      "ok": true,
+      "body_preview": "[{\"rank\": 1, \"child_id\": 1, \"display_name\": \"小明 Tom\", \"total_words\": 42000, \"total_books\": 8, \"strea"
+    },
+    {
+      "role": "API对齐",
+      "name": "前端API对齐: getActivities",
+      "method": "GET",
+      "path": "/activity/",
+      "status": 200,
+      "ok": true,
+      "body_preview": "[{\"id\": 1, \"title\": \"暑期阅读挑战赛\", \"description\": \"连续阅读30天，赢取精美奖品！\", \"start_time\": \"2026-06-24T14:42:42\""
+    },
+    {
+      "role": "API对齐",
+      "name": "前端API对齐: getMessages",
+      "method": "GET",
+      "path": "/message/",
+      "status": 200,
+      "ok": true,
+      "body_preview": "{\"items\": [{\"id\": 1, \"user_id\": 1, \"title\": \"欢迎加入 MegaWords\", \"content\": \"欢迎成为正式会员！开始你的英文阅读之旅吧。\", \"m"
+    },
+    {
+      "role": "API对齐",
+      "name": "前端API对齐: getReservations",
+      "method": "GET",
+      "path": "/reservation/1",
+      "status": 200,
+      "ok": true,
+      "body_preview": "[]"
+    },
+    {
+      "role": "API对齐",
+      "name": "前端API对齐: getCertificates",
+      "method": "GET",
+      "path": "/certificate/?child_id=1",
+      "status": 404,
+      "ok": true,
+      "body_preview": "{\"detail\": \"Not Found\"}"
+    },
+    {
+      "role": "API对齐",
+      "name": "前端API对齐: getRefundPreview",
+      "method": "GET",
+      "path": "/order/1/refund-preview",
+      "status": 422,
+      "ok": true,
+      "body_preview": "{\"detail\": [{\"type\": \"missing\", \"loc\": [\"query\", \"used_days\"], \"msg\": \"Field required\", \"input\": nul"
+    }
+  ]
+}

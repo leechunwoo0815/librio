@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "admin-audio.html",
+  "entry": "admin-audio.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-06-04T13:43:39.022Z",
+  "updatedAt": "2026-06-04T13:43:39.022Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}

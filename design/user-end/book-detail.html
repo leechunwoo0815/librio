@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>图书详情 · Librio</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.003 250);
+      --surface: oklch(100% 0 0);
+      --fg: oklch(20% 0.015 275);
+      --muted: oklch(48% 0.02 250);
+      --border: oklch(90% 0.008 250);
+      --accent: oklch(54% 0.17 275);
+      --accent-soft: oklch(54% 0.17 275 / 0.1);
+      --secondary: oklch(86% 0.20 135);
+      --success: oklch(72% 0.20 145);
+      --success-soft: oklch(72% 0.20 145 / 0.1);
+      --warning: oklch(78% 0.16 85);
+      --warning-soft: oklch(78% 0.16 85 / 0.1);
+      --error: oklch(62% 0.22 25);
+      --radius: 16px; --radius-sm: 10px; --radius-lg: 20px;
+      --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--fg); font-family: var(--font-body);
+      font-size: 15px; line-height: 1.5; max-width: 375px; margin: 0 auto;
+      min-height: 100vh; padding-bottom: 100px; -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; }
+
+    /* nav bar */
+    .nav-bar {
+      display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 10;
+    }
+    .nav-bar .back { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 10px; }
+    .nav-bar .back svg { width: 20px; height: 20px; }
+    .nav-bar .title { font-family: var(--font-display); font-size: 17px; font-weight: 600; }
+
+    /* hero section */
+    .book-hero {
+      display: flex; gap: 16px; padding: 20px 16px;
+      background: var(--surface); margin-bottom: 10px;
+    }
+    .hero-cover {
+      width: 110px; height: 148px; border-radius: var(--radius-sm); flex-shrink: 0;
+      background: linear-gradient(135deg, oklch(96% 0.01 250), oklch(90% 0.02 250));
+      border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 56px; position: relative;
+    }
+    .hero-cover .audio-badge-lg {
+      position: absolute; top: 8px; right: 8px;
+      background: var(--accent-soft); color: var(--accent);
+      padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 600;
+    }
+    .hero-info { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+    .hero-title { font-family: var(--font-display); font-size: 19px; font-weight: 700; margin-bottom: 4px; line-height: 1.3; }
+    .hero-author { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+    .hero-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+    .hero-tags .tag {
+      padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600;
+    }
+    .tag-ar { background: var(--accent-soft); color: var(--accent); }
+    .tag-words { background: oklch(48% 0.02 250 / 0.1); color: var(--muted); }
+    .tag-time { background: oklch(86% 0.20 135 / 0.1); color: oklch(50% 0.12 135); }
+
+    /* inventory status bar */
+    .inv-bar {
+      margin: 0 16px 10px; padding: 10px 14px;
+      border-radius: var(--radius-sm); font-size: 13px; font-weight: 500;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .inv-bar.in-stock { background: var(--success-soft); color: oklch(40% 0.15 145); }
+    .inv-bar.out-of-stock { background: oklch(48% 0.02 250 / 0.08); color: var(--muted); }
+    .inv-bar .inv-detail { margin-left: auto; font-family: var(--font-display); font-weight: 700; }
+
+    /* section cards */
+    .section-card {
+      margin: 0 16px 10px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px;
+      box-shadow: 0 2px 8px oklch(20% 0.015 275 / 0.04);
+    }
+    .section-card h3 {
+      font-family: var(--font-display); font-size: 15px; font-weight: 600;
+      margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+    }
+    .section-card h3 .icon { font-size: 16px; }
+
+    /* description */
+    .desc-text {
+      font-size: 13px; color: var(--fg); line-height: 1.7;
+      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .desc-text.expanded { -webkit-line-clamp: unset; }
+    .expand-btn {
+      color: var(--accent); font-size: 13px; font-weight: 500; margin-top: 6px;
+    }
+
+    /* book info grid */
+    .info-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    }
+    .info-item { }
+    .info-label { font-size: 11px; color: var(--muted); margin-bottom: 2px; }
+    .info-value { font-size: 13px; font-weight: 600; }
+
+    /* reading progress */
+    .progress-section { margin: 0 16px 10px; }
+    .rp-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .rp-title { font-family: var(--font-display); font-size: 14px; font-weight: 600; }
+    .rp-pct { font-family: var(--font-display); font-size: 13px; color: var(--accent); font-weight: 600; }
+    .rp-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+    .rp-fill { height: 100%; background: var(--accent); border-radius: 3px; }
+
+    /* related books */
+    .related-scroll {
+      display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none;
+      padding-bottom: 4px;
+    }
+    .related-scroll::-webkit-scrollbar { display: none; }
+    .related-card {
+      flex-shrink: 0; width: 100px;
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); overflow: hidden;
+    }
+    .related-card .rc-cover {
+      width: 100%; height: 80px; display: flex; align-items: center; justify-content: center;
+      font-size: 32px;
+      background: linear-gradient(135deg, oklch(96% 0.01 250), oklch(92% 0.02 250));
+    }
+    .related-card .rc-body { padding: 6px 8px; }
+    .related-card .rc-title {
+      font-size: 11px; font-weight: 600;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .related-card .rc-ar { font-size: 10px; color: var(--accent); font-weight: 600; margin-top: 2px; }
+
+    /* state toggle for demo */
+    .state-toggle {
+      margin: 0 16px 10px; padding: 10px 14px;
+      background: var(--bg); border: 1px dashed var(--border);
+      border-radius: var(--radius-sm); font-size: 11px; color: var(--muted);
+      text-align: center;
+    }
+    .state-toggle button {
+      padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 500;
+      background: var(--border); color: var(--muted); margin: 0 2px;
+      transition: all 0.12s;
+    }
+    .state-toggle button.active { background: var(--accent); color: white; }
+
+    /* bottom action bar */
+    .action-bar {
+      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 375px;
+      background: color-mix(in oklch, var(--surface) 95%, transparent);
+      backdrop-filter: blur(12px); border-top: 1px solid var(--border);
+      padding: 12px 16px; display: flex; gap: 10px; z-index: 20;
+    }
+    .action-btn {
+      padding: 13px 0; border-radius: 999px; font-size: 15px; font-weight: 600;
+      text-align: center; transition: transform 0.1s ease; border: none; cursor: pointer;
+    }
+    .action-btn:active { transform: scale(0.98); }
+    .btn-primary { flex: 1; background: var(--accent); color: white; box-shadow: 0 4px 16px oklch(54% 0.17 275 / 0.3); }
+    .btn-secondary { flex: 1; background: var(--warning); color: white; box-shadow: 0 4px 16px oklch(78% 0.16 85 / 0.3); }
+    .btn-outline {
+      flex: 0.6; background: var(--surface); color: var(--muted);
+      border: 1px solid var(--border);
+    }
+
+    @media (min-width: 768px) { body { max-width: 375px; border-left: 1px solid var(--border); border-right: 1px solid var(--border); } }
+    @media (min-width: 1024px) { body { max-width: 375px; margin: 0 auto; box-shadow: 0 0 40px oklch(20% 0.015 275 / 0.06); } }
+  </style>
+</head>
+<body>
+  <div class="nav-bar">
+    <a class="back" href="books.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+    </a>
+    <span class="title">图书详情</span>
+  </div>
+
+  <!-- Hero -->
+  <div class="book-hero">
+    <div class="hero-cover">
+      🕷️
+      <span class="audio-badge-lg">🔊 有声书</span>
+    </div>
+    <div class="hero-info">
+      <div class="hero-title">Charlotte's Web</div>
+      <div class="hero-author">E.B. White</div>
+      <div class="hero-tags">
+        <span class="tag tag-ar">AR 4.4</span>
+        <span class="tag tag-words">3,218 词</span>
+        <span class="tag tag-time">预计25分钟</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- state toggle (prototype demo) -->
+  <div class="state-toggle">
+    演示状态切换：
+    <button class="active" onclick="setState('inShelf')">已在书架</button>
+    <button onclick="setState('notInShelf')">未在书架</button>
+    <button onclick="setState('outOfStock')">暂无库存</button>
+  </div>
+
+  <!-- inventory status -->
+  <div class="inv-bar in-stock" id="invBar">
+    <span id="invIcon">✅</span>
+    <span id="invText">可借</span>
+    <span class="inv-detail" id="invDetail">3/5本</span>
+  </div>
+
+  <!-- reading progress (shown when in shelf) -->
+  <div class="progress-section" id="progressSection">
+    <div class="rp-header"><span class="rp-title">阅读进度</span><span class="rp-pct">45%</span></div>
+    <div class="rp-bar"><div class="rp-fill" style="width:45%"></div></div>
+  </div>
+
+  <!-- 内容简介 -->
+  <div class="section-card">
+    <h3><span class="icon">📖</span>内容简介</h3>
+    <p class="desc-text" id="descText">《夏洛的网》是一部关于友谊与忠诚的经典童话。小猪威尔伯在谷仓里结识了蜘蛛夏洛，当威尔伯面临被宰杀的命运时，夏洛在蛛网上织出赞美威尔伯的文字，拯救了他的生命。这个温暖的故事教会孩子们珍惜友谊、勇敢面对困难，是英文阅读启蒙阶段的经典之作。</p>
+    <button class="expand-btn" onclick="toggleDesc()">展开全部</button>
+  </div>
+
+  <!-- 适合年龄 -->
+  <div class="section-card">
+    <h3><span class="icon">👶</span>适合年龄</h3>
+    <div class="info-grid">
+      <div class="info-item">
+        <div class="info-label">推荐年龄</div>
+        <div class="info-value">7–10 岁</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">AR 等级</div>
+        <div class="info-value">AR 4.4</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">总词数</div>
+        <div class="info-value">3,218 词</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">预计阅读时间</div>
+        <div class="info-value">约25分钟</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 系列信息 -->
+  <div class="section-card">
+    <h3><span class="icon">📚</span>系列信息</h3>
+    <div class="info-grid">
+      <div class="info-item">
+        <div class="info-label">所属系列</div>
+        <div class="info-value">经典文学</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">出版社</div>
+        <div class="info-value">HarperCollins</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">出版年份</div>
+        <div class="info-value">1952</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">有声书</div>
+        <div class="info-value">✅ 可用</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 相关推荐 -->
+  <div class="section-card">
+    <h3><span class="icon">💡</span>相关推荐</h3>
+    <div class="related-scroll">
+      <a class="related-card" href="book-detail.html">
+        <div class="rc-cover">🐷</div>
+        <div class="rc-body">
+          <div class="rc-title">Stuart Little</div>
+          <div class="rc-ar">AR 6.0</div>
+        </div>
+      </a>
+      <a class="related-card" href="book-detail.html">
+        <div class="rc-cover">🐻</div>
+        <div class="rc-body">
+          <div class="rc-title">Winnie-the-Pooh</div>
+          <div class="rc-ar">AR 5.2</div>
+        </div>
+      </a>
+      <a class="related-card" href="book-detail.html">
+        <div class="rc-cover">🦁</div>
+        <div class="rc-body">
+          <div class="rc-title">The Lion, the Witch and the Wardrobe</div>
+          <div class="rc-ar">AR 5.7</div>
+        </div>
+      </a>
+      <a class="related-card" href="book-detail.html">
+        <div class="rc-cover">🦊</div>
+        <div class="rc-body">
+          <div class="rc-title">Fantastic Mr Fox</div>
+          <div class="rc-ar">AR 4.1</div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <!-- bottom action bar -->
+  <div class="action-bar" id="actionBar">
+    <button class="action-btn btn-outline" onclick="alert('已收藏')">收藏</button>
+    <a class="action-btn btn-primary" href="reader.html">继续阅读</a>
+  </div>
+
+  <script>
+    var bookState = 'inShelf';
+
+    function toggleDesc() {
+      var text = document.getElementById('descText');
+      var btn = text.nextElementSibling;
+      text.classList.toggle('expanded');
+      btn.textContent = text.classList.contains('expanded') ? '收起' : '展开全部';
+    }
+
+    function setState(state) {
+      bookState = state;
+      document.querySelectorAll('.state-toggle button').forEach(function(b) { b.classList.remove('active'); });
+      event.target.classList.add('active');
+      updateUI();
+    }
+
+    function updateUI() {
+      var progress = document.getElementById('progressSection');
+      var invBar = document.getElementById('invBar');
+      var invIcon = document.getElementById('invIcon');
+      var invText = document.getElementById('invText');
+      var invDetail = document.getElementById('invDetail');
+      var actionBar = document.getElementById('actionBar');
+
+      if (bookState === 'inShelf') {
+        progress.style.display = 'block';
+        invBar.className = 'inv-bar in-stock';
+        invIcon.textContent = '✅';
+        invText.textContent = '可借';
+        invDetail.textContent = '3/5本';
+        actionBar.innerHTML =
+          '<button class="action-btn btn-outline" onclick="alert(\'已收藏\')">收藏</button>' +
+          '<a class="action-btn btn-primary" href="reader.html">继续阅读</a>';
+      } else if (bookState === 'notInShelf') {
+        progress.style.display = 'none';
+        invBar.className = 'inv-bar in-stock';
+        invIcon.textContent = '✅';
+        invText.textContent = '可借';
+        invDetail.textContent = '3/5本';
+        actionBar.innerHTML =
+          '<button class="action-btn btn-outline" onclick="alert(\'已收藏\')">收藏</button>' +
+          '<button class="action-btn btn-primary" onclick="alert(\'已加入书架\')">📚 加入书架</button>';
+      } else if (bookState === 'outOfStock') {
+        progress.style.display = 'none';
+        invBar.className = 'inv-bar out-of-stock';
+        invIcon.textContent = '⚠️';
+        invText.textContent = '无库存';
+        invDetail.textContent = '0/5本';
+        actionBar.innerHTML =
+          '<button class="action-btn btn-outline" onclick="alert(\'已收藏\')">收藏</button>' +
+          '<button class="action-btn btn-secondary" onclick="alert(\'已提交预约\')">🔔 预约借书</button>';
+      }
+    }
+  </script>
+</body>
+</html>

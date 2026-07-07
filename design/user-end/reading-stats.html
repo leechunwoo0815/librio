@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>阅读统计 · MegaWords</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.003 250); --surface: oklch(100% 0 0);
+      --fg: oklch(20% 0.015 275); --muted: oklch(48% 0.02 250);
+      --border: oklch(90% 0.008 250); --accent: oklch(54% 0.17 275);
+      --accent-soft: oklch(54% 0.17 275 / 0.1); --accent-hover: oklch(48% 0.17 275);
+      --secondary: oklch(86% 0.20 135); --secondary-soft: oklch(86% 0.20 135 / 0.12);
+      --success: oklch(72% 0.20 145); --warning: oklch(78% 0.16 85);
+      --error: oklch(62% 0.22 25); --radius: 16px; --radius-sm: 10px; --radius-lg: 20px;
+      --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+      --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--fg); font-family: var(--font-body);
+      font-size: 15px; line-height: 1.5; max-width: 430px; margin: 0 auto;
+      min-height: 100vh; padding-bottom: 80px; -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; }
+    .nav-bar {
+      display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 10;
+    }
+    .nav-bar .back { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 10px; }
+    .nav-bar .back svg { width: 20px; height: 20px; }
+    .nav-bar .title { font-family: var(--font-display); font-size: 17px; font-weight: 600; }
+    .period-tabs { display: flex; gap: 0; margin: 12px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+    .period-tabs button { flex: 1; padding: 9px; font-size: 13px; font-weight: 500; color: var(--muted); }
+    .period-tabs button.active { background: var(--accent); color: white; }
+    .today-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 0 16px 16px; }
+    .t-stat {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 14px; text-align: center;
+    }
+    .t-stat .ts-val { font-family: var(--font-display); font-size: 24px; font-weight: 700; }
+    .t-stat .ts-label { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .t-stat.full { grid-column: 1 / -1; }
+    .chart-card {
+      margin: 0 16px 16px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px;
+    }
+    .chart-card h3 { font-family: var(--font-display); font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+    .bar-chart-wrap { display: flex; align-items: flex-end; gap: 6px; height: 140px; padding-top: 12px; }
+    .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
+    .bar-fill { width: 100%; border-radius: 4px 4px 0 0; min-height: 4px; }
+    .bar-label { font-size: 10px; color: var(--muted); }
+    .line-chart { width: 100%; height: 140px; }
+    .legend { display: flex; gap: 16px; justify-content: center; margin-top: 8px; font-size: 11px; color: var(--muted); }
+    .legend span { display: flex; align-items: center; gap: 4px; }
+    .legend .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .books-read { margin: 0 16px 16px; display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; }
+    .books-read .br-item {
+      flex-shrink: 0; width: 72px; text-align: center;
+    }
+    .br-item .br-cover {
+      width: 72px; height: 96px; border-radius: 8px; display: grid; place-items: center;
+      font-size: 28px; margin-bottom: 4px;
+    }
+    .br-item .br-name { font-size: 10px; line-height: 1.2; color: var(--muted); }
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 430px; display: flex; justify-content: space-around;
+      padding: 8px 8px 20px; background: var(--surface); border-top: 1px solid var(--border);
+      z-index: 10;
+    }
+    .nav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 10px; color: var(--muted); padding: 4px 12px; }
+    .nav-item.active { color: var(--accent); }
+    .nav-item svg { width: 22px; height: 22px; }
+    /* level card */
+    .level-card {
+      margin: 12px 16px; padding: 16px; border-radius: var(--radius);
+      background: linear-gradient(135deg, oklch(54% 0.17 275 / 0.12), oklch(86% 0.20 135 / 0.08));
+      border: 1px solid oklch(54% 0.17 275 / 0.15);
+      display: flex; align-items: center; gap: 14px;
+    }
+    .level-badge { width: 52px; height: 52px; border-radius: 14px; background: var(--accent); display: grid; place-items: center; font-size: 26px; flex-shrink: 0; }
+    .level-info { flex: 1; }
+    .level-info .level-label { font-size: 11px; color: var(--muted); }
+    .level-info .level-name { font-family: var(--font-display); font-size: 18px; font-weight: 700; }
+    .level-info .level-letter { display: inline-block; padding: 2px 8px; border-radius: 999px; background: var(--accent); color: white; font-size: 11px; font-weight: 700; margin-left: 6px; }
+    /* progress bar */
+    .progress-card {
+      margin: 0 16px 12px; padding: 14px 16px; background: var(--surface);
+      border: 1px solid var(--border); border-radius: var(--radius);
+    }
+    .progress-card .prog-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .progress-card .prog-header span:first-child { font-size: 13px; font-weight: 600; }
+    .progress-card .prog-header span:last-child { font-size: 12px; color: var(--muted); }
+    .prog-bar-bg { width: 100%; height: 10px; background: oklch(92% 0.008 250); border-radius: 999px; overflow: hidden; }
+    .prog-bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent), var(--secondary)); }
+    .prog-desc { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    .prog-desc strong { color: var(--accent); font-weight: 600; }
+    /* achievements */
+    .achievement-row {
+      margin: 0 16px 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+    }
+    .ach-item {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+      padding: 12px 8px; text-align: center;
+    }
+    .ach-item .ach-icon { font-size: 22px; margin-bottom: 4px; }
+    .ach-item .ach-val { font-family: var(--font-display); font-size: 20px; font-weight: 700; }
+    .ach-item .ach-label { font-size: 10px; color: var(--muted); margin-top: 1px; }
+    /* leaderboard */
+    .leaderboard-card {
+      margin: 0 16px 16px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px;
+    }
+    .leaderboard-card h3 { font-family: var(--font-display); font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+    .lb-podium { display: flex; justify-content: center; align-items: flex-end; gap: 8px; margin-bottom: 14px; }
+    .lb-podium-item { text-align: center; flex: 1; max-width: 100px; }
+    .lb-avatar { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font-size: 18px; margin: 0 auto 4px; position: relative; }
+    .lb-avatar.rank-1 { background: oklch(78% 0.16 85 / 0.2); border: 2px solid oklch(70% 0.18 85); width: 52px; height: 52px; font-size: 22px; }
+    .lb-avatar.rank-2 { background: oklch(88% 0.01 250 / 0.3); border: 2px solid oklch(78% 0.01 250); }
+    .lb-avatar.rank-3 { background: oklch(75% 0.10 55 / 0.15); border: 2px solid oklch(68% 0.12 55); }
+    .lb-crown { position: absolute; top: -10px; font-size: 14px; }
+    .lb-name { font-size: 12px; font-weight: 500; }
+    .lb-score { font-size: 11px; color: var(--muted); }
+    .lb-medal { font-size: 14px; margin-top: 2px; }
+    .lb-list { list-style: none; }
+    .lb-list li { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+    .lb-list li:last-child { border-bottom: none; }
+    .lb-list .lb-rank { width: 20px; text-align: center; font-weight: 600; color: var(--muted); font-size: 12px; }
+    .lb-list .lb-av { width: 28px; height: 28px; border-radius: 50%; background: var(--accent-soft); display: grid; place-items: center; font-size: 13px; }
+    .lb-list .lb-user-name { flex: 1; font-weight: 500; }
+    .lb-list .lb-user-score { color: var(--accent); font-weight: 600; font-size: 13px; }
+    .lb-list .lb-me { background: oklch(54% 0.17 275 / 0.04); border-radius: var(--radius-sm); padding-left: 8px; padding-right: 8px; margin: 0 -8px; }
+  </style>
+</head>
+<body>
+  <div class="nav-bar">
+    <a class="back" href="home.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a>
+    <span class="title">阅读统计</span>
+  </div>
+  <div class="period-tabs">
+    <button class="active" onclick="switchPeriod(this,'day')">今日</button>
+    <button onclick="switchPeriod(this,'week')">本周</button>
+    <button onclick="switchPeriod(this,'month')">本月</button>
+    <button onclick="switchPeriod(this,'total')">累计</button>
+  </div>
+  <!-- level info card -->
+  <div class="level-card" data-od-id="level-card">
+    <div class="level-badge">📗</div>
+    <div class="level-info">
+      <div class="level-label">当前级别</div>
+      <div class="level-name">词汇新手 <span class="level-letter">B</span></div>
+    </div>
+  </div>
+
+  <!-- promotion progress -->
+  <div class="progress-card" data-od-id="level-progress">
+    <div class="prog-header">
+      <span>晋级进度</span>
+      <span>3 / 8 本</span>
+    </div>
+    <div class="prog-bar-bg"><div class="prog-bar-fill" style="width:37.5%"></div></div>
+    <div class="prog-desc">还需再读 <strong>5 本书</strong> 即可晋升至「故事探索者」</div>
+  </div>
+
+  <!-- achievements -->
+  <div class="achievement-row" data-od-id="achievements">
+    <div class="ach-item"><div class="ach-icon">🏅</div><div class="ach-val">5</div><div class="ach-label">获得徽章</div></div>
+    <div class="ach-item"><div class="ach-icon">🔥</div><div class="ach-val">12</div><div class="ach-label">连续打卡</div></div>
+    <div class="ach-item"><div class="ach-icon">⭐</div><div class="ach-val">3</div><div class="ach-label">满分测验</div></div>
+  </div>
+
+  <!-- leaderboard -->
+  <div class="leaderboard-card" data-od-id="leaderboard">
+    <h3><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>阅读排行榜 <span style="font-size:12px;font-weight:400;color:var(--muted)">按阅读词数排行</span></h3>
+    <div style="text-align:center;margin-bottom:12px;font-size:13px;color:var(--muted)">你的当前排名：第 <strong style="color:var(--accent)">7</strong> 名</div>
+    <div class="lb-podium">
+      <div class="lb-podium-item">
+        <div class="lb-avatar rank-2">👩</div>
+        <div class="lb-name">Lily</div>
+        <div class="lb-score">2,450 词</div>
+        <div class="lb-medal">🥈</div>
+      </div>
+      <div class="lb-podium-item">
+        <div class="lb-avatar rank-1"><span class="lb-crown">👑</span>🧑</div>
+        <div class="lb-name">Tom</div>
+        <div class="lb-score">3,120 词</div>
+        <div class="lb-medal">🥇</div>
+      </div>
+      <div class="lb-podium-item">
+        <div class="lb-avatar rank-3">👦</div>
+        <div class="lb-name">小明</div>
+        <div class="lb-score">1,980 词</div>
+        <div class="lb-medal">🥉</div>
+      </div>
+    </div>
+    <ul class="lb-list">
+      <li><span class="lb-rank">4</span><span class="lb-av">🐶</span><span class="lb-user-name">Anna</span><span class="lb-user-score">1,650</span></li>
+      <li><span class="lb-rank">5</span><span class="lb-av">🐻</span><span class="lb-user-name">Mike</span><span class="lb-user-score">1,520</span></li>
+      <li><span class="lb-rank">6</span><span class="lb-av">🦊</span><span class="lb-user-name">Emma</span><span class="lb-user-score">1,380</span></li>
+      <li class="lb-me"><span class="lb-rank">7</span><span class="lb-av">🐱</span><span class="lb-user-name">我 (Mega)</span><span class="lb-user-score">1,200</span></li>
+    </ul>
+  </div>
+
+  <div class="today-stats">
+    <div class="t-stat"><div class="ts-val" style="color:var(--accent)">25</div><div class="ts-label">今日阅读 (分钟)</div></div>
+    <div class="t-stat"><div class="ts-val" style="color:var(--success)">12</div><div class="ts-label">阅读页数</div></div>
+    <div class="t-stat"><div class="ts-val" style="color:var(--warning)">5</div><div class="ts-label">新增生词</div></div>
+    <div class="t-stat"><div class="ts-val" style="color:var(--secondary)">320</div><div class="ts-label">阅读词数</div></div>
+  </div>
+  <div class="chart-card">
+    <h3>阅读时长趋势（近7天）</h3>
+    <div class="bar-chart-wrap">
+      <div class="bar-col"><div class="bar-fill" style="height:40%;background:var(--accent)"></div><div class="bar-label">5/29</div></div>
+      <div class="bar-col"><div class="bar-fill" style="height:55%;background:var(--accent)"></div><div class="bar-label">5/30</div></div>
+      <div class="bar-col"><div class="bar-fill" style="height:70%;background:var(--accent)"></div><div class="bar-label">5/31</div></div>
+      <div class="bar-col"><div class="bar-fill" style="height:30%;background:var(--accent)"></div><div class="bar-label">6/1</div></div>
+      <div class="bar-col"><div class="bar-fill" style="height:65%;background:var(--accent)"></div><div class="bar-label">6/2</div></div>
+      <div class="bar-col"><div class="bar-fill" style="height:80%;background:var(--accent)"></div><div class="bar-label">6/3</div></div>
+      <div class="bar-col"><div class="bar-fill" style="height:55%;background:var(--secondary)"></div><div class="bar-label">6/4</div></div>
+    </div>
+    <div class="legend"><span><span class="dot" style="background:var(--accent)"></span>已完成</span><span><span class="dot" style="background:var(--secondary)"></span>今日</span></div>
+  </div>
+  <div class="chart-card">
+    <h3>阅读词数趋势（近7天）</h3>
+    <svg class="line-chart" viewBox="0 0 370 140">
+      <polyline points="10,110 70,80 130,60 190,95 250,75 310,45 370,55" fill="none" stroke="oklch(54% 0.17 275)" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="10" cy="110" r="4" fill="oklch(54% 0.17 275)"/><circle cx="70" cy="80" r="4" fill="oklch(54% 0.17 275)"/>
+      <circle cx="130" cy="60" r="4" fill="oklch(54% 0.17 275)"/><circle cx="190" cy="95" r="4" fill="oklch(54% 0.17 275)"/>
+      <circle cx="250" cy="75" r="4" fill="oklch(54% 0.17 275)"/><circle cx="310" cy="45" r="4" fill="oklch(54% 0.17 275)"/>
+      <circle cx="370" cy="55" r="4" fill="oklch(86% 0.20 135)"/>
+      <text x="10" y="130" font-size="9" fill="oklch(48% 0.02 250)" text-anchor="middle">5/29</text>
+      <text x="70" y="130" font-size="9" fill="oklch(48% 0.02 250)" text-anchor="middle">5/30</text>
+      <text x="130" y="130" font-size="9" fill="oklch(48% 0.02 250)" text-anchor="middle">5/31</text>
+      <text x="190" y="130" font-size="9" fill="oklch(48% 0.02 250)" text-anchor="middle">6/1</text>
+      <text x="250" y="130" font-size="9" fill="oklch(48% 0.02 250)" text-anchor="middle">6/2</text>
+      <text x="310" y="130" font-size="9" fill="oklch(48% 0.02 250)" text-anchor="middle">6/3</text>
+      <text x="370" y="130" font-size="9" fill="oklch(48% 0.02 250)" text-anchor="middle">6/4</text>
+    </svg>
+  </div>
+  <div class="chart-card">
+    <h3>已读书架</h3>
+    <div class="books-read">
+      <div class="br-item"><div class="br-cover" style="background:oklch(86% 0.20 135 / 0.15)">🐛</div><div class="br-name">The Very Hungry Caterpillar</div></div>
+      <div class="br-item"><div class="br-cover" style="background:oklch(78% 0.16 85 / 0.15)">🐘</div><div class="br-name">Horton Hears a Who!</div></div>
+      <div class="br-item"><div class="br-cover" style="background:oklch(54% 0.17 275 / 0.12)">🐱</div><div class="br-name">The Cat in the Hat</div></div>
+      <div class="br-item"><div class="br-cover" style="background:oklch(72% 0.20 145 / 0.15)">🐶</div><div class="br-name">Go, Dog. Go!</div></div>
+      <div class="br-item"><div class="br-cover" style="background:oklch(62% 0.22 25 / 0.08)">🐻</div><div class="br-name">Brown Bear</div></div>
+    </div>
+  </div>
+  <nav class="bottom-nav">
+    <a class="nav-item active" href="reading-stats.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>统计</a>
+    <a class="nav-item" href="home.html"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>首页</a>
+    <a class="nav-item" href="my-books.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>书架</a>
+    <a class="nav-item" href="member.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>会员</a>
+  </nav>
+  <script>
+    function switchPeriod(btn, p) {
+      document.querySelectorAll('.period-tabs button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+  </script>
+</body>
+</html>

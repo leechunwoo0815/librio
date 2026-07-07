@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>管理端首页 · MegaWords</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.003 250);
+      --surface: oklch(100% 0 0);
+      --fg: oklch(20% 0.015 275);
+      --muted: oklch(48% 0.02 250);
+      --border: oklch(90% 0.008 250);
+      --accent: oklch(54% 0.17 275);
+      --accent-soft: oklch(54% 0.17 275 / 0.1);
+      --accent-hover: oklch(48% 0.17 275);
+      --secondary: oklch(86% 0.20 135);
+      --secondary-soft: oklch(86% 0.20 135 / 0.12);
+      --success: oklch(72% 0.20 145);
+      --success-soft: oklch(72% 0.20 145 / 0.1);
+      --warning: oklch(78% 0.16 85);
+      --warning-soft: oklch(78% 0.16 85 / 0.1);
+      --error: oklch(62% 0.22 25);
+      --radius: 12px; --radius-sm: 8px; --radius-lg: 16px;
+      --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+      --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--fg); font-family: var(--font-body);
+      font-size: 14px; line-height: 1.5; min-height: 100vh; display: flex;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; }
+    .main { margin-left: 240px; flex: 1; min-height: 100vh; }
+    .top-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 28px; background: var(--surface); border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 5;
+    }
+    .top-bar h1 { font-family: var(--font-display); font-size: 18px; font-weight: 600; }
+    .top-bar .right { display: flex; align-items: center; gap: 16px; font-size: 13px; color: var(--muted); }
+    .top-bar .right .name { color: var(--fg); font-weight: 500; }
+    .logout-btn { color: var(--accent); font-size: 13px; }
+    .logout-btn:hover { text-decoration: underline; }
+    .content { padding: 24px 28px; }
+    /* stat cards */
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+    .stat-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 20px;
+    }
+    .stat-card .stat-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    .stat-card .stat-value {
+      font-family: var(--font-display); font-size: 28px; font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+    .stat-card .stat-change {
+      font-size: 12px; margin-top: 4px; display: flex; align-items: center; gap: 4px;
+    }
+    .stat-card .stat-change.up { color: var(--success); }
+    .stat-card .stat-change.down { color: var(--error); }
+    .stat-card:nth-child(1) { border-top: 3px solid var(--accent); }
+    .stat-card:nth-child(2) { border-top: 3px solid var(--success); }
+    .stat-card:nth-child(3) { border-top: 3px solid var(--secondary); }
+    .stat-card:nth-child(4) { border-top: 3px solid var(--warning); }
+    /* charts */
+    .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .chart-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 20px;
+    }
+    .chart-card h3 {
+      font-family: var(--font-display); font-size: 15px; font-weight: 600;
+      margin-bottom: 16px;
+    }
+    /* simple bar chart */
+    .bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 180px; padding-top: 20px; }
+    .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end; }
+    .bar-fill {
+      width: 100%; border-radius: 4px 4px 0 0; min-height: 4px;
+      transition: height 0.6s ease;
+    }
+    .bar-label { font-size: 11px; color: var(--muted); }
+    /* line chart (svg) */
+    .line-chart-wrap { position: relative; height: 180px; }
+    .line-chart-wrap svg { width: 100%; height: 100%; }
+    .line-chart-wrap .chart-labels {
+      display: flex; justify-content: space-between; margin-top: 8px;
+    }
+    .line-chart-wrap .chart-labels span { font-size: 11px; color: var(--muted); }
+    /* responsive */
+    @media (max-width: 1024px) {
+      .main { margin-left: 200px; }
+      .stats-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 768px) { .stats-grid { grid-template-columns: 1fr; }
+      .charts-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+    <link rel="stylesheet" href="admin-sidebar.css">
+  </head>
+<body>
+  <div id="sidebar-root"></div>
+<div class="main">
+    <div class="top-bar">
+      <h1>数据概览</h1>
+      <div class="right">
+        <span class="name">管理员</span>
+        <button class="logout-btn">退出登录</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="stats-grid" data-od-id="stats">
+        <div class="stat-card">
+          <div class="stat-label">总用户数</div>
+          <div class="stat-value">1,284</div>
+          <div class="stat-change up">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 15l-6-6-6 6"/></svg>
+            +12.3% 较上月
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">总付费数</div>
+          <div class="stat-value">856</div>
+          <div class="stat-change up">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 15l-6-6-6 6"/></svg>
+            +8.7% 较上月
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">正式会员</div>
+          <div class="stat-value">423</div>
+          <div class="stat-change up">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 15l-6-6-6 6"/></svg>
+            +15.1% 较上月
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">本月收入</div>
+          <div class="stat-value">¥182,400</div>
+          <div class="stat-change down">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+            -3.2% 较上月
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">今日在线人数</div>
+          <div class="stat-value">87</div>
+          <div class="stat-change up">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 15l-6-6-6 6"/></svg>
+            +12.0% 较昨日
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">今日阅读总时长</div>
+          <div class="stat-value">38h 12m</div>
+          <div class="stat-change up">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 15l-6-6-6 6"/></svg>
+            +8.5% 较昨日
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">今日新增生词</div>
+          <div class="stat-value">1,234</div>
+          <div class="stat-change up">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 15l-6-6-6 6"/></svg>
+            +16.7% 较昨日
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">今日朗读次数</div>
+          <div class="stat-value">562</div>
+          <div class="stat-change up">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 15l-6-6-6 6"/></svg>
+            +5.3% 较昨日
+          </div>
+        </div>
+        <div class="stat-card" style="border-top:3px solid var(--error)">
+          <div class="stat-label">待审核提交</div>
+          <div class="stat-value" style="color:var(--error)">12</div>
+          <div class="stat-change up">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 15l-6-6-6 6"/></svg>
+            需要审核
+          </div>
+        </div>
+        <div class="stat-card" style="border-top:3px solid var(--secondary)">
+          <div class="stat-label">今日答题人数</div>
+          <div class="stat-value">34</div>
+          <div class="stat-change up">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 15l-6-6-6 6"/></svg>
+            +22.0% 较昨日
+          </div>
+        </div>
+        <div class="stat-card" style="border-top:3px solid oklch(75% 0.14 85)">
+          <div class="stat-label">本周晋级人数</div>
+          <div class="stat-value">8</div>
+          <div class="stat-change up">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 15l-6-6-6 6"/></svg>
+            +33.3% 较上周
+          </div>
+        </div>
+        <div class="stat-card" style="border-top:3px solid oklch(58% 0.18 255)">
+          <div class="stat-label">各级别学生分布</div>
+          <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+            <span style="font-size:11px;padding:2px 6px;border-radius:4px;background:var(--accent-soft);color:var(--accent)">L1: 45</span>
+            <span style="font-size:11px;padding:2px 6px;border-radius:4px;background:var(--secondary-soft);color:oklch(45% 0.15 135)">L2: 38</span>
+            <span style="font-size:11px;padding:2px 6px;border-radius:4px;background:var(--success-soft);color:oklch(40% 0.15 145)">L3: 52</span>
+            <span style="font-size:11px;padding:2px 6px;border-radius:4px;background:var(--warning-soft);color:oklch(42% 0.12 85)">L4: 31</span>
+            <span style="font-size:11px;padding:2px 6px;border-radius:4px;background:oklch(88% 0.14 85 / 0.15);color:oklch(45% 0.14 85)">L5: 18</span>
+            <span style="font-size:11px;padding:2px 6px;border-radius:4px;background:oklch(62% 0.22 25 / 0.08);color:oklch(40% 0.15 25)">L6: 5</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="charts-grid" data-od-id="charts">
+        <div class="chart-card">
+          <h3>转化率趋势（近 6 个月）</h3>
+          <div class="line-chart-wrap">
+            <svg viewBox="0 0 400 160" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="oklch(54% 0.17 275 / 0.2)"/>
+                  <stop offset="100%" stop-color="oklch(54% 0.17 275 / 0.02)"/>
+                </linearGradient>
+              </defs>
+              <!-- grid lines -->
+              <line x1="0" y1="40" x2="400" y2="40" stroke="oklch(90% 0.008 250)" stroke-width="0.5"/>
+              <line x1="0" y1="80" x2="400" y2="80" stroke="oklch(90% 0.008 250)" stroke-width="0.5"/>
+              <line x1="0" y1="120" x2="400" y2="120" stroke="oklch(90% 0.008 250)" stroke-width="0.5"/>
+              <!-- area fill -->
+              <path d="M0,120 L67,100 L134,108 L201,85 L268,70 L335,55 L400,45 L400,160 L0,160 Z" fill="url(#lineGrad)"/>
+              <!-- line -->
+              <polyline points="0,120 67,100 134,108 201,85 268,70 335,55 400,45" fill="none" stroke="oklch(54% 0.17 275)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <!-- dots -->
+              <circle cx="0" cy="120" r="3" fill="oklch(54% 0.17 275)"/>
+              <circle cx="67" cy="100" r="3" fill="oklch(54% 0.17 275)"/>
+              <circle cx="134" cy="108" r="3" fill="oklch(54% 0.17 275)"/>
+              <circle cx="201" cy="85" r="3" fill="oklch(54% 0.17 275)"/>
+              <circle cx="268" cy="70" r="3" fill="oklch(54% 0.17 275)"/>
+              <circle cx="335" cy="55" r="3" fill="oklch(54% 0.17 275)"/>
+              <circle cx="400" cy="45" r="3" fill="oklch(54% 0.17 275)"/>
+            </svg>
+            <div class="chart-labels">
+              <span>1月</span><span>2月</span><span>3月</span><span>4月</span><span>5月</span><span>6月</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <h3>阅读量统计（近 30 天）</h3>
+          <div class="bar-chart">
+            <div class="bar-col">
+              <div class="bar-fill" style="height: 45%; background: var(--accent-soft); border-top: 2px solid var(--accent);"></div>
+              <span class="bar-label">W1</span>
+            </div>
+            <div class="bar-col">
+              <div class="bar-fill" style="height: 62%; background: var(--accent-soft); border-top: 2px solid var(--accent);"></div>
+              <span class="bar-label">W2</span>
+            </div>
+            <div class="bar-col">
+              <div class="bar-fill" style="height: 78%; background: var(--accent-soft); border-top: 2px solid var(--accent);"></div>
+              <span class="bar-label">W3</span>
+            </div>
+            <div class="bar-col">
+              <div class="bar-fill" style="height: 90%; background: oklch(54% 0.17 275 / 0.15); border-top: 2px solid var(--accent);"></div>
+              <span class="bar-label">W4</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="admin-sidebar.js"></script>
+</body>
+</html>

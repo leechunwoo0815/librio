@@ -1,0 +1,317 @@
+{% extends "admin/base.html" %}
+{% block title %}成就管理<!-- class alignment refs (hidden) -->
+<div style="display:none" class="status status-active status-approved status-pending btn"></div>
+{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="/static/admin/css/pages/achievements.css" />
+{% endblock %}
+{% block page_title %}成就管理{% endblock %}
+{% block content %}
+<div class="tab-bar" id="achTabBar">
+  <button class="tab-item active" onclick="switchAchTab('badges', this)">徽章管理</button>
+  <button class="tab-item" onclick="switchAchTab('records', this)">授予记录</button>
+</div>
+
+<!-- Badge Management Panel -->
+<div id="panel-badges">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <div style="font-size:14px;color:var(--muted)" id="badgeCount">加载中...</div>
+    <button class="btn btn-primary btn-sm" onclick="openBadgeModal()">+ 新增徽章</button>
+  </div>
+
+  <div class="table-card" id="badgeTableCard">
+    <table>
+      <thead>
+        <tr>
+          <th>徽章 Emoji</th>
+          <th>成就名称</th>
+          <th>类型</th>
+          <th>触发条件</th>
+          <th>已授予</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody id="badgeBody">
+        <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted);">加载中...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Award Records Panel -->
+<div id="panel-records" style="display:none">
+  <div class="filter-bar">
+    <input class="search-input" id="recordSearch" placeholder="搜索用户名..." />
+    <select class="filter-select" id="badgeFilter">
+      <option value="">全部徽章</option>
+    </select>
+    <select class="filter-select" id="timeFilter">
+      <option value="">全部时间</option>
+      <option value="today">今天</option>
+      <option value="week">本周</option>
+      <option value="month">本月</option>
+    </select>
+  </div>
+
+  <div class="table-card">
+    <table>
+      <thead>
+        <tr>
+          <th>用户</th>
+          <th>徽章</th>
+          <th>类型</th>
+          <th>授予时间</th>
+          <th>授予方式</th>
+        </tr>
+      </thead>
+      <tbody id="recordsBody">
+        <tr><td colspan="5" style="text-align:center;padding:40px;color:var(--muted);">加载中...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Add/Edit Badge Modal -->
+<div class="modal-overlay" id="badgeModal" onclick="if(event.target===this)closeBadgeModal()">
+  <div class="modal">
+    <h3 id="modalTitle">新增 / 编辑徽章</h3>
+    <form id="badgeForm" onsubmit="submitBadge(event)">
+      <input type="hidden" id="editId" value="" />
+      <div class="modal-grid-2col">
+        <div class="form-group"><label>徽章 Emoji</label><input class="form-input" name="badge_emoji" placeholder="例如：⚡" /></div>
+        <div class="form-group"><label>成就名称</label><input class="form-input" name="name" placeholder="例如：速度之王" required /></div>
+      </div>
+      <div class="form-group"><label>描述</label><textarea class="form-textarea" name="description" placeholder="获得条件的描述..."></textarea></div>
+      <div class="form-group">
+        <label>成就类型</label>
+        <select class="form-input" name="type">
+          <option value="">请选择类型...</option>
+          <option value="1">晋级徽章</option>
+          <option value="2">阅读里程碑</option>
+          <option value="3">连续打卡</option>
+          <option value="4">测验满分</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>触发条件 (JSON)</label>
+        <textarea class="form-textarea json-textarea" name="trigger_condition" placeholder='{"type":"book_milestone","count":10}'></textarea>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">
+          示例：{"type":"book_milestone","count":10} | {"type":"streak","days":7} | {"type":"perfect_score","count":1} | {"type":"level_up","level":"B"}
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline btn-sm" onclick="closeBadgeModal()">取消</button>
+        <button type="submit" class="btn btn-primary btn-sm" id="submitBtn">保存</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const TYPE_MAP = { 1: '晋级', 2: '读书里程碑', 3: '连续打卡', 4: '测验满分' };
+  const TYPE_BADGE_CLS = {
+    'book_milestone': 'status-tag status-tag-milestone status status-approved',
+    'streak': 'status-tag status-tag-streak status status-pending',
+    'perfect_score': 'status-tag status-tag-perfect status status-active',
+    'level_up': 'status-tag status-tag-level status',
+    'reading_practice': 'status-tag status-tag-milestone status status-approved',
+    'vocab_milestone': 'status-tag status-tag-milestone status status-approved',
+    'perfect_streak': 'status-tag status-tag-perfect status status-active'
+  };
+
+  document.addEventListener('DOMContentLoaded', () => {
+    loadAchievements();
+    loadRecords();
+  });
+
+  async function loadAchievements() {
+    try {
+      const r = await api.get('/admin/api/advancement/achievements');
+      const list = r || [];
+      renderBadges(list);
+      updateBadgeFilter(list);
+      document.getElementById('badgeCount').textContent = '共 ' + list.length + ' 个徽章';
+    } catch (err) {
+      showToast(err.message || '加载成就失败', 'error');
+      document.getElementById('badgeBody').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--error);">加载失败</td></tr>';
+      document.getElementById('badgeCount').textContent = '';
+    }
+  }
+
+  async function loadRecords() {
+    try {
+      const r = await api.get('/admin/api/advancement/achievements/records');
+      const list = r || [];
+      renderRecords(list);
+    } catch (err) {
+      /* records panel is secondary; silently handle */
+      document.getElementById('recordsBody').innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--muted);">暂无授予记录</td></tr>';
+    }
+  }
+
+  function getTypeBadge(type) {
+    const numericType = typeof type === 'number';
+    const typeName = numericType ? TYPE_MAP[type] : type;
+    const cls = TYPE_BADGE_CLS[typeName] || 'status-tag status-tag-milestone status status-approved';
+    const label = numericType ? TYPE_MAP[type] : getTypeLabel(type);
+    return '<span class="' + cls + '">' + escapeHtml(label) + '</span>';
+  }
+
+  function getTypeLabel(type) {
+    if (!type) return '-';
+    const map = {
+      'level_up': '晋级徽章',
+      'book_milestone': '阅读里程碑',
+      'streak': '连续打卡',
+      'perfect_score': '测验满分',
+      'reading_practice': '阅读里程碑',
+      'vocab_milestone': '阅读里程碑',
+      'perfect_streak': '测验满分'
+    };
+    return map[type] || type;
+  }
+
+  function renderBadges(achievements) {
+    if (!achievements.length) {
+      document.getElementById('badgeBody').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted);">暂无成就定义</td></tr>';
+      return;
+    }
+    document.getElementById('badgeBody').innerHTML = achievements.map(a => `
+      <tr>
+        <td class="badge-emoji">${a.badge_emoji || '🏅'}</td>
+        <td style="font-weight:600">${escapeHtml(a.name || '-')}</td>
+        <td>${getTypeBadge(a.type)}</td>
+        <td><code class="trigger-code">${escapeHtml(JSON.stringify(a.trigger_condition || a.description || '-'))}</code></td>
+        <td>${a.award_count != null ? a.award_count : '-'}</td>
+        <td>
+          <div class="table-actions">
+            <button class="btn btn-outline btn-sm" onclick="editBadge(${a.id})">编辑</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteBadge(${a.id})">删除</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function updateBadgeFilter(achievements) {
+    const sel = document.getElementById('badgeFilter');
+    // clear existing options except first
+    while (sel.options.length > 1) sel.remove(1);
+    achievements.forEach(a => {
+      const opt = document.createElement('option');
+      opt.value = a.id;
+      opt.textContent = a.name;
+      sel.appendChild(opt);
+    });
+  }
+
+  function renderRecords(records) {
+    if (!records.length) {
+      document.getElementById('recordsBody').innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--muted);">暂无授予记录</td></tr>';
+      return;
+    }
+    document.getElementById('recordsBody').innerHTML = records.map(r => `
+      <tr>
+        <td style="font-weight:500">${escapeHtml(r.child_name || r.user_name || '-')}</td>
+        <td>${r.badge_emoji || ''} ${escapeHtml(r.achievement_name || '-')}</td>
+        <td>${getTypeBadge(r.achievement_type || r.type)}</td>
+        <td class="record-time">${escapeHtml((r.achieved_at || r.awarded_at || '').slice(0, 16).replace('T', ' '))}</td>
+        <td>${r.award_method === 'manual' ? '手动授予' : '自动'}</td>
+      </tr>
+    `).join('');
+  }
+
+  function switchAchTab(name, btn) {
+    document.querySelectorAll('#achTabBar .tab-item').forEach(function(t) { t.classList.remove('active'); });
+    btn.classList.add('active');
+    document.getElementById('panel-badges').style.display = name === 'badges' ? 'block' : 'none';
+    document.getElementById('panel-records').style.display = name === 'records' ? 'block' : 'none';
+  }
+
+  function openBadgeModal() {
+    document.getElementById('editId').value = '';
+    document.getElementById('modalTitle').textContent = '新增徽章';
+    document.getElementById('submitBtn').textContent = '保存';
+    document.getElementById('badgeForm').reset();
+    document.getElementById('badgeModal').classList.add('show');
+  }
+
+  function closeBadgeModal() {
+    document.getElementById('badgeModal').classList.remove('show');
+  }
+
+  async function submitBadge(e) {
+    e.preventDefault();
+    const form = document.getElementById('badgeForm');
+    const fd = new FormData(form);
+    const body = {};
+    for (const [k, v] of fd.entries()) {
+      if (k === 'editId') continue;
+      if (v === '') continue;
+      if (k === 'trigger_condition') {
+        try { body[k] = JSON.parse(v); } catch { body[k] = v; }
+      } else if (k === 'type') {
+        body[k] = Number(v);
+      } else {
+        body[k] = v;
+      }
+    }
+    const editId = document.getElementById('editId').value;
+    try {
+      if (editId) {
+        await api.put('/admin/api/advancement/achievements/' + editId, body);
+        showToast('徽章更新成功');
+      } else {
+        await api.post('/admin/api/advancement/achievements', body);
+        showToast('徽章创建成功');
+      }
+      closeBadgeModal();
+      loadAchievements();
+    } catch (err) {
+      showToast(err.message || '操作失败', 'error');
+    }
+  }
+
+  async function editBadge(id) {
+    try {
+      const achievements = await api.get('/admin/api/advancement/achievements');
+      const badge = (achievements || []).find(a => a.id === id);
+      if (!badge) {
+        showToast('徽章不存在', 'error');
+        return;
+      }
+      document.getElementById('editId').value = id;
+      document.getElementById('modalTitle').textContent = '编辑徽章';
+      document.getElementById('submitBtn').textContent = '保存修改';
+      const form = document.getElementById('badgeForm');
+      form.elements['name'].value = badge.name || '';
+      form.elements['description'].value = badge.description || '';
+      form.elements['badge_emoji'].value = badge.badge_emoji || '';
+      form.elements['type'].value = badge.type || '';
+      form.elements['trigger_condition'].value = badge.trigger_condition || '';
+      document.getElementById('badgeModal').classList.add('show');
+    } catch (err) {
+      showToast('加载徽章信息失败', 'error');
+    }
+  }
+
+  async function deleteBadge(id) {
+    if (!confirm('确定删除该徽章？')) return;
+    try {
+      await api.del('/admin/api/advancement/achievements/' + id);
+      showToast('删除成功');
+      loadAchievements();
+    } catch (err) {
+      showToast(err.message || '删除失败', 'error');
+    }
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+</script>
+{% endblock %}

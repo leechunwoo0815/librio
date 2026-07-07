@@ -1,0 +1,209 @@
+<!-- frontend/pages/reading-pkg/book-detail/book-detail.wxml -->
+<view class="page-bg">
+  <view style="display:none" class="active in-stock state-toggle"></view>
+
+  <!-- Loading state -->
+  <view class="loading" wx:if="{{loading}}">
+    <text class="text-secondary">加载中...</text>
+  </view>
+
+  <block wx:if="{{!loading}}">
+
+    <view class="nav-bar">
+      <navigator class="back" open-type="navigateBack" delta="1">
+        <image src="/images/icons/back.png" mode="aspectFit" style="width:40rpx;height:40rpx;" />
+      </navigator>
+      <text class="title">图书详情</text>
+    </view>
+
+    <view class="book-hero" wx:if="{{book}}">
+      <view class="hero-cover book-cover-lg">
+        <view class="book-cover-bar"></view>
+        <text class="book-cover-letter">{{book.title[0]}}</text>
+        <text class="audio-badge-lg" wx:if="{{book.has_audio}}">有声书</text>
+      </view>
+      <view class="hero-info book-hero-info">
+        <view class="hero-title book-hero-title">{{book.title}}</view>
+        <view class="hero-author book-hero-author">{{book.author}}</view>
+        <view class="book-hero-publisher" wx:if="{{book.publisher || book.publish_year}}">{{book.publisher}}<text wx:if="{{book.publisher && book.publish_year}}"> · </text>{{book.publish_year}}</view>
+        <view class="hero-tags book-tags">
+          <text class="tag tag-ar" wx:if="{{book.ar_value}}">AR {{book.ar_value}}</text>
+          <text class="tag tag-words" wx:if="{{book.word_count}}">{{book.word_count}} 词</text>
+          <text class="tag tag-time" wx:if="{{book.audio_duration}}">预计{{book.audio_duration}}</text>
+          <text class="tag tag-age" wx:if="{{book.age_min || book.age_max}}">{{book.age_min}}–{{book.age_max}} 岁</text>
+          <text class="tag tag-series" wx:if="{{book.series_name}}">{{book.series_name}}</text>
+        </view>
+        <text class="quiz-tag" wx:if="{{book.quiz_count}}">📝 本图书有 {{book.quiz_count}} 道测验题</text>
+      </view>
+    </view>
+
+    <!-- Reading progress -->
+    <view class="progress-section reading-progress" wx:if="{{progress}}">
+      <view class="rp-header">
+        <text class="rp-title">阅读进度</text>
+        <text class="rp-pct">{{progress.percent}}%</text>
+      </view>
+      <view class="rp-bar">
+        <view class="rp-fill" style="width:{{progress.percent}}%"></view>
+      </view>
+    </view>
+
+    <!-- Audio info -->
+    <view class="audio-info" wx:if="{{book && book.has_audio}}">
+      <view class="ai-icon">🎧</view>
+      <view class="ai-text">
+        <view class="ai-title">有声朗读</view>
+        <view class="ai-meta">{{book.audio_narrator || '专业朗读'}}<text wx:if="{{book.audio_duration}}"> · {{book.audio_duration}}</text></view>
+      </view>
+      <navigator class="ai-btn" url="/pages/reading-pkg/reader/reader?bookId={{book.id}}">播放</navigator>
+    </view>
+
+    <!-- Inventory status bar -->
+    <view class="inv-bar {{book.available_copies > 0 ? 'in-stock' : 'out-of-stock'}}" wx:if="{{book}}">
+      <text>{{book.available_copies > 0 ? '✅' : '⚠️'}}</text>
+      <text>{{book.available_copies > 0 ? '可借' : '无库存'}}</text>
+      <text class="inv-detail">{{book.available_copies || 0}}/{{book.total_copies || 0}}本</text>
+    </view>
+
+    <!-- Inventory cards -->
+    <view class="inventory" wx:if="{{book}}">
+      <view class="inv-card inv-total">
+        <view class="inv-num">{{book.total_copies || 0}}</view>
+        <view class="inv-label">本馆馆藏</view>
+      </view>
+      <view class="inv-card inv-avail">
+        <view class="inv-num">{{book.available_copies || 0}}</view>
+        <view class="inv-label">可借数量</view>
+      </view>
+    </view>
+
+    <!-- Description section -->
+    <view class="section-card" wx:if="{{book && book.description}}">
+      <view class="section-card-header">
+        <image src="/images/icons/document.png" mode="aspectFit" class="section-icon" />
+        <text class="icon">📖</text>
+        <text class="section-card-title">内容简介</text>
+      </view>
+      <view class="desc-text {{descExpanded ? 'expanded' : ''}}">
+        <text>{{book.description}}</text>
+      </view>
+      <view class="expand-btn" bindtap="toggleDesc" wx:if="{{book.description.length > 120}}">
+        <text>{{descExpanded ? '收起' : '展开全部'}}</text>
+      </view>
+    </view>
+
+    <!-- Book info grid -->
+    <view class="section-card" wx:if="{{book}}">
+      <view class="section-card-header">
+        <text class="icon">👶</text>
+        <text class="section-card-title">适合年龄</text>
+      </view>
+      <view class="info-grid">
+        <view class="info-item">
+          <text class="info-label">推荐年龄</text>
+          <text class="info-value" wx:if="{{book.age_min || book.age_max}}">{{book.age_min}}–{{book.age_max}} 岁</text>
+          <text class="info-value" wx:else>--</text>
+        </view>
+        <view class="info-item">
+          <text class="info-label">AR 等级</text>
+          <text class="info-value" wx:if="{{book.ar_value}}">AR {{book.ar_value}}</text>
+          <text class="info-value" wx:else>--</text>
+        </view>
+        <view class="info-item">
+          <text class="info-label">总词数</text>
+          <text class="info-value" wx:if="{{book.word_count}}">{{book.word_count}} 词</text>
+          <text class="info-value" wx:else>--</text>
+        </view>
+        <view class="info-item">
+          <text class="info-label">预计阅读时间</text>
+          <text class="info-value" wx:if="{{book.audio_duration}}">约{{book.audio_duration}}</text>
+          <text class="info-value" wx:else>--</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- Series info -->
+    <view class="section-card" wx:if="{{book}}">
+      <view class="section-card-header">
+        <text class="icon">📚</text>
+        <text class="section-card-title">系列信息</text>
+      </view>
+      <view class="info-grid">
+        <view class="info-item">
+          <text class="info-label">所属系列</text>
+          <text class="info-value" wx:if="{{book.series_name}}">{{book.series_name}}</text>
+          <text class="info-value" wx:else>--</text>
+        </view>
+        <view class="info-item">
+          <text class="info-label">出版社</text>
+          <text class="info-value" wx:if="{{book.publisher}}">{{book.publisher}}</text>
+          <text class="info-value" wx:else>--</text>
+        </view>
+        <view class="info-item">
+          <text class="info-label">出版年份</text>
+          <text class="info-value" wx:if="{{book.publish_year}}">{{book.publish_year}}</text>
+          <text class="info-value" wx:else>--</text>
+        </view>
+        <view class="info-item">
+          <text class="info-label">有声书</text>
+          <text class="info-value" wx:if="{{book.has_audio}}">✅ 可用</text>
+          <text class="info-value" wx:else>❌ 不可用</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- Related books -->
+    <view class="section-card" wx:if="{{relatedBooks && relatedBooks.length > 0}}">
+      <view class="section-card-header">
+        <text class="icon">💡</text>
+        <text class="section-card-title">相关推荐</text>
+      </view>
+      <scroll-view class="related-scroll" scroll-x="true">
+        <navigator class="related-card" wx:for="{{relatedBooks}}" wx:key="id" url="/pages/reading-pkg/book-detail/book-detail?bookId={{item.id}}">
+          <view class="rc-cover">
+            <text>{{item.title[0]}}</text>
+          </view>
+          <view class="rc-body">
+            <text class="rc-title">{{item.title}}</text>
+            <text class="rc-ar" wx:if="{{item.ar_value}}">AR {{item.ar_value}}</text>
+          </view>
+        </navigator>
+      </scroll-view>
+    </view>
+
+    <!-- Table of contents -->
+    <view class="section-card" wx:if="{{book && book.toc && book.toc.length > 0}}">
+      <view class="section-card-header">
+        <image src="/images/icons/list.png" mode="aspectFit" class="section-icon" />
+        <text class="section-card-title">目录</text>
+      </view>
+      <navigator class="toc-item" wx:for="{{book.toc}}" wx:key="index" url="/pages/reading-pkg/reader/reader?bookId={{book.id}}&chapter={{index + 1}}">
+        <view class="toc-item-left">
+          <text class="toc-num">{{item.num}}</text>
+          <text>{{item.title}}</text>
+        </view>
+        <text class="toc-arrow">›</text>
+      </navigator>
+    </view>
+
+    <!-- Bottom action bar -->
+    <view class="action-bar">
+      <view class="action-btn action-fav btn-outline {{onFavorite ? 'fav-active' : ''}}" bindtap="addFavorite" loading="{{favLoading}}">
+        {{onFavorite ? '已收藏' : '收藏'}}
+      </view>
+      <navigator class="action-btn action-primary btn-primary" wx:if="{{onShelf}}" url="/pages/reading-pkg/reader/reader?bookId={{book.id}}">
+        继续阅读<text wx:if="{{progress && progress.percent}}"> · {{progress.percent}}%</text>
+      </navigator>
+      <view class="action-btn action-primary btn-primary" wx:else bindtap="addToShelf" loading="{{shelfLoading}}">
+        加入书架
+      </view>
+      <view class="action-btn action-secondary btn-secondary" wx:if="{{book && book.available_copies <= 0}}" bindtap="reserveBook">
+        预约借书
+      </view>
+    </view>
+
+    <!-- Bottom spacer -->
+    <view style="height:160rpx;"></view>
+
+  </block>
+</view>

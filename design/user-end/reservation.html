@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>预约管理 · MegaWords</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.003 250);
+      --surface: oklch(100% 0 0);
+      --fg: oklch(20% 0.015 275);
+      --muted: oklch(48% 0.02 250);
+      --border: oklch(90% 0.008 250);
+      --accent: oklch(54% 0.17 275);
+      --accent-soft: oklch(54% 0.17 275 / 0.1);
+      --accent-hover: oklch(48% 0.17 275);
+      --secondary: oklch(86% 0.20 135);
+      --success: oklch(72% 0.20 145);
+      --success-soft: oklch(72% 0.20 145 / 0.1);
+      --warning: oklch(78% 0.16 85);
+      --warning-soft: oklch(78% 0.16 85 / 0.12);
+      --error: oklch(62% 0.22 25);
+      --error-soft: oklch(62% 0.22 25 / 0.08);
+      --radius: 16px; --radius-sm: 10px; --radius-lg: 20px;
+      --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+      --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--fg); font-family: var(--font-body);
+      font-size: 15px; line-height: 1.5; max-width: 430px; margin: 0 auto;
+      min-height: 100vh; padding-bottom: 32px; -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; }
+
+    /* nav bar */
+    .nav-bar {
+      display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 10;
+    }
+    .nav-bar .back { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 10px; }
+    .nav-bar .back svg { width: 20px; height: 20px; }
+    .nav-bar .title { font-family: var(--font-display); font-size: 17px; font-weight: 600; }
+
+    /* section */
+    .section-label {
+      padding: 14px 16px 8px; font-size: 13px; font-weight: 600;
+      color: var(--muted); display: flex; align-items: center; gap: 6px;
+    }
+    .section-count {
+      background: var(--accent-soft); color: var(--accent);
+      padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 600;
+    }
+
+    /* reservation cards */
+    .reservation-list { padding: 0 16px; }
+    .reservation-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px;
+      margin-bottom: 10px; display: flex; gap: 12px;
+      transition: box-shadow 0.15s ease;
+    }
+    .reservation-card:hover { box-shadow: 0 2px 12px oklch(20% 0.015 275 / 0.05); }
+
+    .reservation-cover {
+      width: 64px; height: 84px; border-radius: 8px; flex-shrink: 0;
+      display: grid; place-items: center; font-size: 28px;
+      border: 1px solid var(--border); position: relative; overflow: hidden;
+    }
+    .reservation-cover::before {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(135deg, oklch(95% 0.01 250), oklch(90% 0.02 250));
+    }
+    .reservation-cover span { position: relative; z-index: 1; }
+
+    .reservation-info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .reservation-title {
+      font-family: var(--font-display); font-size: 15px; font-weight: 600;
+      margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .reservation-author { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+    .reservation-time { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+    .reservation-time span { display: inline-flex; align-items: center; gap: 3px; }
+
+    .countdown-row {
+      display: flex; align-items: center; justify-content: space-between; margin-top: auto;
+    }
+    .countdown {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600;
+    }
+    .countdown.urgent {
+      background: var(--error-soft); color: var(--error);
+    }
+    .countdown.normal {
+      background: var(--success-soft); color: var(--success);
+    }
+    .countdown .clock { font-size: 14px; }
+
+    .cancel-btn {
+      padding: 6px 14px; border-radius: 999px; font-size: 12px; font-weight: 600;
+      border: 1px solid var(--border); color: var(--muted); background: var(--surface);
+      transition: all 0.15s ease;
+    }
+    .cancel-btn:hover { border-color: var(--error); color: var(--error); background: var(--error-soft); }
+
+    /* expired card */
+    .reservation-card.expired {
+      opacity: 0.55;
+    }
+    .expired-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 4px 10px; border-radius: 999px;
+      background: oklch(48% 0.02 250 / 0.1); color: var(--muted);
+      font-size: 12px; font-weight: 600;
+    }
+
+    /* queue position */
+    .queue-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 4px 10px; border-radius: 999px;
+      background: var(--warning-soft); color: oklch(55% 0.14 85);
+      font-size: 12px; font-weight: 600;
+    }
+
+    /* empty state */
+    .empty-state {
+      text-align: center; padding: 48px 16px; color: var(--muted);
+    }
+    .empty-state .emoji { font-size: 40px; margin-bottom: 12px; }
+    .empty-state p { font-size: 14px; }
+
+    /* tip */
+    .tip-banner {
+      margin: 8px 16px 16px; padding: 12px 14px; border-radius: var(--radius-sm);
+      background: var(--accent-soft); font-size: 13px; color: var(--accent);
+      display: flex; align-items: flex-start; gap: 8px; line-height: 1.5;
+    }
+    .tip-banner .icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+    @media (min-width: 768px) {
+      body { max-width: 430px; border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
+    }
+    @media (min-width: 1024px) {
+      body { max-width: 430px; margin: 0 auto; box-shadow: 0 0 40px oklch(20% 0.015 275 / 0.06); }
+    }
+  </style>
+</head>
+<body>
+  <div class="nav-bar">
+    <a class="back" href="books.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg></a>
+    <span class="title">预约管理</span>
+  </div>
+
+  <div class="tip-banner">
+    <span class="icon">💡</span>
+    <span>预约图书到馆后将保留 48 小时，超时未取将自动取消预约。请留意倒计时提醒。</span>
+  </div>
+
+  <div class="section-label">
+    进行中的预约 <span class="section-count">3</span>
+  </div>
+
+  <div class="reservation-list">
+    <!-- Active reservation with urgent countdown -->
+    <div class="reservation-card">
+      <div class="reservation-cover"><span>🦕</span></div>
+      <div class="reservation-info">
+        <div class="reservation-title">The Very Hungry Caterpillar</div>
+        <div class="reservation-author">Eric Carle</div>
+        <div class="reservation-time">
+          <span>📅 预约时间：2026-06-13 14:30</span>
+        </div>
+        <div class="countdown-row">
+          <div class="countdown urgent">
+            <span class="clock">⏰</span>
+            剩余 0天 5小时
+          </div>
+          <button class="cancel-btn" onclick="cancelReservation(this)">取消预约</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active reservation with normal countdown -->
+    <div class="reservation-card">
+      <div class="reservation-cover"><span>🐶</span></div>
+      <div class="reservation-info">
+        <div class="reservation-title">Clifford the Big Red Dog</div>
+        <div class="reservation-author">Norman Bridwell</div>
+        <div class="reservation-time">
+          <span>📅 预约时间：2026-06-14 09:15</span>
+        </div>
+        <div class="countdown-row">
+          <div class="countdown normal">
+            <span class="clock">⏰</span>
+            剩余 1天 18小时
+          </div>
+          <button class="cancel-btn" onclick="cancelReservation(this)">取消预约</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reservation in queue (book not yet available) -->
+    <div class="reservation-card">
+      <div class="reservation-cover"><span>🐻</span></div>
+      <div class="reservation-info">
+        <div class="reservation-title">Paddington Bear</div>
+        <div class="reservation-author">Michael Bond</div>
+        <div class="reservation-time">
+          <span>📅 预约时间：2026-06-12 11:00</span>
+        </div>
+        <div class="countdown-row">
+          <div class="queue-badge">⏳ 排队中 第2位</div>
+          <button class="cancel-btn" onclick="cancelReservation(this)">取消预约</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label" style="margin-top: 8px;">
+    已过期 <span class="section-count" style="background: oklch(48% 0.02 250 / 0.1); color: var(--muted);">2</span>
+  </div>
+
+  <div class="reservation-list">
+    <div class="reservation-card expired">
+      <div class="reservation-cover"><span>🎈</span></div>
+      <div class="reservation-info">
+        <div class="reservation-title">Curious George</div>
+        <div class="reservation-author">H.A. Rey</div>
+        <div class="reservation-time">
+          <span>📅 预约时间：2026-06-08 16:45</span>
+        </div>
+        <div class="countdown-row">
+          <div class="expired-badge">已过期 ❌</div>
+          <span style="font-size: 11px; color: var(--muted);">超时未取</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="reservation-card expired">
+      <div class="reservation-cover"><span>🐸</span></div>
+      <div class="reservation-info">
+        <div class="reservation-title">Frog and Toad Are Friends</div>
+        <div class="reservation-author">Arnold Lobel</div>
+        <div class="reservation-time">
+          <span>📅 预约时间：2026-06-02 10:20</span>
+        </div>
+        <div class="countdown-row">
+          <div class="expired-badge">已过期 ❌</div>
+          <span style="font-size: 11px; color: var(--muted);">已取消</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function cancelReservation(btn) {
+      if (confirm('确定要取消该预约吗？')) {
+        const card = btn.closest('.reservation-card');
+        card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+        card.style.opacity = '0';
+        card.style.transform = 'translateX(100%)';
+        setTimeout(() => card.remove(), 300);
+      }
+    }
+  </script>
+</body>
+</html>

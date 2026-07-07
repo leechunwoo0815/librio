@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>学习报告 · MegaWords</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.003 250); --surface: oklch(100% 0 0);
+      --fg: oklch(20% 0.015 275); --muted: oklch(48% 0.02 250);
+      --border: oklch(90% 0.008 250); --accent: oklch(54% 0.17 275);
+      --accent-soft: oklch(54% 0.17 275 / 0.1); --accent-hover: oklch(48% 0.17 275);
+      --secondary: oklch(86% 0.20 135); --secondary-soft: oklch(86% 0.20 135 / 0.12);
+      --success: oklch(72% 0.20 145); --warning: oklch(78% 0.16 85);
+      --error: oklch(62% 0.22 25); --radius: 16px; --radius-sm: 10px; --radius-lg: 20px;
+      --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+      --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--fg); font-family: var(--font-body);
+      font-size: 15px; line-height: 1.5; max-width: 430px; margin: 0 auto;
+      min-height: 100vh; padding-bottom: 80px; -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; }
+    .nav-bar {
+      display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 10;
+    }
+    .nav-bar .back { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 10px; }
+    .nav-bar .back svg { width: 20px; height: 20px; }
+    .nav-bar .title { font-family: var(--font-display); font-size: 17px; font-weight: 600; }
+    .nav-bar .share-btn { color: var(--accent); font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 4px; }
+    .type-tabs { display: flex; gap: 0; margin: 12px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+    .type-tabs button { flex: 1; padding: 9px; font-size: 13px; font-weight: 500; color: var(--muted); }
+    .type-tabs button.active { background: var(--accent); color: white; }
+    .report-card {
+      margin: 0 16px 16px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px;
+    }
+    .report-card .rc-period { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+    .report-card .rc-title { font-family: var(--font-display); font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+    .highlight-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
+    .hl-item { background: var(--bg); border-radius: var(--radius-sm); padding: 12px; text-align: center; }
+    .hl-item .hl-val { font-family: var(--font-display); font-size: 20px; font-weight: 700; }
+    .hl-item .hl-label { font-size: 11px; color: var(--muted); }
+    .section-title { font-family: var(--font-display); font-size: 14px; font-weight: 600; margin: 16px 0 10px; }
+    .ar-trend { display: flex; align-items: flex-end; gap: 8px; height: 100px; padding-top: 8px; }
+    .ar-col { flex: 1; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
+    .ar-bar { width: 100%; border-radius: 4px 4px 0 0; min-height: 4px; }
+    .ar-label { font-size: 10px; color: var(--muted); }
+    .ar-value { font-size: 11px; font-weight: 600; }
+    .suggestion {
+      background: var(--accent-soft); border-radius: var(--radius-sm); padding: 12px 14px;
+      font-size: 13px; line-height: 1.6; margin-top: 10px;
+    }
+    .suggestion .sug-icon { font-size: 18px; margin-right: 6px; }
+    .share-bar { display: flex; gap: 8px; margin: 16px; }
+    .share-bar button {
+      flex: 1; padding: 12px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 500;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .share-bar .btn-share { background: var(--accent); color: white; }
+    .share-bar .btn-save { background: var(--surface); border: 1px solid var(--border); color: var(--fg); }
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 430px; display: flex; justify-content: space-around;
+      padding: 8px 8px 20px; background: var(--surface); border-top: 1px solid var(--border);
+      z-index: 10;
+    }
+    .nav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 10px; color: var(--muted); padding: 4px 12px; }
+    .nav-item.active { color: var(--accent); }
+    .nav-item svg { width: 22px; height: 22px; }
+  </style>
+</head>
+<body>
+  <div class="nav-bar">
+    <a class="back" href="home.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a>
+    <span class="title">学习报告</span>
+    <button class="share-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98"/></svg>分享</button>
+  </div>
+  <div class="type-tabs">
+    <button class="active" onclick="switchType(this,'weekly')">周报</button>
+    <button onclick="switchType(this,'monthly')">月报</button>
+  </div>
+  <div class="report-card">
+    <div class="rc-period">2026年6月 · 第1周</div>
+    <div class="rc-title">本周学习报告</div>
+    <div class="highlight-grid">
+      <div class="hl-item"><div class="hl-val" style="color:var(--accent)">120</div><div class="hl-label">阅读时长 (分钟)</div></div>
+      <div class="hl-item"><div class="hl-val" style="color:var(--success)">8</div><div class="hl-label">阅读本数</div></div>
+      <div class="hl-item"><div class="hl-val" style="color:var(--warning)">23</div><div class="hl-label">新增生词</div></div>
+      <div class="hl-item"><div class="hl-val" style="color:var(--secondary)">5</div><div class="hl-label">打卡天数</div></div>
+    </div>
+    <div class="section-title">AR 变化趋势</div>
+    <div class="ar-trend">
+      <div class="ar-col"><div class="ar-value">3.2</div><div class="ar-bar" style="height:40%;background:var(--accent)"></div><div class="ar-label">5月</div></div>
+      <div class="ar-col"><div class="ar-value">3.5</div><div class="ar-bar" style="height:50%;background:var(--accent)"></div><div class="ar-label">6月W1</div></div>
+      <div class="ar-col"><div class="ar-value">3.8</div><div class="ar-bar" style="height:60%;background:var(--accent)"></div><div class="ar-label">6月W2</div></div>
+      <div class="ar-col"><div class="ar-value">4.1</div><div class="ar-bar" style="height:75%;background:var(--accent)"></div><div class="ar-label">6月W3</div></div>
+      <div class="ar-col"><div class="ar-value" style="color:var(--secondary)">4.4</div><div class="ar-bar" style="height:85%;background:var(--secondary)"></div><div class="ar-label">本周</div></div>
+    </div>
+    <div class="section-title">阅读建议</div>
+    <div class="suggestion"><span class="sug-icon">💡</span>本周 AR 值稳步提升至 4.4，阅读速度也有明显进步。建议继续保持每天 20 分钟阅读习惯，可以开始尝试 AR 4.5-5.0 级别的桥梁书，挑战稍长篇幅的章节书。</div>
+  </div>
+  <div class="share-bar">
+    <button class="btn-share" onclick="alert('分享报告')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98"/></svg>分享报告</button>
+    <button class="btn-save" onclick="alert('已保存')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>保存</button>
+  </div>
+  <script>
+    function switchType(btn, t) {
+      document.querySelectorAll('.type-tabs button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+  </script>
+</body>
+</html>

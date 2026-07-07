@@ -1,0 +1,90 @@
+# backend/middleware/admin_auth.py
+"""管理员认证中间件"""
+
+import logging
+import uuid
+from datetime import datetime, timedelta, timezone
+
+from fastapi import Depends
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from jose import JWTError, jwt
+from sqlalchemy.orm import Session
+
+from backend.common.exceptions import ForbiddenError, UnauthorizedError
+from backend.config import get_settings
+from backend.database import get_db
+from backend.domain.admin.models import Admin
+from backend.common.types import AdminRole
+
+logger = logging.getLogger(__name__)
+settings = get_settings()
+security = HTTPBearer()
+
+# 统一使用 AdminRole 枚举值
+ROLE_ADMIN = AdminRole.ADMIN
+ROLE_STAFF = AdminRole.STAFF
+ROLE_TEACHER = AdminRole.TEACHER
+
+
+def create_admin_token(admin_id: int, role: int) -> str:
+    from backend.common.config_service import ConfigService
+    from backend.database import get_session
+
+    db = get_session()()
+    try:
+        expire_hours = ConfigService.get_int(db, "admin_token_expire_hours", settings.ADMIN_TOKEN_EXPIRE_HOURS)
+    finally:
+        db.close()
+
+    expire = datetime.now(timezone.utc) + timedelta(hours=expire_hours)
+    payload = {
+        "sub": str(admin_id),
+        "role": role,
+        "exp": expire,
+        "type": "admin",
+        "jti": str(uuid.uuid4()),
+    }
+    return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+
+
+async def get_current_admin(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db),
+) -> Admin:
+    token = credentials.credentials
+    try:
+        payload = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+        )
+    except JWTError:
+        raise UnauthorizedError("Token无效或已过期")
+
+    if payload.get("type") != "admin":
+        raise ForbiddenError("需要管理员权限")
+
+    admin_id = payload.get("sub")
+    if not admin_id:
+        raise UnauthorizedError("Token中缺少管理员信息")
+
+    admin = (
+        db.query(Admin)
+        .filter(
+            Admin.id == int(admin_id),
+            Admin.is_deleted == 0,
+            Admin.status == Admin.STATUS_ACTIVE,
+        )
+        .first()
+    )
+    if not admin:
+        raise UnauthorizedError("管理员不存在或已禁用")
+
+    return admin
+
+
+def require_role(*allowed_roles):
+    async def role_checker(admin: Admin = Depends(get_current_admin)) -> Admin:
+        if admin.role not in allowed_roles:
+            raise ForbiddenError("权限不足")
+        return admin
+
+    return role_checker

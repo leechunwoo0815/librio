@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>操作日志 — MegaWords 管理后台</title>
+<style>
+:root {
+  --bg: oklch(98% 0.003 250);
+  --surface: oklch(100% 0 0);
+  --fg: oklch(20% 0.015 275);
+  --muted: oklch(48% 0.02 250);
+  --border: oklch(90% 0.008 250);
+  --accent: oklch(54% 0.17 275);
+  --accent-soft: oklch(54% 0.17 275 / 0.1);
+  --accent-hover: oklch(48% 0.17 275);
+  --secondary: oklch(86% 0.20 135);
+  --secondary-soft: oklch(86% 0.20 135 / 0.12);
+  --success: oklch(72% 0.20 145);
+  --success-soft: oklch(72% 0.20 145 / 0.1);
+  --warning: oklch(78% 0.16 85);
+  --warning-soft: oklch(78% 0.16 85 / 0.1);
+  --error: oklch(62% 0.22 25);
+  --radius: 12px; --radius-sm: 8px; --radius-lg: 16px;
+  --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+}
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: var(--font-body); background: var(--bg); color: var(--fg); display: flex; min-height: 100vh; }
+a { text-decoration: none; color: inherit; }
+
+/* Sidebar */
+.logo-icon { font-size: 28px; }
+.logo-text { font-size: 17px; font-weight: 700; color: var(--accent); font-family: var(--font-display); }
+.logo-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+/* Main */
+.main { margin-left: 240px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+.top-bar { display: flex; align-items: center; justify-content: space-between; padding: 16px 32px; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50; }
+.top-bar h1 { font-size: 18px; font-weight: 700; font-family: var(--font-display); }
+.top-bar .right { display: flex; align-items: center; gap: 16px; font-size: 13px; color: var(--muted); }
+.logout-btn { color: var(--error); font-size: 13px; }
+.content { padding: 24px 32px; flex: 1; }
+
+/* Filter bar */
+.filter-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+.filter-bar select, .filter-bar input[type="text"], .filter-bar input[type="date"] {
+  height: 36px; padding: 0 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; background: var(--surface); color: var(--fg); font-family: var(--font-body); outline: none;
+}
+.filter-bar select:focus, .filter-bar input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.filter-bar select { width: 140px; }
+.filter-bar input[type="text"] { width: 160px; }
+.filter-bar input[type="date"] { width: 150px; }
+.date-sep { font-size: 13px; color: var(--muted); }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 0 16px; height: 36px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; border: none; cursor: pointer; font-family: var(--font-body); transition: all 0.15s; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-hover); }
+
+/* Table */
+.table-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.table-card table { width: 100%; border-collapse: collapse; }
+.table-card th { background: oklch(97% 0.005 250); padding: 10px 14px; font-size: 12px; font-weight: 600; color: var(--muted); text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.table-card td { padding: 11px 14px; font-size: 13px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.table-card tr:last-child td { border-bottom: none; }
+.table-card tr:hover td { background: oklch(97% 0.005 250); }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 500; }
+.badge-accent { background: var(--accent-soft); color: var(--accent); }
+.badge-success { background: var(--success-soft); color: var(--success); }
+.badge-warning { background: var(--warning-soft); color: var(--warning); }
+.badge-error { background: oklch(62% 0.22 25 / 0.1); color: var(--error); }
+.badge-muted { background: oklch(92% 0.005 250); color: var(--muted); }
+.ip-addr { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+
+/* Pagination */
+.pagination { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; }
+.pagination-info { font-size: 12px; color: var(--muted); }
+.pagination-pages { display: flex; gap: 4px; }
+.pagination-pages a { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-sm); font-size: 13px; color: var(--muted); border: 1px solid var(--border); background: var(--surface); }
+.pagination-pages a:hover { border-color: var(--accent); color: var(--accent); }
+.pagination-pages a.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+</style>
+    <link rel="stylesheet" href="admin-sidebar.css">
+  </head>
+<body>
+  <div id="sidebar-root"></div>
+<script>
+document.querySelectorAll('.nav-link').forEach(a => {
+  a.classList.remove('active');
+  if (a.getAttribute('href') === window.location.pathname.split('/').pop()) a.classList.add('active');
+});
+</script>
+
+<div class="main">
+  <div class="top-bar"><h1>操作日志</h1><div class="right"><span>管理员</span><a class="logout-btn" href="admin-login.html">退出</a></div></div>
+
+  <div class="content">
+    <!-- Filter bar -->
+    <div class="filter-bar">
+      <select><option value="">全部模块</option><option>图书</option><option>用户</option><option>订单</option><option>活动</option><option>系统</option></select>
+      <input type="text" placeholder="🔍 搜索操作人...">
+      <input type="date" value="2026-06-01">
+      <span class="date-sep">至</span>
+      <input type="date" value="2026-06-24">
+      <button class="btn btn-primary">查询</button>
+      <div style="flex:1"></div>
+      <button class="btn btn-secondary" style="background:var(--secondary-soft);border:1px solid var(--border)">📥 导出日志</button>
+    </div>
+
+    <!-- Table -->
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr>
+            <th>操作人</th>
+            <th>时间</th>
+            <th>模块</th>
+            <th>操作类型</th>
+            <th>内容摘要</th>
+            <th>IP地址</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>张明</strong></td>
+            <td style="font-size:12px;color:var(--muted)">2026-06-24 14:32:18</td>
+            <td><span class="badge badge-accent">图书</span></td>
+            <td>新增图书</td>
+            <td>新增图书《The Hobbit》ISBN: 978-0-547-92822-7，AR等级 6.6</td>
+            <td class="ip-addr">192.168.1.105</td>
+          </tr>
+          <tr>
+            <td><strong>李雪</strong></td>
+            <td style="font-size:12px;color:var(--muted)">2026-06-24 14:15:43</td>
+            <td><span class="badge badge-accent">用户</span></td>
+            <td>重置密码</td>
+            <td>为用户王小明 (ID: U-2048) 重置登录密码</td>
+            <td class="ip-addr">192.168.1.108</td>
+          </tr>
+          <tr>
+            <td><strong>张明</strong></td>
+            <td style="font-size:12px;color:var(--muted)">2026-06-24 13:58:07</td>
+            <td><span class="badge badge-warning">订单</span></td>
+            <td>审核退款</td>
+            <td>审核通过订单 ORD-20260624-0187 退款申请，金额 ¥299.00</td>
+            <td class="ip-addr">192.168.1.105</td>
+          </tr>
+          <tr>
+            <td><strong>王芳</strong></td>
+            <td style="font-size:12px;color:var(--muted)">2026-06-24 13:42:31</td>
+            <td><span class="badge badge-success">活动</span></td>
+            <td>创建活动</td>
+            <td>创建新活动「暑期英文阅读马拉松」，活动时间 07/01-08/31</td>
+            <td class="ip-addr">192.168.1.112</td>
+          </tr>
+          <tr>
+            <td><strong>张明</strong></td>
+            <td style="font-size:12px;color:var(--muted)">2026-06-24 11:20:55</td>
+            <td><span class="badge badge-accent">图书</span></td>
+            <td>修改价格</td>
+            <td>修改图书《Charlotte's Web》零售价从 ¥68.00 调整为 ¥72.00</td>
+            <td class="ip-addr">192.168.1.105</td>
+          </tr>
+          <tr>
+            <td><strong>李雪</strong></td>
+            <td style="font-size:12px;color:var(--muted)">2026-06-24 10:55:12</td>
+            <td><span class="badge badge-error">系统</span></td>
+            <td>系统配置</td>
+            <td>修改借阅规则：最大借阅天数从 14天 调整为 21天</td>
+            <td class="ip-addr">192.168.1.108</td>
+          </tr>
+          <tr>
+            <td><strong>王芳</strong></td>
+            <td style="font-size:12px;color:var(--muted)">2026-06-24 10:30:48</td>
+            <td><span class="badge badge-success">活动</span></td>
+            <td>删除活动</td>
+            <td>删除活动「春季故事会」（活动已结束）</td>
+            <td class="ip-addr">192.168.1.112</td>
+          </tr>
+          <tr>
+            <td><strong>张明</strong></td>
+            <td style="font-size:12px;color:var(--muted)">2026-06-23 17:45:22</td>
+            <td><span class="badge badge-accent">图书</span></td>
+            <td>上传音频</td>
+            <td>为图书《Wonder》上传音频文件，时长 4:32:15</td>
+            <td class="ip-addr">192.168.1.105</td>
+          </tr>
+          <tr>
+            <td><strong>李雪</strong></td>
+            <td style="font-size:12px;color:var(--muted)">2026-06-23 16:18:33</td>
+            <td><span class="badge badge-accent">用户</span></td>
+            <td>禁用用户</td>
+            <td>禁用用户张三丰 (ID: U-3012)，原因：违规操作</td>
+            <td class="ip-addr">192.168.1.108</td>
+          </tr>
+          <tr>
+            <td><strong>王芳</strong></td>
+            <td style="font-size:12px;color:var(--muted)">2026-06-23 15:02:11</td>
+            <td><span class="badge badge-warning">订单</span></td>
+            <td>手动发货</td>
+            <td>订单 ORD-20260623-0092 手动标记发货，快递单号 SF1098765432</td>
+            <td class="ip-addr">192.168.1.112</td>
+          </tr>
+          <tr>
+            <td><strong>张明</strong></td>
+            <td style="font-size:12px;color:var(--muted)">2026-06-23 14:28:05</td>
+            <td><span class="badge badge-accent">图书</span></td>
+            <td>批量导入</td>
+            <td>批量导入图书 25 本，成功 23 本，失败 2 本</td>
+            <td class="ip-addr">192.168.1.105</td>
+          </tr>
+          <tr>
+            <td><strong>李雪</strong></td>
+            <td style="font-size:12px;color:var(--muted)">2026-06-23 11:55:40</td>
+            <td><span class="badge badge-error">系统</span></td>
+            <td>数据备份</td>
+            <td>执行手动数据备份，备份文件大小 2.8GB，状态：成功</td>
+            <td class="ip-addr">192.168.1.108</td>
+          </tr>
+          <tr>
+            <td><strong>王芳</strong></td>
+            <td style="font-size:12px;color:var(--muted)">2026-06-23 10:12:28</td>
+            <td><span class="badge badge-success">活动</span></td>
+            <td>修改活动</td>
+            <td>修改活动「绘本创作工作坊」地点从 A教室 改为 C多功能厅</td>
+            <td class="ip-addr">192.168.1.112</td>
+          </tr>
+          <tr>
+            <td><strong>张明</strong></td>
+            <td style="font-size:12px;color:var(--muted)">2026-06-22 17:33:19</td>
+            <td><span class="badge badge-warning">订单</span></td>
+            <td>拒绝退款</td>
+            <td>拒绝订单 ORD-20260622-0156 退款申请，原因：已超退款期限</td>
+            <td class="ip-addr">192.168.1.105</td>
+          </tr>
+          <tr>
+            <td><strong>李雪</strong></td>
+            <td style="font-size:12px;color:var(--muted)">2026-06-22 15:47:56</td>
+            <td><span class="badge badge-accent">用户</span></td>
+            <td>新增用户</td>
+            <td>手动新增用户陈小花，分配至「阳光阅读馆」</td>
+            <td class="ip-addr">192.168.1.108</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination">
+      <div class="pagination-info">共 2,847 条，第 1/190 页</div>
+      <div class="pagination-pages">
+        <a href="#">&lt;</a>
+        <a href="#" class="active">1</a>
+        <a href="#">2</a>
+        <a href="#">3</a>
+        <a href="#">4</a>
+        <a href="#">5</a>
+        <a href="#">...</a>
+        <a href="#">190</a>
+        <a href="#">&gt;</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+  <script src="admin-sidebar.js"></script>
+</body>
+</html>

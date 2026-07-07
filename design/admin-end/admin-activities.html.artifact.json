@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "admin-activities.html",
+  "entry": "admin-activities.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-06-04T13:44:13.766Z",
+  "updatedAt": "2026-06-04T13:44:13.766Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}

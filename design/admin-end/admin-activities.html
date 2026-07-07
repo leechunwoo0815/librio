@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>活动管理 · MegaWords</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.003 250); --surface: oklch(100% 0 0); --fg: oklch(20% 0.015 275);
+      --muted: oklch(48% 0.02 250); --border: oklch(90% 0.008 250);
+      --accent: oklch(54% 0.17 275); --accent-soft: oklch(54% 0.17 275 / 0.1);
+      --success: oklch(72% 0.20 145); --success-soft: oklch(72% 0.20 145 / 0.1);
+      --warning: oklch(78% 0.16 85); --warning-soft: oklch(78% 0.16 85 / 0.1);
+      --error: oklch(62% 0.22 25); --error-soft: oklch(62% 0.22 25 / 0.08);
+      --radius: 12px; --radius-sm: 8px; --radius-lg: 16px;
+      --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+      --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 14px; line-height: 1.5; min-height: 100vh; display: flex; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; }
+    .main { margin-left: 240px; flex: 1; min-height: 100vh; }
+    .top-bar { display: flex; align-items: center; justify-content: space-between; padding: 16px 28px; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; }
+    .top-bar h1 { font-family: var(--font-display); font-size: 18px; font-weight: 600; }
+    .top-bar .right { display: flex; align-items: center; gap: 16px; font-size: 13px; color: var(--muted); }
+    .top-bar .right .name { color: var(--fg); font-weight: 500; }
+    .logout-btn { color: var(--accent); font-size: 13px; }
+    .content { padding: 24px 28px; }
+    .toolbar { display: flex; align-items: center; justify-content: flex-end; margin-bottom: 16px; }
+    .btn-action { padding: 9px 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover { background: oklch(48% 0.17 275); }
+    .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; padding: 12px 16px; font-weight: 500; color: var(--muted); border-bottom: 1px solid var(--border); font-size: 12px; letter-spacing: 0.03em; }
+    td { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: oklch(54% 0.17 275 / 0.02); }
+    .status-badge { padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 500; }
+    .status-open { background: var(--success-soft); color: var(--success); }
+    .status-end { background: oklch(48% 0.02 250 / 0.1); color: var(--muted); }
+    .status-draft { background: var(--warning-soft); color: oklch(55% 0.14 85); }
+    .action-link { color: var(--accent); font-size: 12px; cursor: pointer; }
+    .action-link:hover { text-decoration: underline; }
+    .enroll-count { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+    
+    
+  </style>
+    <link rel="stylesheet" href="admin-sidebar.css">
+  </head>
+<body>
+  <div id="sidebar-root"></div>
+<div class="main">
+    <div class="top-bar"><h1>活动管理</h1><div class="right"><span class="name">管理员</span><button class="logout-btn">退出登录</button></div></div>
+    <div class="content">
+      <div class="toolbar" data-od-id="toolbar">
+        <button class="btn-action btn-primary">+ 创建活动</button>
+      </div>
+      <div class="table-wrap" data-od-id="table">
+        <table>
+          <thead><tr><th>活动名称</th><th>时间</th><th>地点</th><th>报名人数</th><th>状态</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr><td>「好饿的毛毛虫」主题故事会</td><td style="font-family: var(--font-mono);">2026-06-14 10:00</td><td>人广馆</td><td class="enroll-count">12 / 15</td><td><span class="status-badge status-open">报名中</span></td><td><span class="action-link">编辑</span> · <span class="action-link">报名管理</span></td></tr>
+            <tr><td>暑期 AR 阅读 30 天挑战</td><td style="font-family: var(--font-mono);">2026-07-01 – 07-30</td><td>全场馆</td><td class="enroll-count">38 / 50</td><td><span class="status-badge status-open">报名中</span></td><td><span class="action-link">编辑</span> · <span class="action-link">报名管理</span></td></tr>
+            <tr><td>「Love You Forever」母亲节亲子阅读</td><td style="font-family: var(--font-mono);">2026-05-11 10:00</td><td>人广馆</td><td class="enroll-count">15 / 15</td><td><span class="status-badge status-end">已结束</span></td><td><span class="action-link">编辑</span> · <span class="action-link">报名管理</span></td></tr>
+            <tr><td>春季阅读马拉松</td><td style="font-family: var(--font-mono);">2026-04-15 – 04-30</td><td>全场馆</td><td class="enroll-count">42 / 40</td><td><span class="status-badge status-end">已结束</span></td><td><span class="action-link">编辑</span> · <span class="action-link">报名管理</span></td></tr>
+            <tr><td>英文绘本创意手工课</td><td style="font-family: var(--font-mono);">2026-06-21 14:00</td><td>徐汇馆</td><td class="enroll-count">0 / 12</td><td><span class="status-badge status-draft">草稿</span></td><td><span class="action-link">编辑</span> · <span class="action-link">报名管理</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <script src="admin-sidebar.js"></script>
+</body>
+</html>

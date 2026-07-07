@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>推荐书单配置 · MegaWords 管理后台</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.003 250); --surface: oklch(100% 0 0);
+      --fg: oklch(20% 0.015 275); --muted: oklch(48% 0.02 250);
+      --border: oklch(90% 0.008 250); --accent: oklch(54% 0.17 275);
+      --accent-soft: oklch(54% 0.17 275 / 0.1); --accent-hover: oklch(48% 0.17 275);
+      --secondary: oklch(86% 0.20 135); --secondary-soft: oklch(86% 0.20 135 / 0.12);
+      --success: oklch(72% 0.20 145); --warning: oklch(78% 0.16 85);
+      --error: oklch(62% 0.22 25); --radius: 12px; --radius-sm: 8px; --radius-lg: 16px;
+      --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+      --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 14px; line-height: 1.5; min-height: 100vh; display: flex; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; }
+    .main { margin-left: 240px; flex: 1; min-height: 100vh; }
+    .top-bar { display: flex; align-items: center; justify-content: space-between; padding: 16px 28px; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; }
+    .top-bar h1 { font-family: var(--font-display); font-size: 18px; font-weight: 600; }
+    .content { padding: 24px 28px; }
+    .toolbar { display: flex; justify-content: space-between; margin-bottom: 20px; }
+    .btn { padding: 8px 18px; border-radius: 8px; font-size: 13px; font-weight: 500; }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-secondary { background: var(--surface); border: 1px solid var(--border); color: var(--fg); }
+    .list-header { font-family: var(--font-display); font-size: 15px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    .list-header .tag { font-size: 10px; padding: 2px 8px; border-radius: 999px; font-weight: 500; }
+    .list-header .tag-sm { background: var(--accent-soft); color: var(--accent); }
+    .book-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-bottom: 24px; }
+    .book-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; display: flex; gap: 12px; align-items: center; transition: transform 0.12s; }
+    .book-card:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.04); }
+    .book-card .bc-cover { width: 44px; height: 60px; border-radius: 6px; display: grid; place-items: center; font-size: 20px; flex-shrink: 0; }
+    .book-card .bc-info { flex: 1; min-width: 0; }
+    .book-card .bc-title { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .book-card .bc-meta { font-size: 11px; color: var(--muted); }
+    .book-card .bc-remove { width: 24px; height: 24px; border-radius: 50%; color: var(--muted); display: grid; place-items: center; flex-shrink: 0; }
+    .book-card .bc-remove:hover { background: oklch(62% 0.22 25 / 0.1); color: var(--error); }
+    .zone-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; margin-bottom: 20px; }
+    .zone-card h3 { font-family: var(--font-display); font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+    .zone-card .zone-desc { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+    .add-book-row { display: flex; gap: 8px; }
+    .add-book-row select { flex: 1; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; background: var(--surface); color: var(--fg); }
+    .switch-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+    .switch { width: 40px; height: 22px; border-radius: 11px; background: var(--border); position: relative; cursor: pointer; transition: background 0.15s; }
+    .switch.on { background: var(--accent); }
+    .switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: white; transition: left 0.15s; }
+    .switch.on::after { left: 20px; }
+    
+    
+  </style>
+    <link rel="stylesheet" href="admin-sidebar.css">
+  </head>
+<body>
+  <div id="sidebar-root"></div>
+<div class="main">
+    <div class="top-bar"><h1>推荐书单配置</h1><div class="right"><span class="name">管理员</span><a href="admin-dashboard.html" class="logout-btn">退出</a></div></div>
+    <div class="content">
+      <div class="zone-card">
+        <h3>分级书单</h3>
+        <div class="zone-desc">按 AR 等级划分的推荐书单，用户可根据自身等级查看对应书单</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px">
+            <div style="font-size:13px;font-weight:600;margin-bottom:6px">入门级 <span class="tag tag-sm" style="font-size:10px;margin-left:4px">AR 0-2</span></div>
+            <div style="font-size:11px;color:var(--muted)">12 本书</div>
+            <div class="switch-row"><div class="switch on"></div><span style="font-size:12px;color:var(--muted)">首页显示</span></div>
+          </div>
+          <div style="background:var(--bg;border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px">
+            <div style="font-size:13px;font-weight:600;margin-bottom:6px">初级 <span class="tag tag-sm" style="font-size:10px;margin-left:4px">AR 2-4</span></div>
+            <div style="font-size:11px;color:var(--muted)">18 本书</div>
+            <div class="switch-row"><div class="switch on"></div><span style="font-size:12px;color:var(--muted)">首页显示</span></div>
+          </div>
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px">
+            <div style="font-size:13px;font-weight:600;margin-bottom:6px">中级 <span class="tag tag-sm" style="font-size:10px;margin-left:4px">AR 4-6</span></div>
+            <div style="font-size:11px;color:var(--muted)">16 本书</div>
+            <div class="switch-row"><div class="switch on"></div><span style="font-size:12px;color:var(--muted)">首页显示</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="zone-card">
+        <h3>热门推荐 · 首页轮播</h3>
+        <div class="zone-desc">在首页轮播图区域展示的推荐书单</div>
+        <div class="list-header">当前推荐图书 <span class="tag tag-sm">3 本</span></div>
+        <div class="book-grid">
+          <div class="book-card"><div class="bc-cover" style="background:oklch(86% 0.20 135 / 0.15)">🐷</div><div class="bc-info"><div class="bc-title">Charlotte's Web</div><div class="bc-meta">AR 4.4 · 经典文学</div></div><button class="bc-remove">✕</button></div>
+          <div class="book-card"><div class="bc-cover" style="background:oklch(78% 0.16 85 / 0.15)">🦊</div><div class="bc-info"><div class="bc-title">Fantastic Mr. Fox</div><div class="bc-meta">AR 4.1 · 动物故事</div></div><button class="bc-remove">✕</button></div>
+          <div class="book-card"><div class="bc-cover" style="background:oklch(54% 0.17 275 / 0.12)">🐉</div><div class="bc-info"><div class="bc-title">My Father's Dragon</div><div class="bc-meta">AR 5.6 · 奇幻冒险</div></div><button class="bc-remove">✕</button></div>
+        </div>
+        <div class="add-book-row"><select><option>添加图书到推荐列表...</option><option>The Cat in the Hat (AR 2.1)</option><option>Harry Potter (AR 5.5)</option><option>Brown Bear (AR 0.9)</option></select><button class="btn btn-primary">添加</button></div>
+      </div>
+      <div class="zone-card">
+        <h3>新书上架</h3>
+        <div class="zone-desc">在首页"新书上架"区域展示</div>
+        <div class="list-header">当前新书 <span class="tag tag-sm">4 本</span></div>
+        <div class="book-grid">
+          <div class="book-card"><div class="bc-cover" style="background:oklch(72% 0.20 145 / 0.15)">🦁</div><div class="bc-info"><div class="bc-title">The Lion, the Witch...</div><div class="bc-meta">AR 5.7</div></div><button class="bc-remove">✕</button></div>
+          <div class="book-card"><div class="bc-cover" style="background:oklch(62% 0.22 25 / 0.1)">🐛</div><div class="bc-info"><div class="bc-title">The Very Hungry...</div><div class="bc-meta">AR 2.9</div></div><button class="bc-remove">✕</button></div>
+          <div class="book-card"><div class="bc-cover" style="background:var(--accent-soft)">🐘</div><div class="bc-info"><div class="bc-title">Horton Hears a Who!</div><div class="bc-meta">AR 3.3</div></div><button class="bc-remove">✕</button></div>
+          <div class="book-card"><div class="bc-cover" style="background:var(--secondary-soft)">🐶</div><div class="bc-info"><div class="bc-title">Go, Dog. Go!</div><div class="bc-meta">AR 1.2</div></div><button class="bc-remove">✕</button></div>
+        </div>
+        <div class="add-book-row"><select><option>添加图书到新书列表...</option><option>The Cat in the Hat (AR 2.1)</option><option>Harry Potter (AR 5.5)</option></select><button class="btn btn-primary">添加</button></div>
+      </div>
+    </div>
+  </div>
+  <script>
+    document.querySelectorAll('.switch').forEach(s => s.addEventListener('click', function() { this.classList.toggle('on'); }));
+    document.querySelectorAll('.bc-remove').forEach(b => b.addEventListener('click', function() { this.closest('.book-card').remove(); }));
+  </script>
+  <script src="admin-sidebar.js"></script>
+</body>
+</html>

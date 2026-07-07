@@ -1,0 +1,337 @@
+{% extends "admin/base.html" %}
+{% block title %}评估管理{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="/static/admin/css/pages/assessments.css" />
+{% endblock %}
+{% block page_title %}评估管理{% endblock %}
+{% block content %}
+<div class="assess-stats" id="assessStats">
+  <div class="astat-card">
+    <div class="astat-label">本月评估数</div>
+    <div class="astat-value" id="statMonthTotal">--</div>
+  </div>
+  <div class="astat-card">
+    <div class="astat-label">待评估</div>
+    <div class="astat-value" id="statPending">--</div>
+  </div>
+  <div class="astat-card">
+    <div class="astat-label">平均 AR 提升</div>
+    <div class="astat-value" id="statAvgArChange">--</div>
+  </div>
+  <div class="astat-card">
+    <div class="astat-label">平均理解正确率</div>
+    <div class="astat-value" id="statAvgAccuracy">--</div>
+  </div>
+</div>
+
+<div class="toolbar">
+  <div class="toolbar-left">
+    <div class="search-box">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input type="text" id="searchInput" placeholder="搜索学员姓名..." oninput="filterTable()" />
+    </div>
+    <select class="filter-select" id="statusFilter" onchange="filterTable()">
+      <option value="">全部状态</option>
+      <option value="completed">已完成</option>
+      <option value="pending">待评估</option>
+      <option value="scheduled">已安排</option>
+    </select>
+    <select class="filter-select" id="venueFilter" onchange="filterTable()">
+      <option value="">全部场馆</option>
+    </select>
+  </div>
+  <button class="btn-primary" onclick="openNewAssessment()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+    新建评估
+  </button>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>学员</th>
+        <th>场馆</th>
+        <th>评估日期</th>
+        <th>当前 AR</th>
+        <th>上次 AR</th>
+        <th>AR 变化</th>
+        <th>理解正确率</th>
+        <th>状态</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody id="assessBody">
+      <tr><td colspan="9" style="text-align:center;padding:40px;color:var(--muted)">加载中...</td></tr>
+    </tbody>
+  </table>
+  <div class="pagination" id="paginationBar"></div>
+  <div style="display:none" class="active info page-btn"></div>
+</div>
+
+<!-- assessment modal -->
+<div class="modal-overlay" id="assessModal" onclick="if(event.target===this)closeAssessModal()">
+  <div class="modal">
+    <h3 id="modalTitle">新建评估</h3>
+    <form id="assessForm" onsubmit="submitAssessment(event)">
+      <input type="hidden" id="editId" value="" />
+      <div class="form-group">
+        <label>孩子ID <span style="color:var(--error)">*</span></label>
+        <input type="number" class="form-input" name="child_id" required />
+      </div>
+      <div class="form-group">
+        <label>当前 AR 等级</label>
+        <input type="number" class="form-input" name="ar_level_after" step="0.1" />
+      </div>
+      <div class="form-group">
+        <label>评估状态</label>
+        <select class="form-input" name="status">
+          <option value="pending">待评估</option>
+          <option value="scheduled">已安排</option>
+          <option value="completed">已完成</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>备注</label>
+        <textarea class="form-input" name="notes" rows="3"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" onclick="closeAssessModal()">取消</button>
+        <button type="submit" class="btn-primary" id="submitBtn">保存</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function() {
+    loadAssessments();
+  })();
+
+  async function loadAssessments() {
+    try {
+      var resp = await api.get('/admin/api/assessment/list');
+      var list = resp.items || resp || [];
+      renderStats(resp.stats || {});
+      renderTable(list);
+      if (resp.stats) populateVenues(list);
+    } catch (err) {
+      showToast(err.message || '加载评估数据失败', 'error');
+      document.getElementById('assessBody').innerHTML =
+        '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--error)">加载失败</td></tr>';
+    }
+  }
+
+  function renderStats(stats) {
+    document.getElementById('statMonthTotal').textContent = stats.month_total != null ? stats.month_total : '--';
+    document.getElementById('statPending').textContent = stats.pending != null ? stats.pending : '--';
+    document.getElementById('statAvgArChange').textContent = stats.avg_ar_change != null ? '+' + stats.avg_ar_change : '--';
+    document.getElementById('statAvgAccuracy').textContent = stats.avg_accuracy != null ? stats.avg_accuracy + '%' : '--';
+  }
+
+  var avatarColors = ['sa1','sa2','sa3','sa4','sa5'];
+  function getAvatarClass(name) {
+    var hash = 0;
+    for (var i = 0; i < name.length; i++) hash = ((hash << 5) - hash) + name.charCodeAt(i);
+    return avatarColors[Math.abs(hash) % avatarColors.length];
+  }
+
+  function renderTable(list) {
+    var body = document.getElementById('assessBody');
+    if (!list.length) {
+      body.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--muted)">暂无评估记录</td></tr>';
+      return;
+    }
+    body.innerHTML = list.map(function(item) {
+      var initial = (item.child_name || '?').charAt(0).toUpperCase();
+      var avatarCls = getAvatarClass(item.child_name || '');
+      var age = item.age ? ' · ' + item.age + '岁' : '';
+      var currentAr = item.ar_level_after ? '<span class="level-badge">AR ' + item.ar_level_after + '</span>' : '&mdash;';
+      var prevAr = item.ar_level_before ? '<span class="level-badge">AR ' + item.ar_level_before + '</span>' : '&mdash;';
+      var arChange = item.ar_level_change ? '<span class="level-up">+' + item.ar_level_change + '</span>' : '&mdash;';
+      var accuracy = '';
+      if (item.comprehension_score != null) {
+        var fillCls = item.comprehension_score >= 80 ? 'high' : (item.comprehension_score >= 60 ? 'mid' : 'low');
+        accuracy = '<div class="score-bar-wrap"><div class="score-bar"><div class="score-bar-fill ' + fillCls + '" style="width:' + item.comprehension_score + '%"></div></div><span class="score-text">' + item.comprehension_score + '%</span></div>';
+      } else {
+        accuracy = '&mdash;';
+      }
+      var statusMap = { completed: ['status-completed','已完成'], pending: ['status-pending','待评估'], scheduled: ['status-scheduled','已安排'] };
+      var st = statusMap[item.status] || ['','--'];
+      var actions = buildActions(item);
+      return '<tr>' +
+        '<td><div class="student-cell"><div class="student-mini-avatar ' + avatarCls + '">' + initial + '</div><span>' + escapeHtml(item.child_name || '-') + age + '</span></div></td>' +
+        '<td>' + escapeHtml(item.venue || '-') + '</td>' +
+        '<td>' + (item.assess_date || '&mdash;') + '</td>' +
+        '<td>' + currentAr + '</td>' +
+        '<td>' + prevAr + '</td>' +
+        '<td>' + arChange + '</td>' +
+        '<td>' + accuracy + '</td>' +
+        '<td><span class="status-badge ' + st[0] + '">' + st[1] + '</span></td>' +
+        '<td><div class="action-btns">' + actions + '</div></td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  function buildActions(item) {
+    var html = '';
+    if (item.status === 'completed') {
+      html += '<button class="action-btn" onclick="viewReport(' + item.id + ')">报告</button>';
+    } else if (item.status === 'pending') {
+      html += '<button class="action-btn" onclick="scheduleAssessment(' + item.id + ')">安排</button>';
+    } else if (item.status === 'scheduled') {
+      html += '<button class="action-btn" onclick="editAssessment(' + item.id + ')">编辑</button>';
+    }
+    html += '<button class="action-btn" onclick="viewDetail(' + item.id + ')">详情</button>';
+    return html;
+  }
+
+  function populateVenues(list) {
+    var venues = {};
+    list.forEach(function(i) { if (i.venue) venues[i.venue] = true; });
+    var sel = document.getElementById('venueFilter');
+    Object.keys(venues).sort().forEach(function(v) {
+      var opt = document.createElement('option');
+      opt.value = v; opt.textContent = v;
+      sel.appendChild(opt);
+    });
+  }
+
+  function filterTable() {
+    var search = document.getElementById('searchInput').value.toLowerCase();
+    var status = document.getElementById('statusFilter').value;
+    var venue = document.getElementById('venueFilter').value;
+    var rows = document.querySelectorAll('#assessBody tr');
+    rows.forEach(function(row) {
+      if (row.children.length < 9) return;
+      var name = (row.querySelector('.student-cell span') || {}).textContent || '';
+      var rowStatus = '';
+      var badge = row.querySelector('.status-badge');
+      if (badge) {
+        if (badge.classList.contains('status-completed')) rowStatus = 'completed';
+        else if (badge.classList.contains('status-pending')) rowStatus = 'pending';
+        else if (badge.classList.contains('status-scheduled')) rowStatus = 'scheduled';
+      }
+      var rowVenue = row.children[1].textContent.trim();
+      var matchSearch = !search || name.toLowerCase().indexOf(search) >= 0;
+      var matchStatus = !status || rowStatus === status;
+      var matchVenue = !venue || rowVenue === venue;
+      row.style.display = (matchSearch && matchStatus && matchVenue) ? '' : 'none';
+    });
+  }
+
+  function viewReport(id) {
+    showToast('报告功能需要后端支持生成PDF', 'info');
+  }
+
+  async function viewDetail(id) {
+    try {
+      var data = await api.get('/admin/api/assessment/' + id);
+      if (!data) {
+        showToast('评估不存在', 'error');
+        return;
+      }
+      var html = '<div style="padding:20px">';
+      html += '<h3 style="margin-bottom:16px">评估详情 #' + id + '</h3>';
+      html += '<table style="width:100%;border-collapse:collapse">';
+      html += '<tr><td style="padding:8px;color:var(--muted);width:120px">孩子</td><td>' + escapeHtml(data.child_name || '-') + '</td></tr>';
+      html += '<tr><td style="padding:8px;color:var(--muted)">当前AR</td><td>' + (data.ar_level_after || '-') + '</td></tr>';
+      html += '<tr><td style="padding:8px;color:var(--muted)">状态</td><td>' + escapeHtml(data.status || '-') + '</td></tr>';
+      html += '<tr><td style="padding:8px;color:var(--muted)">评估日期</td><td>' + escapeHtml(data.assess_date || '-') + '</td></tr>';
+      html += '<tr><td style="padding:8px;color:var(--muted)">备注</td><td>' + escapeHtml(data.notes || '-') + '</td></tr>';
+      html += '</table></div>';
+      showConfirm('评估详情', html, null, '关闭');
+    } catch (err) {
+      showToast('加载详情失败: ' + err.message, 'error');
+    }
+  }
+
+  function scheduleAssessment(id) {
+    showConfirm('安排评估', '确定将评估 #' + id + ' 状态改为"已安排"？', async function() {
+      try {
+        await api.put('/admin/api/assessment/' + id, { status: 'scheduled' });
+        showToast('评估已安排');
+        loadAssessments();
+      } catch (err) {
+        showToast('操作失败: ' + err.message, 'error');
+      }
+    });
+  }
+
+  function editAssessment(id) {
+    // 从当前数据中获取评估信息
+    var rows = document.querySelectorAll('#assessBody tr');
+    rows.forEach(function(row) {
+      var editBtn = row.querySelector('button[onclick*="editAssessment(' + id + ')"]');
+      if (editBtn) {
+        var cells = row.children;
+        document.getElementById('editId').value = id;
+        document.getElementById('modalTitle').textContent = '编辑评估';
+        document.getElementById('submitBtn').textContent = '保存修改';
+        document.getElementById('assessModal').classList.add('show');
+      }
+    });
+  }
+
+  function openNewAssessment() {
+    document.getElementById('editId').value = '';
+    document.getElementById('modalTitle').textContent = '新建评估';
+    document.getElementById('submitBtn').textContent = '保存';
+    document.getElementById('assessForm').reset();
+    document.getElementById('assessModal').classList.add('show');
+  }
+
+  function closeAssessModal() {
+    document.getElementById('assessModal').classList.remove('show');
+  }
+
+  async function submitAssessment(e) {
+    e.preventDefault();
+    var form = document.getElementById('assessForm');
+    var fd = new FormData(form);
+    var body = {};
+    for (var [k, v] of fd.entries()) {
+      if (k === 'editId') continue;
+      if (v === '') continue;
+      if (k === 'child_id' || k === 'ar_level_after') {
+        body[k] = Number(v);
+      } else {
+        body[k] = v;
+      }
+    }
+    var editId = document.getElementById('editId').value;
+    try {
+      if (editId) {
+        await api.put('/admin/api/assessment/' + editId, body);
+        showToast('评估更新成功');
+      } else {
+        await api.post('/admin/api/assessment/', body);
+        showToast('评估创建成功');
+      }
+      closeAssessModal();
+      loadAssessments();
+    } catch (err) {
+      showToast(err.message || '操作失败', 'error');
+    }
+  }
+
+  async function deleteAssessment(id) {
+    if (!confirm('确定删除该评估记录？')) return;
+    try {
+      await api.del('/admin/api/assessment/' + id);
+      showToast('评估已删除');
+      loadAssessments();
+    } catch (err) {
+      showToast(err.message || '删除失败', 'error');
+    }
+  }
+
+  function escapeHtml(str) {
+    var div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+</script>
+{% endblock %}

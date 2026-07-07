@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>成就中心 · MegaWords</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.003 250); --surface: oklch(100% 0 0);
+      --fg: oklch(20% 0.015 275); --muted: oklch(48% 0.02 250);
+      --border: oklch(90% 0.008 250); --accent: oklch(54% 0.17 275);
+      --accent-soft: oklch(54% 0.17 275 / 0.1);
+      --secondary: oklch(86% 0.20 135); --secondary-soft: oklch(86% 0.20 135 / 0.12);
+      --success: oklch(72% 0.20 145); --warning: oklch(78% 0.16 85);
+      --radius: 16px; --radius-sm: 10px; --radius-lg: 20px;
+      --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+      --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--fg); font-family: var(--font-body);
+      font-size: 15px; line-height: 1.5; max-width: 430px; margin: 0 auto;
+      min-height: 100vh; padding-bottom: 80px; -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; }
+    .nav-bar {
+      display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 10;
+    }
+    .nav-bar .back { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 10px; }
+    .nav-bar .back svg { width: 20px; height: 20px; }
+    .nav-bar .title { font-family: var(--font-display); font-size: 17px; font-weight: 600; }
+    /* level card */
+    .level-card {
+      margin: 16px; background: linear-gradient(135deg, var(--accent), oklch(48% 0.17 275));
+      border-radius: var(--radius-lg); padding: 24px 20px; color: white;
+      text-align: center; position: relative; overflow: hidden;
+    }
+    .level-card::before {
+      content: ''; position: absolute; top: -20px; right: -20px;
+      width: 100px; height: 100px; border-radius: 50%;
+      background: rgba(255,255,255,0.1);
+    }
+    .level-emoji { font-size: 48px; margin-bottom: 8px; }
+    .level-name { font-family: var(--font-display); font-size: 20px; font-weight: 700; }
+    .level-desc { font-size: 13px; opacity: 0.85; margin-top: 4px; }
+    .level-stats {
+      display: flex; justify-content: center; gap: 24px; margin-top: 16px;
+    }
+    .level-stat { text-align: center; }
+    .level-stat .num { font-family: var(--font-display); font-size: 24px; font-weight: 700; }
+    .level-stat .label { font-size: 11px; opacity: 0.8; }
+    .level-progress { margin-top: 14px; }
+    .level-progress-bar {
+      height: 6px; background: rgba(255,255,255,0.2); border-radius: 3px; overflow: hidden;
+    }
+    .level-progress-fill { height: 100%; background: white; border-radius: 3px; }
+    .level-progress-text {
+      font-size: 11px; opacity: 0.8; margin-top: 4px; text-align: right;
+    }
+    .promote-btn {
+      margin-top: 12px; padding: 8px 24px; border-radius: 999px;
+      background: rgba(255,255,255,0.2); color: white; font-size: 13px; font-weight: 600;
+      backdrop-filter: blur(8px);
+    }
+    /* tabs */
+    .tabs {
+      display: flex; background: var(--surface); border-bottom: 1px solid var(--border);
+      position: sticky; top: 48px; z-index: 9;
+    }
+    .tab {
+      flex: 1; padding: 12px 0; text-align: center; font-size: 14px;
+      color: var(--muted); font-weight: 500; position: relative;
+    }
+    .tab.active { color: var(--accent); }
+    .tab.active::after {
+      content: ''; position: absolute; bottom: 0; left: 20%; right: 20%;
+      height: 2px; background: var(--accent); border-radius: 1px;
+    }
+    /* badges grid */
+    .badges-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+      padding: 16px;
+    }
+    .badge-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px 8px; text-align: center;
+    }
+    .badge-card.locked { opacity: 0.45; }
+    .badge-icon { font-size: 36px; margin-bottom: 6px; }
+    .badge-card.locked .badge-icon { filter: grayscale(1); }
+    .badge-name { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
+    .badge-date { font-size: 10px; color: var(--muted); }
+    .badge-card.locked .badge-date { color: var(--border); }
+    .badge-lock {
+      width: 20px; height: 20px; margin: 0 auto; color: var(--border);
+    }
+    /* leaderboard */
+    .leaderboard { padding: 16px; display: none; }
+    .leaderboard.active { display: block; }
+    .badges-grid.active { display: grid; }
+    .lb-item {
+      display: flex; align-items: center; gap: 12px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 8px;
+    }
+    .lb-rank {
+      width: 28px; height: 28px; border-radius: 50%;
+      display: grid; place-items: center; font-size: 13px; font-weight: 700;
+      flex-shrink: 0;
+    }
+    .lb-rank.top1 { background: oklch(88% 0.14 85); color: oklch(45% 0.14 85); }
+    .lb-rank.top2 { background: oklch(90% 0.02 250); color: var(--muted); }
+    .lb-rank.top3 { background: oklch(90% 0.06 60); color: oklch(50% 0.10 60); }
+    .lb-rank.normal { background: var(--border); color: var(--muted); }
+    .lb-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      display: grid; place-items: center; font-size: 18px; flex-shrink: 0;
+      background: oklch(92% 0.08 275 / 0.2);
+    }
+    .lb-info { flex: 1; }
+    .lb-name { font-weight: 600; font-size: 14px; }
+    .lb-books { font-size: 12px; color: var(--muted); }
+    .lb-count {
+      font-family: var(--font-display); font-size: 16px; font-weight: 700;
+      color: var(--accent);
+    }
+    .lb-count span { font-size: 12px; font-weight: 400; color: var(--muted); }
+    /* timeline */
+    .timeline { padding: 16px; }
+    .timeline-title { font-family: var(--font-display); font-size: 15px; font-weight: 600; margin-bottom: 12px; }
+    .tl-item {
+      display: flex; gap: 12px; position: relative; padding-bottom: 20px;
+    }
+    .tl-item:last-child { padding-bottom: 0; }
+    .tl-item::before {
+      content: ''; position: absolute; left: 18px; top: 38px; bottom: 0;
+      width: 2px; background: var(--border);
+    }
+    .tl-item:last-child::before { display: none; }
+    .tl-dot {
+      width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+      display: grid; place-items: center; font-size: 18px;
+      background: var(--surface); border: 2px solid var(--accent);
+    }
+    .tl-content { flex: 1; padding-top: 4px; }
+    .tl-name { font-size: 14px; font-weight: 600; }
+    .tl-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .tl-time { font-size: 11px; color: var(--muted); margin-top: 4px; }
+    /* modal */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: oklch(20% 0.015 275 / 0.5); z-index: 100;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
+    }
+    .modal-overlay.show { opacity: 1; pointer-events: auto; }
+    .modal-card {
+      width: calc(100% - 48px); max-width: 360px; background: var(--surface);
+      border-radius: var(--radius-lg); padding: 28px 24px; text-align: center;
+      transform: scale(0.9); transition: transform 0.25s ease;
+    }
+    .modal-overlay.show .modal-card { transform: scale(1); }
+    .modal-card .m-icon { font-size: 48px; margin-bottom: 12px; }
+    .modal-card .m-name { font-family: var(--font-display); font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+    .modal-card .m-desc { font-size: 13px; color: var(--muted); margin-bottom: 12px; line-height: 1.5; }
+    .modal-card .m-detail {
+      font-size: 12px; color: var(--fg); padding: 10px 12px;
+      background: var(--bg); border-radius: var(--radius-sm); margin-bottom: 16px;
+      text-align: left;
+    }
+    .modal-card .m-detail div { padding: 3px 0; }
+    .modal-card .m-detail .m-label { color: var(--muted); }
+    .modal-close {
+      padding: 10px 32px; border-radius: 999px; background: var(--accent);
+      color: white; font-size: 14px; font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="nav-bar">
+    <a class="back" href="member.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+    </a>
+    <div class="title">成就中心</div>
+  </div>
+
+  <div class="level-card">
+    <div class="level-emoji">⭐</div>
+    <div class="level-name">Level 3 · 故事探索者</div>
+    <div class="level-desc">已读 12 本 · 通过 10 次测验</div>
+    <div class="level-stats">
+      <div class="level-stat"><div class="num">12</div><div class="label">已读书籍</div></div>
+      <div class="level-stat"><div class="num">10</div><div class="label">测验通过</div></div>
+      <div class="level-stat"><div class="num">7</div><div class="label">连续打卡</div></div>
+    </div>
+    <div class="level-progress">
+      <div class="level-progress-bar"><div class="level-progress-fill" style="width: 60%"></div></div>
+      <div class="level-progress-text">再读 8 本即可晋级 Level 4</div>
+    </div>
+    <button class="promote-btn" style="display:none">🎯 去晋级</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab(this,'badges')">徽章</button>
+    <button class="tab" onclick="switchTab(this,'leaderboard')">排行榜</button>
+  </div>
+
+  <div class="badges-grid active" id="badges">
+    <div class="badge-card" onclick="showBadge(this)" data-name="初读启航" data-desc="完成第一本书的阅读" data-date="2025-05-10" data-trigger="阅读完任意 1 本书">
+      <div class="badge-icon">📖</div>
+      <div class="badge-name">初读启航</div>
+      <div class="badge-date">2025-05-10</div>
+    </div>
+    <div class="badge-card" onclick="showBadge(this)" data-name="连续 7 天" data-desc="连续阅读打卡 7 天" data-date="2025-05-20" data-trigger="连续 7 天每天阅读满 10 分钟">
+      <div class="badge-icon">🔥</div>
+      <div class="badge-name">连续 7 天</div>
+      <div class="badge-date">2025-05-20</div>
+    </div>
+    <div class="badge-card" onclick="showBadge(this)" data-name="满分达人" data-desc="测验获得 100 分" data-date="2025-05-25" data-trigger="任意一次测验得 100 分">
+      <div class="badge-icon">💯</div>
+      <div class="badge-name">满分达人</div>
+      <div class="badge-date">2025-05-25</div>
+    </div>
+    <div class="badge-card" onclick="showBadge(this)" data-name="读完 10 本" data-desc="累计阅读 10 本书" data-date="2025-06-01" data-trigger="累计阅读完 10 本书">
+      <div class="badge-icon">📚</div>
+      <div class="badge-name">读完 10 本</div>
+      <div class="badge-date">2025-06-01</div>
+    </div>
+    <div class="badge-card" onclick="showBadge(this)" data-name="朗读之星" data-desc="完成 10 次朗读录音" data-date="2025-06-03" data-trigger="累计完成 10 次朗读录音">
+      <div class="badge-icon">🎙️</div>
+      <div class="badge-name">朗读之星</div>
+      <div class="badge-date">2025-06-03</div>
+    </div>
+    <div class="badge-card" onclick="showBadge(this)" data-name="词汇先锋" data-desc="积累 100 个生词" data-date="2025-06-04" data-trigger="生词本累计收录 100 个单词">
+      <div class="badge-icon">📝</div>
+      <div class="badge-name">词汇先锋</div>
+      <div class="badge-date">2025-06-04</div>
+    </div>
+    <div class="badge-card locked" onclick="showBadge(this)" data-name="晋级达人" data-desc="成功晋级 3 次" data-date="" data-trigger="累计成功晋级 3 次">
+      <div class="badge-icon">🏆</div>
+      <div class="badge-name">晋级达人</div>
+      <svg class="badge-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+    </div>
+    <div class="badge-card locked" onclick="showBadge(this)" data-name="速度之王" data-desc="5 分钟内完成测验满分" data-date="" data-trigger="5 分钟内完成测验并得满分">
+      <div class="badge-icon">⚡</div>
+      <div class="badge-name">速度之王</div>
+      <svg class="badge-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+    </div>
+    <div class="badge-card locked" onclick="showBadge(this)" data-name="阅读大师" data-desc="累计阅读 100 本书" data-date="" data-trigger="累计阅读完 100 本书">
+      <div class="badge-icon">🌟</div>
+      <div class="badge-name">阅读大师</div>
+      <svg class="badge-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+    </div>
+  </div>
+
+  <div class="leaderboard" id="leaderboard">
+    <div class="lb-item">
+      <div class="lb-rank top1">1</div>
+      <div class="lb-avatar">👧</div>
+      <div class="lb-info"><div class="lb-name">小月</div><div class="lb-books">Level 5</div></div>
+      <div class="lb-count">38<span> 本</span></div>
+    </div>
+    <div class="lb-item">
+      <div class="lb-rank top2">2</div>
+      <div class="lb-avatar">👦</div>
+      <div class="lb-info"><div class="lb-name">小明</div><div class="lb-books">Level 5</div></div>
+      <div class="lb-count">28<span> 本</span></div>
+    </div>
+    <div class="lb-item">
+      <div class="lb-rank top3">3</div>
+      <div class="lb-avatar">👧</div>
+      <div class="lb-info"><div class="lb-name">Lily</div><div class="lb-books">Level 4</div></div>
+      <div class="lb-count">22<span> 本</span></div>
+    </div>
+    <div class="lb-item">
+      <div class="lb-rank normal">4</div>
+      <div class="lb-avatar">👦</div>
+      <div class="lb-info"><div class="lb-name">Tom</div><div class="lb-books">Level 3</div></div>
+      <div class="lb-count">18<span> 本</span></div>
+    </div>
+    <div class="lb-item" style="border-color:var(--accent)">
+      <div class="lb-rank normal">5</div>
+      <div class="lb-avatar">👦</div>
+      <div class="lb-info"><div class="lb-name">Mega（我）</div><div class="lb-books">Level 3</div></div>
+      <div class="lb-count">12<span> 本</span></div>
+    </div>
+  </div>
+
+  <!-- recent achievements timeline -->
+  <div class="timeline">
+    <div class="timeline-title">最近获得</div>
+    <div class="tl-item">
+      <div class="tl-dot">📝</div>
+      <div class="tl-content">
+        <div class="tl-name">词汇先锋</div>
+        <div class="tl-desc">生词本累计收录 100 个单词</div>
+        <div class="tl-time">2025-06-04</div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot">🎙️</div>
+      <div class="tl-content">
+        <div class="tl-name">朗读之星</div>
+        <div class="tl-desc">累计完成 10 次朗读录音</div>
+        <div class="tl-time">2025-06-03</div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot">📚</div>
+      <div class="tl-content">
+        <div class="tl-name">读完 10 本</div>
+        <div class="tl-desc">累计阅读完 10 本书</div>
+        <div class="tl-time">2025-06-01</div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot">💯</div>
+      <div class="tl-content">
+        <div class="tl-name">满分达人</div>
+        <div class="tl-desc">任意一次测验得 100 分</div>
+        <div class="tl-time">2025-05-25</div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot">🔥</div>
+      <div class="tl-content">
+        <div class="tl-name">连续 7 天</div>
+        <div class="tl-desc">连续 7 天每天阅读满 10 分钟</div>
+        <div class="tl-time">2025-05-20</div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot">📖</div>
+      <div class="tl-content">
+        <div class="tl-name">初读启航</div>
+        <div class="tl-desc">阅读完任意 1 本书</div>
+        <div class="tl-time">2025-05-10</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- badge detail modal -->
+  <div class="modal-overlay" id="badgeModal" onclick="closeBadge(event)">
+    <div class="modal-card">
+      <div class="m-icon" id="modalIcon">📖</div>
+      <div class="m-name" id="modalName">初读启航</div>
+      <div class="m-desc" id="modalDesc">完成第一本书的阅读</div>
+      <div class="m-detail">
+        <div><span class="m-label">获得时间：</span><span id="modalDate">2025-05-10</span></div>
+        <div><span class="m-label">触发条件：</span><span id="modalTrigger">阅读完任意 1 本书</span></div>
+      </div>
+      <button class="modal-close" onclick="closeBadge()">确定</button>
+    </div>
+  </div>
+
+  <script>
+    function switchTab(el, id) {
+      document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
+      el.classList.add('active');
+      document.getElementById('badges').classList.toggle('active', id==='badges');
+      document.getElementById('badges').style.display = id==='badges' ? 'grid' : 'none';
+      document.getElementById('leaderboard').classList.toggle('active', id==='leaderboard');
+      document.getElementById('leaderboard').style.display = id==='leaderboard' ? 'block' : 'none';
+    }
+    function showBadge(el) {
+      document.getElementById('modalIcon').textContent = el.querySelector('.badge-icon').textContent;
+      document.getElementById('modalName').textContent = el.getAttribute('data-name');
+      document.getElementById('modalDesc').textContent = el.getAttribute('data-desc');
+      document.getElementById('modalDate').textContent = el.getAttribute('data-date') || '未获得';
+      document.getElementById('modalTrigger').textContent = el.getAttribute('data-trigger');
+      document.getElementById('badgeModal').classList.add('show');
+    }
+    function closeBadge(e) {
+      if (e && e.target && e.target.id !== 'badgeModal') return;
+      document.getElementById('badgeModal').classList.remove('show');
+    }
+  </script>
+</body>
+</html>

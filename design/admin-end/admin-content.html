@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>图书内容管理 · MegaWords 管理后台</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.003 250); --surface: oklch(100% 0 0);
+      --fg: oklch(20% 0.015 275); --muted: oklch(48% 0.02 250);
+      --border: oklch(90% 0.008 250); --accent: oklch(54% 0.17 275);
+      --accent-soft: oklch(54% 0.17 275 / 0.1); --accent-hover: oklch(48% 0.17 275);
+      --secondary: oklch(86% 0.20 135); --secondary-soft: oklch(86% 0.20 135 / 0.12);
+      --success: oklch(72% 0.20 145); --success-soft: oklch(72% 0.20 145 / 0.1);
+      --warning: oklch(78% 0.16 85); --warning-soft: oklch(78% 0.16 85 / 0.1);
+      --error: oklch(62% 0.22 25); --error-soft: oklch(62% 0.22 25 / 0.1);
+      --radius: 12px; --radius-sm: 8px; --radius-lg: 16px;
+      --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+      --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 14px; line-height: 1.5; min-height: 100vh; display: flex; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; }
+    .main { margin-left: 240px; flex: 1; min-height: 100vh; }
+    .top-bar { display: flex; align-items: center; justify-content: space-between; padding: 16px 28px; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; }
+    .top-bar h1 { font-family: var(--font-display); font-size: 18px; font-weight: 600; }
+    .top-bar .right { display: flex; align-items: center; gap: 16px; font-size: 13px; color: var(--muted); }
+    .top-bar .right .name { color: var(--fg); font-weight: 500; }
+    .content { padding: 24px 28px; }
+
+    /* tabs */
+    .tab-bar { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+    .tab-item { padding: 12px 24px; font-size: 14px; color: var(--muted); font-weight: 500; cursor: pointer; position: relative; transition: color 0.15s; }
+    .tab-item:hover { color: var(--fg); }
+    .tab-item.active { color: var(--accent); }
+    .tab-item.active::after { content: ''; position: absolute; bottom: -1px; left: 0; right: 0; height: 2px; background: var(--accent); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* toolbar */
+    .toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; gap: 12px; flex-wrap: wrap; }
+    .toolbar-left { display: flex; gap: 10px; align-items: center; }
+    .btn { padding: 8px 18px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; transition: all 0.12s; }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-secondary { background: var(--surface); border: 1px solid var(--border); color: var(--fg); }
+    .btn-danger { background: var(--error-soft); color: var(--error); }
+    .btn:hover { opacity: 0.85; }
+    .btn-sm { padding: 5px 12px; font-size: 12px; }
+    select, input { padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; background: var(--surface); color: var(--fg); outline: none; }
+    select:focus, input:focus { border-color: var(--accent); }
+
+    /* page grid */
+    .page-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+    .page-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      overflow: hidden; cursor: grab; transition: box-shadow 0.15s, border-color 0.15s; position: relative;
+    }
+    .page-card:hover { border-color: var(--accent); box-shadow: 0 2px 8px oklch(20% 0.015 275 / 0.06); }
+    .page-card.dragging { opacity: 0.5; border-style: dashed; }
+    .page-thumb {
+      width: 100%; aspect-ratio: 3/4; background: oklch(95% 0.005 250);
+      display: grid; place-items: center; font-size: 32px; color: var(--muted);
+      border-bottom: 1px solid var(--border);
+    }
+    .page-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .page-info { padding: 8px 10px; display: flex; align-items: center; justify-content: space-between; }
+    .page-num { font-size: 13px; font-weight: 600; }
+    .page-status { font-size: 11px; padding: 2px 6px; border-radius: 999px; }
+    .page-status.published { background: var(--success-soft); color: oklch(40% 0.15 145); }
+    .page-status.draft { background: var(--warning-soft); color: oklch(50% 0.14 85); }
+    .page-drag-handle {
+      position: absolute; top: 6px; right: 6px; width: 24px; height: 24px;
+      background: rgba(255,255,255,0.9); border-radius: 4px; display: grid; place-items: center;
+      opacity: 0; transition: opacity 0.15s; cursor: grab;
+    }
+    .page-card:hover .page-drag-handle { opacity: 1; }
+    .page-drag-handle svg { width: 14px; height: 14px; color: var(--muted); }
+
+    /* audio table */
+    table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+    th, td { padding: 12px 16px; text-align: left; font-size: 13px; }
+    th { background: var(--bg); font-weight: 600; font-size: 12px; color: var(--muted); border-bottom: 1px solid var(--border); }
+    td { border-bottom: 1px solid var(--border); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: oklch(97% 0.003 250); }
+    .audio-wave { display: inline-flex; align-items: center; gap: 2px; margin-right: 6px; }
+    .audio-wave span { width: 3px; background: var(--accent); border-radius: 2px; }
+
+    /* modal */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 50; display: none; align-items: center; justify-content: center; }
+    .modal-overlay.show { display: flex; }
+    .modal { background: var(--surface); border-radius: var(--radius-lg); padding: 28px; width: 520px; max-height: 80vh; overflow-y: auto; box-shadow: 0 16px 48px rgba(0,0,0,0.12); }
+    .modal h3 { font-family: var(--font-display); font-size: 17px; font-weight: 600; margin-bottom: 16px; }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 12px; font-weight: 500; color: var(--muted); margin-bottom: 4px; }
+    .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; background: var(--bg); color: var(--fg); }
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+    .upload-zone { border: 2px dashed var(--border); border-radius: var(--radius); padding: 32px; text-align: center; color: var(--muted); margin: 12px 0; cursor: pointer; transition: border-color 0.15s, color 0.15s; }
+    .upload-zone:hover { border-color: var(--accent); color: var(--accent); }
+    .upload-zone svg { width: 32px; height: 32px; margin-bottom: 8px; }
+
+    
+    
+  </style>
+    <link rel="stylesheet" href="admin-sidebar.css">
+  </head>
+<body>
+  <div id="sidebar-root"></div>
+<div class="main">
+    <div class="top-bar">
+      <h1>图书内容管理</h1>
+      <div class="right">
+        <span class="name">管理员</span>
+        <button class="logout-btn" style="color:var(--accent);font-size:13px">退出登录</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- book selector -->
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px">
+        <label style="font-size:13px;color:var(--muted);font-weight:500">选择图书：</label>
+        <select style="min-width:280px">
+          <option>Charlotte's Web -- E.B. White (AR 4.4)</option>
+          <option>The Very Hungry Caterpillar -- Eric Carle (AR 2.9)</option>
+          <option>The Cat in the Hat -- Dr. Seuss (AR 2.1)</option>
+          <option>Fantastic Mr. Fox -- Roald Dahl (AR 4.1)</option>
+        </select>
+      </div>
+
+      <!-- tabs -->
+      <div class="tab-bar" id="tabBar">
+        <button class="tab-item active" onclick="switchTab('pages')">页面管理</button>
+        <button class="tab-item" onclick="switchTab('audio')">音频管理</button>
+      </div>
+
+      <!-- Page Management Panel -->
+      <div class="tab-panel active" id="panel-pages">
+        <div class="toolbar">
+          <div class="toolbar-left">
+            <span style="font-size:13px;color:var(--muted)">共 12 页</span>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-secondary" onclick="openUploadModal()">上传 PDF 自动切页</button>
+            <button class="btn btn-primary" onclick="openPageModal()">+ 新增页面</button>
+          </div>
+        </div>
+
+        <div class="page-grid" id="pageGrid">
+          <div class="page-card" draggable="true">
+            <div class="page-drag-handle"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg></div>
+            <div class="page-thumb" style="background:oklch(90% 0.06 275 / 0.1)">P1</div>
+            <div class="page-info"><span class="page-num">P.1</span><span class="page-status published">已发布</span></div>
+          </div>
+          <div class="page-card" draggable="true">
+            <div class="page-drag-handle"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg></div>
+            <div class="page-thumb" style="background:oklch(90% 0.06 135 / 0.1)">P2</div>
+            <div class="page-info"><span class="page-num">P.2</span><span class="page-status published">已发布</span></div>
+          </div>
+          <div class="page-card" draggable="true">
+            <div class="page-drag-handle"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg></div>
+            <div class="page-thumb" style="background:oklch(90% 0.06 85 / 0.1)">P3</div>
+            <div class="page-info"><span class="page-num">P.3</span><span class="page-status draft">草稿</span></div>
+          </div>
+          <div class="page-card" draggable="true">
+            <div class="page-drag-handle"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg></div>
+            <div class="page-thumb" style="background:oklch(90% 0.06 145 / 0.1)">P4</div>
+            <div class="page-info"><span class="page-num">P.4</span><span class="page-status published">已发布</span></div>
+          </div>
+          <div class="page-card" draggable="true">
+            <div class="page-drag-handle"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg></div>
+            <div class="page-thumb" style="background:oklch(90% 0.06 275 / 0.1)">P5</div>
+            <div class="page-info"><span class="page-num">P.5</span><span class="page-status published">已发布</span></div>
+          </div>
+          <div class="page-card" draggable="true">
+            <div class="page-drag-handle"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg></div>
+            <div class="page-thumb" style="background:oklch(90% 0.06 135 / 0.1)">P6</div>
+            <div class="page-info"><span class="page-num">P.6</span><span class="page-status draft">草稿</span></div>
+          </div>
+          <div class="page-card" draggable="true">
+            <div class="page-drag-handle"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg></div>
+            <div class="page-thumb" style="background:oklch(90% 0.06 85 / 0.1)">P7</div>
+            <div class="page-info"><span class="page-num">P.7</span><span class="page-status published">已发布</span></div>
+          </div>
+          <div class="page-card" draggable="true">
+            <div class="page-drag-handle"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg></div>
+            <div class="page-thumb" style="background:oklch(90% 0.06 145 / 0.1)">P8</div>
+            <div class="page-info"><span class="page-num">P.8</span><span class="page-status published">已发布</span></div>
+          </div>
+          <div class="page-card" draggable="true">
+            <div class="page-drag-handle"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg></div>
+            <div class="page-thumb" style="background:oklch(90% 0.06 275 / 0.1)">P9</div>
+            <div class="page-info"><span class="page-num">P.9</span><span class="page-status draft">草稿</span></div>
+          </div>
+          <div class="page-card" draggable="true">
+            <div class="page-drag-handle"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg></div>
+            <div class="page-thumb" style="background:oklch(90% 0.06 135 / 0.1)">P10</div>
+            <div class="page-info"><span class="page-num">P.10</span><span class="page-status published">已发布</span></div>
+          </div>
+          <div class="page-card" draggable="true">
+            <div class="page-drag-handle"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg></div>
+            <div class="page-thumb" style="background:oklch(90% 0.06 85 / 0.1)">P11</div>
+            <div class="page-info"><span class="page-num">P.11</span><span class="page-status published">已发布</span></div>
+          </div>
+          <div class="page-card" draggable="true">
+            <div class="page-drag-handle"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg></div>
+            <div class="page-thumb" style="background:oklch(90% 0.06 145 / 0.1)">P12</div>
+            <div class="page-info"><span class="page-num">P.12</span><span class="page-status published">已发布</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Audio Management Panel -->
+      <div class="tab-panel" id="panel-audio">
+        <div class="toolbar">
+          <div class="toolbar-left">
+            <span style="font-size:13px;color:var(--muted)">共 5 个音频文件</span>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary" onclick="openAudioModal()">上传音频</button>
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th></th>
+              <th>文件名</th>
+              <th>时长</th>
+              <th>绑定页码</th>
+              <th>文件大小</th>
+              <th>上传时间</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><div class="audio-wave"><span style="height:8px"></span><span style="height:14px"></span><span style="height:10px"></span><span style="height:16px"></span><span style="height:12px"></span></div></td>
+              <td style="font-family:var(--font-mono);font-size:12px">chapter1-p1-3.mp3</td>
+              <td>2:34</td>
+              <td><span style="padding:2px 8px;border-radius:4px;font-size:11px;background:var(--accent-soft);color:var(--accent)">P.1 - P.3</span></td>
+              <td>3.8 MB</td>
+              <td style="font-size:12px;color:var(--muted)">2026-06-01</td>
+              <td><div style="display:flex;gap:6px"><button class="btn btn-secondary btn-sm">播放</button><button class="btn btn-secondary btn-sm">编辑</button><button class="btn btn-danger btn-sm">删除</button></div></td>
+            </tr>
+            <tr>
+              <td><div class="audio-wave"><span style="height:10px"></span><span style="height:16px"></span><span style="height:8px"></span><span style="height:14px"></span><span style="height:10px"></span></div></td>
+              <td style="font-family:var(--font-mono);font-size:12px">chapter1-p4-6.mp3</td>
+              <td>3:12</td>
+              <td><span style="padding:2px 8px;border-radius:4px;font-size:11px;background:var(--accent-soft);color:var(--accent)">P.4 - P.6</span></td>
+              <td>4.5 MB</td>
+              <td style="font-size:12px;color:var(--muted)">2026-06-01</td>
+              <td><div style="display:flex;gap:6px"><button class="btn btn-secondary btn-sm">播放</button><button class="btn btn-secondary btn-sm">编辑</button><button class="btn btn-danger btn-sm">删除</button></div></td>
+            </tr>
+            <tr>
+              <td><div class="audio-wave"><span style="height:12px"></span><span style="height:8px"></span><span style="height:16px"></span><span style="height:10px"></span><span style="height:14px"></span></div></td>
+              <td style="font-family:var(--font-mono);font-size:12px">chapter1-p7-9.mp3</td>
+              <td>2:58</td>
+              <td><span style="padding:2px 8px;border-radius:4px;font-size:11px;background:var(--accent-soft);color:var(--accent)">P.7 - P.9</span></td>
+              <td>4.1 MB</td>
+              <td style="font-size:12px;color:var(--muted)">2026-06-02</td>
+              <td><div style="display:flex;gap:6px"><button class="btn btn-secondary btn-sm">播放</button><button class="btn btn-secondary btn-sm">编辑</button><button class="btn btn-danger btn-sm">删除</button></div></td>
+            </tr>
+            <tr>
+              <td><div class="audio-wave"><span style="height:8px"></span><span style="height:12px"></span><span style="height:16px"></span><span style="height:8px"></span><span style="height:10px"></span></div></td>
+              <td style="font-family:var(--font-mono);font-size:12px">chapter1-p10-12.mp3</td>
+              <td>4:05</td>
+              <td><span style="padding:2px 8px;border-radius:4px;font-size:11px;background:var(--accent-soft);color:var(--accent)">P.10 - P.12</span></td>
+              <td>5.8 MB</td>
+              <td style="font-size:12px;color:var(--muted)">2026-06-02</td>
+              <td><div style="display:flex;gap:6px"><button class="btn btn-secondary btn-sm">播放</button><button class="btn btn-secondary btn-sm">编辑</button><button class="btn btn-danger btn-sm">删除</button></div></td>
+            </tr>
+            <tr>
+              <td><div class="audio-wave"><span style="height:14px"></span><span style="height:10px"></span><span style="height:8px"></span><span style="height:12px"></span><span style="height:16px"></span></div></td>
+              <td style="font-family:var(--font-mono);font-size:12px">full-book-narration.mp3</td>
+              <td>12:49</td>
+              <td><span style="padding:2px 8px;border-radius:4px;font-size:11px;background:var(--success-soft);color:oklch(40% 0.15 145)">全部页面</span></td>
+              <td>18.2 MB</td>
+              <td style="font-size:12px;color:var(--muted)">2026-06-03</td>
+              <td><div style="display:flex;gap:6px"><button class="btn btn-secondary btn-sm">播放</button><button class="btn btn-secondary btn-sm">编辑</button><button class="btn btn-danger btn-sm">删除</button></div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Upload PDF Modal -->
+  <div class="modal-overlay" id="uploadModal">
+    <div class="modal">
+      <h3>上传 PDF 自动切页</h3>
+      <div class="upload-zone" onclick="alert('选择 PDF 文件')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <div>点击或拖拽上传 PDF 文件</div>
+        <div style="font-size:12px;margin-top:4px">支持 PDF 格式，上传后自动识别页面并切割</div>
+      </div>
+      <div class="form-group"><label>选择图书</label><select><option>Charlotte's Web</option><option>The Very Hungry Caterpillar</option></select></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeUploadModal()">取消</button>
+        <button class="btn btn-primary" onclick="closeUploadModal()">开始处理</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Page Modal -->
+  <div class="modal-overlay" id="pageModal">
+    <div class="modal">
+      <h3>编辑页面内容</h3>
+      <div class="form-group"><label>所属图书</label><select><option>Charlotte's Web</option><option>The Very Hungry Caterpillar</option></select></div>
+      <div class="form-group"><label>页码</label><input type="number" value="1" /></div>
+      <div class="form-group"><label>页面标题</label><input type="text" value="Before Breakfast" /></div>
+      <div class="form-group"><label>文本内容 (支持 Markdown)</label><textarea style="min-height:100px;resize:vertical">"Where's Papa going with that ax?" said Fern to her mother as they were setting the table for breakfast.</textarea></div>
+      <div class="upload-zone" onclick="alert('选择图片')">点击或拖拽上传页面图片</div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closePageModal()">取消</button>
+        <button class="btn btn-primary" onclick="closePageModal()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Upload Audio Modal -->
+  <div class="modal-overlay" id="audioModal">
+    <div class="modal">
+      <h3>上传音频文件</h3>
+      <div class="upload-zone" onclick="alert('选择音频文件')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg>
+        <div>点击或拖拽上传音频文件</div>
+        <div style="font-size:12px;margin-top:4px">支持 MP3、WAV、M4A 格式</div>
+      </div>
+      <div class="form-group"><label>绑定页码</label><div style="display:flex;gap:8px;align-items:center"><input type="number" placeholder="起始页" style="width:100px" /><span style="color:var(--muted)">至</span><input type="number" placeholder="结束页" style="width:100px" /></div></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeAudioModal()">取消</button>
+        <button class="btn btn-primary" onclick="closeAudioModal()">上传</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function switchTab(name) {
+      document.querySelectorAll('.tab-item').forEach(function(t) { t.classList.remove('active'); });
+      document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
+      event.target.classList.add('active');
+      document.getElementById('panel-' + name).classList.add('active');
+    }
+
+    // Drag and drop for page cards
+    (function() {
+      var grid = document.getElementById('pageGrid');
+      if (!grid) return;
+      var dragItem = null;
+      grid.addEventListener('dragstart', function(e) {
+        dragItem = e.target.closest('.page-card');
+        if (dragItem) dragItem.classList.add('dragging');
+      });
+      grid.addEventListener('dragend', function() {
+        if (dragItem) dragItem.classList.remove('dragging');
+        dragItem = null;
+      });
+      grid.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        var target = e.target.closest('.page-card');
+        if (target && target !== dragItem) {
+          var rect = target.getBoundingClientRect();
+          var mid = rect.left + rect.width / 2;
+          if (e.clientX < mid) {
+            grid.insertBefore(dragItem, target);
+          } else {
+            grid.insertBefore(dragItem, target.nextSibling);
+          }
+        }
+      });
+    })();
+
+    function openUploadModal() { document.getElementById('uploadModal').classList.add('show'); }
+    function closeUploadModal() { document.getElementById('uploadModal').classList.remove('show'); }
+    function openPageModal() { document.getElementById('pageModal').classList.add('show'); }
+    function closePageModal() { document.getElementById('pageModal').classList.remove('show'); }
+    function openAudioModal() { document.getElementById('audioModal').classList.add('show'); }
+    function closeAudioModal() { document.getElementById('audioModal').classList.remove('show'); }
+  </script>
+  <script src="admin-sidebar.js"></script>
+</body>
+</html>

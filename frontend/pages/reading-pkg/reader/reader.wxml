@@ -1,0 +1,175 @@
+<!--frontend/pages/reading-pkg/reader/reader.wxml-->
+<view class="reader-page">
+  <error-view wx:if="{{loadError}}" visible="{{loadError}}" icon="😵" title="加载失败" desc="数据加载出错了，请稍后重试" showRetry="{{true}}" retryText="重试" bind:onRetry="onRetry" />
+  <loading-skeleton wx:elif="{{loading}}" />
+  <block wx:if="{{!loadError && !loading}}">
+  <!-- Top Nav -->
+  <view class="top-nav">
+    <view class="back-btn" bindtap="goBack">
+      <text class="nav-title">听读</text>
+    </view>
+  </view>
+
+  <!-- 逾期锁定遮罩 — centered card layout -->
+  <view class="overdue-mask overdue-overlay {{isOverdue ? 'show' : ''}}" wx:if="{{isOverdue}}">
+    <view class="overdue-content overdue-card">
+      <text class="overdue-icon od-icon">🔒</text>
+      <text class="overdue-title od-title">借阅已逾期</text>
+      <text class="overdue-desc od-desc">借阅已逾期，请先归还图书后再听读</text>
+      <button class="btn-primary od-btn" bindtap="goBack">返回</button>
+    </view>
+  </view>
+
+  <!-- 图书信息 — capsule tags -->
+  <view class="book-header book-info">
+    <image wx:if="{{book.cover}}" src="{{book.cover}}" class="book-cover book-cover-img" mode="aspectFill" />
+    <text class="cover-emoji" wx:if="{{!book.cover}}">📖</text>
+    <view class="book-meta">
+      <text class="book-title book-name">{{book.title}}</text>
+      <text class="book-author book-writer">{{book.author}}</text>
+      <view class="book-info book-meta-tags">
+        <text class="btag-ar meta-tag ar">AR {{book.ar_value}}</text>
+        <text class="btag-words meta-tag words">{{book.word_count || 0}} 词</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 音频播放器 -->
+  <view class="audio-section player-section" wx:if="{{book.has_audio}}">
+    <!-- Progress Bar -->
+    <view class="audio-progress-wrap progress-area">
+      <view class="progress-times">
+        <text class="audio-time time-now">{{audioCurrentTime}}</text>
+        <text class="audio-time">{{audioTotalTime}}</text>
+      </view>
+      <view class="progress-track">
+        <slider class="audio-slider progress-fill" value="{{audioProgress}}" max="{{audioDuration}}"
+                bindchange="seekAudio" activeColor="var(--accent)" block-size="14" />
+        <view class="progress-handle"></view>
+      </view>
+    </view>
+
+    <!-- Playback Controls -->
+    <view class="audio-main-controls playback-controls">
+      <view class="audio-btn-secondary ctrl-skip" bindtap="rewind15">
+        <text>-15s</text>
+        <text class="skip-label">-15s</text>
+      </view>
+      <view class="audio-btn-main ctrl-play {{audioPlaying ? 'playing' : ''}}" bindtap="toggleAudio">
+        <text class="audio-icon">{{audioPlaying ? '⏸' : '▶'}}</text>
+      </view>
+      <view class="audio-btn-secondary ctrl-skip" bindtap="forward15">
+        <text>+15s</text>
+        <text class="skip-label">+15s</text>
+      </view>
+    </view>
+
+    <!-- Speed Selector -->
+    <view class="speed-bar speed-row">
+      <view class="speed-item speed-chip {{audioSpeed === 0.75 ? 'active' : ''}}" bindtap="setSpeed" data-speed="0.75">0.75x</view>
+      <view class="speed-item speed-chip {{audioSpeed === 1.0 ? 'active' : ''}}" bindtap="setSpeed" data-speed="1.0">1x</view>
+      <view class="speed-item speed-chip {{audioSpeed === 1.25 ? 'active' : ''}}" bindtap="setSpeed" data-speed="1.25">1.25x</view>
+      <view class="speed-item speed-chip {{audioSpeed === 1.5 ? 'active' : ''}}" bindtap="setSpeed" data-speed="1.5">1.5x</view>
+    </view>
+
+    <!-- Chapter Indicator -->
+    <view class="chapter-indicator chapter-tag">Chapter {{currentChapter || 1}}</view>
+  </view>
+
+  <!-- 无音频提示 -->
+  <view class="no-audio" wx:if="{{!book.has_audio}}">
+    <text class="no-audio-icon">📚</text>
+    <text class="no-audio-text">该书暂无音频，请到门店借阅实体书后听读</text>
+  </view>
+
+  <!-- Divider -->
+  <view class="section-divider divider"></view>
+
+  <!-- 查词区域 dict-section -->
+  <view class="lookup-section dict-section">
+    <view class="lookup-header">
+      <text class="lookup-title section-title">词典查词</text>
+    </view>
+    <view class="lookup-input-wrap dict-input-row">
+      <input class="lookup-input dict-input" placeholder="输入英文单词" value="{{lookupWord}}"
+             bindinput="onLookupInput" bindconfirm="doLookup" />
+      <view class="lookup-btn dict-search-btn" bindtap="doLookup">
+        <text>查</text>
+      </view>
+    </view>
+
+    <!-- 查词结果 -->
+    <view class="lookup-result dict-result {{lookupResult ? 'show' : ''}}" wx:if="{{lookupResult}}">
+      <view class="result-word dr-word">{{lookupResult.word}}</view>
+      <view class="result-phonetic dr-phonetic" wx:if="{{lookupResult.phonetic}}">/{{lookupResult.phonetic}}/</view>
+      <view class="result-pos" wx:if="{{lookupResult.part_of_speech}}">{{lookupResult.part_of_speech}}</view>
+      <view class="result-meaning dr-def">{{lookupResult.chinese_meaning || '释义加载中...'}}</view>
+      <view class="result-example" wx:if="{{lookupResult.example_sentence}}">
+        <text class="text-secondary text-sm">{{lookupResult.example_sentence}}</text>
+      </view>
+      <view class="result-source text-sm text-light" wx:if="{{lookupResult.source}}">
+        来源: {{lookupResult.source === 'ecdict' ? 'ECDICT' : 'Free Dictionary'}}
+      </view>
+      <view class="result-actions">
+        <button class="btn-primary btn-sm dr-btn" bindtap="addLookupToVocab">加入生词本</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部工具栏 bottom-bar -->
+  <view class="toolbar safe-bottom bottom-bar">
+    <view class="tool-btn bar-item" bindtap="goBookshelf">
+      <text class="bar-icon">📚</text>
+      <text class="tool-label">书架</text>
+    </view>
+    <view class="tool-btn bar-item" bindtap="goQuiz" wx:if="{{book.has_audio}}">
+      <text class="bar-icon">📝</text>
+      <text class="tool-label">测评</text>
+    </view>
+    <view class="tool-btn bar-item" bindtap="shareBook">
+      <text class="bar-icon">📤</text>
+      <text class="tool-label">分享</text>
+    </view>
+  </view>
+
+  <!-- MP-015: 打卡成功动画 -->
+  <view class="checkin-overlay" wx:if="{{showCheckinAnimation}}">
+    <view class="checkin-card">
+      <text class="checkin-star">⭐</text>
+      <text class="checkin-star s2">🌟</text>
+      <text class="checkin-star s3">✨</text>
+      <text class="checkin-title">打卡成功！</text>
+      <text class="checkin-streak">已连续阅读 {{checkinStreak}} 天</text>
+    </view>
+  </view>
+
+  <!-- 完成弹窗 completion-overlay -->
+  <view class="completion-overlay {{showCompletion ? 'show' : ''}}" wx:if="{{showCompletion}}">
+    <view class="completion-card completion-popup">
+      <view class="cc-top-gradient"></view>
+      <text class="cc-emoji popup-emoji">🎉</text>
+      <text class="cc-title popup-title">恭喜读完！</text>
+      <text class="cc-sub popup-sub">你已完成本书的听读</text>
+      <view class="cc-stats popup-stats">
+        <view class="cc-stat popup-stat">
+          <text class="cc-val val">{{completionStats.books}}</text>
+          <text class="cc-lbl lbl">读完本数</text>
+        </view>
+        <view class="cc-stat popup-stat">
+          <text class="cc-val val">{{completionStats.words}}</text>
+          <text class="cc-lbl lbl">词数</text>
+        </view>
+        <view class="cc-stat popup-stat">
+          <text class="cc-val val">{{completionStats.minutes}}min</text>
+          <text class="cc-lbl lbl">用时</text>
+        </view>
+      </view>
+      <view class="cc-actions popup-actions">
+        <button class="cc-btn cc-btn-primary popup-btn primary" bindtap="goQuizFromCompletion">参加测评</button>
+        <button class="cc-btn cc-btn-secondary popup-btn secondary" bindtap="closeCompletion">返回书架</button>
+      </view>
+    </view>
+  </view>
+
+  </block>
+</view>

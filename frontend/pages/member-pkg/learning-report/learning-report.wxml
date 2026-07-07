@@ -1,0 +1,100 @@
+<!-- frontend/pages/member-pkg/learning-report/learning-report.wxml -->
+<view class="page">
+  <view style="display:none" class="active section-title"></view>
+
+  <!-- Nav Bar -->
+  <view class="nav-bar">
+    <navigator class="back" open-type="navigateBack" delta="1">
+      <text class="back-icon">←</text>
+    </navigator>
+    <text class="title">学习报告</text>
+    <view class="share-btn" bindtap="onShareTap">
+      <text class="share-icon">🔗</text>
+      <text>分享</text>
+    </view>
+  </view>
+
+  <!-- Type Tabs -->
+  <view class="type-tabs">
+    <view class="type-tab {{period === 'week' ? 'active' : ''}}" data-period="week" bindtap="switchPeriod">
+      <text>周报</text>
+    </view>
+    <view class="type-tab {{period === 'month' ? 'active' : ''}}" data-period="month" bindtap="switchPeriod">
+      <text>月报</text>
+    </view>
+  </view>
+
+  <!-- Loading -->
+  <view class="loading-wrap" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+
+  <block wx:if="{{!loading && child}}">
+
+    <!-- Report Card -->
+    <view class="report-card">
+      <text class="rc-period">{{reportPeriod}}</text>
+      <text class="rc-title">{{reportTitle}}</text>
+
+      <!-- Highlight Grid -->
+      <view class="highlight-grid">
+        <view class="hl-item">
+          <text class="hl-val accent">{{summary.total_minutes || 0}}</text>
+          <text class="hl-label">阅读时长 (分钟)</text>
+        </view>
+        <view class="hl-item">
+          <text class="hl-val success">{{summary.books_finished || 0}}</text>
+          <text class="hl-label">阅读本数</text>
+        </view>
+        <view class="hl-item">
+          <text class="hl-val warning">{{summary.total_words || 0}}</text>
+          <text class="hl-label">新增生词</text>
+        </view>
+        <view class="hl-item">
+          <text class="hl-val secondary">{{summary.checkin_days || 0}}</text>
+          <text class="hl-label">打卡天数</text>
+        </view>
+      </view>
+
+      <!-- AR Trend Chart -->
+      <text class="section-heading">AR 变化趋势</text>
+      <view class="ar-trend">
+        <view class="ar-col" wx:for="{{trendData}}" wx:key="date">
+          <text class="ar-value">{{item.minutes}}</text>
+          <view class="ar-bar-track">
+            <view class="ar-bar" style="height: {{item.barHeight}}%; background: var(--accent);"></view>
+          </view>
+          <text class="ar-label">{{item.label}}</text>
+        </view>
+        <view class="empty-chart" wx:if="{{trendData.length === 0}}">
+          <text class="empty-text">暂无数据</text>
+        </view>
+      </view>
+
+      <!-- Suggestion -->
+      <view class="suggestion" wx:if="{{suggestion}}">
+        <text class="sug-icon">💡</text>
+        <text class="sug-text">{{suggestion}}</text>
+      </view>
+    </view>
+
+    <!-- Share Bar -->
+    <view class="share-bar">
+      <view class="btn-share" open-type="share">
+        <text class="btn-icon">📤</text>
+        <text>分享报告</text>
+      </view>
+      <view class="btn-save" bindtap="onShareTap">
+        <text class="btn-icon">💾</text>
+        <text>保存</text>
+      </view>
+    </view>
+  </block>
+
+  <!-- Empty State -->
+  <view class="empty-state" wx:if="{{!loading && !child}}">
+    <text class="empty-icon">📊</text>
+    <text class="empty-text">暂无学习数据</text>
+    <text class="empty-sub">开始阅读后即可查看报告</text>
+  </view>
+</view>

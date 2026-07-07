@@ -1,0 +1,200 @@
+/* pages/questions.css — 题库管理页专属样式 */
+
+/* ===== Split Layout ===== */
+.questions-layout {
+  display: flex;
+  gap: 16px;
+  min-height: 600px;
+}
+
+/* ===== Book List Panel (left) ===== */
+.book-list-panel {
+  width: 300px;
+  flex-shrink: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.book-list-panel .book-search {
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.book-list-panel .book-scroll {
+  overflow-y: auto;
+  max-height: 540px;
+}
+.book-item {
+  padding: 12px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+}
+.book-item.active {
+  background: var(--accent-soft);
+}
+.book-item:last-child {
+  border-bottom: none;
+}
+.book-item .book-title {
+  font-weight: 600;
+  font-size: 14px;
+}
+.book-item .book-meta {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ===== Questions Panel (right) ===== */
+.questions-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.questions-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.questions-panel-header .panel-title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 600;
+}
+.questions-panel-header .panel-meta {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ===== Question Card ===== */
+.question-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+.question-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.question-card-body {
+  flex: 1;
+}
+.question-text {
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+.question-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  font-size: 13px;
+}
+.question-options .option {
+  color: var(--muted);
+}
+.question-options .option.correct {
+  color: var(--success);
+}
+.question-answer {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--success);
+}
+.question-actions {
+  display: flex;
+  gap: 6px;
+  margin-left: 12px;
+}
+
+/* ===== Form Textarea ===== */
+.form-textarea {
+  width: 100%;
+  min-height: 80px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+  resize: vertical;
+}
+.form-textarea:focus {
+  border-color: var(--accent);
+}
+
+/* ===== Filter Select ===== */
+.filter-select {
+  height: 38px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0 12px;
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+  background: var(--surface);
+  color: var(--fg);
+  min-width: 120px;
+}
+
+/* ===== Search Bar ===== */
+.search-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+/* ===== Tab Bar ===== */
+.tab-bar {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+.tab-item {
+  padding: 10px 20px;
+  font-size: 14px;
+  color: var(--muted);
+  font-weight: 500;
+  cursor: pointer;
+  position: relative;
+}
+.tab-item.active {
+  color: var(--accent);
+}
+.tab-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--accent);
+}
+
+/* ===== Status Pills ===== */
+.status {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.status-pending {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+.status-approved {
+  background: var(--success-soft);
+  color: var(--success);
+}
+.status-rejected {
+  background: var(--error-soft);
+  color: var(--error);
+}
+.status-active {
+  background: var(--success-soft);
+  color: var(--success);
+}

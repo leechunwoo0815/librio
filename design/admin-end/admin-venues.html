@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>场馆管理 · MegaWords</title>
+  <style>
+    :root {
+      --bg: oklch(98% 0.003 250);
+      --surface: oklch(100% 0 0);
+      --fg: oklch(20% 0.015 275);
+      --muted: oklch(48% 0.02 250);
+      --border: oklch(90% 0.008 250);
+      --accent: oklch(54% 0.17 275);
+      --accent-soft: oklch(54% 0.17 275 / 0.1);
+      --accent-hover: oklch(48% 0.17 275);
+      --secondary: oklch(86% 0.20 135);
+      --secondary-soft: oklch(86% 0.20 135 / 0.12);
+      --success: oklch(72% 0.20 145);
+      --success-soft: oklch(72% 0.20 145 / 0.1);
+      --warning: oklch(78% 0.16 85);
+      --warning-soft: oklch(78% 0.16 85 / 0.1);
+      --error: oklch(62% 0.22 25);
+      --radius: 12px; --radius-sm: 8px; --radius-lg: 16px;
+      --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
+      --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 14px; line-height: 1.5; min-height: 100vh; display: flex; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; border: none; background: none; }
+    input, select, textarea { font: inherit; }
+    .main { margin-left: 240px; flex: 1; min-height: 100vh; }
+    .top-bar { display: flex; align-items: center; justify-content: space-between; padding: 16px 28px; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; }
+    .top-bar h1 { font-family: var(--font-display); font-size: 18px; font-weight: 600; }
+    .top-bar .right { display: flex; align-items: center; gap: 16px; font-size: 13px; color: var(--muted); }
+    .top-bar .right .name { color: var(--fg); font-weight: 500; }
+    .logout-btn { color: var(--accent); font-size: 13px; }
+    .logout-btn:hover { text-decoration: underline; }
+    .content { padding: 24px 28px; }
+    /* toolbar */
+    .toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; gap: 12px; flex-wrap: wrap; }
+    .toolbar-left { display: flex; align-items: center; gap: 10px; }
+    .search-box { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); width: 260px; }
+    .search-box svg { width: 16px; height: 16px; color: var(--muted); flex-shrink: 0; }
+    .search-box input { border: none; outline: none; background: none; font-size: 13px; width: 100%; color: var(--fg); }
+    .search-box input::placeholder { color: var(--muted); }
+    .filter-select { padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; color: var(--fg); background: var(--surface); cursor: pointer; }
+    .btn-primary { padding: 8px 18px; border-radius: var(--radius-sm); background: var(--accent); color: white; font-size: 13px; font-weight: 500; transition: background 0.15s ease; display: flex; align-items: center; gap: 6px; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-primary svg { width: 16px; height: 16px; }
+    /* table */
+    .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; }
+    thead { background: oklch(97% 0.004 250); }
+    th { padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: 0.02em; border-bottom: 1px solid var(--border); }
+    td { padding: 14px 16px; font-size: 13px; border-bottom: 1px solid var(--border); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: oklch(97% 0.004 250); }
+    .venue-name-cell { display: flex; align-items: center; gap: 10px; }
+    .venue-icon-sm { width: 36px; height: 36px; border-radius: var(--radius-sm); background: var(--accent-soft); display: grid; place-items: center; flex-shrink: 0; }
+    .venue-icon-sm svg { width: 18px; height: 18px; color: var(--accent); }
+    .venue-name-text { font-weight: 500; }
+    .venue-addr-text { font-size: 12px; color: var(--muted); }
+    .status-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 500; }
+    .status-active { background: var(--success-soft); color: var(--success); }
+    .status-inactive { background: oklch(90% 0.008 250); color: var(--muted); }
+    .status-maintenance { background: var(--warning-soft); color: oklch(55% 0.14 85); }
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; }
+    .status-active .status-dot { background: var(--success); }
+    .status-inactive .status-dot { background: var(--muted); }
+    .status-maintenance .status-dot { background: var(--warning); }
+    .action-btns { display: flex; gap: 6px; }
+    .action-btn { padding: 5px 10px; border-radius: var(--radius-sm); font-size: 12px; color: var(--muted); border: 1px solid var(--border); background: var(--surface); transition: all 0.12s ease; }
+    .action-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .action-btn.danger:hover { border-color: var(--error); color: var(--error); }
+    /* pagination */
+    .pagination { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-top: 1px solid var(--border); }
+    .pagination .info { font-size: 12px; color: var(--muted); }
+    .pagination .pages { display: flex; gap: 4px; }
+    .page-btn { width: 32px; height: 32px; border-radius: var(--radius-sm); display: grid; place-items: center; font-size: 13px; color: var(--muted); border: 1px solid var(--border); background: var(--surface); transition: all 0.12s ease; }
+    .page-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .page-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+    /* modal overlay */
+    .modal-overlay { position: fixed; inset: 0; background: oklch(0% 0 0 / 0.4); z-index: 50; display: none; align-items: center; justify-content: center; }
+    .modal-overlay.show { display: flex; }
+    .modal { background: var(--surface); border-radius: var(--radius-lg); padding: 28px; width: 480px; max-width: 90vw; max-height: 80vh; overflow-y: auto; }
+    .modal h2 { font-family: var(--font-display); font-size: 18px; font-weight: 600; margin-bottom: 20px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: var(--fg); }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; color: var(--fg); background: var(--bg); outline: none; transition: border-color 0.15s ease; }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--accent); }
+    .form-group textarea { resize: vertical; min-height: 80px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
+    .btn-cancel { padding: 8px 18px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); font-size: 13px; color: var(--fg); }
+    .btn-cancel:hover { background: oklch(97% 0.004 250); }
+    /* stat row */
+    .venue-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+    .vstat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+    .vstat-label { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+    .vstat-value { font-family: var(--font-display); font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    /* responsive */
+    @media (max-width: 1024px) {
+      .main { margin-left: 200px; }
+      .venue-stats { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 768px) { .venue-stats { grid-template-columns: 1fr; }
+      .toolbar { flex-direction: column; align-items: stretch; }
+      .search-box { width: 100%; }
+    }
+  </style>
+    <link rel="stylesheet" href="admin-sidebar.css">
+  </head>
+<body>
+  <div id="sidebar-root"></div>
+<div class="main">
+    <div class="top-bar">
+      <h1>场馆管理</h1>
+      <div class="right">
+        <span class="name">管理员</span>
+        <button class="logout-btn">退出登录</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- stats -->
+      <div class="venue-stats" data-od-id="venue-stats">
+        <div class="vstat-card">
+          <div class="vstat-label">场馆总数</div>
+          <div class="vstat-value">4</div>
+        </div>
+        <div class="vstat-card">
+          <div class="vstat-label">运营中</div>
+          <div class="vstat-value">3</div>
+        </div>
+        <div class="vstat-card">
+          <div class="vstat-label">总工位数</div>
+          <div class="vstat-value">128</div>
+        </div>
+        <div class="vstat-card">
+          <div class="vstat-label">本月到馆人次</div>
+          <div class="vstat-value">2,847</div>
+        </div>
+      </div>
+
+      <!-- toolbar -->
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <div class="search-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <input type="text" placeholder="搜索场馆名称或地址…" />
+          </div>
+          <select class="filter-select">
+            <option>全部状态</option>
+            <option>运营中</option>
+            <option>维护中</option>
+            <option>已关闭</option>
+          </select>
+        </div>
+        <button class="btn-primary" onclick="toggleModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          新建场馆
+        </button>
+      </div>
+
+      <!-- table -->
+      <div class="table-wrap" data-od-id="venue-table">
+        <table>
+          <thead>
+            <tr>
+              <th>场馆信息</th>
+              <th>联系电话</th>
+              <th>工位数</th>
+              <th>图书库存</th>
+              <th>在借图书</th>
+              <th>状态</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <div class="venue-name-cell">
+                  <div class="venue-icon-sm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg></div>
+                  <div>
+                    <div class="venue-name-text">人广馆</div>
+                    <div class="venue-addr-text">黄浦区南京东路 800 号 3 楼</div>
+                  </div>
+                </div>
+              </td>
+              <td>021-6321-8800</td>
+              <td>42</td>
+              <td>1,260</td>
+              <td>384</td>
+              <td><span class="status-badge status-active"><span class="status-dot"></span>运营中</span></td>
+              <td>
+                <div class="action-btns">
+                  <button class="action-btn">编辑</button>
+                  <button class="action-btn">详情</button>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <div class="venue-name-cell">
+                  <div class="venue-icon-sm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg></div>
+                  <div>
+                    <div class="venue-name-text">徐汇馆</div>
+                    <div class="venue-addr-text">徐汇区漕溪北路 398 号 2 楼</div>
+                  </div>
+                </div>
+              </td>
+              <td>021-6438-2200</td>
+              <td>36</td>
+              <td>980</td>
+              <td>312</td>
+              <td><span class="status-badge status-active"><span class="status-dot"></span>运营中</span></td>
+              <td>
+                <div class="action-btns">
+                  <button class="action-btn">编辑</button>
+                  <button class="action-btn">详情</button>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <div class="venue-name-cell">
+                  <div class="venue-icon-sm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg></div>
+                  <div>
+                    <div class="venue-name-text">陆家嘴馆</div>
+                    <div class="venue-addr-text">浦东新区陆家嘴环路 1000 号 B1</div>
+                  </div>
+                </div>
+              </td>
+              <td>021-5878-6600</td>
+              <td>28</td>
+              <td>720</td>
+              <td>215</td>
+              <td><span class="status-badge status-active"><span class="status-dot"></span>运营中</span></td>
+              <td>
+                <div class="action-btns">
+                  <button class="action-btn">编辑</button>
+                  <button class="action-btn">详情</button>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <div class="venue-name-cell">
+                  <div class="venue-icon-sm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg></div>
+                  <div>
+                    <div class="venue-name-text">松江馆</div>
+                    <div class="venue-addr-text">松江区谷阳北路 166 号 1 楼</div>
+                  </div>
+                </div>
+              </td>
+              <td>021-5781-3300</td>
+              <td>22</td>
+              <td>540</td>
+              <td>0</td>
+              <td><span class="status-badge status-maintenance"><span class="status-dot"></span>维护中</span></td>
+              <td>
+                <div class="action-btns">
+                  <button class="action-btn">编辑</button>
+                  <button class="action-btn">详情</button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="pagination">
+          <span class="info">共 4 个场馆</span>
+          <div class="pages">
+            <button class="page-btn active">1</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- create venue modal -->
+  <div class="modal-overlay" id="venueModal" onclick="if(event.target===this)toggleModal()">
+    <div class="modal">
+      <h2>新建场馆</h2>
+      <div class="form-group">
+        <label>场馆名称</label>
+        <input type="text" placeholder="例如：静安馆" />
+      </div>
+      <div class="form-group">
+        <label>场馆地址</label>
+        <input type="text" placeholder="详细地址" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>联系电话</label>
+          <input type="text" placeholder="021-XXXX-XXXX" />
+        </div>
+        <div class="form-group">
+          <label>工位数量</label>
+          <input type="number" placeholder="30" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>营业时间</label>
+          <input type="text" placeholder="周二至周日 10:00–18:00" />
+        </div>
+        <div class="form-group">
+          <label>状态</label>
+          <select>
+            <option>运营中</option>
+            <option>维护中</option>
+            <option>已关闭</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>备注</label>
+        <textarea placeholder="场馆备注信息…"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="toggleModal()">取消</button>
+        <button class="btn-primary" onclick="toggleModal()">确认创建</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function toggleModal() {
+      document.getElementById('venueModal').classList.toggle('show');
+    }
+  </script>
+  <script src="admin-sidebar.js"></script>
+</body>
+</html>
