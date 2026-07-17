@@ -1,17 +1,20 @@
 # MegaWords 项目状态终审报告
 
-**日期**: 2026-07-17  
-**审计范围**: 全量代码复核 — 后端 P0/P1 修复验证 + 前端遗留项确认 + 测试全量运行
+**日期**: 2026-07-17 (v2 — 追加 CI/CD 全量覆盖)  
+**审计范围**: 全量代码复核 — 后端 P0/P1 修复验证 + 前端遗留项确认 + 测试全量运行 + CI/CD 基础设施
 
 ---
 
 ## 测试结果
 
-| 测试套件 | 结果 |
-|----------|------|
-| pytest | 175 passed, 4 skipped, 0 failed |
-| behave | 16 features passed, 138 scenarios passed, 0 failed |
-| ruff | **All checks passed!** (从 92 errors → 0) |
+| 测试套件 | v1 (fix-prompts 阶段) | v2 (CI/CD 最终提交) |
+|----------|-----------------------|-------------------|
+| pytest | 175 passed, 4 skipped, 0 failed | **210 passed, 5 skipped** ✅ |
+| behave | 16 features, 138 scenarios, 0 failed | 138/970/0 ✅ |
+| ruff | backend/ tests/ 0 errors | + features/ scripts/ 0 errors ✅ |
+| ruff format | — | **326 files already formatted** ✅ |
+| verify_api_contract | — | **OK** ✅ |
+| check_model_consistency | — | **53 tables** ✅ |
 
 ---
 
@@ -106,3 +109,47 @@
 1. 替代 appid 占位符（需微信公众平台获取真实 AppID）
 2. 补全服务协议（需法务/运营提供文本）
 3. 填写隐私政策运营主体（需与认证主体一致）
+
+---
+
+## 附录：CI/CD 全量覆盖总结 (v2)
+
+### 基础设施
+| 项目 | 值 |
+|------|-----|
+| CI 平台 | GitHub Actions（`.github/workflows/ci.yml`） |
+| 默认分支 | `main`（`master` 已重命名） |
+| 远程仓库 | `github.com/leechunwoo0815/librio`（SSH） |
+
+### CI 3 Job 分解
+| Job | 检查项 | 状态 |
+|-----|--------|------|
+| lint | ruff check backend/ tests/ | 0 errors ✅ |
+| | ruff check features/ scripts/ | 0 errors ✅ |
+| | ruff format --check . | 326 formatted ✅ |
+| test | pytest tests/ -x -q | 210/5 ✅ |
+| | behave features/ --no-capture -q | 138/970 ✅ |
+| | verify_api_contract | OK ✅ |
+| model-check | check_model_consistency | 53 tables ✅ |
+
+### 4 条新增路由
+| 路由 | 用途 | 测试数 |
+|------|------|--------|
+| GET /child/transfer/records | 权益转让记录 | 15 service + 21 HTTP |
+| GET /book/{book_id}/related | 相关图书推荐 | |
+| GET /reading/checkin/{child_id}/records | 打卡记录 | |
+| DELETE /child/{child_id} | 删除孩子 | |
+
+### 36 新测试覆盖
+- 15 Service 层：正常/空/异常/边界
+- 21 HTTP 层：鉴权 (401/403) / 序列化 / 参数校验 / 7 边界场景 (5/7)
+- 2 个 P3 边界（软删除过滤）代码已保护但未单独测
+
+### 已知阻塞
+| 项 | 原因 |
+|----|------|
+| appid 占位符 | 需微信公众平台真实值 |
+| 服务协议内容 | 需法务/运营提供 |
+| 隐私政策主体 | 需与认证主体一致 |
+| iconfont woff2 | 需从 iconfont.cn 下载 |
+| reading-stats 折线图 | 需产品决策 |
