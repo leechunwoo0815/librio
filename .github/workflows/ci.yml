@@ -34,7 +34,7 @@ jobs:
         with:
           python-version: "3.13"
           cache: pip
-      - run: pip install -r requirements.txt pytest pytest-asyncio httpx behave hamcrest
+      - run: pip install -r requirements.txt pytest pytest-asyncio httpx behave PyHamcrest
       - run: python -m pytest tests/ -x -q --tb=short
       - run: python -m behave features/ --no-capture -q
 
