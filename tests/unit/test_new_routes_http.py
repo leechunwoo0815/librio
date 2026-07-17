@@ -1,7 +1,7 @@
 """HTTP layer tests for 4 new routes — auth, serialization, parameter validation"""
 import pytest
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session as SASession
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 from fastapi.testclient import TestClient
 
