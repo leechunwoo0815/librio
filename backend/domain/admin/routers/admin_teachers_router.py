@@ -59,6 +59,7 @@ def create_teacher(
         status=data.status,
     )
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(service.db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -79,6 +80,7 @@ def update_teacher(
     """更新老师"""
     result = service.update_teacher(teacher_id, data)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(service.db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -98,6 +100,7 @@ def delete_teacher(
     """删除老师"""
     result = service.delete_teacher(teacher_id)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(service.db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -117,6 +120,7 @@ def assign_teacher(
     """分配老师给孩子"""
     result = service.assign_teacher(data.child_id, data.teacher_id)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(service.db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -149,6 +153,7 @@ def get_child_teacher(
 
 # ==================== 排班管理 ====================
 
+
 @router.post("/schedule", response_model=TeacherScheduleResponse, status_code=201)
 def create_schedule(
     data: CreateScheduleRequest,
@@ -156,8 +161,11 @@ def create_schedule(
     admin=Depends(require_perm("teacher.schedule")),
 ):
     """创建排班"""
-    result = service.create_schedule(data.teacher_id, data.weekday, data.start_time, data.end_time)
+    result = service.create_schedule(
+        data.teacher_id, data.weekday, data.start_time, data.end_time
+    )
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(service.db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -187,6 +195,7 @@ def delete_schedule(
     """删除排班"""
     result = service.delete_schedule(schedule_id)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(service.db)
     system_service.write_operation_log(
         admin_id=admin.id,

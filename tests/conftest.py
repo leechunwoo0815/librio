@@ -12,8 +12,10 @@ from fastapi.testclient import TestClient
 
 from backend.database import Base
 from backend.main import app
+
 # 禁用测试中的定时任务
 from backend.tasks.scheduler import scheduler
+
 if scheduler.running:
     scheduler.shutdown(wait=False)
 
@@ -25,7 +27,9 @@ def db_engine():
     [Why] 使用SQLite内存数据库，测试间完全隔离
     [How] 每次测试创建新引擎
     """
-    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
+    engine = create_engine(
+        "sqlite:///:memory:", connect_args={"check_same_thread": False}
+    )
     Base.metadata.create_all(bind=engine)
     yield engine
     Base.metadata.drop_all(bind=engine)

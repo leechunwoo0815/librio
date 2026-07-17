@@ -6,6 +6,7 @@
 2. 从后端 router.py 中提取所有 @router.get/post/put/delete 装饰器路径
 3. 比对差异（前端调用的路径必须在后端存在）
 """
+
 import re
 import sys
 import pathlib
@@ -21,11 +22,11 @@ def parse_frontend_apis(api_js_path: str) -> dict[str, list[str]]:
     for match in re.finditer(pattern, content):
         method, path = match.groups()
         # 替换模板变量为 {param}
-        path = re.sub(r'\$\{[^}]+\}', '{param}', path)
+        path = re.sub(r"\$\{[^}]+\}", "{param}", path)
         # 去除查询字符串
-        path = path.split('?')[0]
-        if path.startswith('/'):
-            apis[method].append(path.rstrip('/') or '/')
+        path = path.split("?")[0]
+        if path.startswith("/"):
+            apis[method].append(path.rstrip("/") or "/")
 
     return apis
 
@@ -41,7 +42,9 @@ def parse_backend_routes(backend_dir: str) -> dict[str, list[str]]:
         # 提取所有 router prefix（包括 fav_router 等别名）
         prefixes = re.findall(r'APIRouter\(prefix=["\'](.*?)["\']', content)
 
-        for match in re.finditer(r'@router\.(get|post|put|delete)\(\s*["\'](.*?)["\']', content):
+        for match in re.finditer(
+            r'@router\.(get|post|put|delete)\(\s*["\'](.*?)["\']', content
+        ):
             method, path = match.groups()
             for prefix in prefixes:
                 full_path = prefix + path
@@ -51,7 +54,9 @@ def parse_backend_routes(backend_dir: str) -> dict[str, list[str]]:
                     routes[method_key].append(full_path)
 
         # 也匹配 @fav_router 等别名
-        for alias_match in re.finditer(r'@(\w+_router)\.(get|post|put|delete)\(\s*["\'](.*?)["\']', content):
+        for alias_match in re.finditer(
+            r'@(\w+_router)\.(get|post|put|delete)\(\s*["\'](.*?)["\']', content
+        ):
             _, method, path = alias_match.groups()
             for prefix in prefixes:
                 full_path = prefix + path
@@ -81,7 +86,9 @@ def main():
                     matched = True
                     break
             if not matched:
-                mismatches.append(f"Frontend {method.upper()} {path} has no matching backend route")
+                mismatches.append(
+                    f"Frontend {method.upper()} {path} has no matching backend route"
+                )
 
     if mismatches:
         print(f"FOUND {len(mismatches)} API contract mismatches:")

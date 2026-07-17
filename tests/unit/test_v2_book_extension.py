@@ -25,8 +25,12 @@ def db_session():
 def test_book_v2_fields(db_session):
     """验证Book的V2.0新增字段"""
     book = Book(
-        isbn="9780064400558", title="Charlotte's Web", author="E.B. White",
-        ar_value=3.2, age_min=7, age_max=9,
+        isbn="9780064400558",
+        title="Charlotte's Web",
+        author="E.B. White",
+        ar_value=3.2,
+        age_min=7,
+        age_max=9,
         word_count=32000,
         estimated_reading_minutes=45,
         has_audio=1,
@@ -48,8 +52,12 @@ def test_book_v2_fields(db_session):
 def test_book_v2_defaults(db_session):
     """验证V2.0字段默认值"""
     book = Book(
-        isbn="9780000000001", title="Test", author="Author",
-        ar_value=1.0, age_min=5, age_max=7,
+        isbn="9780000000001",
+        title="Test",
+        author="Author",
+        ar_value=1.0,
+        age_min=5,
+        age_max=7,
     )
     db_session.add(book)
     db_session.commit()

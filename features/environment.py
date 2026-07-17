@@ -7,7 +7,8 @@
 
 import os
 import sys
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 # 测试环境强制使用 Mock 网关
 os.environ["MOCK_PAYMENT"] = "true"
@@ -18,6 +19,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from backend.database import Base, get_db
+
 # 注册所有 ORM 模型（让 Base.metadata 知道所有表）
 from backend.domain.user.models import *  # noqa: F401,F403
 from backend.domain.child.models import *  # noqa: F401,F403
@@ -73,6 +75,7 @@ def before_scenario(context, scenario):
     app.dependency_overrides[get_db] = override_get_db
 
     from fastapi.testclient import TestClient
+
     context.client = TestClient(app)
 
     context.user = None

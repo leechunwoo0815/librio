@@ -122,3 +122,11 @@ class VoiceRecordingDetailResponse(BaseSchema):
     duration_seconds: int
     pronunciation_score: float | None = None
     create_time: datetime | None = None
+
+
+class CheckinRecordResponse(BaseSchema):
+    """打卡记录响应（前端最近打卡列表）"""
+
+    date: str
+    book_name: str
+    pages: str

@@ -29,13 +29,28 @@ def _setup(db):
     user = User(openid="test_res", phone="13800138040")
     db.add(user)
     db.commit()
-    child = Child(user_id=user.id, name="预约测试", age=7, grade="二年级",
-                  status=Child.STATUS_OFFICIAL, deposit_status=DepositStatus.PAID)
+    child = Child(
+        user_id=user.id,
+        name="预约测试",
+        age=7,
+        grade="二年级",
+        status=Child.STATUS_OFFICIAL,
+        deposit_status=DepositStatus.PAID,
+    )
     db.add(child)
     db.commit()
-    book = Book(isbn="9780064400558", title="Charlotte's Web", author="E.B. White",
-                ar_value=3.2, age_min=7, age_max=9, word_count=31000,
-                total_stock=5, available_stock=5, offline_available=1)
+    book = Book(
+        isbn="9780064400558",
+        title="Charlotte's Web",
+        author="E.B. White",
+        ar_value=3.2,
+        age_min=7,
+        age_max=9,
+        word_count=31000,
+        total_stock=5,
+        available_stock=5,
+        offline_available=1,
+    )
     db.add(book)
     db.commit()
     return user, child, book
@@ -45,7 +60,9 @@ def test_create_reservation(db):
     """成功预约"""
     user, child, book = _setup(db)
     svc = ReservationService(db)
-    result = svc.create_reservation(ReservationCreateRequest(child_id=child.id, book_id=book.id))
+    result = svc.create_reservation(
+        ReservationCreateRequest(child_id=child.id, book_id=book.id)
+    )
     assert result.status == ReservationStatus.PENDING
 
 
@@ -56,7 +73,9 @@ def test_create_reservation_no_stock(db):
     db.commit()
     svc = ReservationService(db)
     with pytest.raises(Exception, match="库存"):
-        svc.create_reservation(ReservationCreateRequest(child_id=child.id, book_id=book.id))
+        svc.create_reservation(
+            ReservationCreateRequest(child_id=child.id, book_id=book.id)
+        )
 
 
 def test_create_reservation_locks_stock(db):
@@ -73,7 +92,9 @@ def test_expire_reservation_releases_stock(db):
     """过期释放库存"""
     user, child, book = _setup(db)
     svc = ReservationService(db)
-    result = svc.create_reservation(ReservationCreateRequest(child_id=child.id, book_id=book.id))
+    result = svc.create_reservation(
+        ReservationCreateRequest(child_id=child.id, book_id=book.id)
+    )
     db.refresh(book)
     stock_after_reserve = book.available_stock
     svc.expire_reservation(result.id)

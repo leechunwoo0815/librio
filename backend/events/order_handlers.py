@@ -78,14 +78,18 @@ def handle_order_paid_for_child(event, db: Session):
         child.member_start_time = now
         child.member_expire_time = now + timedelta(days=obs_days)
         child_repo.update(child)
-        logger.info(f"Child {event.child_id} observation period activated: {obs_days} days")
+        logger.info(
+            f"Child {event.child_id} observation period activated: {obs_days} days"
+        )
     elif event.order_type == OrderType.PARENT_COURSE:
         obs_days = ConfigService.get_int(db, "observation_days", 30)
         child.status = MemberStatus.OBSERVATION
         child.member_start_time = now
         child.member_expire_time = now + timedelta(days=obs_days)
         child_repo.update(child)
-        logger.info(f"Child {event.child_id} parent-course -> observation activated: {obs_days} days")
+        logger.info(
+            f"Child {event.child_id} parent-course -> observation activated: {obs_days} days"
+        )
     else:
         logger.warning(f"OrderPaidEvent: unhandled order_type={event.order_type}")
 

@@ -37,9 +37,7 @@ def list_slots(
 # ============================================================
 
 
-@router.get(
-    "/admin", response_model=list[ParentCourseTimeResponse]
-)
+@router.get("/admin", response_model=list[ParentCourseTimeResponse])
 def admin_list_slots(
     venue_id: int | None = Query(None, description="按场馆筛选"),
     db=Depends(get_db),
@@ -50,9 +48,7 @@ def admin_list_slots(
     return service.list_all(venue_id)
 
 
-@router.post(
-    "/admin", response_model=ParentCourseTimeResponse, status_code=201
-)
+@router.post("/admin", response_model=ParentCourseTimeResponse, status_code=201)
 def admin_create_slot(
     data: ParentCourseTimeCreate,
     db=Depends(get_db),
@@ -63,9 +59,7 @@ def admin_create_slot(
     return service.create(data)
 
 
-@router.put(
-    "/admin/{slot_id}", response_model=ParentCourseTimeResponse
-)
+@router.put("/admin/{slot_id}", response_model=ParentCourseTimeResponse)
 def admin_update_slot(
     slot_id: int,
     data: ParentCourseTimeUpdate,
@@ -77,9 +71,7 @@ def admin_update_slot(
     return service.update(slot_id, data)
 
 
-@router.delete(
-    "/admin/{slot_id}", response_model=dict
-)
+@router.delete("/admin/{slot_id}", response_model=dict)
 def admin_delete_slot(
     slot_id: int,
     db=Depends(get_db),

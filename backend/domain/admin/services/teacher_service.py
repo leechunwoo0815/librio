@@ -36,10 +36,15 @@ class AdminTeacherService:
         total = self.teacher_repo.count()
 
         # 预加载场馆名与每个老师负责的孩子数
-        venues = {v.id: v.name for v in self.db.query(Venue).filter(Venue.is_deleted == 0).all()}
+        venues = {
+            v.id: v.name
+            for v in self.db.query(Venue).filter(Venue.is_deleted == 0).all()
+        }
         student_counts = {
             row.teacher_id: row.cnt
-            for row in self.db.query(Child.teacher_id, func.count(Child.id).label("cnt"))
+            for row in self.db.query(
+                Child.teacher_id, func.count(Child.id).label("cnt")
+            )
             .filter(Child.is_deleted == 0, Child.teacher_id.isnot(None))
             .group_by(Child.teacher_id)
             .all()
@@ -47,11 +52,16 @@ class AdminTeacherService:
 
         # 预加载每个 teacher_id 对应的管理员账号
         from backend.domain.admin.models import Admin
+
         admin_map = {}
-        admins = self.db.query(Admin).filter(
-            Admin.teacher_id.isnot(None),
-            Admin.is_deleted == 0,
-        ).all()
+        admins = (
+            self.db.query(Admin)
+            .filter(
+                Admin.teacher_id.isnot(None),
+                Admin.is_deleted == 0,
+            )
+            .all()
+        )
         for a in admins:
             role_name = a.role_ref.name if a.role_ref else "未知"
             admin_map[a.teacher_id] = {"admin_id": a.id, "admin_role_name": role_name}

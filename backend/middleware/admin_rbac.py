@@ -20,13 +20,24 @@ def require_perm(*perm_codes: str):
         admin=Depends(require_perm("user.create"))
         admin=Depends(require_perm("user.create", "user.edit"))
     """
+
     def perm_checker(
         admin: Admin = Depends(get_current_admin),
         db: Session = Depends(get_db),
     ) -> Admin:
         from backend.domain.admin.services.account_service import AdminAccountService
-        if not any(AdminAccountService(db).has_permission(admin, code) for code in perm_codes):
-            logger.warning("Permission denied: admin_id=%d, username=%s, required=%s, role_id=%d", admin.id, admin.username, perm_codes, admin.admin_role_id)
+
+        if not any(
+            AdminAccountService(db).has_permission(admin, code) for code in perm_codes
+        ):
+            logger.warning(
+                "Permission denied: admin_id=%d, username=%s, required=%s, role_id=%d",
+                admin.id,
+                admin.username,
+                perm_codes,
+                admin.admin_role_id,
+            )
             raise ForbiddenError("权限不足")
         return admin
+
     return perm_checker

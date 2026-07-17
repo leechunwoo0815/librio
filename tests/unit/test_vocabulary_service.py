@@ -50,8 +50,8 @@ def test_add_to_vocabulary_new(vocab_service, mock_db):
     mock_word = MagicMock()
     mock_word.id = 1
     mock_db.query.return_value.filter.return_value.first.side_effect = [
-        mock_word,   # dictionary_word found
-        None,        # user_vocabulary not exists yet
+        mock_word,  # dictionary_word found
+        None,  # user_vocabulary not exists yet
     ]
 
     mock_uv = MagicMock()
@@ -70,8 +70,8 @@ def test_add_to_vocabulary_already_exists(vocab_service, mock_db):
     mock_uv = MagicMock()
     mock_uv.lookup_count = 2
     mock_db.query.return_value.filter.return_value.first.side_effect = [
-        mock_word,   # dictionary_word found
-        mock_uv,     # user_vocabulary exists
+        mock_word,  # dictionary_word found
+        mock_uv,  # user_vocabulary exists
     ]
 
     _ = vocab_service.add_to_vocabulary(child_id=1, word="curiosity")
@@ -102,7 +102,9 @@ def test_get_vocabulary_list(vocab_service, mock_db):
     mock_uv.word.chinese_meaning = "好奇心"
     mock_uv.word.phonetic = "/ˌkjʊriˈɑːsəti/"
 
-    mock_db.query.return_value.options.return_value.filter.return_value.order_by.return_value.all.return_value = [mock_uv]
+    mock_db.query.return_value.options.return_value.filter.return_value.order_by.return_value.all.return_value = [
+        mock_uv
+    ]
 
     result = vocab_service.get_vocabulary_list(child_id=1)
     assert len(result) == 1

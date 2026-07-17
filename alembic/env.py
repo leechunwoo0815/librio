@@ -8,7 +8,8 @@ from alembic import context
 # Import all models so Alembic can detect them
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from backend.database import Base
 
@@ -18,9 +19,23 @@ from backend.domain.child.models import Child  # noqa: F401
 from backend.domain.child.benefit_transfer_model import BenefitTransferApplication  # noqa: F401
 from backend.domain.book.models import Book, BookCopy  # noqa: F401
 from backend.domain.bookshelf.models import Bookshelf, Favorites  # noqa: F401
-from backend.domain.reading.models import BookPage, ReadingProgress, ReadingSession, CheckIn  # noqa: F401
+from backend.domain.reading.models import (
+    BookPage,
+    ReadingProgress,
+    ReadingSession,
+    CheckIn,
+)  # noqa: F401
 from backend.domain.vocabulary.models import DictionaryWord, UserVocabulary  # noqa: F401
-from backend.domain.advancement.models import Level, ChildLevel, ReadingSubmission, QuestionBank, Quiz, QuizAnswer, Achievement, ChildAchievement  # noqa: F401
+from backend.domain.advancement.models import (
+    Level,
+    ChildLevel,
+    ReadingSubmission,
+    QuestionBank,
+    Quiz,
+    QuizAnswer,
+    Achievement,
+    ChildAchievement,
+)  # noqa: F401
 from backend.domain.order.models import Order  # noqa: F401
 from backend.domain.refund.models import RefundApplication  # noqa: F401
 from backend.domain.borrow.models import BorrowRecord  # noqa: F401
@@ -29,9 +44,20 @@ from backend.domain.reservation.models import Reservation  # noqa: F401
 from backend.domain.report.models import ObservationReport, LearningReport  # noqa: F401
 from backend.domain.certificate.models import LevelCertificate  # noqa: F401
 from backend.domain.activity.models import Activity, ActivityEnrollment  # noqa: F401
-from backend.domain.admin.models import Admin, OperationLog, SystemConfig, Teacher, TeacherSchedule, Venue  # noqa: F401
+from backend.domain.admin.models import (
+    Admin,
+    OperationLog,
+    SystemConfig,
+    Teacher,
+    TeacherSchedule,
+    Venue,
+)  # noqa: F401
 from backend.domain.admin.rbac_models import Role, Permission, RolePermission  # noqa: F401
-from backend.domain.evaluation.models import AREvaluation, GuidanceRecord, ObservationEvaluation  # noqa: F401
+from backend.domain.evaluation.models import (
+    AREvaluation,
+    GuidanceRecord,
+    ObservationEvaluation,
+)  # noqa: F401
 from backend.domain.message.models import SystemMessage  # noqa: F401
 from backend.domain.parent_course_time.models import ParentCourseTime  # noqa: F401
 from backend.domain.quiz_question.models import QuizQuestion  # noqa: F401

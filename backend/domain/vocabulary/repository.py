@@ -34,7 +34,11 @@ class UserVocabularyRepository(BaseRepository[UserVocabulary]):
     def get_by_child(
         self, child_id: int, status: int | None = None, sort_by: str = "time"
     ) -> list[UserVocabulary]:
-        q = self.db.query(UserVocabulary).options(joinedload(UserVocabulary.word)).filter(UserVocabulary.child_id == child_id)
+        q = (
+            self.db.query(UserVocabulary)
+            .options(joinedload(UserVocabulary.word))
+            .filter(UserVocabulary.child_id == child_id)
+        )
         if status is not None:
             q = q.filter(UserVocabulary.status == status)
         if sort_by == "alpha":

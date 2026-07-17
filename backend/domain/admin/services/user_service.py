@@ -69,9 +69,7 @@ class AdminUserService:
         venue_ids = {c.venue_id for c in all_children if c.venue_id}
         venue_map = {}
         if venue_ids:
-            venues = (
-                self.db.query(Venue).filter(Venue.id.in_(venue_ids)).all()
-            )
+            venues = self.db.query(Venue).filter(Venue.id.in_(venue_ids)).all()
             venue_map = {v.id: v.name for v in venues}
 
         items = []
@@ -99,7 +97,9 @@ class AdminUserService:
                             "member_expire_time": c.member_expire_time.isoformat()
                             if c.member_expire_time
                             else None,
-                            "venue_name": venue_map.get(c.venue_id) if c.venue_id else None,
+                            "venue_name": venue_map.get(c.venue_id)
+                            if c.venue_id
+                            else None,
                         }
                         for c in children
                     ],
@@ -129,22 +129,16 @@ class AdminUserService:
             for s in subs
         ]
 
-    def list_children(self, limit: int = 500, child_ids: list[int] | None = None) -> list[dict]:
+    def list_children(
+        self, limit: int = 500, child_ids: list[int] | None = None
+    ) -> list[dict]:
         """获取孩子列表 — 借还场景下拉框专用"""
-        query = (
-            self.db.query(Child)
-            .filter(Child.is_deleted == 0)
-        )
+        query = self.db.query(Child).filter(Child.is_deleted == 0)
         if child_ids is not None:
             if not child_ids:
                 return []
             query = query.filter(Child.id.in_(child_ids))
-        children = (
-            query
-            .order_by(Child.id.asc())
-            .limit(limit)
-            .all()
-        )
+        children = query.order_by(Child.id.asc()).limit(limit).all()
         child_ids = [c.id for c in children]
         borrow_counts = dict(
             self.db.query(
@@ -177,7 +171,9 @@ class AdminUserService:
             )
         return results
 
-    def search_children(self, keyword: str, child_ids: list[int] | None = None) -> list[dict]:
+    def search_children(
+        self, keyword: str, child_ids: list[int] | None = None
+    ) -> list[dict]:
         """搜索孩子 — 借还场景专用，返回孩子+家长+借阅信息"""
         q = (
             self.db.query(Child)
@@ -448,7 +444,9 @@ class AdminUserService:
 
     def admin_create_child(self, user_id: int, data: ChildCreate) -> dict:
         """管理员创建孩子（为指定用户）"""
-        user = self.db.query(User).filter(User.id == user_id, User.is_deleted == 0).first()
+        user = (
+            self.db.query(User).filter(User.id == user_id, User.is_deleted == 0).first()
+        )
         if not user:
             raise NotFoundError("用户不存在")
         child = Child(
@@ -466,7 +464,11 @@ class AdminUserService:
 
     def admin_update_child(self, child_id: int, data: ChildUpdate) -> dict:
         """管理员更新孩子信息"""
-        child = self.db.query(Child).filter(Child.id == child_id, Child.is_deleted == 0).first()
+        child = (
+            self.db.query(Child)
+            .filter(Child.id == child_id, Child.is_deleted == 0)
+            .first()
+        )
         if not child:
             raise NotFoundError("孩子不存在")
         update_data = data.model_dump(exclude_unset=True)
@@ -477,7 +479,11 @@ class AdminUserService:
 
     def admin_delete_child(self, child_id: int) -> dict:
         """管理员删除孩子（软删除）"""
-        child = self.db.query(Child).filter(Child.id == child_id, Child.is_deleted == 0).first()
+        child = (
+            self.db.query(Child)
+            .filter(Child.id == child_id, Child.is_deleted == 0)
+            .first()
+        )
         if not child:
             raise NotFoundError("孩子不存在")
         # 检查是否有未还书
@@ -491,7 +497,9 @@ class AdminUserService:
             .count()
         )
         if active_borrows > 0:
-            raise ValidationError(f"该孩子有 {active_borrows} 本未还书，请先归还后再删除")
+            raise ValidationError(
+                f"该孩子有 {active_borrows} 本未还书，请先归还后再删除"
+            )
         child.soft_delete()
         self.db.commit()
         return {"success": True, "message": "孩子已删除"}
@@ -501,12 +509,18 @@ class AdminUserService:
         from passlib.context import CryptContext
 
         # 检查手机号唯一性
-        existing = self.db.query(User).filter(User.phone == data.phone, User.is_deleted == 0).first()
+        existing = (
+            self.db.query(User)
+            .filter(User.phone == data.phone, User.is_deleted == 0)
+            .first()
+        )
         if existing:
             raise ValidationError(f"手机号 {data.phone} 已存在")
         # 生成 synthetic openid（User 模型 openid 不可为空且唯一）
         synthetic_openid = f"admin_created_{data.phone}"
-        existing_openid = self.db.query(User).filter(User.openid == synthetic_openid).first()
+        existing_openid = (
+            self.db.query(User).filter(User.openid == synthetic_openid).first()
+        )
         if existing_openid:
             raise ValidationError("该手机号已创建过账号")
         # 密码：未提供则生成 12 位随机安全密码

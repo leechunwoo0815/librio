@@ -78,3 +78,13 @@ class BorrowPermissionResponse(BaseSchema):
 
     child_id: int
     can_borrow: bool
+
+
+class TransferRecordResponse(BaseSchema):
+    """权益转让记录响应"""
+
+    id: int
+    source_child_name: str
+    target_child_name: str
+    status: str
+    created_at: str

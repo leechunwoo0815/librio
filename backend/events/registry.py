@@ -86,9 +86,7 @@ def register_event_handlers():
     event_bus.subscribe("book.overdue", handle_book_overdue_for_fines)
 
     # ── 阅读读完一本书 ──
-    event_bus.subscribe(
-        "reading.book_finished", handle_book_finished_for_advancement
-    )
+    event_bus.subscribe("reading.book_finished", handle_book_finished_for_advancement)
 
     # ── 阅读会话结束 ──
     event_bus.subscribe(

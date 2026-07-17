@@ -31,18 +31,21 @@ class Admin(BaseModel):
     status = Column(SmallInteger, default=STATUS_ACTIVE, comment="1=启用 0=禁用")
 
     # RBAC 扩展字段（Phase 1）
-    admin_role_id = Column(BigInteger, nullable=True, comment="RBAC角色ID (引用 role.id)")
-    teacher_id = Column(BigInteger, nullable=True, comment="关联教师ID (role=teacher时必填)")
+    admin_role_id = Column(
+        BigInteger, nullable=True, comment="RBAC角色ID (引用 role.id)"
+    )
+    teacher_id = Column(
+        BigInteger, nullable=True, comment="关联教师ID (role=teacher时必填)"
+    )
 
     # ── RBAC 权限方法 ──
 
     role_ref = relationship(
-        Role, foreign_keys=[admin_role_id],
+        Role,
+        foreign_keys=[admin_role_id],
         primaryjoin="Admin.admin_role_id == Role.id",
         lazy="joined",
     )
-
-
 
 
 class OperationLog(BaseModel):
@@ -105,10 +108,18 @@ class SystemConfig(BaseModel):
         # ── 预约 ──
         "reservation_expire_hours": ("72", "int", "预约过期时间（小时）"),
         # ── 晋级规则 ──
-        "default_required_books": ("5", "int", "每级默认需读完书数（预留，当前读取 Level.required_books 字段）"),
+        "default_required_books": (
+            "5",
+            "int",
+            "每级默认需读完书数（预留，当前读取 Level.required_books 字段）",
+        ),
         "quiz_pass_rate": ("0.80", "string", "测验最低通过率（每本书5题答对4题=80%）"),
         "quiz_total_questions": ("5", "int", "每本书测验默认题数"),
-        "quiz_pass_count": ("5", "int", "每级需通过测验的最少书数（默认=required_books，全部通过）"),
+        "quiz_pass_count": (
+            "5",
+            "int",
+            "每级需通过测验的最少书数（默认=required_books，全部通过）",
+        ),
         "require_teacher_review": ("false", "bool", "晋级是否需要老师审核"),
         # ── 打卡规则 ──
         "checkin_min_minutes": ("10", "int", "打卡最低阅读分钟数"),
@@ -117,8 +128,16 @@ class SystemConfig(BaseModel):
         # ── 书架 ──
         "bookshelf_limit": ("0", "int", "书架最大数量，0表示无限制"),
         # ── 场馆信息 ──
-        "venue_name": ("人广馆", "string", "场馆名称（预留，当前读取 Venue 表 name 字段）"),
-        "venue_address": ("上海市黄浦区", "string", "场馆地址（预留，当前读取 Venue 表 address 字段）"),
+        "venue_name": (
+            "人广馆",
+            "string",
+            "场馆名称（预留，当前读取 Venue 表 name 字段）",
+        ),
+        "venue_address": (
+            "上海市黄浦区",
+            "string",
+            "场馆地址（预留，当前读取 Venue 表 address 字段）",
+        ),
         # ── 订单 ──
         "order_expire_minutes": ("30", "int", "订单未支付自动关闭时间（分钟）"),
         "price_parent_course": ("99", "string", "亲子课价格（元）"),
@@ -155,7 +174,9 @@ class Teacher(BaseModel):
     expertise = Column(String(255), nullable=True, comment="擅长领域")
     title = Column(String(50), nullable=True, comment="职称")
     status = Column(
-        String(20), default="online", comment="在线状态: online=在线 offline=离线 leave=休假中"
+        String(20),
+        default="online",
+        comment="在线状态: online=在线 offline=离线 leave=休假中",
     )
 
     schedules = relationship(
@@ -205,7 +226,9 @@ class Venue(BaseModel):
     phone = Column(String(20), nullable=True, comment="联系电话")
     business_hours = Column(String(100), nullable=True, comment="营业时间")
     status = Column(
-        String(20), default="active", comment="运营状态: active=运营中 maintenance=维护中 inactive=已关闭"
+        String(20),
+        default="active",
+        comment="运营状态: active=运营中 maintenance=维护中 inactive=已关闭",
     )
     capacity = Column(BigInteger, default=0, comment="容量/工位数")
 

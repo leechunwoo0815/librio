@@ -118,4 +118,3 @@ class CheckIn(BaseModel):
 
     def __repr__(self):
         return f"<CheckIn(child={self.child_id}, date={self.check_date}, type={self.check_type})>"
-

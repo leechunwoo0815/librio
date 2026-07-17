@@ -8,6 +8,7 @@ from backend.common.base_schema import BaseSchema
 
 class WordResponse(BaseSchema):
     """词条响应"""
+
     model_config = ConfigDict(from_attributes=True, extra="forbid")
 
     id: int
@@ -23,6 +24,7 @@ class WordResponse(BaseSchema):
 
 class WordCreateRequest(BaseSchema):
     """创建词条请求"""
+
     word: str = Field(..., min_length=1, max_length=100)
     phonetic: str | None = None
     pos: str | None = None  # 映射到 part_of_speech
@@ -33,6 +35,7 @@ class WordCreateRequest(BaseSchema):
 
 class WordUpdateRequest(BaseSchema):
     """更新词条请求"""
+
     word: str | None = Field(None, min_length=1, max_length=100)
     phonetic: str | None = None
     pos: str | None = None
@@ -43,6 +46,7 @@ class WordUpdateRequest(BaseSchema):
 
 class WordListResponse(BaseSchema):
     """词条列表响应"""
+
     items: list[WordResponse]
     total: int
     page: int

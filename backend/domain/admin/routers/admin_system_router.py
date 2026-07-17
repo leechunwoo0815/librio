@@ -59,6 +59,7 @@ router = APIRouter(prefix="/admin/api", tags=["系统管理"])
 
 # ==================== 操作日志接收 ====================
 
+
 @router.post("/oplogs", response_model=AdminActionResponse)
 def receive_oplogs(
     data: ReceiveOplogsRequest,
@@ -86,6 +87,7 @@ def receive_oplogs(
 
 # ==================== 仪表盘 ====================
 
+
 @router.get("/dashboard", response_model=AdminDashboardResponse)
 def get_dashboard(
     service: AdminDashboardService = Depends(get_admin_dashboard_service),
@@ -96,6 +98,7 @@ def get_dashboard(
 
 
 # ==================== 系统配置 ====================
+
 
 @router.get("/config", response_model=ConfigResponse)
 def get_all_configs(
@@ -152,6 +155,7 @@ def init_defaults(
 
 # ==================== 用户管理 ====================
 
+
 @router.get("/users/export", response_model=AdminActionResponse)
 def export_users_csv(
     search: str = None,
@@ -162,29 +166,39 @@ def export_users_csv(
     result = service.list_users_with_children(search, page=1, page_size=99999)
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["家长姓名", "手机号", "孩子名", "年龄", "年级", "身份", "场馆", "注册时间"])
+    writer.writerow(
+        ["家长姓名", "手机号", "孩子名", "年龄", "年级", "身份", "场馆", "注册时间"]
+    )
     status_map = {0: "体验课", 1: "观察期", 2: "正式会员", 3: "已过期", 4: "已退出"}
     for u in result.get("items", []):
         children = u.get("children", [])
         if children:
             for c in children:
-                writer.writerow([
+                writer.writerow(
+                    [
+                        u.get("parent_name", ""),
+                        u.get("phone", ""),
+                        c.get("name", ""),
+                        c.get("age", ""),
+                        c.get("grade", ""),
+                        status_map.get(c.get("status"), ""),
+                        c.get("venue_name", ""),
+                        u.get("create_time", ""),
+                    ]
+                )
+        else:
+            writer.writerow(
+                [
                     u.get("parent_name", ""),
                     u.get("phone", ""),
-                    c.get("name", ""),
-                    c.get("age", ""),
-                    c.get("grade", ""),
-                    status_map.get(c.get("status"), ""),
-                    c.get("venue_name", ""),
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
                     u.get("create_time", ""),
-                ])
-        else:
-            writer.writerow([
-                u.get("parent_name", ""),
-                u.get("phone", ""),
-                "", "", "", "", "",
-                u.get("create_time", ""),
-            ])
+                ]
+            )
     output.seek(0)
     return StreamingResponse(
         iter([output.getvalue()]),
@@ -356,6 +370,7 @@ def admin_delete_child(
 
 # ==================== 订单管理 ====================
 
+
 @router.get("/orders", response_model=OrderListResponse)
 def list_orders(
     page: int = Query(1, ge=1),
@@ -369,7 +384,9 @@ def list_orders(
     admin=Depends(require_perm("order.list")),
 ):
     """分页查询订单列表"""
-    return service.list_orders_paginated(page, page_size, order_type, pay_status, date_from, date_to, search)
+    return service.list_orders_paginated(
+        page, page_size, order_type, pay_status, date_from, date_to, search
+    )
 
 
 @router.get("/orders/{order_no}/refund", response_model=AdminActionResponse)
@@ -382,7 +399,9 @@ def get_order_refund(
     return service.get_order_refund(order_no)
 
 
-@router.post("/orders/{order_no}/refund", response_model=AdminActionResponse, status_code=201)
+@router.post(
+    "/orders/{order_no}/refund", response_model=AdminActionResponse, status_code=201
+)
 def admin_create_refund(
     order_no: str,
     data: AdminCreateRefundRequest,
@@ -476,6 +495,7 @@ def delete_order(
 
 # ==================== 提交审核 ====================
 
+
 @router.get("/submissions", response_model=list)
 def list_submissions_legacy(
     service: AdminUserService = Depends(get_admin_user_service),
@@ -486,6 +506,7 @@ def list_submissions_legacy(
 
 
 # ==================== 操作日志 ====================
+
 
 @router.get("/operation-logs", response_model=OperationLogResponse)
 def list_operation_logs(
@@ -501,6 +522,7 @@ def list_operation_logs(
 
 # ==================== 回收站 ====================
 
+
 @router.get("/recycle-bin", response_model=RecycleBinResponse)
 def list_recycle_bin(
     module: str = Query(None),
@@ -513,7 +535,9 @@ def list_recycle_bin(
     return service.list_recycle_bin(module, page, page_size)
 
 
-@router.post("/recycle-bin/{module}/{item_id}/restore", response_model=AdminActionResponse)
+@router.post(
+    "/recycle-bin/{module}/{item_id}/restore", response_model=AdminActionResponse
+)
 def restore_item(
     module: str,
     item_id: int,
@@ -550,6 +574,7 @@ def permanent_delete_item(
 
 
 # ==================== 消息管理 ====================
+
 
 @router.post("/messages/send", response_model=MessageSendResponse)
 def send_message(
@@ -608,6 +633,7 @@ def delete_message(
 
 
 # ==================== 管理员管理 ====================
+
 
 @router.get("/admins", response_model=AdminActionResponse)
 def list_admins(
@@ -675,7 +701,9 @@ def change_password(
     service: AdminAccountService = Depends(get_admin_account_service),
 ):
     """修改管理员密码 — 校验旧密码"""
-    result = service.change_password(admin_id, data.old_password, data.new_password, admin.id)
+    result = service.change_password(
+        admin_id, data.old_password, data.new_password, admin.id
+    )
     system_service = AdminSystemService(service.db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -705,6 +733,7 @@ def delete_admin(
 
 
 # ==================== 证书管理别名（兼容 ARCHITECTURE.md 文档规范） ====================
+
 
 @router.get("/certificates", response_model=AdminActionResponse)
 def list_certificates_alias(

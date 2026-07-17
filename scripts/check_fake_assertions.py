@@ -3,6 +3,7 @@
 
 behave 不支持 pytest.skip，前端交互步骤保留 assert True 但必须有注释说明原因。
 """
+
 import pathlib
 import sys
 
@@ -15,7 +16,12 @@ for py_file in pathlib.Path("features/steps").rglob("*.py"):
         # assert True 必须有注释说明原因
         if stripped == "assert True":
             violations.append(f"{py_file}:{i}: bare assert True (no comment)")
-        elif stripped.startswith("assert True") and "#" not in stripped and "\"" not in stripped and "'" not in stripped:
+        elif (
+            stripped.startswith("assert True")
+            and "#" not in stripped
+            and '"' not in stripped
+            and "'" not in stripped
+        ):
             violations.append(f"{py_file}:{i}: assert True without explanation")
 
 if violations:

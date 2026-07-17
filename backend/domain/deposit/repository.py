@@ -19,10 +19,14 @@ class DepositRepository(BaseRepository[DepositRecord]):
             self.db.query(DepositRecord)
             .filter(
                 DepositRecord.child_id == child_id,
-                DepositRecord.status.in_([
-                    DepositStatus.PENDING, DepositStatus.PAID,
-                    DepositStatus.REFUNDING, DepositStatus.REFUND_PENDING,
-                ]),
+                DepositRecord.status.in_(
+                    [
+                        DepositStatus.PENDING,
+                        DepositStatus.PAID,
+                        DepositStatus.REFUNDING,
+                        DepositStatus.REFUND_PENDING,
+                    ]
+                ),
                 DepositRecord.is_deleted == 0,
             )
             .order_by(DepositRecord.id.desc())
@@ -37,10 +41,14 @@ class DepositRepository(BaseRepository[DepositRecord]):
             self.db.query(DepositRecord)
             .filter(
                 DepositRecord.child_id == child_id,
-                DepositRecord.status.in_([
-                    DepositStatus.PENDING, DepositStatus.PAID,
-                    DepositStatus.REFUNDING, DepositStatus.REFUND_PENDING,
-                ]),
+                DepositRecord.status.in_(
+                    [
+                        DepositStatus.PENDING,
+                        DepositStatus.PAID,
+                        DepositStatus.REFUNDING,
+                        DepositStatus.REFUND_PENDING,
+                    ]
+                ),
                 DepositRecord.is_deleted == 0,
             )
             .with_for_update()

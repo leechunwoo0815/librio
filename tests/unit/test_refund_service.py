@@ -28,7 +28,10 @@ def _setup(db):
     db.add(user)
     db.flush()
     child = Child(
-        user_id=user.id, name="退款测试", age=7, grade="二年级",
+        user_id=user.id,
+        name="退款测试",
+        age=7,
+        grade="二年级",
         status=Child.STATUS_OFFICIAL,
     )
     db.add(child)

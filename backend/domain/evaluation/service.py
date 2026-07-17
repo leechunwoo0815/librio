@@ -6,7 +6,11 @@ import logging
 from sqlalchemy.orm import Session
 
 from backend.common.base_repo import BaseRepository
-from backend.domain.evaluation.models import AREvaluation, ObservationEvaluation, GuidanceRecord
+from backend.domain.evaluation.models import (
+    AREvaluation,
+    ObservationEvaluation,
+    GuidanceRecord,
+)
 from backend.domain.evaluation.schemas import (
     AREvaluationCreate,
     AREvaluationResponse,
@@ -26,9 +30,7 @@ class EvaluationService:
 
     # ==================== AR测评 ====================
 
-    def create_ar_evaluation(
-        self, data: AREvaluationCreate
-    ) -> AREvaluationResponse:
+    def create_ar_evaluation(self, data: AREvaluationCreate) -> AREvaluationResponse:
         """创建 AR 测评记录，同时更新孩子的 ar_level"""
         from backend.domain.child.models import Child
 
@@ -52,8 +54,7 @@ class EvaluationService:
 
         self.db.commit()
         logger.info(
-            f"AR evaluation created: child={data.child_id}, "
-            f"ar_level={data.ar_level}"
+            f"AR evaluation created: child={data.child_id}, ar_level={data.ar_level}"
         )
         return AREvaluationResponse.model_validate(created)
 
@@ -70,9 +71,7 @@ class EvaluationService:
         )
         return [AREvaluationResponse.model_validate(r) for r in records]
 
-    def get_latest_ar_evaluation(
-        self, child_id: int
-    ) -> AREvaluationResponse | None:
+    def get_latest_ar_evaluation(self, child_id: int) -> AREvaluationResponse | None:
         """获取最近一次 AR 测评"""
         record = (
             self.db.query(AREvaluation)

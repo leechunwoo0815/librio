@@ -37,6 +37,7 @@ def create_venue(
     """创建场馆"""
     result = service.create_venue(data)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(service.db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -57,6 +58,7 @@ def update_venue(
     """更新场馆"""
     result = service.update_venue(venue_id, data)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(service.db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -76,6 +78,7 @@ def delete_venue(
     """删除场馆"""
     result = service.delete_venue(venue_id)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(service.db)
     system_service.write_operation_log(
         admin_id=admin.id,

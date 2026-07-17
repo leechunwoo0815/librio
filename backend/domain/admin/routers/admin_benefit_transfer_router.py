@@ -4,7 +4,9 @@ from sqlalchemy.orm import Session
 
 from backend.database import get_db
 from backend.domain.admin.admin_schemas import AdminActionResponse
-from backend.domain.admin.services.benefit_transfer_service import BenefitTransferAdminService
+from backend.domain.admin.services.benefit_transfer_service import (
+    BenefitTransferAdminService,
+)
 from backend.middleware.admin_rbac import require_perm
 
 router = APIRouter(prefix="/admin/api/benefit-transfers", tags=["权益转让审核"])
@@ -18,7 +20,9 @@ class ReviewRequest(BaseModel):
 
 @router.get("", response_model=AdminActionResponse)
 def list_transfers(
-    status: int | None = Query(None, description="筛选状态: 0=PENDING 1=APPROVED 2=REJECTED"),
+    status: int | None = Query(
+        None, description="筛选状态: 0=PENDING 1=APPROVED 2=REJECTED"
+    ),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -38,6 +42,7 @@ def approve_transfer(
     svc = BenefitTransferAdminService(db)
     result = svc.approve(application_id, admin.id, req.review_remark if req else "")
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(svc.db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -58,6 +63,7 @@ def reject_transfer(
     svc = BenefitTransferAdminService(db)
     result = svc.reject(application_id, admin.id, req.review_remark if req else "")
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(svc.db)
     system_service.write_operation_log(
         admin_id=admin.id,

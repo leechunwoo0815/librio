@@ -81,7 +81,9 @@ def test_activity_enrollment(db_session):
 
     now = datetime.now()
     activity = Activity(
-        title="读书会", type=0, max_participants=30,
+        title="读书会",
+        type=0,
+        max_participants=30,
         start_time=now + timedelta(days=7),
         end_time=now + timedelta(days=7, hours=2),
         venue_id=1,
@@ -120,7 +122,13 @@ def test_refund_application(db_session):
     child.user_id = parent.id
     db_session.commit()
 
-    order = Order(order_no="MW_REFUND", user_id=parent.id, child_id=child.id, type=2, amount=500.00)
+    order = Order(
+        order_no="MW_REFUND",
+        user_id=parent.id,
+        child_id=child.id,
+        type=2,
+        amount=500.00,
+    )
     db_session.add(order)
     db_session.commit()
 

@@ -252,9 +252,11 @@ def get_payment_gateway():
     settings = get_settings()
     if settings.MOCK_PAYMENT:
         from backend.common.gateways.payment.mock import MockPaymentGateway
+
         return MockPaymentGateway()
     else:
         from backend.integrations.wechat.pay_v3 import WeChatPayV3
+
         return WeChatPayV3()
 
 
@@ -269,6 +271,7 @@ def get_sms_gateway():
             "如需生产短信，请设置 MOCK_SMS=false 并配置 SMS_PROVIDER=tencent/aliyun"
         )
         from backend.common.gateways.sms.mock import MockSmsGateway
+
         return MockSmsGateway()
 
     provider = settings.SMS_PROVIDER
@@ -279,6 +282,7 @@ def get_sms_gateway():
         )
     if provider == "tencent":
         from backend.integrations.sms.tencent import TencentSmsGateway
+
         return TencentSmsGateway(
             app_id=settings.SMS_APP_ID,
             app_key=settings.SMS_APP_KEY,
@@ -287,6 +291,7 @@ def get_sms_gateway():
         )
     elif provider == "aliyun":
         from backend.integrations.sms.aliyun import AliyunSmsGateway
+
         return AliyunSmsGateway(
             app_id=settings.SMS_APP_ID,
             app_key=settings.SMS_APP_KEY,
@@ -294,7 +299,6 @@ def get_sms_gateway():
             template_code=settings.SMS_TEMPLATE_CODE,
         )
     raise NotImplementedError(f"未支持的短信服务商: {provider}")
-
 
 
 def get_message_service(db: Session = Depends(get_db)):

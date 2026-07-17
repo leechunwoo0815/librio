@@ -103,7 +103,9 @@ class AdminMessageService:
         """已发送消息列表"""
         from backend.domain.message.models import SystemMessage
 
-        total = self.db.query(SystemMessage).filter(SystemMessage.is_deleted == 0).count()
+        total = (
+            self.db.query(SystemMessage).filter(SystemMessage.is_deleted == 0).count()
+        )
         messages = (
             self.db.query(SystemMessage)
             .filter(SystemMessage.is_deleted == 0)
@@ -188,7 +190,9 @@ class AdminMessageService:
             .filter(Child.id.in_(child_ids), Child.is_deleted == 0)
             .all()
         }
-        all_book_ids = list({r.book_id for records in user_records.values() for r in records})
+        all_book_ids = list(
+            {r.book_id for records in user_records.values() for r in records}
+        )
         books_map = {
             b.id: b
             for b in self.db.query(Book)

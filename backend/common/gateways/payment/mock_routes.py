@@ -20,7 +20,9 @@ logger = logging.getLogger(__name__)
 mock_payment_router = APIRouter(prefix="/mock/payment", tags=["Mock-支付"])
 
 
-@mock_payment_router.post("/notify/order", dependencies=[Depends(require_perm("order.edit"))])
+@mock_payment_router.post(
+    "/notify/order", dependencies=[Depends(require_perm("order.edit"))]
+)
 async def mock_payment_notify(
     request: Request,
     admin: Admin = Depends(get_current_admin),
@@ -52,8 +54,15 @@ async def mock_payment_notify(
         result = svc.handle_payment_callback(callback)
         db.commit()
 
-        logger.info("[MockPayNotify] 支付回调模拟成功 out_trade_no=%s admin_id=%s", out_trade_no, admin.id)
-        return {"success": True, "order": {"id": result.id, "pay_status": result.pay_status}}
+        logger.info(
+            "[MockPayNotify] 支付回调模拟成功 out_trade_no=%s admin_id=%s",
+            out_trade_no,
+            admin.id,
+        )
+        return {
+            "success": True,
+            "order": {"id": result.id, "pay_status": result.pay_status},
+        }
     except Exception as e:
         db.rollback()
         logger.error("[MockPayNotify] 支付回调失败: %s", e)
@@ -62,7 +71,9 @@ async def mock_payment_notify(
         db.close()
 
 
-@mock_payment_router.post("/notify/refund", dependencies=[Depends(require_perm("order.edit"))])
+@mock_payment_router.post(
+    "/notify/refund", dependencies=[Depends(require_perm("order.edit"))]
+)
 async def mock_refund_notify(
     request: Request,
     admin: Admin = Depends(get_current_admin),
@@ -87,7 +98,11 @@ async def mock_refund_notify(
         svc.mark_refunded(order_no)
         db.commit()
 
-        logger.info("[MockRefundNotify] 退款回调模拟成功 order_no=%s admin_id=%s", order_no, admin.id)
+        logger.info(
+            "[MockRefundNotify] 退款回调模拟成功 order_no=%s admin_id=%s",
+            order_no,
+            admin.id,
+        )
         return {"success": True, "order_no": order_no}
     except Exception as e:
         db.rollback()
@@ -97,7 +112,9 @@ async def mock_refund_notify(
         db.close()
 
 
-@mock_payment_router.post("/notify/deposit", dependencies=[Depends(require_perm("deposit.pay"))])
+@mock_payment_router.post(
+    "/notify/deposit", dependencies=[Depends(require_perm("deposit.pay"))]
+)
 async def mock_deposit_notify(
     request: Request,
     admin: Admin = Depends(get_current_admin),
@@ -122,7 +139,11 @@ async def mock_deposit_notify(
         result = svc.handle_callback(order_no)
         db.commit()
 
-        logger.info("[MockDepositNotify] 押金回调模拟成功 order_no=%s admin_id=%s", order_no, admin.id)
+        logger.info(
+            "[MockDepositNotify] 押金回调模拟成功 order_no=%s admin_id=%s",
+            order_no,
+            admin.id,
+        )
         return {"success": True, "deposit": {"id": result.id, "status": result.status}}
     except Exception as e:
         db.rollback()

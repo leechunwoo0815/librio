@@ -15,8 +15,10 @@ from pydantic import BaseModel, Field, ConfigDict, model_validator
 
 # ==================== 通用响应 ====================
 
+
 class SuccessResponse(BaseModel):
     """通用成功响应"""
+
     model_config = ConfigDict(extra="forbid")
 
     success: bool = True
@@ -29,6 +31,7 @@ class AdminActionResponse(BaseModel):
     当 Service 返回其他 Pydantic Response 对象时，
     通过 model_validator(before) 自动转换为 dict，保留所有字段。
     """
+
     model_config = ConfigDict(extra="allow")
 
     success: bool = True
@@ -45,6 +48,7 @@ class AdminActionResponse(BaseModel):
 
 class PaginatedResponse(BaseModel):
     """分页响应"""
+
     model_config = ConfigDict(extra="forbid")
 
     items: list = []
@@ -56,6 +60,7 @@ class PaginatedResponse(BaseModel):
 
 class AdminDashboardResponse(BaseModel):
     """管理后台仪表盘"""
+
     model_config = ConfigDict(extra="forbid")
 
     total_users: int = 0
@@ -73,6 +78,7 @@ class AdminDashboardResponse(BaseModel):
 
 class ConfigResponse(BaseModel):
     """配置响应"""
+
     model_config = ConfigDict(extra="forbid")
 
     items: dict = {}
@@ -81,17 +87,22 @@ class ConfigResponse(BaseModel):
 
 class UpdateUserRequest(BaseModel):
     """更新用户/家长信息请求"""
+
     model_config = ConfigDict(extra="forbid")
 
     parent_name: str | None = Field(None, min_length=1, max_length=50)
     phone: str | None = Field(None, min_length=1, max_length=11)
     child_status: int | None = Field(
-        None, ge=0, le=4, description="主孩子状态: 0=体验课 1=观察期 2=正式会员 3=已过期 4=已退出"
+        None,
+        ge=0,
+        le=4,
+        description="主孩子状态: 0=体验课 1=观察期 2=正式会员 3=已过期 4=已退出",
     )
 
 
 class UserListResponse(BaseModel):
     """用户列表响应"""
+
     model_config = ConfigDict(extra="forbid")
 
     items: list = []
@@ -103,6 +114,7 @@ class UserListResponse(BaseModel):
 
 class OrderListResponse(BaseModel):
     """订单列表响应"""
+
     model_config = ConfigDict(extra="forbid")
 
     items: list = []
@@ -114,6 +126,7 @@ class OrderListResponse(BaseModel):
 
 class OperationLogResponse(BaseModel):
     """操作日志响应"""
+
     model_config = ConfigDict(extra="forbid")
 
     items: list = []
@@ -125,6 +138,7 @@ class OperationLogResponse(BaseModel):
 
 class RecycleBinResponse(BaseModel):
     """回收站响应"""
+
     model_config = ConfigDict(extra="forbid")
 
     items: list = []
@@ -136,6 +150,7 @@ class RecycleBinResponse(BaseModel):
 
 class MessageSendResponse(BaseModel):
     """消息发送响应"""
+
     model_config = ConfigDict(extra="forbid")
 
     success: bool = True
@@ -144,6 +159,7 @@ class MessageSendResponse(BaseModel):
 
 class ReadingStatsResponse(BaseModel):
     """阅读统计响应"""
+
     model_config = ConfigDict(extra="allow")
 
     stats: dict = {}
@@ -151,6 +167,7 @@ class ReadingStatsResponse(BaseModel):
 
 class ReadingTrendsResponse(BaseModel):
     """阅读趋势响应"""
+
     model_config = ConfigDict(extra="allow")
 
     trends: list = []
@@ -158,8 +175,10 @@ class ReadingTrendsResponse(BaseModel):
 
 # ==================== 场馆管理 ====================
 
+
 class VenueResponse(BaseModel):
     """场馆响应"""
+
     model_config = ConfigDict(from_attributes=True, extra="forbid")
 
     id: int
@@ -174,6 +193,7 @@ class VenueResponse(BaseModel):
 
 class CreateVenueRequest(BaseModel):
     """创建场馆请求"""
+
     model_config = ConfigDict(extra="forbid")
 
     name: str = Field(..., min_length=1, max_length=100)
@@ -186,6 +206,7 @@ class CreateVenueRequest(BaseModel):
 
 class UpdateVenueRequest(BaseModel):
     """更新场馆请求"""
+
     model_config = ConfigDict(extra="forbid")
 
     name: str | None = Field(None, min_length=1, max_length=100)
@@ -198,8 +219,10 @@ class UpdateVenueRequest(BaseModel):
 
 # ==================== 老师管理 ====================
 
+
 class TeacherResponse(BaseModel):
     """老师响应"""
+
     model_config = ConfigDict(from_attributes=True, extra="allow")
 
     id: int
@@ -220,6 +243,7 @@ class TeacherResponse(BaseModel):
 
 class CreateTeacherRequest(BaseModel):
     """创建老师请求"""
+
     model_config = ConfigDict(extra="forbid")
 
     name: str = Field(..., min_length=1, max_length=50)
@@ -234,6 +258,7 @@ class CreateTeacherRequest(BaseModel):
 
 class UpdateTeacherRequest(BaseModel):
     """更新老师请求"""
+
     model_config = ConfigDict(extra="forbid")
 
     name: str | None = Field(None, min_length=1, max_length=50)
@@ -248,6 +273,7 @@ class UpdateTeacherRequest(BaseModel):
 
 class AssignTeacherRequest(BaseModel):
     """分配老师请求"""
+
     model_config = ConfigDict(extra="forbid")
 
     child_id: int
@@ -256,6 +282,7 @@ class AssignTeacherRequest(BaseModel):
 
 class TeacherScheduleResponse(BaseModel):
     """排班响应"""
+
     model_config = ConfigDict(from_attributes=True, extra="forbid")
 
     id: int
@@ -268,6 +295,7 @@ class TeacherScheduleResponse(BaseModel):
 
 class CreateScheduleRequest(BaseModel):
     """创建排班请求"""
+
     model_config = ConfigDict(extra="forbid")
 
     teacher_id: int
@@ -278,8 +306,10 @@ class CreateScheduleRequest(BaseModel):
 
 # ==================== 系统配置 ====================
 
+
 class SystemConfigResponse(BaseModel):
     """系统配置响应"""
+
     model_config = ConfigDict(from_attributes=True, extra="forbid")
 
     id: int
@@ -291,6 +321,7 @@ class SystemConfigResponse(BaseModel):
 
 class ConfigItemResponse(BaseModel):
     """配置项响应（含类型和说明）"""
+
     model_config = ConfigDict(extra="forbid")
 
     value: str | None = None
@@ -300,6 +331,7 @@ class ConfigItemResponse(BaseModel):
 
 class ConfigListResponse(BaseModel):
     """所有配置响应"""
+
     model_config = ConfigDict(extra="forbid")
 
     pass  # Dynamic dict, returned as-is
@@ -307,22 +339,40 @@ class ConfigListResponse(BaseModel):
 
 # ==================== 消息管理 ====================
 
+
 class SendMessageRequest(BaseModel):
     """运营消息发送请求"""
+
     model_config = ConfigDict(extra="forbid")
 
     title: str = Field(..., min_length=1, max_length=100)
     content: str = Field(..., min_length=1)
-    msg_type: int = Field(default=1, ge=1, le=5, description="1=系统通知 2=活动通知 3=借阅通知 4=老师消息 5=阅读提醒")
+    msg_type: int = Field(
+        default=1,
+        ge=1,
+        le=5,
+        description="1=系统通知 2=活动通知 3=借阅通知 4=老师消息 5=阅读提醒",
+    )
     priority: int = Field(default=0, ge=0, le=2, description="0=低 1=中 2=高")
-    target: str = Field(default="all", description="all=全部用户, user=指定用户, teacher=指定老师/全部老师")
-    target_user_id: int | None = Field(None, description="指定用户ID，target=user时必填")
-    target_teacher_id: int | None = Field(None, description="指定老师ID，target=teacher时可选")
-    target_role_groups: list[str] | None = Field(None, description="目标用户分组: trial/observation/member, target=all时可选, 默认全部")
+    target: str = Field(
+        default="all",
+        description="all=全部用户, user=指定用户, teacher=指定老师/全部老师",
+    )
+    target_user_id: int | None = Field(
+        None, description="指定用户ID，target=user时必填"
+    )
+    target_teacher_id: int | None = Field(
+        None, description="指定老师ID，target=teacher时可选"
+    )
+    target_role_groups: list[str] | None = Field(
+        None,
+        description="目标用户分组: trial/observation/member, target=all时可选, 默认全部",
+    )
 
 
 class MessageRecord(BaseModel):
     """消息记录响应"""
+
     model_config = ConfigDict(from_attributes=True, extra="forbid")
 
     id: int
@@ -338,6 +388,7 @@ class MessageRecord(BaseModel):
 
 class MessageListAdminResponse(BaseModel):
     """管理端消息列表响应"""
+
     model_config = ConfigDict(extra="forbid")
 
     items: list[MessageRecord]
@@ -348,8 +399,10 @@ class MessageListAdminResponse(BaseModel):
 
 # ==================== 活动管理 ====================
 
+
 class CreateActivityRequest(BaseModel):
     """创建活动请求"""
+
     model_config = ConfigDict(extra="forbid")
 
     title: str = Field(..., min_length=1, max_length=200)
@@ -365,6 +418,7 @@ class CreateActivityRequest(BaseModel):
 
 class UpdateActivityRequest(BaseModel):
     """更新活动请求"""
+
     model_config = ConfigDict(extra="forbid")
 
     title: str | None = Field(None, min_length=1, max_length=200)
@@ -382,6 +436,7 @@ class UpdateActivityRequest(BaseModel):
 
 class BatchCheckinRequest(BaseModel):
     """批量签到请求"""
+
     model_config = ConfigDict(extra="forbid")
 
     child_ids: list[int] = Field(..., min_length=1)
@@ -389,8 +444,10 @@ class BatchCheckinRequest(BaseModel):
 
 # ==================== 图书管理 ====================
 
+
 class CreateBookRequest(BaseModel):
     """创建图书请求"""
+
     model_config = ConfigDict(extra="forbid")
 
     title: str = Field(..., min_length=1, max_length=200)
@@ -408,6 +465,7 @@ class CreateBookRequest(BaseModel):
 
 class UpdateBookRequest(BaseModel):
     """更新图书请求"""
+
     model_config = ConfigDict(extra="forbid")
 
     title: str | None = Field(None, min_length=1, max_length=200)
@@ -429,6 +487,7 @@ class UpdateBookRequest(BaseModel):
 
 class BulkImportBookItem(BaseModel):
     """批量导入图书项"""
+
     model_config = ConfigDict(extra="forbid")
 
     isbn: str = Field(..., min_length=1)
@@ -442,15 +501,19 @@ class BulkImportBookItem(BaseModel):
 
 class CreateBookCopyRequest(BaseModel):
     """创建图书副本请求（支持扫码枪故障时手动输入条码）"""
+
     model_config = ConfigDict(extra="forbid")
 
-    barcode: str | None = Field(None, min_length=1, max_length=50, description="副本条码，为空时系统自动生成")
+    barcode: str | None = Field(
+        None, min_length=1, max_length=50, description="副本条码，为空时系统自动生成"
+    )
     location: str | None = Field(None, max_length=50, description="存放位置")
     condition_note: str | None = Field(None, max_length=255, description="入库状况备注")
 
 
 class SaveBookPageRequest(BaseModel):
     """保存图书页面内容请求"""
+
     model_config = ConfigDict(extra="forbid")
 
     text_content: str | None = Field(None, description="页面文本内容")
@@ -460,8 +523,10 @@ class SaveBookPageRequest(BaseModel):
 
 # ==================== 借阅管理 ====================
 
+
 class BorrowBookRequest(BaseModel):
     """借书请求"""
+
     model_config = ConfigDict(extra="forbid")
 
     child_id: int
@@ -472,6 +537,7 @@ class BorrowBookRequest(BaseModel):
 
 class ReturnBookRequest(BaseModel):
     """还书请求"""
+
     model_config = ConfigDict(extra="forbid")
 
     borrow_record_id: int
@@ -479,8 +545,10 @@ class ReturnBookRequest(BaseModel):
 
 # ==================== 押金管理 ====================
 
+
 class RequestRefundRequest(BaseModel):
     """申请退款请求"""
+
     model_config = ConfigDict(extra="forbid")
 
     child_id: int
@@ -488,6 +556,7 @@ class RequestRefundRequest(BaseModel):
 
 class AdminPayDepositRequest(BaseModel):
     """管理员代缴押金请求"""
+
     model_config = ConfigDict(extra="forbid")
 
     child_id: int
@@ -495,8 +564,10 @@ class AdminPayDepositRequest(BaseModel):
 
 # ==================== 预约管理 ====================
 
+
 class FulfillReservationRequest(BaseModel):
     """完成预约请求"""
+
     model_config = ConfigDict(extra="forbid")
 
     reservation_id: int
@@ -505,6 +576,7 @@ class FulfillReservationRequest(BaseModel):
 
 class AdminCreateReservationRequest(BaseModel):
     """管理员创建预约请求"""
+
     model_config = ConfigDict(extra="forbid")
 
     child_id: int
@@ -513,8 +585,10 @@ class AdminCreateReservationRequest(BaseModel):
 
 # ==================== 订单管理 ====================
 
+
 class AdminCreateRefundRequest(BaseModel):
     """管理员代客退款请求"""
+
     model_config = ConfigDict(extra="forbid")
 
     reason: str = "管理员代发起退款"
@@ -523,17 +597,23 @@ class AdminCreateRefundRequest(BaseModel):
 
 class AdminCreateOrderRequest(BaseModel):
     """管理员代客创建订单请求"""
+
     model_config = ConfigDict(extra="forbid")
 
     child_id: int
     order_type: int
     remark: str = ""
-    amount: Decimal | None = Field(None, gt=0, decimal_places=2, description="实收金额（已支付时必填）")
-    pay_type: int | None = Field(None, ge=1, le=6, description="付款方式（已支付时必填）")
+    amount: Decimal | None = Field(
+        None, gt=0, decimal_places=2, description="实收金额（已支付时必填）"
+    )
+    pay_type: int | None = Field(
+        None, ge=1, le=6, description="付款方式（已支付时必填）"
+    )
 
 
 class UpdateOrderStatusRequest(BaseModel):
     """更新订单状态请求"""
+
     model_config = ConfigDict(extra="forbid")
 
     pay_status: int | None = None
@@ -541,6 +621,7 @@ class UpdateOrderStatusRequest(BaseModel):
 
 class AdminOfflineCreateOrderRequest(BaseModel):
     """管理员线下创建用户+订单请求"""
+
     model_config = ConfigDict(extra="forbid")
 
     parent_name: str = Field(..., min_length=1, max_length=50)
@@ -550,15 +631,21 @@ class AdminOfflineCreateOrderRequest(BaseModel):
     child_grade: str = Field(..., max_length=20)
     venue_id: int | None = None
     order_type: int = Field(..., ge=1, le=5)
-    amount: Decimal | None = Field(None, gt=0, decimal_places=2, description="实收金额（已支付时必填）")
-    pay_type: int | None = Field(None, ge=1, le=6, description="付款方式（已支付时必填）")
+    amount: Decimal | None = Field(
+        None, gt=0, decimal_places=2, description="实收金额（已支付时必填）"
+    )
+    pay_type: int | None = Field(
+        None, ge=1, le=6, description="付款方式（已支付时必填）"
+    )
     remark: str = ""
 
 
 # ==================== 报告管理 ====================
 
+
 class AddObservationCommentRequest(BaseModel):
     """添加观察期评语请求"""
+
     model_config = ConfigDict(extra="forbid")
 
     comment: str
@@ -566,6 +653,7 @@ class AddObservationCommentRequest(BaseModel):
 
 class ReceiveOplogsRequest(BaseModel):
     """接收前端操作日志请求"""
+
     model_config = ConfigDict(extra="forbid")
 
     logs: list = []
@@ -573,8 +661,10 @@ class ReceiveOplogsRequest(BaseModel):
 
 # ==================== 晋级管理 ====================
 
+
 class CreateLevelRequest(BaseModel):
     """创建级别请求"""
+
     model_config = ConfigDict(extra="forbid")
 
     name: str = Field(..., min_length=1, max_length=50)
@@ -590,6 +680,7 @@ class CreateLevelRequest(BaseModel):
 
 class UpdateLevelRequest(BaseModel):
     """更新级别请求"""
+
     model_config = ConfigDict(extra="forbid")
 
     name: str | None = Field(None, min_length=1, max_length=50)
@@ -605,6 +696,7 @@ class UpdateLevelRequest(BaseModel):
 
 class LevelResponse(BaseModel):
     """级别响应"""
+
     model_config = ConfigDict(from_attributes=True, extra="forbid")
 
     id: int
@@ -621,17 +713,21 @@ class LevelResponse(BaseModel):
 
 class CreateAchievementRequest(BaseModel):
     """创建成就请求"""
+
     model_config = ConfigDict(extra="forbid")
 
     name: str = Field(..., min_length=1, max_length=100)
     description: str | None = None
-    type: int = Field(1, ge=1, le=4)  # 1=level_up, 2=book_milestone, 3=streak, 4=perfect_score
+    type: int = Field(
+        1, ge=1, le=4
+    )  # 1=level_up, 2=book_milestone, 3=streak, 4=perfect_score
     badge_emoji: str | None = None
     trigger_condition: str | None = None
 
 
 class UpdateAchievementRequest(BaseModel):
     """更新成就请求"""
+
     model_config = ConfigDict(extra="forbid")
 
     name: str | None = Field(None, min_length=1, max_length=100)
@@ -643,6 +739,7 @@ class UpdateAchievementRequest(BaseModel):
 
 class AchievementResponse(BaseModel):
     """成就响应"""
+
     model_config = ConfigDict(from_attributes=True, extra="forbid")
 
     id: int
@@ -655,6 +752,7 @@ class AchievementResponse(BaseModel):
 
 class ReviewSubmissionRequest(BaseModel):
     """审核提交请求"""
+
     model_config = ConfigDict(extra="forbid")
 
     status: int = Field(..., ge=0, le=2)  # 0=待审核, 1=通过, 2=打回
@@ -663,6 +761,7 @@ class ReviewSubmissionRequest(BaseModel):
 
 class CreateQuestionRequest(BaseModel):
     """创建题目请求"""
+
     model_config = ConfigDict(extra="forbid")
 
     book_id: int
@@ -678,6 +777,7 @@ class CreateQuestionRequest(BaseModel):
 
 class UpdateQuestionRequest(BaseModel):
     """更新题目请求"""
+
     model_config = ConfigDict(extra="forbid")
 
     question_text: str | None = None
@@ -692,6 +792,7 @@ class UpdateQuestionRequest(BaseModel):
 
 class QuestionResponse(BaseModel):
     """题目响应"""
+
     model_config = ConfigDict(from_attributes=True, extra="forbid")
 
     id: int
@@ -708,6 +809,7 @@ class QuestionResponse(BaseModel):
 
 class BulkImportQuestionItem(BaseModel):
     """批量导入题目项"""
+
     model_config = ConfigDict(extra="forbid")
 
     isbn: str = Field(..., min_length=1)
@@ -722,8 +824,10 @@ class BulkImportQuestionItem(BaseModel):
 
 # ==================== 退款管理 ====================
 
+
 class AuditRefundRequest(BaseModel):
     """审核退款请求"""
+
     model_config = ConfigDict(extra="forbid")
 
     action: str = Field(..., pattern="^(approve|reject)$")
@@ -732,6 +836,7 @@ class AuditRefundRequest(BaseModel):
 
 class RefundResponse(BaseModel):
     """退款响应"""
+
     model_config = ConfigDict(from_attributes=True, extra="forbid")
 
     id: int
@@ -746,8 +851,10 @@ class RefundResponse(BaseModel):
 
 # ==================== 管理员管理 ====================
 
+
 class CreateAdminRequest(BaseModel):
     """创建管理员请求"""
+
     model_config = ConfigDict(extra="forbid")
 
     username: str = Field(..., min_length=3, max_length=50)
@@ -760,6 +867,7 @@ class CreateAdminRequest(BaseModel):
 
 class UpdateAdminRequest(BaseModel):
     """更新管理员请求"""
+
     model_config = ConfigDict(extra="forbid")
 
     name: str | None = None
@@ -773,6 +881,7 @@ class UpdateAdminRequest(BaseModel):
 
 class ChangePasswordRequest(BaseModel):
     """修改密码请求"""
+
     model_config = ConfigDict(extra="forbid")
 
     old_password: str = Field(..., min_length=1)
@@ -781,11 +890,17 @@ class ChangePasswordRequest(BaseModel):
 
 class AdminCreateUserRequest(BaseModel):
     """管理员创建用户请求"""
+
     model_config = ConfigDict(extra="forbid")
 
     parent_name: str = Field(..., min_length=1, max_length=50, description="家长姓名")
     phone: str = Field(..., min_length=11, max_length=11, description="手机号")
-    password: str | None = Field(None, min_length=6, max_length=128, description="初始密码（可选，默认手机号后6位）")
+    password: str | None = Field(
+        None,
+        min_length=6,
+        max_length=128,
+        description="初始密码（可选，默认手机号后6位）",
+    )
     # 同时创建孩子（可选）
     child_name: str | None = Field(None, max_length=50, description="孩子姓名")
     child_age: int | None = Field(None, ge=3, le=15, description="孩子年龄")

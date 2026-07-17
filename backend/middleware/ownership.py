@@ -50,7 +50,12 @@ def verify_child_ownership(
     if not child:
         raise NotFoundError("孩子不存在")
     if child.user_id != current_user.id:
-        logger.warning("Ownership violation: child_id=%d, user_id=%d, owner_id=%d", child_id, current_user.id, child.user_id)
+        logger.warning(
+            "Ownership violation: child_id=%d, user_id=%d, owner_id=%d",
+            child_id,
+            current_user.id,
+            child.user_id,
+        )
         raise ForbiddenError("无权操作该孩子")
     return child
 
@@ -229,11 +234,20 @@ class GetOwnedOrder:
             raise BadRequestError("缺少路径参数 order_id")
         from backend.domain.order.models import Order
 
-        order = db.query(Order).filter(Order.id == int(order_id), Order.is_deleted == 0).first()
+        order = (
+            db.query(Order)
+            .filter(Order.id == int(order_id), Order.is_deleted == 0)
+            .first()
+        )
         if not order:
             raise NotFoundError("订单不存在")
         if order.user_id != current_user.id:
-            logger.warning("Ownership violation: order_id=%d, user_id=%d, owner_id=%d", order_id, current_user.id, order.user_id)
+            logger.warning(
+                "Ownership violation: order_id=%d, user_id=%d, owner_id=%d",
+                order_id,
+                current_user.id,
+                order.user_id,
+            )
             raise ForbiddenError("无权操作该订单")
         return current_user, order
 
@@ -258,13 +272,21 @@ class GetOwnedRefund:
 
         refund = (
             db.query(RefundApplication)
-            .filter(RefundApplication.id == int(refund_id), RefundApplication.is_deleted == 0)
+            .filter(
+                RefundApplication.id == int(refund_id),
+                RefundApplication.is_deleted == 0,
+            )
             .first()
         )
         if not refund:
             raise NotFoundError("退款记录不存在")
         if refund.user_id != current_user.id:
-            logger.warning("Ownership violation: refund_id=%d, user_id=%d, owner_id=%d", refund_id, current_user.id, refund.user_id)
+            logger.warning(
+                "Ownership violation: refund_id=%d, user_id=%d, owner_id=%d",
+                refund_id,
+                current_user.id,
+                refund.user_id,
+            )
             raise ForbiddenError("无权查看该退款记录")
         return current_user, refund
 

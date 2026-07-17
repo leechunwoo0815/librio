@@ -33,12 +33,26 @@ def _setup(db):
     db.add(user)
     db.commit()
 
-    child1 = Child(user_id=user.id, name="小明", age=7, grade="二年级",
-                   english_name="Tom", total_words_read=5000,
-                   total_books_finished=2, current_streak_days=10)
-    child2 = Child(user_id=user.id, name="小红", age=5, grade="幼儿园大班",
-                   english_name="Lucy", total_words_read=8000,
-                   total_books_finished=3, current_streak_days=5)
+    child1 = Child(
+        user_id=user.id,
+        name="小明",
+        age=7,
+        grade="二年级",
+        english_name="Tom",
+        total_words_read=5000,
+        total_books_finished=2,
+        current_streak_days=10,
+    )
+    child2 = Child(
+        user_id=user.id,
+        name="小红",
+        age=5,
+        grade="幼儿园大班",
+        english_name="Lucy",
+        total_words_read=8000,
+        total_books_finished=3,
+        current_streak_days=5,
+    )
     db.add_all([child1, child2])
     db.commit()
 
@@ -51,10 +65,24 @@ def _setup(db):
     db.add_all([cl1, cl2])
     db.commit()
 
-    book1 = Book(isbn="978001", title="Book1", author="A", ar_value=2.0,
-                 age_min=5, age_max=9, word_count=3000)
-    book2 = Book(isbn="978002", title="Book2", author="B", ar_value=3.0,
-                 age_min=5, age_max=9, word_count=5000)
+    book1 = Book(
+        isbn="978001",
+        title="Book1",
+        author="A",
+        ar_value=2.0,
+        age_min=5,
+        age_max=9,
+        word_count=3000,
+    )
+    book2 = Book(
+        isbn="978002",
+        title="Book2",
+        author="B",
+        ar_value=3.0,
+        age_min=5,
+        age_max=9,
+        word_count=5000,
+    )
     db.add_all([book1, book2])
     db.commit()
 
@@ -78,8 +106,14 @@ def test_leaderboard_medals(db):
     """前3名显示金银铜牌"""
     user, child1, child2, book1, book2 = _setup(db)
     # 添加第3个孩子
-    child3 = Child(user_id=user.id, name="小华", age=8, grade="三年级",
-                   english_name="Mike", total_words_read=2000)
+    child3 = Child(
+        user_id=user.id,
+        name="小华",
+        age=8,
+        grade="三年级",
+        english_name="Mike",
+        total_words_read=2000,
+    )
     db.add(child3)
     db.commit()
     svc = LeaderboardService(db)
@@ -105,14 +139,16 @@ def test_weekly_leaderboard(db):
 
     # 小明最近7天读了1本
     sub1 = ReadingSubmission(
-        child_id=child1.id, book_id=book1.id,
+        child_id=child1.id,
+        book_id=book1.id,
         status=ReadingSubmission.STATUS_APPROVED,
         submitted_at=datetime.now() - timedelta(days=2),
         word_count=book1.word_count,
     )
     # 小红10天前读的（不在7天内）
     sub2 = ReadingSubmission(
-        child_id=child2.id, book_id=book2.id,
+        child_id=child2.id,
+        book_id=book2.id,
         status=ReadingSubmission.STATUS_APPROVED,
         submitted_at=datetime.now() - timedelta(days=10),
         word_count=book2.word_count,

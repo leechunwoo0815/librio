@@ -29,12 +29,30 @@ def test_bulk_import_books_deduplication(db):
 
     svc = AdminBookService(db)
     items = [
-        BulkImportBookItem(isbn="9780064400558", title="Charlotte's Web", author="E.B. White",
-                           ar_value=Decimal("3.2"), age_min=7, age_max=9),
-        BulkImportBookItem(isbn="9780064400558", title="Charlotte's Web 2", author="E.B. White",
-                           ar_value=Decimal("3.5"), age_min=7, age_max=9),
-        BulkImportBookItem(isbn="9780061120084", title="The Little Prince", author="Saint-Exupéry",
-                           ar_value=Decimal("4.0"), age_min=8, age_max=12),
+        BulkImportBookItem(
+            isbn="9780064400558",
+            title="Charlotte's Web",
+            author="E.B. White",
+            ar_value=Decimal("3.2"),
+            age_min=7,
+            age_max=9,
+        ),
+        BulkImportBookItem(
+            isbn="9780064400558",
+            title="Charlotte's Web 2",
+            author="E.B. White",
+            ar_value=Decimal("3.5"),
+            age_min=7,
+            age_max=9,
+        ),
+        BulkImportBookItem(
+            isbn="9780061120084",
+            title="The Little Prince",
+            author="Saint-Exupéry",
+            ar_value=Decimal("4.0"),
+            age_min=8,
+            age_max=12,
+        ),
     ]
     result = svc.bulk_import_books(items)
     assert result["success"] == 2
@@ -48,18 +66,37 @@ def test_bulk_import_questions_batch_lookup(db):
     from backend.domain.admin.schemas import BulkImportQuestionItem
 
     svc = AdminBookService(db)
-    book = Book(isbn="9780064400558", title="Charlotte's Web", author="E.B. White",
-                ar_value=Decimal("3.2"), age_min=7, age_max=9, word_count=31000)
+    book = Book(
+        isbn="9780064400558",
+        title="Charlotte's Web",
+        author="E.B. White",
+        ar_value=Decimal("3.2"),
+        age_min=7,
+        age_max=9,
+        word_count=31000,
+    )
     db.add(book)
     db.commit()
 
     items = [
-        BulkImportQuestionItem(isbn="9780064400558", question_text="Q1",
-                               option_a="A", option_b="B", option_c="C", option_d="D",
-                               correct_answer="A"),
-        BulkImportQuestionItem(isbn="9780064400558", question_text="Q2",
-                               option_a="A", option_b="B", option_c="C", option_d="D",
-                               correct_answer="B"),
+        BulkImportQuestionItem(
+            isbn="9780064400558",
+            question_text="Q1",
+            option_a="A",
+            option_b="B",
+            option_c="C",
+            option_d="D",
+            correct_answer="A",
+        ),
+        BulkImportQuestionItem(
+            isbn="9780064400558",
+            question_text="Q2",
+            option_a="A",
+            option_b="B",
+            option_c="C",
+            option_d="D",
+            correct_answer="B",
+        ),
     ]
     result = svc.bulk_import_questions(items)
     assert result["success"] == 2
@@ -70,15 +107,31 @@ def test_search_questions_by_book_batch(db):
     from backend.domain.admin.services.book_service import AdminBookService
 
     svc = AdminBookService(db)
-    book = Book(isbn="9780064400558", title="Charlotte's Web", author="E.B. White",
-                ar_value=Decimal("3.2"), age_min=7, age_max=9, word_count=31000)
+    book = Book(
+        isbn="9780064400558",
+        title="Charlotte's Web",
+        author="E.B. White",
+        ar_value=Decimal("3.2"),
+        age_min=7,
+        age_max=9,
+        word_count=31000,
+    )
     db.add(book)
     db.commit()
 
     for i in range(3):
-        db.add(QuestionBank(book_id=book.id, question_text=f"Q{i}",
-                            option_a="A", option_b="B", option_c="C", option_d="D",
-                            correct_answer="A", difficulty=i))
+        db.add(
+            QuestionBank(
+                book_id=book.id,
+                question_text=f"Q{i}",
+                option_a="A",
+                option_b="B",
+                option_c="C",
+                option_d="D",
+                correct_answer="A",
+                difficulty=i,
+            )
+        )
     db.commit()
 
     result = svc.search_questions_by_book("Charlotte")
@@ -89,8 +142,15 @@ def test_batch_generate_copies(db):
     from backend.domain.admin.services.book_service import AdminBookService
 
     svc = AdminBookService(db)
-    book = Book(isbn="9780064400558", title="Charlotte's Web", author="E.B. White",
-                ar_value=Decimal("3.2"), age_min=7, age_max=9, word_count=31000)
+    book = Book(
+        isbn="9780064400558",
+        title="Charlotte's Web",
+        author="E.B. White",
+        ar_value=Decimal("3.2"),
+        age_min=7,
+        age_max=9,
+        word_count=31000,
+    )
     db.add(book)
     db.commit()
 
@@ -104,8 +164,15 @@ def test_batch_generate_copies_skip_existing(db):
     from backend.domain.admin.services.book_service import AdminBookService
 
     svc = AdminBookService(db)
-    book = Book(isbn="9780064400558", title="Charlotte's Web", author="E.B. White",
-                ar_value=Decimal("3.2"), age_min=7, age_max=9, word_count=31000)
+    book = Book(
+        isbn="9780064400558",
+        title="Charlotte's Web",
+        author="E.B. White",
+        ar_value=Decimal("3.2"),
+        age_min=7,
+        age_max=9,
+        word_count=31000,
+    )
     db.add(book)
     db.commit()
 
@@ -127,23 +194,58 @@ def test_admin_list_children_borrow_counts(db):
     db.flush()
     children = []
     for i in range(3):
-        child = Child(user_id=user.id, name=f"孩子{i}", age=5 + i, grade="大班",
-                      status=Child.STATUS_OFFICIAL, deposit_status=DepositStatus.PAID)
+        child = Child(
+            user_id=user.id,
+            name=f"孩子{i}",
+            age=5 + i,
+            grade="大班",
+            status=Child.STATUS_OFFICIAL,
+            deposit_status=DepositStatus.PAID,
+        )
         db.add(child)
         db.flush()
         children.append(child)
-    book = Book(isbn="9780064400558", title="Charlotte's Web", author="E.B. White",
-                ar_value=Decimal("3.2"), age_min=7, age_max=9, word_count=31000)
+    book = Book(
+        isbn="9780064400558",
+        title="Charlotte's Web",
+        author="E.B. White",
+        ar_value=Decimal("3.2"),
+        age_min=7,
+        age_max=9,
+        word_count=31000,
+    )
     db.add(book)
     db.flush()
     from datetime import datetime
+
     now = datetime.utcnow()
-    db.add(BorrowRecord(child_id=children[0].id, book_id=book.id, status=BorrowStatus.BORROWING,
-                        borrow_time=now, due_date=now))
-    db.add(BorrowRecord(child_id=children[1].id, book_id=book.id, status=BorrowStatus.BORROWING,
-                        borrow_time=now, due_date=now))
-    db.add(BorrowRecord(child_id=children[1].id, book_id=book.id, status=BorrowStatus.RETURNED,
-                        borrow_time=now, due_date=now))
+    db.add(
+        BorrowRecord(
+            child_id=children[0].id,
+            book_id=book.id,
+            status=BorrowStatus.BORROWING,
+            borrow_time=now,
+            due_date=now,
+        )
+    )
+    db.add(
+        BorrowRecord(
+            child_id=children[1].id,
+            book_id=book.id,
+            status=BorrowStatus.BORROWING,
+            borrow_time=now,
+            due_date=now,
+        )
+    )
+    db.add(
+        BorrowRecord(
+            child_id=children[1].id,
+            book_id=book.id,
+            status=BorrowStatus.RETURNED,
+            borrow_time=now,
+            due_date=now,
+        )
+    )
     db.commit()
 
     result = svc.list_children(limit=10, child_ids=[c.id for c in children])
@@ -172,18 +274,39 @@ def test_overdue_reminders_batch_loading(db):
     user = User(openid="parent1", phone="13800138001")
     db.add(user)
     db.flush()
-    child = Child(user_id=user.id, name="小明", age=7, grade="二年级",
-                  status=Child.STATUS_OFFICIAL, deposit_status=DepositStatus.PAID)
+    child = Child(
+        user_id=user.id,
+        name="小明",
+        age=7,
+        grade="二年级",
+        status=Child.STATUS_OFFICIAL,
+        deposit_status=DepositStatus.PAID,
+    )
     db.add(child)
     db.flush()
-    book = Book(isbn="9780064400558", title="Charlotte's Web", author="E.B. White",
-                ar_value=Decimal("3.2"), age_min=7, age_max=9, word_count=31000)
+    book = Book(
+        isbn="9780064400558",
+        title="Charlotte's Web",
+        author="E.B. White",
+        ar_value=Decimal("3.2"),
+        age_min=7,
+        age_max=9,
+        word_count=31000,
+    )
     db.add(book)
     db.flush()
     from datetime import datetime, timedelta
+
     now = datetime.utcnow()
-    db.add(BorrowRecord(child_id=child.id, book_id=book.id, status=BorrowStatus.BORROWING,
-                        borrow_time=now, due_date=now - timedelta(days=3)))
+    db.add(
+        BorrowRecord(
+            child_id=child.id,
+            book_id=book.id,
+            status=BorrowStatus.BORROWING,
+            borrow_time=now,
+            due_date=now - timedelta(days=3),
+        )
+    )
     db.commit()
 
     result = svc.send_overdue_reminders(user.id)
@@ -195,7 +318,9 @@ def test_overdue_reminders_batch_loading(db):
 
 
 def test_benefit_transfer_list_batch(db):
-    from backend.domain.admin.services.benefit_transfer_service import BenefitTransferAdminService
+    from backend.domain.admin.services.benefit_transfer_service import (
+        BenefitTransferAdminService,
+    )
 
     svc = BenefitTransferAdminService(db)
     user = User(openid="parent1", phone="13800138001", parent_name="测试家长")
@@ -203,15 +328,24 @@ def test_benefit_transfer_list_batch(db):
     db.flush()
     children = []
     for i in range(2):
-        child = Child(user_id=user.id, name=f"孩子{i}", age=6, grade="一年级",
-                      status=Child.STATUS_OFFICIAL, deposit_status=DepositStatus.PAID)
+        child = Child(
+            user_id=user.id,
+            name=f"孩子{i}",
+            age=6,
+            grade="一年级",
+            status=Child.STATUS_OFFICIAL,
+            deposit_status=DepositStatus.PAID,
+        )
         db.add(child)
         db.flush()
         children.append(child)
     from backend.domain.child.benefit_transfer_model import BenefitTransferApplication
+
     app = BenefitTransferApplication(
-        source_child_id=children[0].id, target_child_id=children[1].id,
-        user_id=user.id, status=0,
+        source_child_id=children[0].id,
+        target_child_id=children[1].id,
+        user_id=user.id,
+        status=0,
     )
     db.add(app)
     db.commit()

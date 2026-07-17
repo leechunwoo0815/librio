@@ -174,8 +174,8 @@ class AdvancementService:
             for ans in answers
         ]
         questions = {
-            q.id: q for q in
-            self.db.query(QuestionBank).filter(QuestionBank.id.in_(qids)).all()
+            q.id: q
+            for q in self.db.query(QuestionBank).filter(QuestionBank.id.in_(qids)).all()
         }
         for ans in answers:
             if isinstance(ans, dict):
@@ -271,7 +271,11 @@ class AdvancementService:
         """晋级检测"""
         current = (
             self.db.query(ChildLevel)
-            .filter(ChildLevel.child_id == child_id, ChildLevel.is_current, ChildLevel.is_deleted == 0)
+            .filter(
+                ChildLevel.child_id == child_id,
+                ChildLevel.is_current,
+                ChildLevel.is_deleted == 0,
+            )
             .with_for_update()
             .first()
         )
@@ -398,7 +402,9 @@ class AdvancementService:
         quiz = self.quiz_repo.get_by_id_or_raise(quiz_id)
         return quiz
 
-    def list_quizzes(self, page: int = 1, page_size: int = 20, child_ids: list[int] | None = None) -> dict:
+    def list_quizzes(
+        self, page: int = 1, page_size: int = 20, child_ids: list[int] | None = None
+    ) -> dict:
         """获取测验记录列表（含孩子、图书、答题结果）"""
         from backend.domain.advancement.models import Quiz
         from backend.domain.child.models import Child
@@ -407,7 +413,13 @@ class AdvancementService:
         query = self.db.query(Quiz).filter(Quiz.is_deleted == 0)
         if child_ids is not None:
             if not child_ids:
-                return {"items": [], "total": 0, "page": page, "page_size": page_size, "has_next": False}
+                return {
+                    "items": [],
+                    "total": 0,
+                    "page": page,
+                    "page_size": page_size,
+                    "has_next": False,
+                }
             query = query.filter(Quiz.child_id.in_(child_ids))
         total = query.count()
         quizzes = (
@@ -422,38 +434,58 @@ class AdvancementService:
         children = {}
         books = {}
         if child_ids:
-            for c in self.db.query(Child).filter(Child.id.in_(child_ids), Child.is_deleted == 0).all():
+            for c in (
+                self.db.query(Child)
+                .filter(Child.id.in_(child_ids), Child.is_deleted == 0)
+                .all()
+            ):
                 children[c.id] = c.name
         if book_ids:
-            for b in self.db.query(Book).filter(Book.id.in_(book_ids), Book.is_deleted == 0).all():
-                books[b.id] = {"title": b.title, "ar_value": float(b.ar_value) if b.ar_value is not None else None}
+            for b in (
+                self.db.query(Book)
+                .filter(Book.id.in_(book_ids), Book.is_deleted == 0)
+                .all()
+            ):
+                books[b.id] = {
+                    "title": b.title,
+                    "ar_value": float(b.ar_value) if b.ar_value is not None else None,
+                }
 
         items = []
         for q in quizzes:
             book_info = books.get(q.book_id, {})
             score = float(q.score) if q.score is not None else None
-            status_text = "已完成" if q.status == Quiz.STATUS_COMPLETED else ("已过期" if q.status == Quiz.STATUS_EXPIRED else "进行中")
+            status_text = (
+                "已完成"
+                if q.status == Quiz.STATUS_COMPLETED
+                else ("已过期" if q.status == Quiz.STATUS_EXPIRED else "进行中")
+            )
             passed = None
             if score is not None:
                 from backend.common.config_service import ConfigService
                 from backend.common.types import PASS_THRESHOLD
-                pass_rate = ConfigService.get_decimal(self.db, "quiz_pass_rate", PASS_THRESHOLD)
+
+                pass_rate = ConfigService.get_decimal(
+                    self.db, "quiz_pass_rate", PASS_THRESHOLD
+                )
                 passed = score >= pass_rate * 100
-            items.append({
-                "id": q.id,
-                "child_id": q.child_id,
-                "child_name": children.get(q.child_id),
-                "book_id": q.book_id,
-                "book_title": book_info.get("title"),
-                "ar_value": book_info.get("ar_value"),
-                "status": q.status,
-                "status_text": status_text,
-                "total_questions": q.total_questions,
-                "correct_count": q.correct_count,
-                "score": score,
-                "passed": passed,
-                "create_time": q.create_time.isoformat() if q.create_time else None,
-            })
+            items.append(
+                {
+                    "id": q.id,
+                    "child_id": q.child_id,
+                    "child_name": children.get(q.child_id),
+                    "book_id": q.book_id,
+                    "book_title": book_info.get("title"),
+                    "ar_value": book_info.get("ar_value"),
+                    "status": q.status,
+                    "status_text": status_text,
+                    "total_questions": q.total_questions,
+                    "correct_count": q.correct_count,
+                    "score": score,
+                    "passed": passed,
+                    "create_time": q.create_time.isoformat() if q.create_time else None,
+                }
+            )
 
         return {
             "items": items,
@@ -468,6 +500,7 @@ class AdvancementService:
     def create_level(self, data) -> dict:
         """创建级别"""
         from backend.domain.advancement.models import Level
+
         dump = data.model_dump()
         if "pass_rate" in dump:
             dump["required_quiz_pass_rate"] = dump.pop("pass_rate")
@@ -481,7 +514,12 @@ class AdvancementService:
         """更新级别"""
         from backend.domain.advancement.models import Level
         from backend.common.exceptions import NotFoundError
-        level = self.db.query(Level).filter(Level.id == level_id, Level.is_deleted == 0).first()
+
+        level = (
+            self.db.query(Level)
+            .filter(Level.id == level_id, Level.is_deleted == 0)
+            .first()
+        )
         if not level:
             raise NotFoundError("级别不存在")
         update_data = data.model_dump(exclude_unset=True)
@@ -497,7 +535,12 @@ class AdvancementService:
         """删除级别"""
         from backend.domain.advancement.models import Level
         from backend.common.exceptions import NotFoundError
-        level = self.db.query(Level).filter(Level.id == level_id, Level.is_deleted == 0).first()
+
+        level = (
+            self.db.query(Level)
+            .filter(Level.id == level_id, Level.is_deleted == 0)
+            .first()
+        )
         if not level:
             raise NotFoundError("级别不存在")
         level.is_deleted = 1
@@ -509,6 +552,7 @@ class AdvancementService:
     def create_achievement(self, data) -> dict:
         """创建成就"""
         from backend.domain.advancement.models import Achievement
+
         achievement = Achievement(**data.model_dump())
         self.db.add(achievement)
         self.db.commit()
@@ -519,7 +563,12 @@ class AdvancementService:
         """更新成就"""
         from backend.domain.advancement.models import Achievement
         from backend.common.exceptions import NotFoundError
-        achievement = self.db.query(Achievement).filter(Achievement.id == achievement_id, Achievement.is_deleted == 0).first()
+
+        achievement = (
+            self.db.query(Achievement)
+            .filter(Achievement.id == achievement_id, Achievement.is_deleted == 0)
+            .first()
+        )
         if not achievement:
             raise NotFoundError("成就不存在")
         update_data = data.model_dump(exclude_unset=True)
@@ -533,7 +582,12 @@ class AdvancementService:
         """删除成就"""
         from backend.domain.advancement.models import Achievement
         from backend.common.exceptions import NotFoundError
-        achievement = self.db.query(Achievement).filter(Achievement.id == achievement_id, Achievement.is_deleted == 0).first()
+
+        achievement = (
+            self.db.query(Achievement)
+            .filter(Achievement.id == achievement_id, Achievement.is_deleted == 0)
+            .first()
+        )
         if not achievement:
             raise NotFoundError("成就不存在")
         achievement.is_deleted = 1
@@ -545,6 +599,7 @@ class AdvancementService:
     def create_question(self, data) -> dict:
         """创建题目"""
         from backend.domain.advancement.models import QuestionBank
+
         question = QuestionBank(**data.model_dump())
         self.db.add(question)
         self.db.commit()
@@ -555,11 +610,23 @@ class AdvancementService:
         """更新题目"""
         from backend.domain.advancement.models import QuestionBank
         from backend.common.exceptions import NotFoundError
-        question = self.db.query(QuestionBank).filter(QuestionBank.id == question_id).first()
+
+        question = (
+            self.db.query(QuestionBank).filter(QuestionBank.id == question_id).first()
+        )
         if not question:
             raise NotFoundError("题目不存在")
         update_data = data.model_dump(exclude_unset=True)
-        allowed_fields = ['question_text', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_answer', 'difficulty', 'explanation']
+        allowed_fields = [
+            "question_text",
+            "option_a",
+            "option_b",
+            "option_c",
+            "option_d",
+            "correct_answer",
+            "difficulty",
+            "explanation",
+        ]
         for key, value in update_data.items():
             if key in allowed_fields:
                 setattr(question, key, value)
@@ -570,7 +637,10 @@ class AdvancementService:
         """删除题目"""
         from backend.domain.advancement.models import QuestionBank
         from backend.common.exceptions import NotFoundError
-        question = self.db.query(QuestionBank).filter(QuestionBank.id == question_id).first()
+
+        question = (
+            self.db.query(QuestionBank).filter(QuestionBank.id == question_id).first()
+        )
         if not question:
             raise NotFoundError("题目不存在")
         question.is_deleted = 1
@@ -581,7 +651,12 @@ class AdvancementService:
         """审核提交"""
         from backend.domain.advancement.models import ReadingSubmission
         from backend.common.exceptions import NotFoundError
-        sub = self.db.query(ReadingSubmission).filter(ReadingSubmission.id == submission_id).first()
+
+        sub = (
+            self.db.query(ReadingSubmission)
+            .filter(ReadingSubmission.id == submission_id)
+            .first()
+        )
         if not sub:
             raise NotFoundError("提交不存在")
         sub.status = data.status
@@ -604,28 +679,40 @@ class AdvancementService:
         from backend.domain.advancement.models import ChildAchievement
         from backend.domain.child.models import Child
 
-        total = self.db.query(ChildAchievement).filter(ChildAchievement.is_deleted == 0).count()
+        total = (
+            self.db.query(ChildAchievement)
+            .filter(ChildAchievement.is_deleted == 0)
+            .count()
+        )
 
-        records = self.db.query(ChildAchievement).filter(
-            ChildAchievement.is_deleted == 0
-        ).order_by(
-            ChildAchievement.achieved_at.desc()
-        ).offset(
-            (page - 1) * page_size
-        ).limit(page_size).all()
+        records = (
+            self.db.query(ChildAchievement)
+            .filter(ChildAchievement.is_deleted == 0)
+            .order_by(ChildAchievement.achieved_at.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+            .all()
+        )
 
         # 批量查询所有相关 child 和 achievement，避免 N+1
         child_ids = list(set(r.child_id for r in records if r.child_id))
         children = {}
         if child_ids:
-            for c in self.db.query(Child).filter(Child.id.in_(child_ids), Child.is_deleted == 0).all():
+            for c in (
+                self.db.query(Child)
+                .filter(Child.id.in_(child_ids), Child.is_deleted == 0)
+                .all()
+            ):
                 children[c.id] = c.name
 
         from backend.domain.advancement.models import Achievement
+
         ach_ids = list(set(r.achievement_id for r in records if r.achievement_id))
         achievements = {}
         if ach_ids:
-            for a in self.db.query(Achievement).filter(Achievement.id.in_(ach_ids)).all():
+            for a in (
+                self.db.query(Achievement).filter(Achievement.id.in_(ach_ids)).all()
+            ):
                 achievements[a.id] = {
                     "name": a.name,
                     "type": a.type,
@@ -636,17 +723,21 @@ class AdvancementService:
         result = []
         for r in records:
             ach = achievements.get(r.achievement_id, {})
-            result.append({
-                "id": r.id,
-                "child_id": r.child_id,
-                "child_name": children.get(r.child_id),
-                "achievement_id": r.achievement_id,
-                "achievement_name": ach.get("name"),
-                "achievement_type": ach.get("type"),
-                "badge_emoji": ach.get("badge_emoji"),
-                "trigger_condition": ach.get("trigger_condition"),
-                "achieved_at": r.achieved_at.isoformat() if hasattr(r, 'achieved_at') and r.achieved_at else None,
-            })
+            result.append(
+                {
+                    "id": r.id,
+                    "child_id": r.child_id,
+                    "child_name": children.get(r.child_id),
+                    "achievement_id": r.achievement_id,
+                    "achievement_name": ach.get("name"),
+                    "achievement_type": ach.get("type"),
+                    "badge_emoji": ach.get("badge_emoji"),
+                    "trigger_condition": ach.get("trigger_condition"),
+                    "achieved_at": r.achieved_at.isoformat()
+                    if hasattr(r, "achieved_at") and r.achieved_at
+                    else None,
+                }
+            )
 
         return {
             "items": result,
@@ -692,17 +783,28 @@ class AdvancementService:
 
         # 统计信息
         current_month = datetime.now().strftime("%Y-%m")
-        last_month = (datetime.now().replace(day=1) - timedelta(days=1)).strftime("%Y-%m")
+        last_month = (datetime.now().replace(day=1) - timedelta(days=1)).strftime(
+            "%Y-%m"
+        )
         month_new = sum(
-            1 for c, _ in rows
+            1
+            for c, _ in rows
             if (c.issued_at and c.issued_at.strftime("%Y-%m") == current_month)
-            or (not c.issued_at and c.create_time and c.create_time.strftime("%Y-%m") == current_month)
+            or (
+                not c.issued_at
+                and c.create_time
+                and c.create_time.strftime("%Y-%m") == current_month
+            )
         )
         last_month_new = sum(
             1
             for c, _ in rows
             if (c.issued_at and c.issued_at.strftime("%Y-%m") == last_month)
-            or (not c.issued_at and c.create_time and c.create_time.strftime("%Y-%m") == last_month)
+            or (
+                not c.issued_at
+                and c.create_time
+                and c.create_time.strftime("%Y-%m") == last_month
+            )
         )
         levels = sorted(
             {c.level_name for c, _ in rows if c.level_name},
@@ -762,10 +864,11 @@ class AdvancementService:
         from backend.domain.certificate.models import LevelCertificate
         from backend.common.exceptions import NotFoundError
 
-        cert = self.db.query(LevelCertificate).filter(
-            LevelCertificate.id == cert_id,
-            LevelCertificate.is_deleted == 0
-        ).first()
+        cert = (
+            self.db.query(LevelCertificate)
+            .filter(LevelCertificate.id == cert_id, LevelCertificate.is_deleted == 0)
+            .first()
+        )
         if not cert:
             raise NotFoundError("证书不存在")
 
@@ -776,28 +879,45 @@ class AdvancementService:
         self.db.commit()
         return {"success": True, "message": "证书更新成功"}
 
-    def list_submissions(self, page: int = 1, page_size: int = 20, status: str = None, child_ids: list[int] | None = None) -> dict:
+    def list_submissions(
+        self,
+        page: int = 1,
+        page_size: int = 20,
+        status: str = None,
+        child_ids: list[int] | None = None,
+    ) -> dict:
         """获取提交记录列表 — 支持逗号分隔多状态"""
         from backend.domain.advancement.models import ReadingSubmission
         from backend.domain.child.models import Child
         from backend.domain.book.models import Book
 
-        query = self.db.query(ReadingSubmission).filter(ReadingSubmission.is_deleted == 0)
+        query = self.db.query(ReadingSubmission).filter(
+            ReadingSubmission.is_deleted == 0
+        )
         if child_ids is not None:
             if not child_ids:
-                return {"items": [], "total": 0, "page": page, "page_size": page_size, "has_next": False}
+                return {
+                    "items": [],
+                    "total": 0,
+                    "page": page,
+                    "page_size": page_size,
+                    "has_next": False,
+                }
             query = query.filter(ReadingSubmission.child_id.in_(child_ids))
         if status:
-            status_list = [int(s.strip()) for s in status.split(',') if s.strip().isdigit()]
+            status_list = [
+                int(s.strip()) for s in status.split(",") if s.strip().isdigit()
+            ]
             if status_list:
                 query = query.filter(ReadingSubmission.status.in_(status_list))
 
         total = query.count()
-        subs = query.order_by(
-            ReadingSubmission.create_time.desc()
-        ).offset(
-            (page - 1) * page_size
-        ).limit(page_size).all()
+        subs = (
+            query.order_by(ReadingSubmission.create_time.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+            .all()
+        )
 
         # 批量查询 child 和 book，避免 N+1
         child_ids = list(set(s.child_id for s in subs if s.child_id))
@@ -805,28 +925,46 @@ class AdvancementService:
         children = {}
         books = {}
         if child_ids:
-            for c in self.db.query(Child).filter(Child.id.in_(child_ids), Child.is_deleted == 0).all():
-                children[c.id] = {"name": c.name, "ar_level": getattr(c, 'ar_level', None)}
+            for c in (
+                self.db.query(Child)
+                .filter(Child.id.in_(child_ids), Child.is_deleted == 0)
+                .all()
+            ):
+                children[c.id] = {
+                    "name": c.name,
+                    "ar_level": getattr(c, "ar_level", None),
+                }
         if book_ids:
-            for b in self.db.query(Book).filter(Book.id.in_(book_ids), Book.is_deleted == 0).all():
-                books[b.id] = {"title": b.title, "total_pages": getattr(b, 'total_pages', None)}
+            for b in (
+                self.db.query(Book)
+                .filter(Book.id.in_(book_ids), Book.is_deleted == 0)
+                .all()
+            ):
+                books[b.id] = {
+                    "title": b.title,
+                    "total_pages": getattr(b, "total_pages", None),
+                }
 
         result = []
         for s in subs:
             child_info = children.get(s.child_id, {})
             book_info = books.get(s.book_id, {})
-            result.append({
-                "id": s.id,
-                "child_id": s.child_id,
-                "child_name": child_info.get("name"),
-                "book_id": s.book_id,
-                "book_title": book_info.get("title"),
-                "status": s.status,
-                "submitted_at": s.submitted_at.isoformat() if getattr(s, 'submitted_at', None) else (s.create_time.isoformat() if s.create_time else None),
-                "create_time": s.create_time.isoformat() if s.create_time else None,
-                "level": child_info.get("ar_level"),
-                "total_pages": book_info.get("total_pages"),
-            })
+            result.append(
+                {
+                    "id": s.id,
+                    "child_id": s.child_id,
+                    "child_name": child_info.get("name"),
+                    "book_id": s.book_id,
+                    "book_title": book_info.get("title"),
+                    "status": s.status,
+                    "submitted_at": s.submitted_at.isoformat()
+                    if getattr(s, "submitted_at", None)
+                    else (s.create_time.isoformat() if s.create_time else None),
+                    "create_time": s.create_time.isoformat() if s.create_time else None,
+                    "level": child_info.get("ar_level"),
+                    "total_pages": book_info.get("total_pages"),
+                }
+            )
 
         return {
             "items": result,
@@ -836,7 +974,9 @@ class AdvancementService:
             "has_next": page * page_size < total,
         }
 
-    def list_questions(self, page: int = 1, page_size: int = 20, keyword: str = None) -> dict:
+    def list_questions(
+        self, page: int = 1, page_size: int = 20, keyword: str = None
+    ) -> dict:
         """获取题库列表"""
         from backend.domain.advancement.models import QuestionBank
 
@@ -845,11 +985,12 @@ class AdvancementService:
             query = query.filter(QuestionBank.question_text.ilike(f"%{keyword}%"))
 
         total = query.count()
-        items = query.order_by(
-            QuestionBank.create_time.desc()
-        ).offset(
-            (page - 1) * page_size
-        ).limit(page_size).all()
+        items = (
+            query.order_by(QuestionBank.create_time.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+            .all()
+        )
 
         return {
             "items": [
@@ -890,8 +1031,16 @@ class AdvancementService:
         if not cert:
             raise NotFoundError("证书不存在")
 
-        child = self.db.query(Child).filter(Child.id == cert.child_id, Child.is_deleted == 0).first()
-        level = self.db.query(Level).filter(Level.id == cert.level_id, Level.is_deleted == 0).first()
+        child = (
+            self.db.query(Child)
+            .filter(Child.id == cert.child_id, Child.is_deleted == 0)
+            .first()
+        )
+        level = (
+            self.db.query(Level)
+            .filter(Level.id == cert.level_id, Level.is_deleted == 0)
+            .first()
+        )
 
         cert.certificate_no = (
             f"MW-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}"
@@ -917,9 +1066,11 @@ class AdvancementService:
         from backend.domain.certificate.models import LevelCertificate
         from backend.common.exceptions import NotFoundError
 
-        cert = self.db.query(LevelCertificate).filter(
-            LevelCertificate.id == cert_id, LevelCertificate.is_deleted == 0
-        ).first()
+        cert = (
+            self.db.query(LevelCertificate)
+            .filter(LevelCertificate.id == cert_id, LevelCertificate.is_deleted == 0)
+            .first()
+        )
         if not cert:
             raise NotFoundError("证书不存在")
         cert.soft_delete()

@@ -77,7 +77,9 @@ class AdminDashboardService:
         )
 
         # 测评通过率 — 从配置读取通过率阈值
-        pass_threshold = ConfigService.get_decimal(self.db, "quiz_pass_rate", PASS_THRESHOLD)
+        pass_threshold = ConfigService.get_decimal(
+            self.db, "quiz_pass_rate", PASS_THRESHOLD
+        )
         pass_score = pass_threshold * 100  # 0.8 → 80
         total_quizzes = (
             self.db.query(func.count(Quiz.id))

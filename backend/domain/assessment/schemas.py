@@ -7,6 +7,7 @@ from backend.common.base_schema import BaseSchema, PaginatedResponse
 
 class AssessmentResponse(BaseSchema):
     """评估响应"""
+
     id: int
     child_id: int
     child_name: str | None = None
@@ -28,6 +29,7 @@ class AssessmentResponse(BaseSchema):
 
 class AssessmentCreateRequest(BaseSchema):
     """创建评估请求"""
+
     child_id: int
     teacher_id: int | None = None
     venue_id: int | None = None
@@ -42,6 +44,7 @@ class AssessmentCreateRequest(BaseSchema):
 
 class AssessmentUpdateRequest(BaseSchema):
     """更新评估请求"""
+
     ar_level_before: float | None = None
     ar_level_after: float | None = None
     comprehension_score: float | None = None
@@ -54,4 +57,5 @@ class AssessmentUpdateRequest(BaseSchema):
 
 class AssessmentListResponse(PaginatedResponse[AssessmentResponse]):
     """评估列表响应"""
+
     stats: dict = {}

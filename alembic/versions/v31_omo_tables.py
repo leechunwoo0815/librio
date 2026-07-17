@@ -33,15 +33,37 @@ def upgrade() -> None:
     # ============================================================
     op.create_table(
         "book_copy",
-        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False, comment="主键"),
+        sa.Column(
+            "id", sa.BigInteger(), autoincrement=True, nullable=False, comment="主键"
+        ),
         sa.Column("book_id", sa.BigInteger(), nullable=False, comment="关联图书ID"),
         sa.Column("barcode", sa.String(50), nullable=False, comment="副本条码（唯一）"),
-        sa.Column("status", sa.SmallInteger(), server_default="0", comment="副本状态: 0=可借 1=已借出 2=维修中 3=报废"),
-        sa.Column("condition_note", sa.String(255), nullable=True, comment="入库时状况备注"),
+        sa.Column(
+            "status",
+            sa.SmallInteger(),
+            server_default="0",
+            comment="副本状态: 0=可借 1=已借出 2=维修中 3=报废",
+        ),
+        sa.Column(
+            "condition_note", sa.String(255), nullable=True, comment="入库时状况备注"
+        ),
         sa.Column("location", sa.String(50), nullable=True, comment="存放位置"),
-        sa.Column("create_time", sa.DateTime(), server_default=sa.func.now(), comment="创建时间"),
-        sa.Column("update_time", sa.DateTime(), server_default=sa.func.now(), onupdate=sa.func.now(), comment="更新时间"),
-        sa.Column("is_deleted", sa.SmallInteger(), server_default="0", comment="软删除标记"),
+        sa.Column(
+            "create_time",
+            sa.DateTime(),
+            server_default=sa.func.now(),
+            comment="创建时间",
+        ),
+        sa.Column(
+            "update_time",
+            sa.DateTime(),
+            server_default=sa.func.now(),
+            onupdate=sa.func.now(),
+            comment="更新时间",
+        ),
+        sa.Column(
+            "is_deleted", sa.SmallInteger(), server_default="0", comment="软删除标记"
+        ),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index("ix_book_copy_book_id", "book_copy", ["book_id"])
@@ -52,21 +74,52 @@ def upgrade() -> None:
     # ============================================================
     op.create_table(
         "borrow_record",
-        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False, comment="主键"),
+        sa.Column(
+            "id", sa.BigInteger(), autoincrement=True, nullable=False, comment="主键"
+        ),
         sa.Column("child_id", sa.BigInteger(), nullable=False, comment="孩子ID"),
         sa.Column("book_id", sa.BigInteger(), nullable=False, comment="图书ID"),
         sa.Column("book_copy_id", sa.BigInteger(), nullable=True, comment="具体副本ID"),
-        sa.Column("operator_id", sa.BigInteger(), nullable=True, comment="操作运营人员ID"),
+        sa.Column(
+            "operator_id", sa.BigInteger(), nullable=True, comment="操作运营人员ID"
+        ),
         sa.Column("borrow_time", sa.DateTime(), nullable=False, comment="借出时间"),
-        sa.Column("due_date", sa.DateTime(), nullable=False, comment="应还日期（借出+21天）"),
+        sa.Column(
+            "due_date", sa.DateTime(), nullable=False, comment="应还日期（借出+21天）"
+        ),
         sa.Column("return_time", sa.DateTime(), nullable=True, comment="实际归还时间"),
-        sa.Column("status", sa.SmallInteger(), server_default="0", comment="借阅状态: 0=借阅中 1=已归还 2=已逾期 3=丢失"),
+        sa.Column(
+            "status",
+            sa.SmallInteger(),
+            server_default="0",
+            comment="借阅状态: 0=借阅中 1=已归还 2=已逾期 3=丢失",
+        ),
         sa.Column("overdue_days", sa.Integer(), server_default="0", comment="逾期天数"),
-        sa.Column("fine_amount", sa.Numeric(10, 2), server_default="0", comment="逾期罚款"),
-        sa.Column("quiz_passed", sa.SmallInteger(), server_default="0", comment="是否已通过测评: 0=否 1=是"),
-        sa.Column("create_time", sa.DateTime(), server_default=sa.func.now(), comment="创建时间"),
-        sa.Column("update_time", sa.DateTime(), server_default=sa.func.now(), onupdate=sa.func.now(), comment="更新时间"),
-        sa.Column("is_deleted", sa.SmallInteger(), server_default="0", comment="软删除标记"),
+        sa.Column(
+            "fine_amount", sa.Numeric(10, 2), server_default="0", comment="逾期罚款"
+        ),
+        sa.Column(
+            "quiz_passed",
+            sa.SmallInteger(),
+            server_default="0",
+            comment="是否已通过测评: 0=否 1=是",
+        ),
+        sa.Column(
+            "create_time",
+            sa.DateTime(),
+            server_default=sa.func.now(),
+            comment="创建时间",
+        ),
+        sa.Column(
+            "update_time",
+            sa.DateTime(),
+            server_default=sa.func.now(),
+            onupdate=sa.func.now(),
+            comment="更新时间",
+        ),
+        sa.Column(
+            "is_deleted", sa.SmallInteger(), server_default="0", comment="软删除标记"
+        ),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index("ix_borrow_child_id", "borrow_record", ["child_id"])
@@ -79,19 +132,49 @@ def upgrade() -> None:
     # ============================================================
     op.create_table(
         "deposit_record",
-        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False, comment="主键"),
+        sa.Column(
+            "id", sa.BigInteger(), autoincrement=True, nullable=False, comment="主键"
+        ),
         sa.Column("child_id", sa.BigInteger(), nullable=False, comment="孩子ID"),
-        sa.Column("amount", sa.Numeric(10, 2), nullable=False, server_default="1200.00", comment="押金金额"),
-        sa.Column("status", sa.SmallInteger(), server_default="0", comment="押金状态: 0=未支付 1=已支付 2=已退款 3=已扣除"),
+        sa.Column(
+            "amount",
+            sa.Numeric(10, 2),
+            nullable=False,
+            server_default="1200.00",
+            comment="押金金额",
+        ),
+        sa.Column(
+            "status",
+            sa.SmallInteger(),
+            server_default="0",
+            comment="押金状态: 0=未支付 1=已支付 2=已退款 3=已扣除",
+        ),
         sa.Column("pay_time", sa.DateTime(), nullable=True, comment="支付时间"),
         sa.Column("pay_order_id", sa.BigInteger(), nullable=True, comment="支付订单ID"),
         sa.Column("refund_time", sa.DateTime(), nullable=True, comment="退款时间"),
-        sa.Column("refund_amount", sa.Numeric(10, 2), nullable=True, comment="退款金额"),
-        sa.Column("deduct_amount", sa.Numeric(10, 2), nullable=True, comment="扣除金额"),
+        sa.Column(
+            "refund_amount", sa.Numeric(10, 2), nullable=True, comment="退款金额"
+        ),
+        sa.Column(
+            "deduct_amount", sa.Numeric(10, 2), nullable=True, comment="扣除金额"
+        ),
         sa.Column("deduct_reason", sa.String(255), nullable=True, comment="扣除原因"),
-        sa.Column("create_time", sa.DateTime(), server_default=sa.func.now(), comment="创建时间"),
-        sa.Column("update_time", sa.DateTime(), server_default=sa.func.now(), onupdate=sa.func.now(), comment="更新时间"),
-        sa.Column("is_deleted", sa.SmallInteger(), server_default="0", comment="软删除标记"),
+        sa.Column(
+            "create_time",
+            sa.DateTime(),
+            server_default=sa.func.now(),
+            comment="创建时间",
+        ),
+        sa.Column(
+            "update_time",
+            sa.DateTime(),
+            server_default=sa.func.now(),
+            onupdate=sa.func.now(),
+            comment="更新时间",
+        ),
+        sa.Column(
+            "is_deleted", sa.SmallInteger(), server_default="0", comment="软删除标记"
+        ),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index("ix_deposit_child_id", "deposit_record", ["child_id"])
@@ -101,17 +184,47 @@ def upgrade() -> None:
     # ============================================================
     op.create_table(
         "reservation",
-        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False, comment="主键"),
+        sa.Column(
+            "id", sa.BigInteger(), autoincrement=True, nullable=False, comment="主键"
+        ),
         sa.Column("child_id", sa.BigInteger(), nullable=False, comment="孩子ID"),
         sa.Column("book_id", sa.BigInteger(), nullable=False, comment="图书ID"),
         sa.Column("venue_id", sa.BigInteger(), nullable=True, comment="预约取书场馆"),
-        sa.Column("status", sa.SmallInteger(), server_default="0", comment="预约状态: 0=待取书 1=已取书 2=已过期 3=已取消"),
-        sa.Column("expire_time", sa.DateTime(), nullable=False, comment="过期时间（创建+72小时）"),
+        sa.Column(
+            "status",
+            sa.SmallInteger(),
+            server_default="0",
+            comment="预约状态: 0=待取书 1=已取书 2=已过期 3=已取消",
+        ),
+        sa.Column(
+            "expire_time",
+            sa.DateTime(),
+            nullable=False,
+            comment="过期时间（创建+72小时）",
+        ),
         sa.Column("fulfilled_time", sa.DateTime(), nullable=True, comment="取书时间"),
-        sa.Column("borrow_record_id", sa.BigInteger(), nullable=True, comment="取书后关联的借阅记录ID"),
-        sa.Column("create_time", sa.DateTime(), server_default=sa.func.now(), comment="创建时间"),
-        sa.Column("update_time", sa.DateTime(), server_default=sa.func.now(), onupdate=sa.func.now(), comment="更新时间"),
-        sa.Column("is_deleted", sa.SmallInteger(), server_default="0", comment="软删除标记"),
+        sa.Column(
+            "borrow_record_id",
+            sa.BigInteger(),
+            nullable=True,
+            comment="取书后关联的借阅记录ID",
+        ),
+        sa.Column(
+            "create_time",
+            sa.DateTime(),
+            server_default=sa.func.now(),
+            comment="创建时间",
+        ),
+        sa.Column(
+            "update_time",
+            sa.DateTime(),
+            server_default=sa.func.now(),
+            onupdate=sa.func.now(),
+            comment="更新时间",
+        ),
+        sa.Column(
+            "is_deleted", sa.SmallInteger(), server_default="0", comment="软删除标记"
+        ),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index("ix_reservation_child_id", "reservation", ["child_id"])
@@ -119,19 +232,77 @@ def upgrade() -> None:
     # ============================================================
     # 5. Book 表新增 V3.1 字段
     # ============================================================
-    op.add_column("book", sa.Column("total_stock", sa.Integer(), server_default="0", comment="实体书库存总数"))
-    op.add_column("book", sa.Column("available_stock", sa.Integer(), server_default="0", comment="实体书可借数量"))
-    op.add_column("book", sa.Column("offline_available", sa.SmallInteger(), server_default="0", comment="是否支持线下借阅: 0=否 1=是"))
-    op.add_column("book", sa.Column("audio_timeline", sa.Text(), nullable=True, comment="音频时间线JSON"))
-    op.add_column("book", sa.Column("core_vocabulary", sa.Text(), nullable=True, comment="核心词汇JSON列表"))
-    op.add_column("book", sa.Column("is_published", sa.SmallInteger(), server_default="1", comment="是否上架: 0=下架 1=上架"))
+    op.add_column(
+        "book",
+        sa.Column(
+            "total_stock", sa.Integer(), server_default="0", comment="实体书库存总数"
+        ),
+    )
+    op.add_column(
+        "book",
+        sa.Column(
+            "available_stock",
+            sa.Integer(),
+            server_default="0",
+            comment="实体书可借数量",
+        ),
+    )
+    op.add_column(
+        "book",
+        sa.Column(
+            "offline_available",
+            sa.SmallInteger(),
+            server_default="0",
+            comment="是否支持线下借阅: 0=否 1=是",
+        ),
+    )
+    op.add_column(
+        "book",
+        sa.Column("audio_timeline", sa.Text(), nullable=True, comment="音频时间线JSON"),
+    )
+    op.add_column(
+        "book",
+        sa.Column(
+            "core_vocabulary", sa.Text(), nullable=True, comment="核心词汇JSON列表"
+        ),
+    )
+    op.add_column(
+        "book",
+        sa.Column(
+            "is_published",
+            sa.SmallInteger(),
+            server_default="1",
+            comment="是否上架: 0=下架 1=上架",
+        ),
+    )
 
     # ============================================================
     # 6. Child 表新增 V3.1 字段
     # ============================================================
-    op.add_column("child", sa.Column("deposit_status", sa.SmallInteger(), server_default="0", comment="押金状态: 0=未交 1=已交 2=已退 3=已扣"))
-    op.add_column("child", sa.Column("outstanding_fines", sa.Numeric(10, 2), server_default="0", comment="未缴罚款"))
-    op.add_column("child", sa.Column("current_level_id", sa.BigInteger(), nullable=True, comment="当前级别ID"))
+    op.add_column(
+        "child",
+        sa.Column(
+            "deposit_status",
+            sa.SmallInteger(),
+            server_default="0",
+            comment="押金状态: 0=未交 1=已交 2=已退 3=已扣",
+        ),
+    )
+    op.add_column(
+        "child",
+        sa.Column(
+            "outstanding_fines",
+            sa.Numeric(10, 2),
+            server_default="0",
+            comment="未缴罚款",
+        ),
+    )
+    op.add_column(
+        "child",
+        sa.Column(
+            "current_level_id", sa.BigInteger(), nullable=True, comment="当前级别ID"
+        ),
+    )
 
     # ============================================================
     # 7. 索引补齐（现有表缺失的索引）
@@ -139,11 +310,15 @@ def upgrade() -> None:
     # CheckIn：按 child + date 查打卡
     op.create_index("ix_checkin_child_date", "check_in", ["child_id", "check_date"])
     # ReadingSession：按 child + time 范围查
-    op.create_index("ix_session_child_time", "reading_session", ["child_id", "start_time"])
+    op.create_index(
+        "ix_session_child_time", "reading_session", ["child_id", "start_time"]
+    )
     # UserVocabulary：按 child + status 查生词
     op.create_index("ix_vocab_child_status", "user_vocabulary", ["child_id", "status"])
     # Order：按 child + type + pay_status 防重复
-    op.create_index("ix_order_child_type_pay", "order", ["child_id", "type", "pay_status"])
+    op.create_index(
+        "ix_order_child_type_pay", "order", ["child_id", "type", "pay_status"]
+    )
 
     # ============================================================
     # 8. 积分去重视图

@@ -72,6 +72,7 @@ def _validate_admin_token(token: str) -> dict | None:
         return AdminAccountService(db).validate_admin_token(token)
     except Exception:
         import logging
+
         logging.getLogger(__name__).exception("Failed to validate admin token")
         return None
     finally:
@@ -96,7 +97,9 @@ def _check_page_perm(admin: dict, page: str) -> bool:
     return required_perm in perms
 
 
-def _render_page(request: Request, page: str, template: str | None = None, extra: dict | None = None):
+def _render_page(
+    request: Request, page: str, template: str | None = None, extra: dict | None = None
+):
     """统一页面渲染 — 带权限校验"""
     admin = _get_admin_info(request)
     if not admin:

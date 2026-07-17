@@ -108,7 +108,9 @@ class UserService:
             self.db.commit()
         except IntegrityError:
             self.db.rollback()
-            logger.warning(f"Failed to update phone for user {user_id}: duplicate phone {phone}")
+            logger.warning(
+                f"Failed to update phone for user {user_id}: duplicate phone {phone}"
+            )
             user = self.user_repo.get_by_id_or_raise(user_id)
         return UserResponse.model_validate(user)
 

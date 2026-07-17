@@ -172,7 +172,9 @@ class ReservationService:
         records = self.reservation_repo.get_active_by_child(child_id)
         return [ReservationResponse.model_validate(r) for r in records]
 
-    def cancel_reservation(self, reservation_id: int, user_id: int | None = None) -> dict:
+    def cancel_reservation(
+        self, reservation_id: int, user_id: int | None = None
+    ) -> dict:
         """取消预约"""
         from backend.common.exceptions import ForbiddenError, NotFoundError
         from backend.domain.child.models import Child

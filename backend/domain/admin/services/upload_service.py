@@ -56,7 +56,7 @@ class UploadService:
     @staticmethod
     def _detect_mime(data: bytes) -> str:
         for magic, mime in UploadService._MIME_MAGIC.items():
-            if data[:len(magic)] == magic:
+            if data[: len(magic)] == magic:
                 return mime
         return "application/octet-stream"
 

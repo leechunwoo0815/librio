@@ -15,6 +15,7 @@ from backend.domain.child.schemas import (
     ChildUpdate,
     TransferBenefitRequest,
     BorrowPermissionResponse,
+    TransferRecordResponse,
 )
 from backend.domain.child.service import ChildService
 from backend.database import get_db
@@ -85,6 +86,26 @@ def transfer_benefit(
     return child_service.create_benefit_transfer_application(
         req.source_child_id, req.target_child_id, current_user.id
     )
+
+
+@router.get("/transfer/records", response_model=list[TransferRecordResponse])
+def get_transfer_records(
+    child_service: ChildService = Depends(get_child_service),
+    current_user=Depends(get_current_user),
+):
+    """获取当前用户的权益转让记录列表"""
+    return child_service.get_transfer_records(current_user.id)
+
+
+@router.delete("/{child_id}", response_model=dict)
+def delete_child(
+    child_id: int,
+    child_service: ChildService = Depends(get_child_service),
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """删除孩子（软删除，需无未还书）"""
+    return child_service.delete_child(child_id, current_user.id)
 
 
 @router.get("/{child_id}/can-borrow", response_model=BorrowPermissionResponse)

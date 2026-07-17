@@ -76,6 +76,7 @@ def set_role_permissions(
     """设置角色权限（全量替换）"""
     result = service.set_role_permissions(role_id, data.permission_codes)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(service.db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -93,8 +94,11 @@ def create_role(
     admin=Depends(require_perm("role.edit")),
 ):
     """创建自定义角色"""
-    result = service.create_role(data.code, data.name, data.description, data.sort_order)
+    result = service.create_role(
+        data.code, data.name, data.description, data.sort_order
+    )
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(service.db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -115,6 +119,7 @@ def update_role(
     """更新角色基本信息"""
     result = service.update_role(role_id, data.name, data.description, data.sort_order)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(service.db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -134,6 +139,7 @@ def delete_role(
     """删除角色（系统角色不可删除）"""
     result = service.delete_role(role_id)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(service.db)
     system_service.write_operation_log(
         admin_id=admin.id,

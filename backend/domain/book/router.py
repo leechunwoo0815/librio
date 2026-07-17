@@ -19,7 +19,11 @@ from backend.middleware.rate_limit import rate_limit
 router = APIRouter(prefix="/book", tags=["图书"])
 
 
-@router.get("/search", response_model=BookListResponse, dependencies=[Depends(rate_limit(30, 60))])
+@router.get(
+    "/search",
+    response_model=BookListResponse,
+    dependencies=[Depends(rate_limit(30, 60))],
+)
 def search_books(
     keyword: str | None = None,
     ar_level: str | None = None,
@@ -70,3 +74,13 @@ def create_book_copy(
     """创建实体书副本（V3.1，管理员操作）"""
     copy_data.book_id = book_id
     return book_service.create_book_copy(copy_data)
+
+
+@router.get("/{book_id}/related", response_model=list[BookResponse])
+def get_related_books(
+    book_id: int,
+    limit: int = Query(6, ge=1, le=20),
+    book_service: BookService = Depends(get_book_service),
+):
+    """获取相关图书推荐（同主题）"""
+    return book_service.get_related_books(book_id, limit)

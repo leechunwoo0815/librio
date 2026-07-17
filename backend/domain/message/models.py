@@ -13,7 +13,11 @@ class MessageReadStatus(BaseModel):
     __table_args__ = {"extend_existing": True}
 
     message_id = Column(
-        BigInteger, ForeignKey("system_message.id", ondelete="CASCADE"), nullable=False, index=True, comment="消息ID"
+        BigInteger,
+        ForeignKey("system_message.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+        comment="消息ID",
     )
     user_id = Column(
         BigInteger, ForeignKey("user.id"), nullable=False, index=True, comment="用户ID"
@@ -27,7 +31,11 @@ class SystemMessage(BaseModel):
     __table_args__ = {"extend_existing": True}
 
     user_id = Column(
-        BigInteger, ForeignKey("user.id"), nullable=True, index=True, comment="用户ID(null=角色群发)"
+        BigInteger,
+        ForeignKey("user.id"),
+        nullable=True,
+        index=True,
+        comment="用户ID(null=角色群发)",
     )
     title = Column(String(100), nullable=False, comment="标题")
     content = Column(Text, nullable=False, comment="内容")
@@ -38,7 +46,9 @@ class SystemMessage(BaseModel):
     )
     priority = Column(SmallInteger, default=0, comment="0=低 1=中 2=高")
     is_read = Column(SmallInteger, default=0, comment="0=未读 1=已读")
-    target_role_codes = Column(JSON, nullable=True, comment="可见角色code列表, null=全部可见")
+    target_role_codes = Column(
+        JSON, nullable=True, comment="可见角色code列表, null=全部可见"
+    )
 
 
 class TeacherMessage(BaseModel):
@@ -48,7 +58,11 @@ class TeacherMessage(BaseModel):
     __table_args__ = {"extend_existing": True}
 
     teacher_id = Column(
-        BigInteger, ForeignKey("teacher.id"), nullable=False, index=True, comment="老师ID"
+        BigInteger,
+        ForeignKey("teacher.id"),
+        nullable=False,
+        index=True,
+        comment="老师ID",
     )
     title = Column(String(100), nullable=False, comment="标题")
     content = Column(Text, nullable=False, comment="内容")

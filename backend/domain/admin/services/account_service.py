@@ -36,18 +36,24 @@ class AdminAccountService:
 
         settings = get_settings()
         try:
-            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+            payload = jwt.decode(
+                token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+            )
             if payload.get("type") != "admin":
                 return None
             admin_id = payload.get("sub")
             if not admin_id:
                 return None
 
-            admin = self.db.query(Admin).filter(
-                Admin.id == int(admin_id),
-                Admin.is_deleted == 0,
-                Admin.status == Admin.STATUS_ACTIVE,
-            ).first()
+            admin = (
+                self.db.query(Admin)
+                .filter(
+                    Admin.id == int(admin_id),
+                    Admin.is_deleted == 0,
+                    Admin.status == Admin.STATUS_ACTIVE,
+                )
+                .first()
+            )
             if not admin:
                 return None
 
@@ -137,20 +143,30 @@ class AdminAccountService:
             "last_login": target.last_login.isoformat()
             if hasattr(target, "last_login") and target.last_login
             else None,
-            "create_time": target.create_time.isoformat() if target.create_time else None,
+            "create_time": target.create_time.isoformat()
+            if target.create_time
+            else None,
         }
 
     def _resolve_admin_role_id(self, data) -> int | None:
         if data.admin_role_id is not None:
             from backend.domain.admin.rbac_models import Role
-            role = self.db.query(Role).filter(Role.id == data.admin_role_id, Role.is_deleted == 0).first()
+
+            role = (
+                self.db.query(Role)
+                .filter(Role.id == data.admin_role_id, Role.is_deleted == 0)
+                .first()
+            )
             if not role:
                 raise ValidationError("指定的角色不存在")
             return role.id
         legacy_map = {0: "super_admin", 1: "staff", 2: "teacher"}
         code = legacy_map.get(data.role, "staff")
         from backend.domain.admin.rbac_models import Role
-        role = self.db.query(Role).filter(Role.code == code, Role.is_deleted == 0).first()
+
+        role = (
+            self.db.query(Role).filter(Role.code == code, Role.is_deleted == 0).first()
+        )
         return role.id if role else None
 
     def create_admin(self, data, current_admin_id: int) -> dict:
@@ -188,12 +204,19 @@ class AdminAccountService:
 
     def _check_admin_role_change(self, target: Admin, data, current: Admin):
         if target.id == current.id:
-            if (data.admin_role_id is not None and data.admin_role_id != target.admin_role_id) or \
-               (data.role is not None and data.role != target.role):
+            if (
+                data.admin_role_id is not None
+                and data.admin_role_id != target.admin_role_id
+            ) or (data.role is not None and data.role != target.role):
                 raise ForbiddenError("不能修改自己的角色")
         if data.admin_role_id is not None:
             from backend.domain.admin.rbac_models import Role
-            role = self.db.query(Role).filter(Role.id == data.admin_role_id, Role.is_deleted == 0).first()
+
+            role = (
+                self.db.query(Role)
+                .filter(Role.id == data.admin_role_id, Role.is_deleted == 0)
+                .first()
+            )
             if not role:
                 raise ValidationError("指定的角色不存在")
 
@@ -221,7 +244,11 @@ class AdminAccountService:
         current = self.db.query(Admin).filter(Admin.id == current_admin_id).first()
 
         self._check_admin_role_change(target, data, current)
-        if data.status is not None and target.id == current.id and data.status != target.status:
+        if (
+            data.status is not None
+            and target.id == current.id
+            and data.status != target.status
+        ):
             raise ForbiddenError("不能修改自己的状态")
 
         update_data = data.model_dump(exclude_unset=True)
@@ -241,7 +268,9 @@ class AdminAccountService:
         self.db.commit()
         return {"success": True, "message": "管理员更新成功"}
 
-    def change_password(self, admin_id: int, old_password: str, new_password: str, current_admin_id: int) -> dict:
+    def change_password(
+        self, admin_id: int, old_password: str, new_password: str, current_admin_id: int
+    ) -> dict:
         """修改管理员密码 — 校验旧密码"""
         if admin_id != current_admin_id:
             raise ForbiddenError("只能修改自己的密码")
@@ -264,12 +293,19 @@ class AdminAccountService:
     def get_permission_codes(self, admin: Admin) -> set[str]:
         if self.is_super_admin(admin):
             from backend.domain.admin.rbac_models import Permission
-            return {p.code for p in self.db.query(Permission.code).filter(Permission.is_deleted == 0).all()}
+
+            return {
+                p.code
+                for p in self.db.query(Permission.code)
+                .filter(Permission.is_deleted == 0)
+                .all()
+            }
 
         if not admin.admin_role_id:
             return set()
 
         from backend.domain.admin.rbac_models import RolePermission
+
         return {
             rp.permission_code
             for rp in self.db.query(RolePermission)
@@ -300,10 +336,15 @@ class AdminAccountService:
             return []
         if scope == "own" and admin.teacher_id:
             from backend.domain.child.models import Child
-            rows = self.db.query(Child.id).filter(
-                Child.teacher_id == admin.teacher_id,
-                Child.is_deleted == 0,
-            ).all()
+
+            rows = (
+                self.db.query(Child.id)
+                .filter(
+                    Child.teacher_id == admin.teacher_id,
+                    Child.is_deleted == 0,
+                )
+                .all()
+            )
             return [r[0] for r in rows]
         return []
 

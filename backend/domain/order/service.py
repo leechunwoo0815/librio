@@ -132,9 +132,7 @@ class OrderService:
                 MemberStatus.OFFICIAL,
                 MemberStatus.EXPIRED,
             ):
-                raise ValidationError(
-                    f"当前状态({child.status})不允许购买会员"
-                )
+                raise ValidationError(f"当前状态({child.status})不允许购买会员")
 
         # 后端计算金额，不信任前端（从 ConfigService 读取，支持动态配置）
         base_amount = self._get_price(order_data.type)
@@ -189,6 +187,7 @@ class OrderService:
 
         # P0-6: 多孩优惠 — 检查该用户是否有其他孩子是观察期/正式会员
         from backend.domain.child.models import Child
+
         active_children = (
             self.db.query(Child)
             .filter(
@@ -275,11 +274,13 @@ class OrderService:
             self.db.query(Order)
             .filter(
                 Order.child_id == child_id,
-                Order.type.in_([
-                    OrderType.QUARTERLY,
-                    OrderType.SEMI_ANNUAL,
-                    OrderType.OFFICIAL_MEMBER,
-                ]),
+                Order.type.in_(
+                    [
+                        OrderType.QUARTERLY,
+                        OrderType.SEMI_ANNUAL,
+                        OrderType.OFFICIAL_MEMBER,
+                    ]
+                ),
                 Order.pay_status == PayStatus.PAID,
                 Order.is_deleted == 0,
             )
@@ -295,15 +296,15 @@ class OrderService:
             return []  # 已是最高级
 
         current_total_days, next_type = hierarchy
-        remaining_days = max(
-            0, (child.member_expire_time - datetime.now()).days
-        )
+        remaining_days = max(0, (child.member_expire_time - datetime.now()).days)
 
         options = []
         # 计算当前剩余价值
         current_price = self._get_price(current_type)
         remaining_value = (
-            current_price * Decimal(str(remaining_days)) / Decimal(str(current_total_days))
+            current_price
+            * Decimal(str(remaining_days))
+            / Decimal(str(current_total_days))
         ).quantize(Decimal("0.01"))
 
         # 可升级到的目标类型
@@ -317,14 +318,16 @@ class OrderService:
             target_price = self._get_price(target_type)
             upgrade_price = max(target_price - remaining_value, Decimal("0"))
             target_days = self._UPGRADE_HIERARCHY.get(target_type, (365, None))[0]
-            options.append({
-                "current_type": current_type,
-                "target_type": target_type,
-                "target_price": str(target_price),
-                "target_days": target_days,
-                "remaining_value": str(remaining_value),
-                "upgrade_price": str(upgrade_price.quantize(Decimal("0.01"))),
-            })
+            options.append(
+                {
+                    "current_type": current_type,
+                    "target_type": target_type,
+                    "target_price": str(target_price),
+                    "target_days": target_days,
+                    "remaining_value": str(remaining_value),
+                    "upgrade_price": str(upgrade_price.quantize(Decimal("0.01"))),
+                }
+            )
 
         return options
 
@@ -402,12 +405,19 @@ class OrderService:
         elif order.type == OrderType.SEMI_ANNUAL:
             total_days = 180
         else:
-            return {"refund_amount": order.amount, "daily_rate": Decimal("0"), "used_amount": Decimal("0"), "total_days": 0}
+            return {
+                "refund_amount": order.amount,
+                "daily_rate": Decimal("0"),
+                "used_amount": Decimal("0"),
+                "total_days": 0,
+            }
 
         used = min(used_days, total_days)
         daily_rate = (order.amount / total_days).quantize(Decimal("0.01"))
         used_amount = (daily_rate * used).quantize(Decimal("0.01"))
-        refund = max((order.amount - used_amount).quantize(Decimal("0.01")), Decimal("0"))
+        refund = max(
+            (order.amount - used_amount).quantize(Decimal("0.01")), Decimal("0")
+        )
         return {
             "refund_amount": refund,
             "daily_rate": daily_rate,

@@ -16,24 +16,40 @@ class AdminReportService:
         self.db = db
 
     def list_observation_reports(
-        self, page: int = 20, page_size: int = 20, keyword: str = None, child_ids: list[int] | None = None
+        self,
+        page: int = 20,
+        page_size: int = 20,
+        keyword: str = None,
+        child_ids: list[int] | None = None,
     ) -> dict:
         """获取观察报告列表 — 带分页"""
         from backend.domain.report.models import ObservationReport
 
-        query = self.db.query(ObservationReport).filter(ObservationReport.is_deleted == 0)
+        query = self.db.query(ObservationReport).filter(
+            ObservationReport.is_deleted == 0
+        )
 
         if child_ids is not None:
             if not child_ids:
-                return {"items": [], "total": 0, "page": page, "page_size": page_size, "has_next": False}
+                return {
+                    "items": [],
+                    "total": 0,
+                    "page": page,
+                    "page_size": page_size,
+                    "has_next": False,
+                }
             query = query.filter(ObservationReport.child_id.in_(child_ids))
 
         # 如果有关键词，先搜索匹配的 child
         if keyword:
-            matched_children = self.db.query(Child.id).filter(
-                Child.name.ilike(f"%{keyword}%"),
-                Child.is_deleted == 0,
-            ).all()
+            matched_children = (
+                self.db.query(Child.id)
+                .filter(
+                    Child.name.ilike(f"%{keyword}%"),
+                    Child.is_deleted == 0,
+                )
+                .all()
+            )
             child_ids = [c.id for c in matched_children]
             if child_ids:
                 query = query.filter(ObservationReport.child_id.in_(child_ids))
@@ -58,9 +74,11 @@ class AdminReportService:
         report_child_ids = list(set(r.child_id for r in reports if r.child_id))
         children = {}
         if report_child_ids:
-            for c in self.db.query(Child).filter(
-                Child.id.in_(report_child_ids), Child.is_deleted == 0
-            ).all():
+            for c in (
+                self.db.query(Child)
+                .filter(Child.id.in_(report_child_ids), Child.is_deleted == 0)
+                .all()
+            ):
                 children[c.id] = c.name
 
         result = []
@@ -93,9 +111,7 @@ class AdminReportService:
             "has_next": page * page_size < total,
         }
 
-    def get_reading_stats(
-        self, start_date: str = None, end_date: str = None
-    ) -> dict:
+    def get_reading_stats(self, start_date: str = None, end_date: str = None) -> dict:
         """获取阅读统计数据 — 使用 SQL 聚合"""
         from backend.domain.reading.models import ReadingSession, CheckIn
 
@@ -106,23 +122,31 @@ class AdminReportService:
             end_date = datetime.now().strftime("%Y-%m-%d")
 
         # SQL 聚合查询
-        stats = self.db.query(
-            func.count(ReadingSession.id).label("total_sessions"),
-            func.sum(ReadingSession.duration_seconds).label("total_seconds"),
-            func.count(func.distinct(ReadingSession.child_id)).label("active_children"),
-        ).filter(
-            ReadingSession.is_deleted == 0,
-            ReadingSession.create_time >= start_date,
-            ReadingSession.create_time <= end_date,
-        ).first()
+        stats = (
+            self.db.query(
+                func.count(ReadingSession.id).label("total_sessions"),
+                func.sum(ReadingSession.duration_seconds).label("total_seconds"),
+                func.count(func.distinct(ReadingSession.child_id)).label(
+                    "active_children"
+                ),
+            )
+            .filter(
+                ReadingSession.is_deleted == 0,
+                ReadingSession.create_time >= start_date,
+                ReadingSession.create_time <= end_date,
+            )
+            .first()
+        )
 
         # 今日在线人数
-        online_today = self.db.query(
-            func.count(func.distinct(ReadingSession.child_id))
-        ).filter(
-            ReadingSession.is_deleted == 0,
-            func.date(ReadingSession.create_time) == func.current_date(),
-        ).scalar()
+        online_today = (
+            self.db.query(func.count(func.distinct(ReadingSession.child_id)))
+            .filter(
+                ReadingSession.is_deleted == 0,
+                func.date(ReadingSession.create_time) == func.current_date(),
+            )
+            .scalar()
+        )
 
         # 总儿童数
         total_children = self.db.query(Child).filter(Child.is_deleted == 0).count()
@@ -191,9 +215,7 @@ class AdminReportService:
             "top_readers": top_readers,
         }
 
-    def get_reading_trends(
-        self, start_date: str = None, end_date: str = None
-    ) -> dict:
+    def get_reading_trends(self, start_date: str = None, end_date: str = None) -> dict:
         """获取阅读趋势数据 — 使用 SQL 聚合"""
         from backend.domain.reading.models import ReadingSession
 

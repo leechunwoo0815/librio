@@ -34,6 +34,7 @@ router = APIRouter(prefix="/admin/api", tags=["图书管理"])
 
 # ==================== 图书管理 ====================
 
+
 @router.get("/books", response_model=AdminActionResponse)
 def list_books(
     keyword: str | None = None,
@@ -71,6 +72,7 @@ def create_book(
     book_data = BookCreate(**data.model_dump())
     result = service.create_book(book_data)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -92,6 +94,7 @@ def update_book(
     service = BookService(db)
     result = service.update_book(book_id, data)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -112,6 +115,7 @@ def delete_book(
     service = BookService(db)
     result = service.delete_book(book_id)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -132,6 +136,7 @@ def toggle_publish(
     service = BookService(db)
     result = service.toggle_publish(book_id)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -142,7 +147,11 @@ def toggle_publish(
     return result
 
 
-@router.post("/books/bulk-import", response_model=AdminActionResponse, dependencies=[Depends(rate_limit(5, 60))])
+@router.post(
+    "/books/bulk-import",
+    response_model=AdminActionResponse,
+    dependencies=[Depends(rate_limit(5, 60))],
+)
 def bulk_import_books(
     books: list[BulkImportBookItem],
     service: AdminBookService = Depends(get_admin_book_service),
@@ -151,6 +160,7 @@ def bulk_import_books(
     """批量导入图书"""
     result = service.bulk_import_books(books)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(service.db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -162,6 +172,7 @@ def bulk_import_books(
 
 
 # ==================== 图书副本 ====================
+
 
 @router.get("/bookcopy", response_model=list)
 def list_bookcopies(
@@ -182,6 +193,7 @@ def batch_generate_copies(
     """批量生成实体书副本条码"""
     result = service.batch_generate_copies(isbn, count)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(service.db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -192,7 +204,9 @@ def batch_generate_copies(
     return result
 
 
-@router.post("/bookcopy/{book_id}/copies", response_model=AdminActionResponse, status_code=201)
+@router.post(
+    "/bookcopy/{book_id}/copies", response_model=AdminActionResponse, status_code=201
+)
 def create_book_copy(
     book_id: int,
     data: CreateBookCopyRequest = CreateBookCopyRequest(),
@@ -208,6 +222,7 @@ def create_book_copy(
         condition_note=data.condition_note,
     )
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -219,6 +234,7 @@ def create_book_copy(
 
 
 # ==================== 图书页面内容 ====================
+
 
 @router.get("/books/{book_id}/pages", response_model=AdminActionResponse)
 def list_book_pages(
@@ -249,6 +265,7 @@ def save_book_page(
         audio_url=data.audio_url,
     )
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -278,6 +295,7 @@ async def upload_file(
     service.validate_file_extension(fname, file_type)
     result = service.save_upload(fname, content)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(service.db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -304,6 +322,7 @@ async def upload_chunk(
     service.validate_file_extension(filename, file_type)
     result = service.save_chunk(upload_id, chunk_index, total_chunks, filename, content)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(service.db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -323,6 +342,7 @@ def complete_upload(
     """合并分片，完成上传"""
     result = service.complete_upload(upload_id)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(service.db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -345,7 +365,10 @@ def upload_status(
 
 # ==================== 批量导出 ====================
 
-@router.get("/export/{module}", response_model=None, dependencies=[Depends(rate_limit(10, 60))])
+
+@router.get(
+    "/export/{module}", response_model=None, dependencies=[Depends(rate_limit(10, 60))]
+)
 def export_data(
     module: str,
     service: AdminExportService = Depends(get_admin_export_service),

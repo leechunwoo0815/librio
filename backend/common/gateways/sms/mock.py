@@ -32,7 +32,11 @@ class MockSmsGateway(SmsGateway):
         with self._lock:
             self._codes[phone] = (code, time.time())
 
-        logger.info("[MockSms] 验证码已生成 phone=%s code=%s**（开发模式，未实际发送）", phone, code[:4])
+        logger.info(
+            "[MockSms] 验证码已生成 phone=%s code=%s**（开发模式，未实际发送）",
+            phone,
+            code[:4],
+        )
 
         return SmsSendResponse(success=True, code=code)
 

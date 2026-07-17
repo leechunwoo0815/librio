@@ -91,7 +91,9 @@ async def deposit_callback(
     timestamp = request.headers.get("wechatpay-timestamp", "")
     nonce = request.headers.get("wechatpay-nonce", "")
 
-    valid = await payment_gateway.verify_callback_signature(body_str, signature, timestamp, nonce)
+    valid = await payment_gateway.verify_callback_signature(
+        body_str, signature, timestamp, nonce
+    )
     if not valid:
         raise HTTPException(status_code=400, detail="签名验证失败")
 
@@ -102,6 +104,12 @@ async def deposit_callback(
         associated_data=encrypted.get("associated_data", ""),
     )
 
-    callback_amount = (Decimal(str(callback_data.amount)) / Decimal("100")) if callback_data.amount is not None else None
-    result = await asyncio.to_thread(service.handle_callback, callback_data.out_trade_no, callback_amount)
+    callback_amount = (
+        (Decimal(str(callback_data.amount)) / Decimal("100"))
+        if callback_data.amount is not None
+        else None
+    )
+    result = await asyncio.to_thread(
+        service.handle_callback, callback_data.out_trade_no, callback_amount
+    )
     return {"success": True, "deposit": {"id": result.id, "status": result.status}}

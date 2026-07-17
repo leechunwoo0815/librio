@@ -43,7 +43,9 @@ class UserLogin(BaseSchema):
     """微信登录请求"""
 
     code: str = Field(..., description="微信登录code")
-    phone_code: str | None = Field(None, description="微信手机号临时code（getPhoneNumber 返回）")
+    phone_code: str | None = Field(
+        None, description="微信手机号临时code（getPhoneNumber 返回）"
+    )
 
 
 class PhoneLoginRequest(BaseSchema):

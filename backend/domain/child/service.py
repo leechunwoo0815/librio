@@ -144,7 +144,11 @@ class ChildService:
         if target.status == MemberStatus.EXITED:
             raise ForbiddenError("目标孩子已退出，无法转让权益")
 
-        if target.status in (MemberStatus.OBSERVATION, MemberStatus.OFFICIAL, MemberStatus.EXPIRED):
+        if target.status in (
+            MemberStatus.OBSERVATION,
+            MemberStatus.OFFICIAL,
+            MemberStatus.EXPIRED,
+        ):
             raise ForbiddenError("目标孩子已有会员权益，无法转让")
 
         from backend.domain.borrow.models import BorrowRecord
@@ -210,6 +214,70 @@ class ChildService:
             "status": 0,
             "message": "申请已提交，等待管理员审核",
         }
+
+    def get_transfer_records(self, user_id: int) -> list[dict]:
+        from backend.domain.child.models import Child
+
+        apps = (
+            self.db.query(BenefitTransferApplication)
+            .filter(
+                BenefitTransferApplication.user_id == user_id,
+                BenefitTransferApplication.is_deleted == 0,
+            )
+            .order_by(BenefitTransferApplication.create_time.desc())
+            .all()
+        )
+        child_ids = {app.source_child_id for app in apps} | {
+            app.target_child_id for app in apps
+        }
+        children = {
+            c.id: c for c in self.db.query(Child).filter(Child.id.in_(child_ids)).all()
+        }
+        status_map = {0: "pending", 1: "approved", 2: "rejected"}
+        result = []
+        for app in apps:
+            src = children.get(app.source_child_id)
+            tgt = children.get(app.target_child_id)
+            result.append(
+                {
+                    "id": app.id,
+                    "source_child_name": src.name if src else "--",
+                    "target_child_name": tgt.name if tgt else "--",
+                    "status": status_map.get(app.status, "pending"),
+                    "created_at": app.create_time.isoformat()
+                    if app.create_time
+                    else "",
+                }
+            )
+        return result
+
+    def delete_child(self, child_id: int, user_id: int) -> dict:
+        from backend.domain.borrow.models import BorrowRecord
+        from backend.common.types import BorrowStatus
+
+        child = self.child_repo.get_by_id(child_id)
+        if not child or child.is_deleted == 1:
+            raise NotFoundError("孩子不存在")
+        if child.user_id != user_id:
+            raise ForbiddenError("无权操作该孩子")
+
+        active_borrows = (
+            self.db.query(BorrowRecord)
+            .filter(
+                BorrowRecord.child_id == child_id,
+                BorrowRecord.is_deleted == 0,
+                BorrowRecord.status.in_([BorrowStatus.BORROWING, BorrowStatus.OVERDUE]),
+            )
+            .count()
+        )
+        if active_borrows > 0:
+            raise ValidationError(
+                f"该孩子有 {active_borrows} 本未还书，请先归还后再删除"
+            )
+
+        child.soft_delete()
+        self.db.commit()
+        return {"success": True, "message": "孩子已删除"}
 
     def can_borrow_books(self, child_id: int) -> bool:
         """检查孩子是否可借书 — 会员状态 + 押金状态"""

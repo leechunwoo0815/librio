@@ -62,23 +62,29 @@ class AdminBookService:
         book_ids = list({c.book_id for c in copies if c.book_id})
         books = {
             b.id: b
-            for b in self.db.query(Book).filter(Book.id.in_(book_ids), Book.is_deleted == 0).all()
+            for b in self.db.query(Book)
+            .filter(Book.id.in_(book_ids), Book.is_deleted == 0)
+            .all()
         }
 
         # 批量查询未归还的借阅记录
         copy_ids = [c.id for c in copies]
         active_borrows = {
             br.book_copy_id: br
-            for br in self.db.query(BorrowRecord).filter(
+            for br in self.db.query(BorrowRecord)
+            .filter(
                 BorrowRecord.book_copy_id.in_(copy_ids),
                 BorrowRecord.status == 0,
                 BorrowRecord.is_deleted == 0,
-            ).all()
+            )
+            .all()
         }
         child_ids = list({br.child_id for br in active_borrows.values() if br.child_id})
         children = {
             c.id: c.name
-            for c in self.db.query(Child).filter(Child.id.in_(child_ids), Child.is_deleted == 0).all()
+            for c in self.db.query(Child)
+            .filter(Child.id.in_(child_ids), Child.is_deleted == 0)
+            .all()
         }
 
         result = []
@@ -92,7 +98,9 @@ class AdminBookService:
                     "book_id": c.book_id,
                     "book_title": book.title if book else None,
                     "isbn": book.isbn if book else None,
-                    "ar_value": float(book.ar_value) if book and book.ar_value is not None else None,
+                    "ar_value": float(book.ar_value)
+                    if book and book.ar_value is not None
+                    else None,
                     "status": c.status,
                     "location": c.location,
                     "condition_note": c.condition_note,

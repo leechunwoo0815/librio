@@ -7,7 +7,12 @@ from sqlalchemy.orm import sessionmaker
 from backend.database import Base
 from backend.domain.user.models import User
 from backend.domain.child.models import Child
-from backend.domain.advancement.models import Level, ChildLevel, Achievement, ChildAchievement
+from backend.domain.advancement.models import (
+    Level,
+    ChildLevel,
+    Achievement,
+    ChildAchievement,
+)
 from backend.domain.profile.service import ProfileService
 
 
@@ -26,15 +31,24 @@ def _setup(db):
     db.add(user)
     db.commit()
 
-    child = Child(user_id=user.id, name="小明", age=7, grade="二年级",
-                  english_name="Tom", status=Child.STATUS_OFFICIAL,
-                  total_words_read=30000, total_books_finished=10,
-                  current_streak_days=15, longest_streak_days=20)
+    child = Child(
+        user_id=user.id,
+        name="小明",
+        age=7,
+        grade="二年级",
+        english_name="Tom",
+        status=Child.STATUS_OFFICIAL,
+        total_words_read=30000,
+        total_books_finished=10,
+        current_streak_days=15,
+        longest_streak_days=20,
+    )
     db.add(child)
     db.commit()
 
-    level = Level(name="A", sort_order=1, required_books=10,
-                  max_borrow_count=20, badge_emoji="🌱")
+    level = Level(
+        name="A", sort_order=1, required_books=10, max_borrow_count=20, badge_emoji="🌱"
+    )
     db.add(level)
     db.commit()
 
@@ -85,8 +99,9 @@ def test_get_profile_achievements(db):
     """名片包含成就"""
     user, child, level, cl = _setup(db)
 
-    ach = Achievement(name="首次读完", type=Achievement.TYPE_BOOK_MILESTONE,
-                      badge_emoji="📚")
+    ach = Achievement(
+        name="首次读完", type=Achievement.TYPE_BOOK_MILESTONE, badge_emoji="📚"
+    )
     db.add(ach)
     db.commit()
 

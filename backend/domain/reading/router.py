@@ -23,6 +23,7 @@ from backend.domain.reading.schemas import (
     EndSessionRequest,
     SessionResponse,
     CheckInResponse,
+    CheckinRecordResponse,
     StreakResponse,
     SaveRecordingRequest,
     VoiceRecordingResponse,
@@ -103,6 +104,15 @@ def get_checkin_calendar(
 ):
     """获取月度打卡日历"""
     return service.get_checkin_calendar(child.id, year, month)
+
+
+@router.get("/checkin/{child_id}/records", response_model=list[CheckinRecordResponse])
+def get_checkin_records(
+    child=Depends(GetOwnedChild()),
+    service: ReadingService = Depends(get_reading_service),
+):
+    """获取最近打卡记录"""
+    return service.get_checkin_records(child.id)
 
 
 @router.get("/streak/{child_id}", response_model=StreakResponse)

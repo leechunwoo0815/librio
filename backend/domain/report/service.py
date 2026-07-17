@@ -290,6 +290,7 @@ class ReportService:
         badge_emoji = ""
         if level_name != "未分级":
             from backend.domain.advancement.models import Level
+
             level = (
                 self.db.query(Level)
                 .filter(Level.name == level_name, Level.is_deleted == 0)
@@ -309,7 +310,11 @@ class ReportService:
             teacher_comment = report.teacher_comment
 
         template_path = os.path.join(
-            os.path.dirname(__file__), "..", "..", "templates", "observation_report.html"
+            os.path.dirname(__file__),
+            "..",
+            "..",
+            "templates",
+            "observation_report.html",
         )
         try:
             with open(template_path, encoding="utf-8") as f:
@@ -321,7 +326,9 @@ class ReportService:
         return template.render(
             child_name=child.name if child else "",
             english_name=child.english_name if child else "",
-            obs_start=report.start_date.strftime("%Y-%m-%d") if report.start_date else "",
+            obs_start=report.start_date.strftime("%Y-%m-%d")
+            if report.start_date
+            else "",
             obs_end=report.end_date.strftime("%Y-%m-%d") if report.end_date else "",
             badge_emoji=badge_emoji,
             level_name=level_name,
@@ -332,7 +339,9 @@ class ReportService:
             quizzes_passed=quizzes_passed,
             pass_rate=pass_rate,
             teacher_comment_section=teacher_comment,
-            generated_at=report.create_time.strftime("%Y-%m-%d %H:%M") if report.create_time else "",
+            generated_at=report.create_time.strftime("%Y-%m-%d %H:%M")
+            if report.create_time
+            else "",
         )
 
     async def render_report_pdf(self, child_id: int) -> bytes | None:

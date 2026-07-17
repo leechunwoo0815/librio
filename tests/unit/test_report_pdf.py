@@ -1,4 +1,5 @@
 """Tests for observation report PDF endpoint"""
+
 import os
 
 import pytest
@@ -9,6 +10,7 @@ from backend.middleware.auth import create_access_token
 
 try:
     import weasyprint  # noqa: F401
+
     PDF_AVAILABLE = True
 except ImportError:
     PDF_AVAILABLE = False
@@ -37,7 +39,9 @@ def test_observation_pdf_endpoint_is_async():
     )
 
 
-@pytest.mark.skipif(not PDF_AVAILABLE or not HAS_MYSQL, reason="weasyprint or MySQL not available")
+@pytest.mark.skipif(
+    not PDF_AVAILABLE or not HAS_MYSQL, reason="weasyprint or MySQL not available"
+)
 def test_observation_pdf_with_auth():
     """With valid auth token, endpoint should route correctly (no DB data → 404)"""
     response = client.get("/report/observation/1/pdf", headers=AUTH_HEADER)

@@ -32,36 +32,46 @@ class DictionaryService:
 
         if keyword:
             query = query.filter(
-                (DictionaryWord.word.contains(keyword)) |
-                (DictionaryWord.chinese_meaning.contains(keyword))
+                (DictionaryWord.word.contains(keyword))
+                | (DictionaryWord.chinese_meaning.contains(keyword))
             )
         if level:
             query = query.filter(DictionaryWord.level == level)
 
         total = query.count()
-        items = query.order_by(DictionaryWord.word).offset((page - 1) * page_size).limit(page_size).all()
+        items = (
+            query.order_by(DictionaryWord.word)
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+            .all()
+        )
 
         result = []
         for w in items:
-            result.append(WordResponse(
-                id=w.id,
-                word=w.word,
-                phonetic=w.phonetic,
-                pos=w.part_of_speech,
-                cn_definition=w.chinese_meaning,
-                example_sentence=w.example_sentence,
-                ar_level=w.level,
-                create_time=w.create_time,
-            ))
+            result.append(
+                WordResponse(
+                    id=w.id,
+                    word=w.word,
+                    phonetic=w.phonetic,
+                    pos=w.part_of_speech,
+                    cn_definition=w.chinese_meaning,
+                    example_sentence=w.example_sentence,
+                    ar_level=w.level,
+                    create_time=w.create_time,
+                )
+            )
 
-        return WordListResponse(items=result, total=total, page=page, page_size=page_size)
+        return WordListResponse(
+            items=result, total=total, page=page, page_size=page_size
+        )
 
     def get_word(self, word_id: int) -> WordResponse:
         """获取单词详情"""
-        w = self.db.query(DictionaryWord).filter(
-            DictionaryWord.id == word_id,
-            DictionaryWord.is_deleted == 0
-        ).first()
+        w = (
+            self.db.query(DictionaryWord)
+            .filter(DictionaryWord.id == word_id, DictionaryWord.is_deleted == 0)
+            .first()
+        )
         if not w:
             raise NotFoundError("单词不存在")
 
@@ -79,9 +89,11 @@ class DictionaryService:
     def create_word(self, data: WordCreateRequest) -> WordResponse:
         """创建单词"""
         # 检查单词是否已存在
-        existing = self.db.query(DictionaryWord).filter(
-            DictionaryWord.word == data.word.lower()
-        ).first()
+        existing = (
+            self.db.query(DictionaryWord)
+            .filter(DictionaryWord.word == data.word.lower())
+            .first()
+        )
         if existing:
             raise ValidationError(f"单词 '{data.word}' 已存在")
 
@@ -105,7 +117,9 @@ class DictionaryService:
 
     def update_word(self, word_id: int, data: WordUpdateRequest) -> WordResponse:
         """更新单词"""
-        word = self.db.query(DictionaryWord).filter(DictionaryWord.id == word_id).first()
+        word = (
+            self.db.query(DictionaryWord).filter(DictionaryWord.id == word_id).first()
+        )
         if not word:
             raise NotFoundError("单词不存在")
 
@@ -127,10 +141,11 @@ class DictionaryService:
 
     def delete_word(self, word_id: int) -> dict:
         """删除单词（软删除）"""
-        word = self.db.query(DictionaryWord).filter(
-            DictionaryWord.id == word_id,
-            DictionaryWord.is_deleted == 0
-        ).first()
+        word = (
+            self.db.query(DictionaryWord)
+            .filter(DictionaryWord.id == word_id, DictionaryWord.is_deleted == 0)
+            .first()
+        )
         if not word:
             raise NotFoundError("单词不存在")
 

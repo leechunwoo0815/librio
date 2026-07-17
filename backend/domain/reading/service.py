@@ -9,7 +9,12 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 from backend.common.base_repo import BaseRepository
-from backend.common.events import CheckInEvent, ReadingBookFinishedEvent, ReadingSessionCompletedEvent, event_bus
+from backend.common.events import (
+    CheckInEvent,
+    ReadingBookFinishedEvent,
+    ReadingSessionCompletedEvent,
+    event_bus,
+)
 from backend.common.config_service import ConfigService
 from backend.domain.child.models import Child
 from backend.domain.reading.models import (
@@ -129,10 +134,14 @@ class ReadingService:
                 .first()
             )
             if not existing_sub:
-                book = self.db.query(Book).filter(
-                    Book.id == progress.book_id,
-                    Book.is_deleted == 0,
-                ).first()
+                book = (
+                    self.db.query(Book)
+                    .filter(
+                        Book.id == progress.book_id,
+                        Book.is_deleted == 0,
+                    )
+                    .first()
+                )
                 sub = ReadingSubmission(
                     child_id=progress.child_id,
                     book_id=progress.book_id,
@@ -209,6 +218,7 @@ class ReadingService:
 
     def end_session(self, session_id: int, data: EndSessionRequest) -> SessionResponse:
         from backend.domain.reading.models import ReadingSession
+
         session = (
             self.db.query(ReadingSession)
             .filter(ReadingSession.id == session_id, ReadingSession.is_deleted == 0)
@@ -217,6 +227,7 @@ class ReadingService:
         )
         if not session:
             from backend.common.exceptions import NotFoundError
+
             raise NotFoundError("阅读会话不存在")
         session.end_time = datetime.now()
         session.duration_seconds = int(
@@ -302,6 +313,30 @@ class ReadingService:
             for c in self.checkin_repo.get_monthly(child_id, year, month)
         ]
 
+    def get_checkin_records(self, child_id: int, limit: int = 20) -> list[dict]:
+        from backend.domain.reading.models import ReadingSession
+        from backend.domain.book.models import Book
+
+        sessions = (
+            self.db.query(ReadingSession)
+            .join(Book, ReadingSession.book_id == Book.id)
+            .filter(
+                ReadingSession.child_id == child_id,
+                ReadingSession.is_deleted == 0,
+            )
+            .order_by(ReadingSession.start_time.desc())
+            .limit(limit)
+            .all()
+        )
+        return [
+            {
+                "date": s.start_time.strftime("%Y-%m-%d") if s.start_time else "",
+                "book_name": s.book.title if s.book else "",
+                "pages": f"{s.pages_read}页" if s.pages_read else "0页",
+            }
+            for s in sessions
+        ]
+
     def get_streak(self, child_id: int) -> StreakResponse:
         child_repo = BaseRepository(self.db, Child)
         child = child_repo.get_by_id(child_id)
@@ -334,11 +369,16 @@ class ReadingService:
         )
 
     def get_recordings(
-        self, child_id: int, book_id: int | None = None,
-        page: int = 1, page_size: int = 20
+        self,
+        child_id: int,
+        book_id: int | None = None,
+        page: int = 1,
+        page_size: int = 20,
     ) -> list[VoiceRecordingDetailResponse]:
         """获取语音录音列表"""
-        recordings = self.voice_repo.get_by_child_and_book(child_id, book_id, page=page, page_size=page_size)
+        recordings = self.voice_repo.get_by_child_and_book(
+            child_id, book_id, page=page, page_size=page_size
+        )
         result = []
         for r in recordings:
             result.append(

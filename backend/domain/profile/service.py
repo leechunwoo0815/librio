@@ -59,7 +59,9 @@ class ProfileService:
             for ca in cas:
                 ach = ach_map.get(ca.achievement_id)
                 if ach:
-                    achievements.append({"name": ach.name, "badge_emoji": ach.badge_emoji})
+                    achievements.append(
+                        {"name": ach.name, "badge_emoji": ach.badge_emoji}
+                    )
 
         return {
             "child_id": child.id,

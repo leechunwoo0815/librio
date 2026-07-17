@@ -134,8 +134,16 @@ PERMISSIONS = [
     {"code": "refund.list", "name": "退款列表", "group_name": "refund"},
     {"code": "refund.audit", "name": "退款审核", "group_name": "refund"},
     # benefit_transfer
-    {"code": "benefit_transfer.list", "name": "权益转移列表", "group_name": "benefit_transfer"},
-    {"code": "benefit_transfer.review", "name": "权益转移审核", "group_name": "benefit_transfer"},
+    {
+        "code": "benefit_transfer.list",
+        "name": "权益转移列表",
+        "group_name": "benefit_transfer",
+    },
+    {
+        "code": "benefit_transfer.review",
+        "name": "权益转移审核",
+        "group_name": "benefit_transfer",
+    },
     # teacher
     {"code": "teacher.list", "name": "老师列表", "group_name": "teacher"},
     {"code": "teacher.view", "name": "老师详情", "group_name": "teacher"},
@@ -182,63 +190,165 @@ PERMISSIONS = [
     {"code": "content.create", "name": "创建内容", "group_name": "content"},
     {"code": "content.delete", "name": "删除内容", "group_name": "content"},
     # parent_course_time
-    {"code": "parent_course_time.list", "name": "时间段列表", "group_name": "parent_course_time"},
-    {"code": "parent_course_time.create", "name": "创建时间段", "group_name": "parent_course_time"},
-    {"code": "parent_course_time.edit", "name": "编辑时间段", "group_name": "parent_course_time"},
-    {"code": "parent_course_time.delete", "name": "删除时间段", "group_name": "parent_course_time"},
+    {
+        "code": "parent_course_time.list",
+        "name": "时间段列表",
+        "group_name": "parent_course_time",
+    },
+    {
+        "code": "parent_course_time.create",
+        "name": "创建时间段",
+        "group_name": "parent_course_time",
+    },
+    {
+        "code": "parent_course_time.edit",
+        "name": "编辑时间段",
+        "group_name": "parent_course_time",
+    },
+    {
+        "code": "parent_course_time.delete",
+        "name": "删除时间段",
+        "group_name": "parent_course_time",
+    },
 ]
 
 # ── 角色权限映射 ──
 # super_admin: 全部权限（在代码中特殊处理）
 STAFF_PERMS = [
     "dashboard.view",
-    "user.list", "user.view", "user.create", "user.edit", "user.delete", "user.export",
-    "child.list", "child.view", "child.create", "child.edit",
-    "order.list", "order.view", "order.create", "order.edit", "order.mark_paid", "order.export",
-    "book.list", "book.view", "book.create", "book.edit", "book.import", "book.export",
-    "bookcopy.list", "bookcopy.create", "bookcopy.edit",
+    "user.list",
+    "user.view",
+    "user.create",
+    "user.edit",
+    "user.delete",
+    "user.export",
+    "child.list",
+    "child.view",
+    "child.create",
+    "child.edit",
+    "order.list",
+    "order.view",
+    "order.create",
+    "order.edit",
+    "order.mark_paid",
+    "order.export",
+    "book.list",
+    "book.view",
+    "book.create",
+    "book.edit",
+    "book.import",
+    "book.export",
+    "bookcopy.list",
+    "bookcopy.create",
+    "bookcopy.edit",
     "upload.manage",
-    "borrow.list", "borrow.create", "borrow.return", "borrow.overdue", "borrow.fine_clear", "borrow.mark_lost",
-    "deposit.list", "deposit.pay",
-    "reservation.list", "reservation.create", "reservation.fulfill", "reservation.cancel",
-    "submission.list", "submission.view", "submission.approve", "submission.reject",
-    "activity.list", "activity.view", "activity.create", "activity.edit", "activity.cancel",
-    "activity.enrollment", "activity.checkin",
-    "assessment.list", "assessment.view", "assessment.create", "assessment.edit", "assessment.delete",
-    "quiz.list", "quiz.view",
-    "question.list", "question.create", "question.edit", "question.import",
-    "level.list", "level.create",
-    "achievement.list", "achievement.create", "achievement.edit",
-    "certificate.list", "certificate.regenerate",
-    "report.list", "report.view", "report.generate", "report.comment", "report.reading_data",
+    "borrow.list",
+    "borrow.create",
+    "borrow.return",
+    "borrow.overdue",
+    "borrow.fine_clear",
+    "borrow.mark_lost",
+    "deposit.list",
+    "deposit.pay",
+    "reservation.list",
+    "reservation.create",
+    "reservation.fulfill",
+    "reservation.cancel",
+    "submission.list",
+    "submission.view",
+    "submission.approve",
+    "submission.reject",
+    "activity.list",
+    "activity.view",
+    "activity.create",
+    "activity.edit",
+    "activity.cancel",
+    "activity.enrollment",
+    "activity.checkin",
+    "assessment.list",
+    "assessment.view",
+    "assessment.create",
+    "assessment.edit",
+    "assessment.delete",
+    "quiz.list",
+    "quiz.view",
+    "question.list",
+    "question.create",
+    "question.edit",
+    "question.import",
+    "level.list",
+    "level.create",
+    "achievement.list",
+    "achievement.create",
+    "achievement.edit",
+    "certificate.list",
+    "certificate.regenerate",
+    "report.list",
+    "report.view",
+    "report.generate",
+    "report.comment",
+    "report.reading_data",
     "refund.list",
-    "teacher.list", "teacher.view", "teacher.create", "teacher.edit",
-    "teacher.assign", "teacher.schedule",
-    "venue.list", "venue.create", "venue.edit",
-    "message.list", "message.send",
+    "teacher.list",
+    "teacher.view",
+    "teacher.create",
+    "teacher.edit",
+    "teacher.assign",
+    "teacher.schedule",
+    "venue.list",
+    "venue.create",
+    "venue.edit",
+    "message.list",
+    "message.send",
     "log.list",
-    "recycle.list", "recycle.restore",
-    "dictionary.list", "dictionary.edit", "dictionary.create", "dictionary.delete",
-    "content.list", "content.edit",
-    "evaluation.create", "evaluation.list", "evaluation.view",
-    "parent_course_time.list", "parent_course_time.create", "parent_course_time.edit", "parent_course_time.delete",
+    "recycle.list",
+    "recycle.restore",
+    "dictionary.list",
+    "dictionary.edit",
+    "dictionary.create",
+    "dictionary.delete",
+    "content.list",
+    "content.edit",
+    "evaluation.create",
+    "evaluation.list",
+    "evaluation.view",
+    "parent_course_time.list",
+    "parent_course_time.create",
+    "parent_course_time.edit",
+    "parent_course_time.delete",
     "benefit_transfer.list",
-    "content.create", "content.delete",
+    "content.create",
+    "content.delete",
 ]
 
 TEACHER_PERMS = [
     "dashboard.view",
-    "child.list", "child.view",
-    "book.list", "book.view",
-    "borrow.list", "borrow.mark_lost",    "submission.list", "submission.view", "submission.approve", "submission.reject",
-    "activity.list", "activity.view", "activity.enrollment", "activity.checkin",
-    "assessment.list", "assessment.view",
-    "quiz.list", "quiz.view",
+    "child.list",
+    "child.view",
+    "book.list",
+    "book.view",
+    "borrow.list",
+    "borrow.mark_lost",
+    "submission.list",
+    "submission.view",
+    "submission.approve",
+    "submission.reject",
+    "activity.list",
+    "activity.view",
+    "activity.enrollment",
+    "activity.checkin",
+    "assessment.list",
+    "assessment.view",
+    "quiz.list",
+    "quiz.view",
     "question.list",
     "level.list",
     "achievement.list",
     "certificate.list",
-    "report.list", "report.view", "report.comment", "report.reading_data",
+    "report.list",
+    "report.view",
+    "report.comment",
+    "report.reading_data",
     "message.list",
 ]
 
@@ -278,10 +388,12 @@ def _batch_insert_role_perms(db: Session, role_id: int, perm_codes: list[str]):
     """幂等插入 + 清理已移除的权限码"""
     existing = {
         rp.permission_code
-        for rp in db.query(RolePermission).filter(
+        for rp in db.query(RolePermission)
+        .filter(
             RolePermission.role_id == role_id,
             RolePermission.is_deleted == 0,
-        ).all()
+        )
+        .all()
     }
     # 新增
     new_codes = [c for c in perm_codes if c not in existing]
@@ -304,30 +416,44 @@ def seed_default_configs(db: Session):
     自动覆盖全部 35 个键，统一 config_type，消除维护两份配置清单的风险。
     """
     for key, (value, typ, desc) in SystemConfig.DEFAULTS.items():
-        existing = db.query(SystemConfig).filter(
-            SystemConfig.config_key == key,
-            SystemConfig.is_deleted == 0,
-        ).first()
+        existing = (
+            db.query(SystemConfig)
+            .filter(
+                SystemConfig.config_key == key,
+                SystemConfig.is_deleted == 0,
+            )
+            .first()
+        )
         if not existing:
-            db.add(SystemConfig(
-                config_key=key,
-                config_value=str(value),
-                config_type=typ,
-                description=desc,
-            ))
+            db.add(
+                SystemConfig(
+                    config_key=key,
+                    config_value=str(value),
+                    config_type=typ,
+                    description=desc,
+                )
+            )
 
     # 清理旧版 seeder 写入的死数据键名（observation_price→price_observation, etc.）
     dead_keys = ["observation_price", "official_member_price"]
-    dead = db.query(SystemConfig).filter(
-        SystemConfig.config_key.in_(dead_keys),
-        SystemConfig.is_deleted == 0,
-    ).all()
+    dead = (
+        db.query(SystemConfig)
+        .filter(
+            SystemConfig.config_key.in_(dead_keys),
+            SystemConfig.is_deleted == 0,
+        )
+        .all()
+    )
     for c in dead:
         c.is_deleted = 1
-        logger.info("清理死数据配置键: %s (已被 %s 替代)",
-                     c.config_key,
-                     {"observation_price": "price_observation",
-                      "official_member_price": "price_official_member"}.get(c.config_key, "?"))
+        logger.info(
+            "清理死数据配置键: %s (已被 %s 替代)",
+            c.config_key,
+            {
+                "observation_price": "price_observation",
+                "official_member_price": "price_official_member",
+            }.get(c.config_key, "?"),
+        )
 
     db.flush()
 
@@ -335,7 +461,11 @@ def seed_default_configs(db: Session):
 def migrate_admin_roles(db: Session):
     """将旧 admin.role (0/1/2) 迁移到新的 admin_role_id"""
     role_code_map = {r.code: r.id for r in db.query(Role).all()}
-    admins = db.query(Admin).filter(Admin.admin_role_id.is_(None), Admin.is_deleted == 0).all()
+    admins = (
+        db.query(Admin)
+        .filter(Admin.admin_role_id.is_(None), Admin.is_deleted == 0)
+        .all()
+    )
     for admin in admins:
         if admin.role is not None:
             code = OLD_ROLE_MAP.get(admin.role, "staff")
@@ -358,9 +488,13 @@ def run():
         # 统计
         role_count = db.query(Role).filter(Role.is_deleted == 0).count()
         perm_count = db.query(Permission).filter(Permission.is_deleted == 0).count()
-        rp_count = db.query(RolePermission).filter(RolePermission.is_deleted == 0).count()
+        rp_count = (
+            db.query(RolePermission).filter(RolePermission.is_deleted == 0).count()
+        )
         migrated = db.query(Admin).filter(Admin.admin_role_id.isnot(None)).count()
-        logger.info(f"RBAC 种子完成: roles={role_count}, permissions={perm_count}, role_permissions={rp_count}, admin_migrated={migrated}")
+        logger.info(
+            f"RBAC 种子完成: roles={role_count}, permissions={perm_count}, role_permissions={rp_count}, admin_migrated={migrated}"
+        )
     except Exception:
         db.rollback()
         raise

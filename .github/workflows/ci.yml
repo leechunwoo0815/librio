@@ -25,6 +25,8 @@ jobs:
           cache: pip
       - run: pip install ruff
       - run: ruff check backend/ tests/
+      - run: ruff check features/ scripts/
+      - run: ruff format --check .
 
   test:
     runs-on: ubuntu-latest
@@ -37,6 +39,7 @@ jobs:
       - run: pip install -r requirements.txt pytest pytest-asyncio httpx behave PyHamcrest
       - run: python -m pytest tests/ -x -q --tb=short
       - run: python -m behave features/ --no-capture -q
+      - run: python -m scripts.verify_api_contract
 
   model-check:
     runs-on: ubuntu-latest

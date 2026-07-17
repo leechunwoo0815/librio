@@ -31,8 +31,12 @@ def _setup(db, observation_days=31):
     db.commit()
 
     child = Child(
-        user_id=user.id, name="观察期小明", age=6, grade="一年级",
-        english_name="Tom", status=Child.STATUS_OBSERVATION,
+        user_id=user.id,
+        name="观察期小明",
+        age=6,
+        grade="一年级",
+        english_name="Tom",
+        status=Child.STATUS_OBSERVATION,
         create_time=datetime.now() - timedelta(days=observation_days),
         member_start_time=datetime.now() - timedelta(days=observation_days),
     )
@@ -84,14 +88,22 @@ def test_report_contains_reading_stats(db):
     user, child, level = _setup(db, observation_days=31)
 
     # 添加阅读提交记录
-    book = Book(isbn="978OBS1", title="ObsBook", author="A", ar_value=2.0,
-                age_min=5, age_max=9, word_count=3000)
+    book = Book(
+        isbn="978OBS1",
+        title="ObsBook",
+        author="A",
+        ar_value=2.0,
+        age_min=5,
+        age_max=9,
+        word_count=3000,
+    )
     db.add(book)
     db.commit()
 
     for i in range(5):
         sub = ReadingSubmission(
-            child_id=child.id, book_id=book.id,
+            child_id=child.id,
+            book_id=book.id,
             status=ReadingSubmission.STATUS_APPROVED,
             submitted_at=datetime.now() - timedelta(days=10),
             word_count=3000,
@@ -112,16 +124,32 @@ def test_report_contains_quiz_stats(db):
     """报告包含测验统计"""
     user, child, level = _setup(db, observation_days=31)
 
-    book = Book(isbn="978OBS2", title="QuizBook", author="B", ar_value=2.0,
-                age_min=5, age_max=9, word_count=2000)
+    book = Book(
+        isbn="978OBS2",
+        title="QuizBook",
+        author="B",
+        ar_value=2.0,
+        age_min=5,
+        age_max=9,
+        word_count=2000,
+    )
     db.add(book)
     db.commit()
 
     # 3次测验，2次通过
-    for i, (score, status) in enumerate([(90, Quiz.STATUS_COMPLETED), (60, Quiz.STATUS_COMPLETED), (85, Quiz.STATUS_COMPLETED)]):
+    for i, (score, status) in enumerate(
+        [
+            (90, Quiz.STATUS_COMPLETED),
+            (60, Quiz.STATUS_COMPLETED),
+            (85, Quiz.STATUS_COMPLETED),
+        ]
+    ):
         quiz = Quiz(
-            child_id=child.id, book_id=book.id,
-            status=status, score=score, total_questions=5,
+            child_id=child.id,
+            book_id=book.id,
+            status=status,
+            score=score,
+            total_questions=5,
             create_time=datetime.now() - timedelta(days=10),
         )
         db.add(quiz)

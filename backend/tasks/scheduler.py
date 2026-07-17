@@ -848,7 +848,11 @@ def mark_overdue_books():
             for record in new_overdue + existing_overdue:
                 if record.child_id == child_id:
                     total_fine += record.fine_amount or Decimal("0")
-            child = db.query(Child).filter(Child.id == child_id, Child.is_deleted == 0).first()
+            child = (
+                db.query(Child)
+                .filter(Child.id == child_id, Child.is_deleted == 0)
+                .first()
+            )
             if child:
                 child.outstanding_fines = total_fine
 
@@ -906,9 +910,7 @@ def check_observation_expiry():
         # 2. 状态变更
         for child in expired:
             child.status = MemberStatus.EXPIRED
-            logger.info(
-                f"Observation expired: child_id={child.id}, name={child.name}"
-            )
+            logger.info(f"Observation expired: child_id={child.id}, name={child.name}")
 
         db.commit()
         logger.info(f"Observation expiry: {len(expired)} children expired")
@@ -961,9 +963,7 @@ def check_observation_reminders():
                     msg_type=6,
                     priority=1 if days <= 2 else 0,
                 )
-                logger.info(
-                    f"OBSERVATION_REMIND: child={child.id}, days_left={days}"
-                )
+                logger.info(f"OBSERVATION_REMIND: child={child.id}, days_left={days}")
         db.commit()
     except Exception as e:
         db.rollback()
@@ -989,7 +989,9 @@ def check_activity_reminders():
             .filter(
                 Activity.start_time >= target_start,
                 Activity.start_time < target_end,
-                Activity.status.in_([Activity.STATUS_ENROLLING, Activity.STATUS_ENROLL_CLOSED]),
+                Activity.status.in_(
+                    [Activity.STATUS_ENROLLING, Activity.STATUS_ENROLL_CLOSED]
+                ),
                 Activity.is_deleted == 0,
             )
             .all()
@@ -1017,7 +1019,9 @@ def check_activity_reminders():
                     msg_type=5,
                     priority=0,
                 )
-                logger.info(f"ACTIVITY_REMIND: child={child.id}, activity={activity.id}")
+                logger.info(
+                    f"ACTIVITY_REMIND: child={child.id}, activity={activity.id}"
+                )
 
         db.commit()
     except Exception as e:

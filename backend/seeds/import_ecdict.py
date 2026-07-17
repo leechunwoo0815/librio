@@ -217,7 +217,9 @@ if __name__ == "__main__":
 
     if not os.path.exists(ECDICT_PATH):
         logger.info(f"ECDICT database not found at {ECDICT_PATH}")
-        logger.info("Please download from: https://github.com/skywind3000/ECDICT/releases")
+        logger.info(
+            "Please download from: https://github.com/skywind3000/ECDICT/releases"
+        )
         sys.exit(1)
 
     logger.info(f"Starting ECDICT import (limit={args.limit}, mysql={args.mysql})...")

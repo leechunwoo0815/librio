@@ -105,11 +105,8 @@ class BookService:
         resp.available_copies = available_copies or 0
 
         from backend.domain.audio.models import AudioFile
-        audio = (
-            self.db.query(AudioFile)
-            .filter(AudioFile.book_id == book.id)
-            .first()
-        )
+
+        audio = self.db.query(AudioFile).filter(AudioFile.book_id == book.id).first()
         if audio:
             resp.audio_narrator = audio.reader
             resp.audio_duration = audio.duration_seconds
@@ -117,6 +114,7 @@ class BookService:
                 resp.audio_url = audio.file_url
 
         from backend.domain.advancement.models import QuestionBank
+
         qcount = (
             self.db.query(func.count(QuestionBank.id))
             .filter(
@@ -164,6 +162,7 @@ class BookService:
     def update_book(self, book_id: int, data) -> dict:
         """更新图书"""
         from backend.common.exceptions import NotFoundError
+
         book = (
             self.db.query(Book)
             .filter(Book.id == book_id, Book.is_deleted == 0)
@@ -183,6 +182,7 @@ class BookService:
     def delete_book(self, book_id: int) -> dict:
         """软删除图书"""
         from backend.common.exceptions import NotFoundError
+
         book = (
             self.db.query(Book)
             .filter(Book.id == book_id, Book.is_deleted == 0)
@@ -213,7 +213,7 @@ class BookService:
         """恢复可借库存（事件处理器调用，不自行 commit）"""
         self.db.query(Book).filter(Book.id == book_id, Book.is_deleted == 0).update(
             {Book.available_stock: Book.available_stock + 1},
-            synchronize_session='fetch',
+            synchronize_session="fetch",
         )
 
     def update_copy_status(self, copy_id: int, status: int) -> None:
@@ -301,21 +301,48 @@ class BookService:
             "success": True,
         }
 
+    def get_related_books(self, book_id: int, limit: int = 6) -> list[Book]:
+        from backend.common.exceptions import NotFoundError
+
+        book = self.book_repo.get_by_id(book_id)
+        if not book or book.is_deleted == 1:
+            raise NotFoundError("图书不存在")
+        theme = book.theme
+        if not theme:
+            return []
+        related = (
+            self.db.query(Book)
+            .filter(
+                Book.theme == theme,
+                Book.id != book_id,
+                Book.is_deleted == 0,
+            )
+            .limit(limit)
+            .all()
+        )
+        return related
+
     def toggle_publish(self, book_id: int) -> dict:
         """切换图书发布状态"""
         from backend.common.exceptions import NotFoundError
+
         book = self.book_repo.get_by_id(book_id)
         if not book or book.is_deleted == 1:
             raise NotFoundError("图书不存在")
         # SQL 原子更新，避免并发问题
         from sqlalchemy import update
         from backend.domain.book.models import Book
+
         new_status = 0 if book.is_published == 1 else 1
         self.db.execute(
             update(Book).where(Book.id == book_id).values(is_published=new_status)
         )
         self.db.commit()
-        return {"success": True, "is_published": new_status, "message": "发布状态已切换"}
+        return {
+            "success": True,
+            "is_published": new_status,
+            "message": "发布状态已切换",
+        }
 
     def create_book_copy_admin(
         self,

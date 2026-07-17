@@ -19,10 +19,10 @@ from backend.common.exceptions import ForbiddenError, UnauthorizedError
 from backend.config import get_settings
 from backend.database import get_db
 from backend.domain.admin.models import Admin
+
 logger = logging.getLogger(__name__)
 settings = get_settings()
 security = HTTPBearer()
-
 
 
 def create_admin_token(admin_id: int, role: int) -> str:
@@ -31,7 +31,9 @@ def create_admin_token(admin_id: int, role: int) -> str:
 
     db = get_session()()
     try:
-        expire_hours = ConfigService.get_int(db, "admin_token_expire_hours", settings.ADMIN_TOKEN_EXPIRE_HOURS)
+        expire_hours = ConfigService.get_int(
+            db, "admin_token_expire_hours", settings.ADMIN_TOKEN_EXPIRE_HOURS
+        )
     finally:
         db.close()
 
@@ -78,4 +80,3 @@ async def get_current_admin(
         raise UnauthorizedError("管理员不存在或已禁用")
 
     return admin
-

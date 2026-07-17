@@ -210,7 +210,9 @@ class WeChatPayV3(PaymentGateway):
             "paySign": pay_sign,
         }
 
-    async def verify_callback_signature(self, body: str, signature: str, timestamp: str, nonce: str) -> bool:
+    async def verify_callback_signature(
+        self, body: str, signature: str, timestamp: str, nonce: str
+    ) -> bool:
         """验证回调签名 — 实现 PaymentGateway ABC"""
         if not self.platform_cert:
             raise RuntimeError("微信平台证书未配置，无法验签")
@@ -226,7 +228,9 @@ class WeChatPayV3(PaymentGateway):
         except InvalidSignature:
             return False
 
-    async def decrypt_callback_data(self, ciphertext: str, nonce: str, associated_data: str) -> PaymentCallbackData:
+    async def decrypt_callback_data(
+        self, ciphertext: str, nonce: str, associated_data: str
+    ) -> PaymentCallbackData:
         """解密回调通知 — 实现 PaymentGateway ABC"""
         aesgcm = AESGCM(self.api_key_v3.encode())
         plaintext = aesgcm.decrypt(
@@ -236,7 +240,11 @@ class WeChatPayV3(PaymentGateway):
         )
         data = json.loads(plaintext)
         amount_raw = data.get("amount", {}).get("total")
-        amount = Decimal(str(amount_raw)) / Decimal("100") if amount_raw is not None else None
+        amount = (
+            Decimal(str(amount_raw)) / Decimal("100")
+            if amount_raw is not None
+            else None
+        )
         return PaymentCallbackData(
             out_trade_no=data.get("out_trade_no", ""),
             transaction_id=data.get("transaction_id", ""),

@@ -1,8 +1,10 @@
 """Tests for PDFService"""
+
 import pytest
 
 try:
     from backend.common.pdf_service import PDFService
+
     PDF_AVAILABLE = True
 except Exception:
     PDF_AVAILABLE = False

@@ -4,6 +4,7 @@ Revision ID: 010_obs_cert_cleanup
 Revises: 7641c1e2bb62 (008_reading_submission_wordcount)
 Create Date: 2026-06-09
 """
+
 from alembic import op
 import sqlalchemy as sa
 
@@ -17,8 +18,19 @@ def upgrade():
     # 新增观察期报告表
     op.create_table(
         "observation_report",
-        sa.Column("id", sa.BigInteger().with_variant(sa.Integer, "sqlite"), primary_key=True, autoincrement=True),
-        sa.Column("child_id", sa.BigInteger(), sa.ForeignKey("child.id"), nullable=False, index=True),
+        sa.Column(
+            "id",
+            sa.BigInteger().with_variant(sa.Integer, "sqlite"),
+            primary_key=True,
+            autoincrement=True,
+        ),
+        sa.Column(
+            "child_id",
+            sa.BigInteger(),
+            sa.ForeignKey("child.id"),
+            nullable=False,
+            index=True,
+        ),
         sa.Column("total_books_read", sa.Integer(), server_default="0"),
         sa.Column("total_words_read", sa.Integer(), server_default="0"),
         sa.Column("total_reading_minutes", sa.Integer(), server_default="0"),
@@ -38,9 +50,22 @@ def upgrade():
     # 新增晋级证书表
     op.create_table(
         "level_certificate",
-        sa.Column("id", sa.BigInteger().with_variant(sa.Integer, "sqlite"), primary_key=True, autoincrement=True),
-        sa.Column("child_id", sa.BigInteger(), sa.ForeignKey("child.id"), nullable=False, index=True),
-        sa.Column("level_id", sa.BigInteger(), sa.ForeignKey("level.id"), nullable=False),
+        sa.Column(
+            "id",
+            sa.BigInteger().with_variant(sa.Integer, "sqlite"),
+            primary_key=True,
+            autoincrement=True,
+        ),
+        sa.Column(
+            "child_id",
+            sa.BigInteger(),
+            sa.ForeignKey("child.id"),
+            nullable=False,
+            index=True,
+        ),
+        sa.Column(
+            "level_id", sa.BigInteger(), sa.ForeignKey("level.id"), nullable=False
+        ),
         sa.Column("level_name", sa.String(50), nullable=False),
         sa.Column("child_name", sa.String(50), nullable=False),
         sa.Column("child_english_name", sa.String(50), nullable=True),

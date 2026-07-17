@@ -96,7 +96,13 @@ app.add_exception_handler(BusinessException, business_exception_handler)
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     """全局未捕获异常处理器 — 防止返回原始 500 HTML 页面"""
-    logger.error("Unhandled exception: %s %s - %s", request.method, request.url.path, exc, exc_info=True)
+    logger.error(
+        "Unhandled exception: %s %s - %s",
+        request.method,
+        request.url.path,
+        exc,
+        exc_info=True,
+    )
     return JSONResponse(
         status_code=500,
         content={"detail": "服务器内部错误，请稍后重试"},
@@ -114,7 +120,12 @@ async def add_no_cache_headers(request, call_next):
     """禁止缓存 HTML 和 JS/CSS 文件（开发环境）"""
     response = await trace_middleware(request, call_next)
     path = request.url.path
-    if path.endswith('.html') or path.endswith('.js') or path.endswith('.css') or '/admin/view/' in path:
+    if (
+        path.endswith(".html")
+        or path.endswith(".js")
+        or path.endswith(".css")
+        or "/admin/view/" in path
+    ):
         response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
         response.headers["Pragma"] = "no-cache"
         response.headers["Expires"] = "0"
@@ -125,13 +136,15 @@ async def add_no_cache_headers(request, call_next):
 # 微信小程序请求来源是 servicewechat.com
 CORS_ORIGINS = ["https://servicewechat.com"]
 if settings.DEBUG:
-    CORS_ORIGINS.extend([
-        "http://localhost:3000",
-        "http://localhost:3002",
-        "http://localhost:5173",
-        "http://localhost:8002",
-        "http://127.0.0.1:8002",
-    ])
+    CORS_ORIGINS.extend(
+        [
+            "http://localhost:3000",
+            "http://localhost:3002",
+            "http://localhost:5173",
+            "http://localhost:8002",
+            "http://127.0.0.1:8002",
+        ]
+    )
 
 app.add_middleware(
     CORSMiddleware,
@@ -221,16 +234,32 @@ app.include_router(message_router)
 # 管理端路由 — 页面路由优先注册（HTML 页面），API 路由后注册（JSON 响应）
 
 # 新的领域路由（拆分后）
-from backend.domain.admin.routers.admin_venues_router import router as admin_venues_router  # noqa: E402
-from backend.domain.admin.routers.admin_teachers_router import router as admin_teachers_router  # noqa: E402
+from backend.domain.admin.routers.admin_venues_router import (  # noqa: E402
+    router as admin_venues_router,
+)
+from backend.domain.admin.routers.admin_teachers_router import (  # noqa: E402
+    router as admin_teachers_router,
+)
 from backend.domain.admin.routers.admin_books_router import router as admin_books_router  # noqa: E402
-from backend.domain.admin.routers.admin_advancement_router import router as admin_advancement_router  # noqa: E402
-from backend.domain.admin.routers.admin_activities_router import router as admin_activities_router  # noqa: E402
-from backend.domain.admin.routers.admin_borrow_router import router as admin_borrow_router  # noqa: E402
-from backend.domain.admin.routers.admin_reports_router import router as admin_reports_router  # noqa: E402
-from backend.domain.admin.routers.admin_system_router import router as admin_system_router  # noqa: E402
+from backend.domain.admin.routers.admin_advancement_router import (  # noqa: E402
+    router as admin_advancement_router,
+)
+from backend.domain.admin.routers.admin_activities_router import (  # noqa: E402
+    router as admin_activities_router,
+)
+from backend.domain.admin.routers.admin_borrow_router import (  # noqa: E402
+    router as admin_borrow_router,
+)
+from backend.domain.admin.routers.admin_reports_router import (  # noqa: E402
+    router as admin_reports_router,
+)
+from backend.domain.admin.routers.admin_system_router import (  # noqa: E402
+    router as admin_system_router,
+)
 from backend.domain.admin.routers.admin_role_router import router as admin_role_router  # noqa: E402
-from backend.domain.admin.routers.admin_benefit_transfer_router import router as admin_benefit_transfer_router  # noqa: E402
+from backend.domain.admin.routers.admin_benefit_transfer_router import (  # noqa: E402
+    router as admin_benefit_transfer_router,
+)
 
 app.include_router(admin_page_router)  # HTML 页面路由（优先匹配）
 app.include_router(admin_auth_router)  # 认证 API 路由

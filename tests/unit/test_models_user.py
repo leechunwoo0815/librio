@@ -33,14 +33,10 @@ def test_create_user(db_session):
     [Why] 验证用户模型的基本创建功能
     [How] 创建用户实例，验证属性
     """
-    user = User(
-        parent_name="张三",
-        phone="13800138000",
-        openid="test_openid_123"
-    )
+    user = User(parent_name="张三", phone="13800138000", openid="test_openid_123")
     db_session.add(user)
     db_session.commit()
-    
+
     assert user.id is not None
     assert user.parent_name == "张三"
     assert user.phone == "13800138000"
@@ -56,10 +52,10 @@ def test_user_unique_phone(db_session):
     """
     user1 = User(parent_name="张三", phone="13800138000", openid="openid1")
     user2 = User(parent_name="李四", phone="13800138000", openid="openid2")
-    
+
     db_session.add(user1)
     db_session.commit()
-    
+
     with pytest.raises(Exception):  # 应抛出唯一性约束异常
         db_session.add(user2)
         db_session.commit()

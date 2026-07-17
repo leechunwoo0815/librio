@@ -69,9 +69,15 @@ def test_order_types(db_session):
     child.user_id = parent.id
     db_session.commit()
 
-    order1 = Order(order_no="MW001", user_id=parent.id, child_id=child.id, type=1, amount=99.00)
-    order2 = Order(order_no="MW002", user_id=parent.id, child_id=child.id, type=2, amount=500.00)
-    order3 = Order(order_no="MW003", user_id=parent.id, child_id=child.id, type=3, amount=5400.00)
+    order1 = Order(
+        order_no="MW001", user_id=parent.id, child_id=child.id, type=1, amount=99.00
+    )
+    order2 = Order(
+        order_no="MW002", user_id=parent.id, child_id=child.id, type=2, amount=500.00
+    )
+    order3 = Order(
+        order_no="MW003", user_id=parent.id, child_id=child.id, type=3, amount=5400.00
+    )
     db_session.add_all([order1, order2, order3])
     db_session.commit()
 
@@ -93,7 +99,9 @@ def test_order_payment_flow(db_session):
     child.user_id = parent.id
     db_session.commit()
 
-    order = Order(order_no="MW_PAY", user_id=parent.id, child_id=child.id, type=1, amount=99.00)
+    order = Order(
+        order_no="MW_PAY", user_id=parent.id, child_id=child.id, type=1, amount=99.00
+    )
     db_session.add(order)
     db_session.commit()
 

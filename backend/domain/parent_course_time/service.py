@@ -49,9 +49,7 @@ class ParentCourseTimeService:
         ).all()
         return [ParentCourseTimeResponse.model_validate(r) for r in records]
 
-    def create(
-        self, data: ParentCourseTimeCreate
-    ) -> ParentCourseTimeResponse:
+    def create(self, data: ParentCourseTimeCreate) -> ParentCourseTimeResponse:
         """创建时间段"""
         record = ParentCourseTime(
             venue_id=data.venue_id,

@@ -30,7 +30,12 @@ class RateLimiter:
         self._requests[key] = [t for t in self._requests[key] if t > cutoff]
 
         if len(self._requests[key]) >= max_requests:
-            logger.warning("Rate limit hit: key=%s, max=%d, window=%ds", key, max_requests, window_seconds)
+            logger.warning(
+                "Rate limit hit: key=%s, max=%d, window=%ds",
+                key,
+                max_requests,
+                window_seconds,
+            )
             raise RateLimitError(f"请求过于频繁，请 {window_seconds} 秒后再试")
 
         self._requests[key].append(now)

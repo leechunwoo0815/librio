@@ -39,8 +39,13 @@ def get_product_tiers(
 ):
     tiers = [
         TierInfo(
-            type=1, name="亲子课", price=order_service.get_price_for_type(OrderType.PARENT_COURSE), unit="次",
-            original_price=order_service.get_original_price(OrderType.PARENT_COURSE), discount_tag="限时特惠", sort_order=1,
+            type=1,
+            name="亲子课",
+            price=order_service.get_price_for_type(OrderType.PARENT_COURSE),
+            unit="次",
+            original_price=order_service.get_original_price(OrderType.PARENT_COURSE),
+            discount_tag="限时特惠",
+            sort_order=1,
             features=[
                 TierFeature(icon="👩‍👧", title="亲子共读", desc="专业老师指导亲子共读"),
                 TierFeature(icon="📚", title="精选绘本", desc="适龄英文原版绘本"),
@@ -50,50 +55,124 @@ def get_product_tiers(
             cta="立即报名",
         ),
         TierInfo(
-            type=2, name="观察期", price=order_service.get_price_for_type(OrderType.OBSERVATION), unit="30天",
-            original_price=None, discount_tag=None, sort_order=2,
+            type=2,
+            name="观察期",
+            price=order_service.get_price_for_type(OrderType.OBSERVATION),
+            unit="30天",
+            original_price=None,
+            discount_tag=None,
+            sort_order=2,
             features=[
-                TierFeature(icon="📚", title="在线阅读全量图书", desc="A-Z 全级别 3,500+ 英文原版图书"),
-                TierFeature(icon="✅", title="每日阅读打卡", desc="培养孩子坚持阅读的好习惯"),
-                TierFeature(icon="📊", title="阅读数据统计", desc="实时追踪阅读时长、词汇量、进度"),
-                TierFeature(icon="👩‍🏫", title="老师定期评估", desc="专业老师每周阅读能力评估与反馈"),
-                TierFeature(icon="📋", title="观察期结束报告", desc="30天后生成个性化阅读能力分析报告"),
+                TierFeature(
+                    icon="📚",
+                    title="在线阅读全量图书",
+                    desc="A-Z 全级别 3,500+ 英文原版图书",
+                ),
+                TierFeature(
+                    icon="✅", title="每日阅读打卡", desc="培养孩子坚持阅读的好习惯"
+                ),
+                TierFeature(
+                    icon="📊",
+                    title="阅读数据统计",
+                    desc="实时追踪阅读时长、词汇量、进度",
+                ),
+                TierFeature(
+                    icon="👩‍🏫",
+                    title="老师定期评估",
+                    desc="专业老师每周阅读能力评估与反馈",
+                ),
+                TierFeature(
+                    icon="📋",
+                    title="观察期结束报告",
+                    desc="30天后生成个性化阅读能力分析报告",
+                ),
             ],
             cta="立即报名",
         ),
         TierInfo(
-            type=3, name="正式会员", price=order_service.get_price_for_type(OrderType.OFFICIAL_MEMBER), unit="年",
-            original_price=order_service.get_original_price(OrderType.OFFICIAL_MEMBER), discount_tag="限时特惠", sort_order=3,
+            type=3,
+            name="正式会员",
+            price=order_service.get_price_for_type(OrderType.OFFICIAL_MEMBER),
+            unit="年",
+            original_price=order_service.get_original_price(OrderType.OFFICIAL_MEMBER),
+            discount_tag="限时特惠",
+            sort_order=3,
             features=[
-                TierFeature(icon="📚", title="全量图书无限阅读", desc="平台所有图书随时在线阅读"),
-                TierFeature(icon="🎯", title="A-Z 26级晋级体系", desc="科学分级，循序渐进提升阅读能力"),
-                TierFeature(icon="🏆", title="排行榜竞技", desc="与同龄小伙伴比拼阅读量"),
-                TierFeature(icon="📜", title="晋级证书", desc="每通过一级获得专属晋级证书"),
-                TierFeature(icon="⭐", title="成就系统", desc="丰富的成就徽章记录每个里程碑"),
+                TierFeature(
+                    icon="📚", title="全量图书无限阅读", desc="平台所有图书随时在线阅读"
+                ),
+                TierFeature(
+                    icon="🎯",
+                    title="A-Z 26级晋级体系",
+                    desc="科学分级，循序渐进提升阅读能力",
+                ),
+                TierFeature(
+                    icon="🏆", title="排行榜竞技", desc="与同龄小伙伴比拼阅读量"
+                ),
+                TierFeature(
+                    icon="📜", title="晋级证书", desc="每通过一级获得专属晋级证书"
+                ),
+                TierFeature(
+                    icon="⭐", title="成就系统", desc="丰富的成就徽章记录每个里程碑"
+                ),
             ],
             cta="立即开通",
         ),
         TierInfo(
-            type=5, name="半年会员", price=order_service.get_price_for_type(OrderType.SEMI_ANNUAL), unit="半年",
-            original_price=None, discount_tag=None, sort_order=4,
+            type=5,
+            name="半年会员",
+            price=order_service.get_price_for_type(OrderType.SEMI_ANNUAL),
+            unit="半年",
+            original_price=None,
+            discount_tag=None,
+            sort_order=4,
             features=[
-                TierFeature(icon="📚", title="全量图书无限阅读", desc="平台所有图书随时在线阅读"),
-                TierFeature(icon="🎯", title="A-Z 26级晋级体系", desc="科学分级，循序渐进提升阅读能力"),
-                TierFeature(icon="🏆", title="排行榜竞技", desc="与同龄小伙伴比拼阅读量"),
-                TierFeature(icon="📜", title="晋级证书", desc="每通过一级获得专属晋级证书"),
-                TierFeature(icon="⭐", title="成就系统", desc="丰富的成就徽章记录每个里程碑"),
+                TierFeature(
+                    icon="📚", title="全量图书无限阅读", desc="平台所有图书随时在线阅读"
+                ),
+                TierFeature(
+                    icon="🎯",
+                    title="A-Z 26级晋级体系",
+                    desc="科学分级，循序渐进提升阅读能力",
+                ),
+                TierFeature(
+                    icon="🏆", title="排行榜竞技", desc="与同龄小伙伴比拼阅读量"
+                ),
+                TierFeature(
+                    icon="📜", title="晋级证书", desc="每通过一级获得专属晋级证书"
+                ),
+                TierFeature(
+                    icon="⭐", title="成就系统", desc="丰富的成就徽章记录每个里程碑"
+                ),
             ],
             cta="立即开通",
         ),
         TierInfo(
-            type=4, name="季度会员", price=order_service.get_price_for_type(OrderType.QUARTERLY), unit="季度",
-            original_price=None, discount_tag=None, sort_order=5,
+            type=4,
+            name="季度会员",
+            price=order_service.get_price_for_type(OrderType.QUARTERLY),
+            unit="季度",
+            original_price=None,
+            discount_tag=None,
+            sort_order=5,
             features=[
-                TierFeature(icon="📚", title="全量图书无限阅读", desc="平台所有图书随时在线阅读"),
-                TierFeature(icon="🎯", title="A-Z 26级晋级体系", desc="科学分级，循序渐进提升阅读能力"),
-                TierFeature(icon="🏆", title="排行榜竞技", desc="与同龄小伙伴比拼阅读量"),
-                TierFeature(icon="📜", title="晋级证书", desc="每通过一级获得专属晋级证书"),
-                TierFeature(icon="⭐", title="成就系统", desc="丰富的成就徽章记录每个里程碑"),
+                TierFeature(
+                    icon="📚", title="全量图书无限阅读", desc="平台所有图书随时在线阅读"
+                ),
+                TierFeature(
+                    icon="🎯",
+                    title="A-Z 26级晋级体系",
+                    desc="科学分级，循序渐进提升阅读能力",
+                ),
+                TierFeature(
+                    icon="🏆", title="排行榜竞技", desc="与同龄小伙伴比拼阅读量"
+                ),
+                TierFeature(
+                    icon="📜", title="晋级证书", desc="每通过一级获得专属晋级证书"
+                ),
+                TierFeature(
+                    icon="⭐", title="成就系统", desc="丰富的成就徽章记录每个里程碑"
+                ),
             ],
             cta="立即开通",
         ),
@@ -150,7 +229,9 @@ async def payment_callback(
     signature = headers.get("wechatpay-signature", "")
     timestamp = headers.get("wechatpay-timestamp", "")
     nonce = headers.get("wechatpay-nonce", "")
-    if not await gateway.verify_callback_signature(body.decode(), signature, timestamp, nonce):
+    if not await gateway.verify_callback_signature(
+        body.decode(), signature, timestamp, nonce
+    ):
         raise PaymentError("回调验签失败")
 
     parsed = json.loads(body)
@@ -166,7 +247,8 @@ async def payment_callback(
             trade_no=decrypted.transaction_id,
             pay_type=1,
             amount=Decimal(str(decrypted.amount)) / Decimal("100")
-            if decrypted.amount is not None else Decimal("0"),
+            if decrypted.amount is not None
+            else Decimal("0"),
         )
     else:
         callback = OrderPayCallback(**parsed)
@@ -270,6 +352,7 @@ def get_upgrade_options(
 ):
     """查询可升级选项及差价"""
     from backend.middleware.ownership import verify_child_ownership
+
     verify_child_ownership(child_id, current_user, db)
     return order_service.get_upgrade_options(child_id)
 
@@ -282,9 +365,7 @@ def create_upgrade_order(
     current_user=Depends(get_current_user),
 ):
     """创建升级订单 — 补齐差额"""
-    return order_service.create_upgrade_order(
-        current_user.id, child_id, target_type
-    )
+    return order_service.create_upgrade_order(current_user.id, child_id, target_type)
 
 
 @router.post("/{order_id}/cancel", response_model=OrderResponse)

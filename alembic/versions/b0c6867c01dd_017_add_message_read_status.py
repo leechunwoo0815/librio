@@ -23,12 +23,18 @@ def upgrade() -> None:
     op.create_table(
         "message_read_status",
         sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
-        sa.Column("message_id", sa.BigInteger(), nullable=False, index=True, comment="消息ID"),
-        sa.Column("user_id", sa.BigInteger(), nullable=False, index=True, comment="用户ID"),
+        sa.Column(
+            "message_id", sa.BigInteger(), nullable=False, index=True, comment="消息ID"
+        ),
+        sa.Column(
+            "user_id", sa.BigInteger(), nullable=False, index=True, comment="用户ID"
+        ),
         sa.Column("create_time", sa.DateTime(), nullable=True),
         sa.Column("update_time", sa.DateTime(), nullable=True),
         sa.Column("is_deleted", sa.SmallInteger(), nullable=True),
-        sa.ForeignKeyConstraint(["message_id"], ["system_message.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(
+            ["message_id"], ["system_message.id"], ondelete="CASCADE"
+        ),
         sa.ForeignKeyConstraint(["user_id"], ["user.id"]),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("message_id", "user_id", name="uq_message_read_mid_uid"),

@@ -117,8 +117,11 @@ class VoiceRecordingRepository(BaseRepository[VoiceRecording]):
         super().__init__(db, VoiceRecording)
 
     def get_by_child_and_book(
-        self, child_id: int, book_id: int | None = None,
-        page: int = 1, page_size: int = 20
+        self,
+        child_id: int,
+        book_id: int | None = None,
+        page: int = 1,
+        page_size: int = 20,
     ) -> list[VoiceRecording]:
         """获取孩子的语音记录"""
         q = self.db.query(VoiceRecording).filter(
@@ -128,4 +131,9 @@ class VoiceRecordingRepository(BaseRepository[VoiceRecording]):
         if book_id:
             q = q.filter(VoiceRecording.book_id == book_id)
         offset = (page - 1) * page_size
-        return q.order_by(VoiceRecording.create_time.desc()).offset(offset).limit(page_size).all()
+        return (
+            q.order_by(VoiceRecording.create_time.desc())
+            .offset(offset)
+            .limit(page_size)
+            .all()
+        )

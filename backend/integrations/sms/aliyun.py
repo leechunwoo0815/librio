@@ -13,6 +13,7 @@ try:
     from alibabacloud_dysmsapi20170525.client import Client as DysmsapiClient
     from alibabacloud_dysmsapi20170525 import models as dysmsapi_models
     from alibabacloud_tea_openapi import models as open_api_models
+
     _HAS_SDK = True
 except ImportError:
     _HAS_SDK = False
@@ -65,7 +66,8 @@ class AliyunSmsGateway(SmsGateway):
             self._codes[phone] = (code, time.time())
             logger.info(
                 "[AliyunSms(dev)] 验证码 %s 已生成（SDK/凭据未配置，未实际发送）phone=%s",
-                code[:4], phone,
+                code[:4],
+                phone,
             )
             return SmsSendResponse(success=True, code=code)
 
@@ -99,11 +101,15 @@ class AliyunSmsGateway(SmsGateway):
         if not _HAS_SDK or not self.app_id or not self.app_key:
             logger.info(
                 "[AliyunSms(dev)] 通知短信 phone=%s template=%s params=%s（SDK/凭据未配置）",
-                request.phone, request.template_id, request.template_params,
+                request.phone,
+                request.template_id,
+                request.template_params,
             )
             return SmsSendResponse(success=True)
 
-        template_params = json.dumps(request.template_params) if request.template_params else None
+        template_params = (
+            json.dumps(request.template_params) if request.template_params else None
+        )
         req = dysmsapi_models.SendSmsRequest(
             phone_numbers=request.phone,
             sign_name=self.sign_name,
@@ -111,5 +117,7 @@ class AliyunSmsGateway(SmsGateway):
             template_param=template_params,
         )
         ok, err = await asyncio.to_thread(self._call_send_sms, req)
-        logger.info("阿里云 SMS 通知 %s phone=%s", "成功" if ok else "失败", request.phone)
+        logger.info(
+            "阿里云 SMS 通知 %s phone=%s", "成功" if ok else "失败", request.phone
+        )
         return SmsSendResponse(success=ok, error_message=err)

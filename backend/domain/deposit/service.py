@@ -14,8 +14,17 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from backend.common.events import DepositPaidEvent, event_bus
-from backend.common.exceptions import ConflictError, NotFoundError, PaymentError, ValidationError
-from backend.common.gateways.payment import PaymentGateway, PaymentOrderRequest, PaymentRefundRequest
+from backend.common.exceptions import (
+    ConflictError,
+    NotFoundError,
+    PaymentError,
+    ValidationError,
+)
+from backend.common.gateways.payment import (
+    PaymentGateway,
+    PaymentOrderRequest,
+    PaymentRefundRequest,
+)
 from backend.common.types import BorrowStatus, DepositStatus
 from backend.domain.borrow.models import BorrowRecord
 from backend.domain.child.models import Child
@@ -62,6 +71,7 @@ class DepositService:
         )
 
         from backend.domain.user.models import User
+
         user = self.db.query(User).filter(User.id == current_user.id).first()
         if not user or not user.openid:
             raise ValidationError("用户openid不存在")
@@ -110,7 +120,9 @@ class DepositService:
             pay_params=result.pay_params,
         )
 
-    def handle_callback(self, order_no: str, amount: Decimal | None = None) -> DepositResponse:
+    def handle_callback(
+        self, order_no: str, amount: Decimal | None = None
+    ) -> DepositResponse:
         """支付回调 — PENDING → PAID"""
         record = (
             self.db.query(DepositRecord)
@@ -127,6 +139,7 @@ class DepositService:
 
         if amount is not None and amount != record.amount:
             from backend.common.exceptions import PaymentError
+
             raise PaymentError(f"押金金额不一致: 回调{amount}, 记录{record.amount}")
 
         record.status = DepositStatus.PAID
@@ -179,6 +192,7 @@ class DepositService:
         )
 
         from backend.domain.user.models import User
+
         user = self.db.query(User).filter(User.id == child.user_id).first()
         if not user or not user.openid:
             raise ValidationError("用户openid不存在")
@@ -265,7 +279,9 @@ class DepositService:
             child.deposit_status = DepositStatus.REFUND_PENDING
 
         self.db.commit()
-        logger.info(f"Refund requested: child_id={data.child_id}, status=REFUND_PENDING")
+        logger.info(
+            f"Refund requested: child_id={data.child_id}, status=REFUND_PENDING"
+        )
         return DepositResponse.model_validate(record)
 
     def deduct_deposit(self, data: DepositDeductRequest) -> DepositResponse:
@@ -339,7 +355,7 @@ class DepositService:
                     Book.total_stock: func.greatest(Book.total_stock - 1, 0),
                     Book.available_stock: func.greatest(Book.available_stock - 1, 0),
                 },
-                synchronize_session='fetch',
+                synchronize_session="fetch",
             )
 
         self.db.commit()
@@ -353,7 +369,10 @@ class DepositService:
         }
 
     async def audit_refund(
-        self, child_id: int, action: str, admin_id: int,
+        self,
+        child_id: int,
+        action: str,
+        admin_id: int,
         payment_gateway: PaymentGateway | None = None,
     ) -> DepositResponse:
         """审核押金退款 — approve 触发真实退款，reject 回退 PAID"""
@@ -361,7 +380,9 @@ class DepositService:
         if not record:
             raise NotFoundError("未找到押金记录")
         if record.status != DepositStatus.REFUND_PENDING:
-            raise ConflictError(f"当前状态({record.status})不允许审核，仅 REFUND_PENDING 可审核")
+            raise ConflictError(
+                f"当前状态({record.status})不允许审核，仅 REFUND_PENDING 可审核"
+            )
 
         child = (
             self.db.query(Child)
@@ -375,7 +396,9 @@ class DepositService:
                 self.db.query(BorrowRecord)
                 .filter(
                     BorrowRecord.child_id == child_id,
-                    BorrowRecord.status.in_([BorrowStatus.BORROWING, BorrowStatus.OVERDUE]),
+                    BorrowRecord.status.in_(
+                        [BorrowStatus.BORROWING, BorrowStatus.OVERDUE]
+                    ),
                     BorrowRecord.is_deleted == 0,
                 )
                 .with_for_update()
@@ -394,17 +417,25 @@ class DepositService:
 
             if payment_gateway:
                 try:
-                    result = await payment_gateway.refund(PaymentRefundRequest(
-                        out_trade_no=str(record.pay_order_id) if record.pay_order_id else "",
-                        total_amount=record.amount,
-                        refund_amount=record.amount,
-                        reason="押金退款（审核通过）",
-                    ))
-                    if hasattr(result, 'success') and not result.success:
-                        raise PaymentError(getattr(result, 'error_message', '退款接口返回失败'))
+                    result = await payment_gateway.refund(
+                        PaymentRefundRequest(
+                            out_trade_no=str(record.pay_order_id)
+                            if record.pay_order_id
+                            else "",
+                            total_amount=record.amount,
+                            refund_amount=record.amount,
+                            reason="押金退款（审核通过）",
+                        )
+                    )
+                    if hasattr(result, "success") and not result.success:
+                        raise PaymentError(
+                            getattr(result, "error_message", "退款接口返回失败")
+                        )
                 except Exception as e:
                     self.db.rollback()
-                    logger.error(f"Refund failed, transaction rolled back: child={child_id}, error={e}")
+                    logger.error(
+                        f"Refund failed, transaction rolled back: child={child_id}, error={e}"
+                    )
                     raise PaymentError(f"押金退款调用失败: {e}")
 
         elif action == "reject":
@@ -420,6 +451,7 @@ class DepositService:
         self.db.commit()
 
         from backend.domain.admin.services.system_service import AdminSystemService
+
         system_service = AdminSystemService(self.db)
         system_service.write_operation_log(
             admin_id=admin_id,

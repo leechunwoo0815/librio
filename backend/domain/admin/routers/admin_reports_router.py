@@ -32,6 +32,7 @@ router = APIRouter(prefix="/admin/api", tags=["报告管理"])
 
 # ==================== 退款管理 ====================
 
+
 @router.get("/refunds", response_model=PaginatedResponse)
 def list_refunds(
     page: int = Query(1, ge=1),
@@ -58,6 +59,7 @@ def audit_refund(
     audit = RefundAudit(status=status, admin_id=admin.id, remark=data.comment)
     result = service.audit_refund(refund_id, audit)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(service.db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -72,13 +74,17 @@ def audit_refund(
         if refund and order:
             background_tasks.add_task(
                 RefundService._execute_wechat_refund,
-                refund.id, order.order_no, refund.refund_amount, refund.review_comment or "",
+                refund.id,
+                order.order_no,
+                refund.refund_amount,
+                refund.review_comment or "",
             )
 
     return result
 
 
 # ==================== 报告管理 ====================
+
 
 @router.get("/reports", response_model=PaginatedResponse)
 def list_reports(
@@ -91,7 +97,9 @@ def list_reports(
 ):
     """获取报告汇总列表（当前仅观察期报告） — 带分页"""
     child_ids = AdminAccountService(db).get_scoped_child_ids(admin)
-    return service.list_observation_reports(page, page_size, keyword, child_ids=child_ids)
+    return service.list_observation_reports(
+        page, page_size, keyword, child_ids=child_ids
+    )
 
 
 @router.get("/reports/observation", response_model=PaginatedResponse)
@@ -105,7 +113,9 @@ def list_observation_reports(
 ):
     """获取观察期报告列表 — 带分页"""
     child_ids = AdminAccountService(db).get_scoped_child_ids(admin)
-    return service.list_observation_reports(page, page_size, keyword, child_ids=child_ids)
+    return service.list_observation_reports(
+        page, page_size, keyword, child_ids=child_ids
+    )
 
 
 @router.post("/reports/observation/generate", response_model=SuccessResponse)
@@ -118,6 +128,7 @@ def generate_observation_report(
     generated = service.generate_due_reports()
     result = {"success": True, "message": f"已生成 {len(generated)} 份观察期报告"}
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(service.db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -128,7 +139,9 @@ def generate_observation_report(
     return result
 
 
-@router.put("/reports/observation/{report_id}/comment", response_model=AdminActionResponse)
+@router.put(
+    "/reports/observation/{report_id}/comment", response_model=AdminActionResponse
+)
 def add_observation_comment(
     report_id: int,
     data: AddObservationCommentRequest,
@@ -139,6 +152,7 @@ def add_observation_comment(
     service = ReportService(db)
     result = service.add_teacher_comment(report_id, admin.id, data.comment)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(service.db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -150,6 +164,7 @@ def add_observation_comment(
 
 
 # ==================== 阅读数据统计 ====================
+
 
 @router.get("/reading-data/stats", response_model=ReadingStatsResponse)
 def get_reading_stats(

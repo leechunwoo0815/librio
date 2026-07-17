@@ -44,8 +44,14 @@ def test_can_borrow_books_observation(child_service, db):
     user = User(openid="obs_user", phone="13800138011")
     db.add(user)
     db.commit()
-    child = Child(user_id=user.id, name="测试", age=6, grade="一年级",
-                  status=Child.STATUS_OBSERVATION, deposit_status=1)
+    child = Child(
+        user_id=user.id,
+        name="测试",
+        age=6,
+        grade="一年级",
+        status=Child.STATUS_OBSERVATION,
+        deposit_status=1,
+    )
     db.add(child)
     db.commit()
 
@@ -57,8 +63,14 @@ def test_can_borrow_books_official(child_service, db):
     user = User(openid="official_user", phone="13800138012")
     db.add(user)
     db.commit()
-    child = Child(user_id=user.id, name="测试", age=6, grade="一年级",
-                  status=Child.STATUS_OFFICIAL, deposit_status=1)
+    child = Child(
+        user_id=user.id,
+        name="测试",
+        age=6,
+        grade="一年级",
+        status=Child.STATUS_OFFICIAL,
+        deposit_status=1,
+    )
     db.add(child)
     db.commit()
 
@@ -70,7 +82,9 @@ def test_can_borrow_books_expired(child_service, db):
     user = User(openid="expired_user", phone="13800138013")
     db.add(user)
     db.commit()
-    child = Child(user_id=user.id, name="测试", age=6, grade="一年级", status=Child.STATUS_EXPIRED)
+    child = Child(
+        user_id=user.id, name="测试", age=6, grade="一年级", status=Child.STATUS_EXPIRED
+    )
     db.add(child)
     db.commit()
 
@@ -80,5 +94,6 @@ def test_can_borrow_books_expired(child_service, db):
 def test_can_borrow_books_child_not_found(child_service, db):
     """不存在的孩子不可借书"""
     from backend.common.exceptions import NotFoundError
+
     with pytest.raises(NotFoundError):
         child_service.can_borrow_books(999)

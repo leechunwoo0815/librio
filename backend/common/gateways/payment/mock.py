@@ -52,7 +52,9 @@ class MockPaymentGateway(PaymentGateway):
         }
         logger.info(
             "[MockPay] JSAPI下单 out_trade_no=%s amount_cent=%s description=%s",
-            order_no, amount_cent, description,
+            order_no,
+            amount_cent,
+            description,
         )
         return pay_params
 
@@ -78,7 +80,9 @@ class MockPaymentGateway(PaymentGateway):
             prepay_id,
         )
 
-        return PaymentOrderResponse(success=True, prepay_id=prepay_id, pay_params=pay_params)
+        return PaymentOrderResponse(
+            success=True, prepay_id=prepay_id, pay_params=pay_params
+        )
 
     async def refund(self, request: PaymentRefundRequest) -> PaymentRefundResponse:
         refund_id = f"mock_refund_{uuid.uuid4().hex[:16]}"
@@ -105,10 +109,16 @@ class MockPaymentGateway(PaymentGateway):
         try:
             data = json.loads(ciphertext)
             amount_raw = data.get("amount")
-            amount = Decimal(str(amount_raw)) / Decimal("100") if amount_raw is not None else None
+            amount = (
+                Decimal(str(amount_raw)) / Decimal("100")
+                if amount_raw is not None
+                else None
+            )
             return PaymentCallbackData(
                 out_trade_no=data.get("out_trade_no", ""),
-                transaction_id=data.get("transaction_id", f"mock_txn_{uuid.uuid4().hex[:16]}"),
+                transaction_id=data.get(
+                    "transaction_id", f"mock_txn_{uuid.uuid4().hex[:16]}"
+                ),
                 trade_state="SUCCESS",
                 amount=amount,
                 raw_body=ciphertext,

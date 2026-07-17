@@ -89,7 +89,9 @@ class ChildAchievementRepository(BaseRepository[ChildAchievement]):
         return (
             self.db.query(ChildAchievement)
             .options(joinedload(ChildAchievement.achievement))
-            .filter(ChildAchievement.child_id == child_id, ChildAchievement.is_deleted == 0)
+            .filter(
+                ChildAchievement.child_id == child_id, ChildAchievement.is_deleted == 0
+            )
             .limit(100)
             .all()
         )

@@ -9,7 +9,12 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from backend.common.base_repo import BaseRepository
-from backend.common.exceptions import ConflictError, ForbiddenError, NotFoundError, ValidationError
+from backend.common.exceptions import (
+    ConflictError,
+    ForbiddenError,
+    NotFoundError,
+    ValidationError,
+)
 from backend.common.types import OrderType, PayStatus
 from backend.domain.order.models import Order
 from backend.domain.refund.models import RefundApplication
@@ -37,6 +42,7 @@ class RefundService:
         )
         if not order:
             from backend.common.exceptions import NotFoundError
+
             raise NotFoundError(f"Order(id={data.order_id}) 不存在")
         if order.user_id != user_id:
             raise ForbiddenError("订单不属于当前用户")
@@ -58,9 +64,11 @@ class RefundService:
 
         # P0-5: 亲子课退款规则 — 课程开始后不可退款
         from backend.common.types import OrderType
+
         if order.type == OrderType.PARENT_COURSE:
             from backend.domain.parent_course_time.models import ParentCourseTime
             from datetime import datetime as dt
+
             now = dt.now()
             # 查找该用户已报名且已开始的亲子课
             course_started = (
@@ -82,6 +90,7 @@ class RefundService:
 
         # P2-7: 365天内同一孩子仅可退款1次（防滥用循环退款）
         from sqlalchemy import func
+
         one_year_ago = datetime.now().replace(year=datetime.now().year - 1)
         approved_count = (
             self.db.query(func.count(RefundApplication.id))
@@ -111,7 +120,9 @@ class RefundService:
             .count()
         )
         if active_borrows > 0:
-            raise ValidationError("您名下尚有未归还的实体图书，请先至门店归还后再申请退款")
+            raise ValidationError(
+                "您名下尚有未归还的实体图书，请先至门店归还后再申请退款"
+            )
 
         # 计算退款金额（服务端计算已用天数，不信任前端）
         used_days = (datetime.now() - order.pay_time).days if order.pay_time else 0
@@ -134,7 +145,9 @@ class RefundService:
         """审核退款 — 带行锁防止双重审批"""
         refund = (
             self.db.query(RefundApplication)
-            .filter(RefundApplication.id == refund_id, RefundApplication.is_deleted == 0)
+            .filter(
+                RefundApplication.id == refund_id, RefundApplication.is_deleted == 0
+            )
             .with_for_update()
             .first()
         )
@@ -165,7 +178,9 @@ class RefundService:
         return RefundResponse.model_validate(refund)
 
     @staticmethod
-    async def _execute_wechat_refund(refund_id: int, order_no: str, amount: Decimal, reason: str):
+    async def _execute_wechat_refund(
+        refund_id: int, order_no: str, amount: Decimal, reason: str
+    ):
         """调用退款 API（独立 session，供 BackgroundTasks 调用）"""
         import uuid
         from backend.database import get_session
@@ -192,13 +207,15 @@ class RefundService:
             gateway = get_payment_gateway()
             out_refund_no = f"RF{uuid.uuid4().hex[:16]}"
 
-            result = await gateway.refund(PaymentRefundRequest(
-                out_trade_no=order_no,
-                out_refund_no=out_refund_no,
-                total_amount=amount,
-                refund_amount=amount,
-                reason=reason or "管理员审核通过",
-            ))
+            result = await gateway.refund(
+                PaymentRefundRequest(
+                    out_trade_no=order_no,
+                    out_refund_no=out_refund_no,
+                    total_amount=amount,
+                    refund_amount=amount,
+                    reason=reason or "管理员审核通过",
+                )
+            )
             logger.info(f"WeChat refund submitted: order={order_no}, result={result}")
             # 微信退款是异步的，状态由回调或定时任务更新
         except Exception as e:
@@ -212,6 +229,7 @@ class RefundService:
                     order.refund_remark = str(e)[:200]
 
                 from backend.domain.message.models import SystemMessage
+
                 msg = SystemMessage(
                     user_id=0,
                     title="退款执行失败",
@@ -222,7 +240,9 @@ class RefundService:
                 db.add(msg)
                 db.commit()
             except SQLAlchemyError as e2:
-                logger.error(f"Failed to save refund failure state for order {order_no}: {e2}")
+                logger.error(
+                    f"Failed to save refund failure state for order {order_no}: {e2}"
+                )
         finally:
             db.close()
 
@@ -280,7 +300,11 @@ class RefundService:
         return max(refund.quantize(Decimal("0.01")), Decimal("0"))
 
     def get_refund_with_order(self, refund_id: int) -> tuple | None:
-        refund = self.db.query(RefundApplication).filter(RefundApplication.id == refund_id).first()
+        refund = (
+            self.db.query(RefundApplication)
+            .filter(RefundApplication.id == refund_id)
+            .first()
+        )
         if not refund:
             return None
         order = self.db.query(Order).filter(Order.id == refund.order_id).first()
@@ -291,7 +315,9 @@ class RefundService:
             self.refund_repo.get_by_id_or_raise(refund_id)
         )
 
-    def get_user_refunds(self, user_id: int, page: int = 1, page_size: int = 20) -> dict:
+    def get_user_refunds(
+        self, user_id: int, page: int = 1, page_size: int = 20
+    ) -> dict:
         records, total = self.refund_repo.get_by_user(user_id, page, page_size)
         return {
             "items": [RefundResponse.model_validate(r) for r in records],

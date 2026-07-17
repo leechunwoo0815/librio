@@ -40,7 +40,7 @@ def get_activity(
     service = ActivityService(db)
     result = service.get_activity(activity_id)
     # 返回字典格式
-    return result.model_dump() if hasattr(result, 'model_dump') else result
+    return result.model_dump() if hasattr(result, "model_dump") else result
 
 
 @router.post("", response_model=AdminActionResponse, status_code=201)
@@ -53,6 +53,7 @@ def create_activity(
     service = ActivityService(db)
     result = service.create_activity(data)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -74,6 +75,7 @@ def update_activity(
     service = ActivityService(db)
     result = service.update_activity(activity_id, data)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -94,6 +96,7 @@ def delete_activity(
     service = ActivityService(db)
     result = service.delete_activity(activity_id)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -114,6 +117,7 @@ def cancel_activity(
     service = ActivityService(db)
     result = service.cancel_activity(activity_id, admin.id)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -146,6 +150,7 @@ def batch_checkin(
     service = ActivityService(db)
     result = service.batch_checkin(activity_id, data.child_ids)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -167,6 +172,7 @@ def admin_sign_in(
     enrollment = service.get_enrollment_by_id(enrollment_id)
     result = service.sign_in(enrollment.id)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -175,4 +181,3 @@ def admin_sign_in(
         content=f"管理员签到: 报名 #{enrollment_id}",
     )
     return result
-

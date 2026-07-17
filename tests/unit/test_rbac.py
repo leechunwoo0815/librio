@@ -10,7 +10,12 @@ from backend.domain.admin.admin_schemas import UpdateAdminRequest
 from backend.domain.admin.rbac_models import Role, Permission, RolePermission
 from backend.domain.admin.services.account_service import AdminAccountService
 from backend.utils.password import hash_password
-from backend.seeds.seed_rbac import PERMISSIONS, STAFF_PERMS, TEACHER_PERMS, migrate_admin_roles
+from backend.seeds.seed_rbac import (
+    PERMISSIONS,
+    STAFF_PERMS,
+    TEACHER_PERMS,
+    migrate_admin_roles,
+)
 
 
 @pytest.fixture
@@ -26,8 +31,11 @@ def db():
 def _seed_all(db):
     """执行完整种子流程"""
     from backend.seeds.seed_rbac import (
-        seed_roles, seed_permissions, seed_role_permissions,
+        seed_roles,
+        seed_permissions,
+        seed_role_permissions,
     )
+
     seed_roles(db)
     seed_permissions(db)
     seed_role_permissions(db)
@@ -157,8 +165,13 @@ class TestAdminPermissionMethods:
         _seed_all(db)
         from backend.domain.child.models import Child
         from backend.domain.user.models import User
+
         # Create a user + children assigned to teacher
-        user = User(openid=f"test_user_{__name__}", phone="13800000000", parent_name="Test Parent")
+        user = User(
+            openid=f"test_user_{__name__}",
+            phone="13800000000",
+            parent_name="Test Parent",
+        )
         db.add(user)
         db.flush()
         for i in range(3):
@@ -199,25 +212,43 @@ class TestAdminPermissionMethods:
     def test_super_admin_has_all_permissions_in_table(self, db):
         _seed_all(db)
         super_admin_role = db.query(Role).filter(Role.code == "super_admin").first()
-        rp_count = db.query(RolePermission).filter(
-            RolePermission.role_id == super_admin_role.id,
-            RolePermission.is_deleted == 0,
-        ).count()
+        rp_count = (
+            db.query(RolePermission)
+            .filter(
+                RolePermission.role_id == super_admin_role.id,
+                RolePermission.is_deleted == 0,
+            )
+            .count()
+        )
         total_perms = db.query(Permission).filter(Permission.is_deleted == 0).count()
-        assert rp_count == total_perms, f"super_admin has {rp_count} perms but total is {total_perms}"
+        assert rp_count == total_perms, (
+            f"super_admin has {rp_count} perms but total is {total_perms}"
+        )
 
     def test_get_all_permission_counts(self, db):
         _seed_all(db)
         total = db.query(Permission).filter(Permission.is_deleted == 0).count()
-        assert total == len(PERMISSIONS), f"expected {len(PERMISSIONS)} perms, got {total}"
+        assert total == len(PERMISSIONS), (
+            f"expected {len(PERMISSIONS)} perms, got {total}"
+        )
 
         role_map = {r.code: r.id for r in db.query(Role).all()}
-        for role_code, expected_list in [("super_admin", PERMISSIONS), ("staff", STAFF_PERMS), ("teacher", TEACHER_PERMS)]:
-            rp_count = db.query(RolePermission).filter(
-                RolePermission.role_id == role_map[role_code],
-                RolePermission.is_deleted == 0,
-            ).count()
-            assert rp_count == len(expected_list), f"{role_code}: expected {len(expected_list)} perms, got {rp_count}"
+        for role_code, expected_list in [
+            ("super_admin", PERMISSIONS),
+            ("staff", STAFF_PERMS),
+            ("teacher", TEACHER_PERMS),
+        ]:
+            rp_count = (
+                db.query(RolePermission)
+                .filter(
+                    RolePermission.role_id == role_map[role_code],
+                    RolePermission.is_deleted == 0,
+                )
+                .count()
+            )
+            assert rp_count == len(expected_list), (
+                f"{role_code}: expected {len(expected_list)} perms, got {rp_count}"
+            )
 
     def test_admin_role_id_none_data_scope(self, db):
         _seed_all(db)
@@ -232,7 +263,8 @@ class TestAdminPermissionMethods:
         _seed_all(db)
         # Simulate old-style admins without admin_role_id
         old_admin = Admin(
-            username="old_admin", name="Old Admin",
+            username="old_admin",
+            name="Old Admin",
             role=0,  # super_admin in old system
             admin_role_id=None,
         )
@@ -308,17 +340,28 @@ class TestAdminPermissionMethods:
         removed_code = "role.edit"
         # First verify it exists
         role_id = db.query(Role).filter(Role.code == "super_admin").first().id
-        assert db.query(RolePermission).filter(
-            RolePermission.role_id == role_id,
-            RolePermission.permission_code == removed_code,
-            RolePermission.is_deleted == 0,
-        ).first() is not None
+        assert (
+            db.query(RolePermission)
+            .filter(
+                RolePermission.role_id == role_id,
+                RolePermission.permission_code == removed_code,
+                RolePermission.is_deleted == 0,
+            )
+            .first()
+            is not None
+        )
         # Re-seed (should still exist since it's in PERMISSIONS)
         from backend.seeds.seed_rbac import seed_role_permissions
+
         seed_role_permissions(db)
         db.flush()
-        assert db.query(RolePermission).filter(
-            RolePermission.role_id == role_id,
-            RolePermission.permission_code == removed_code,
-            RolePermission.is_deleted == 0,
-        ).first() is not None
+        assert (
+            db.query(RolePermission)
+            .filter(
+                RolePermission.role_id == role_id,
+                RolePermission.permission_code == removed_code,
+                RolePermission.is_deleted == 0,
+            )
+            .first()
+            is not None
+        )

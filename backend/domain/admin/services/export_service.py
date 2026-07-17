@@ -99,12 +99,20 @@ class AdminExportService:
 
         children = {}
         if child_ids:
-            for c in self.db.query(Child).filter(Child.id.in_(child_ids), Child.is_deleted == 0).all():
+            for c in (
+                self.db.query(Child)
+                .filter(Child.id.in_(child_ids), Child.is_deleted == 0)
+                .all()
+            ):
                 children[c.id] = c
 
         books = {}
         if book_ids:
-            for b in self.db.query(Book).filter(Book.id.in_(book_ids), Book.is_deleted == 0).all():
+            for b in (
+                self.db.query(Book)
+                .filter(Book.id.in_(book_ids), Book.is_deleted == 0)
+                .all()
+            ):
                 books[b.id] = b
 
         output = io.StringIO()
@@ -156,9 +164,12 @@ class AdminExportService:
                 "create_time",
             ]
         )
-        enrollments = self.db.query(ActivityEnrollment).filter(
-            ActivityEnrollment.is_deleted == 0
-        ).limit(10000).all()
+        enrollments = (
+            self.db.query(ActivityEnrollment)
+            .filter(ActivityEnrollment.is_deleted == 0)
+            .limit(10000)
+            .all()
+        )
 
         # 批量查询所有相关 child 和 activity，避免 N+1
         child_ids = list(set(e.child_id for e in enrollments if e.child_id))
@@ -166,12 +177,20 @@ class AdminExportService:
 
         children = {}
         if child_ids:
-            for c in self.db.query(Child).filter(Child.id.in_(child_ids), Child.is_deleted == 0).all():
+            for c in (
+                self.db.query(Child)
+                .filter(Child.id.in_(child_ids), Child.is_deleted == 0)
+                .all()
+            ):
                 children[c.id] = c
 
         activities = {}
         if activity_ids:
-            for a in self.db.query(Activity).filter(Activity.id.in_(activity_ids), Activity.is_deleted == 0).all():
+            for a in (
+                self.db.query(Activity)
+                .filter(Activity.id.in_(activity_ids), Activity.is_deleted == 0)
+                .all()
+            ):
                 activities[a.id] = a
 
         for e in enrollments:

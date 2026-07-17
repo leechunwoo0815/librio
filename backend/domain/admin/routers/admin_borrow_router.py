@@ -34,7 +34,11 @@ from backend.domain.borrow.schemas import (
     ReturnBookRequest as ReturnBookSchema,
 )
 from backend.domain.deposit.service import DepositService
-from backend.domain.deposit.schemas import DepositPayRequest, DepositRefundRequest, DepositDeductRequest
+from backend.domain.deposit.schemas import (
+    DepositPayRequest,
+    DepositRefundRequest,
+    DepositDeductRequest,
+)
 from backend.domain.reservation.service import ReservationService
 from backend.domain.reservation.schemas import ReservationFulfillRequest
 
@@ -46,6 +50,7 @@ class AuditRefundRequest(BaseModel):
 
 
 # ==================== 孩子列表（借还下拉框）====================
+
 
 @router.get("/children", response_model=list)
 def list_children(
@@ -59,6 +64,7 @@ def list_children(
 
 
 # ==================== 借阅管理 ====================
+
 
 @router.get("/borrows", response_model=AdminActionResponse)
 def list_borrows(
@@ -109,6 +115,7 @@ def borrow_book(
     req = BorrowBookSchema(**data.model_dump())
     result = service.borrow_book(req)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -130,6 +137,7 @@ def return_book(
     req = ReturnBookSchema(**data.model_dump())
     result = service.return_book(req)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -148,6 +156,7 @@ def send_overdue_reminders(
     """发送逾期提醒"""
     result = service.send_overdue_reminders(admin.id)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(service.db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -160,7 +169,10 @@ def send_overdue_reminders(
 
 # ==================== 罚款管理 ====================
 
-@router.post("/borrows/{borrow_record_id}/mark-lost", response_model=AdminActionResponse)
+
+@router.post(
+    "/borrows/{borrow_record_id}/mark-lost", response_model=AdminActionResponse
+)
 def mark_borrow_lost(
     borrow_record_id: int,
     admin=Depends(require_perm("borrow.mark_lost")),
@@ -170,12 +182,13 @@ def mark_borrow_lost(
     service = DepositService(db)
     result = service.mark_book_lost(borrow_record_id, admin.id)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(db)
     system_service.write_operation_log(
         admin_id=admin.id,
         module="borrow",
         operation="mark_lost",
-        content=f"标记图书丢失: borrow #{borrow_record_id}, fine={result.get('fine_amount','?')}",
+        content=f"标记图书丢失: borrow #{borrow_record_id}, fine={result.get('fine_amount', '?')}",
     )
     return result
 
@@ -189,6 +202,7 @@ def clear_child_fines(
     """管理员清零孩子罚款"""
     result = service.clear_child_fines(child_id, admin.id)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(service.db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -200,6 +214,7 @@ def clear_child_fines(
 
 
 # ==================== 押金管理 ====================
+
 
 @router.get("/deposits", response_model=AdminActionResponse)
 def list_deposits(
@@ -227,7 +242,9 @@ async def audit_refund(
     if child_ids is not None and child_id not in child_ids:
         raise ForbiddenError("无权操作该孩子或无访问权限")
     service = DepositService(db)
-    result = await service.audit_refund(child_id, data.action, admin.id, payment_gateway)
+    result = await service.audit_refund(
+        child_id, data.action, admin.id, payment_gateway
+    )
     return result
 
 
@@ -245,6 +262,7 @@ def request_refund(
     req = DepositRefundRequest(child_id=data.child_id)
     result = service.refund_deposit(req)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -267,6 +285,7 @@ async def admin_pay_deposit(
     req = DepositPayRequest(child_id=data.child_id)
     result = await service.pay_deposit(req, payment_gateway)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -274,7 +293,7 @@ async def admin_pay_deposit(
         operation="pay",
         content=f"代缴押金: child #{data.child_id}",
     )
-    return result.model_dump() if hasattr(result, 'model_dump') else result
+    return result.model_dump() if hasattr(result, "model_dump") else result
 
 
 @router.post("/deposits/{child_id}/cancel-refund", response_model=AdminActionResponse)
@@ -290,6 +309,7 @@ def admin_cancel_refund(
     service = DepositService(db)
     result = service.cancel_refund(child_id)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -313,6 +333,7 @@ def admin_mark_refunded(
     service = DepositService(db)
     result = service.mark_refunded(child_id)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -333,6 +354,7 @@ def admin_deduct_deposit(
     service = DepositService(db)
     result = service.deduct_deposit(data)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -344,6 +366,7 @@ def admin_deduct_deposit(
 
 
 # ==================== 预约管理 ====================
+
 
 @router.get("/reservations", response_model=AdminActionResponse)
 def list_reservations(
@@ -370,6 +393,7 @@ def fulfill_reservation(
     req = ReservationFulfillRequest(reservation_id=data.reservation_id)
     result = service.fulfill_reservation(req)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -390,6 +414,7 @@ def cancel_reservation(
     service = ReservationService(db)
     result = service.cancel_reservation(reservation_id)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -413,6 +438,7 @@ def admin_create_reservation(
     req = ReservationCreateRequest(child_id=data.child_id, book_id=data.book_id)
     result = service.create_reservation(req)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -420,7 +446,7 @@ def admin_create_reservation(
         operation="create",
         content=f"创建预约: child #{data.child_id}, book #{data.book_id}",
     )
-    return result.model_dump() if hasattr(result, 'model_dump') else result
+    return result.model_dump() if hasattr(result, "model_dump") else result
 
 
 @router.put("/enrollments/{ticket_code}/sign-in", response_model=AdminActionResponse)
@@ -433,6 +459,7 @@ def sign_in_by_ticket_code(
     service = ActivityService(db)
     result = service.sign_in_by_ticket_code(ticket_code)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(db)
     system_service.write_operation_log(
         admin_id=admin.id,

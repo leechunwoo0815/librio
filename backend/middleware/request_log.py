@@ -73,37 +73,45 @@ class RequestLogMiddleware(BaseHTTPMiddleware):
         method = request.method
         client = request.client.host if request.client else "-"
         admin_id = _extract_admin_id(request)
-        trace_id = getattr(request.state, "trace_id", None) or request.headers.get("X-Trace-Id", uuid.uuid4().hex[:16])
+        trace_id = getattr(request.state, "trace_id", None) or request.headers.get(
+            "X-Trace-Id", uuid.uuid4().hex[:16]
+        )
 
         try:
             response = await call_next(request)
             duration_ms = round((time.time() - start) * 1000, 2)
             status = response.status_code
             logger.info(
-                json_lib.dumps({
-                    "method": method,
-                    "path": path,
-                    "status": status,
-                    "cost_ms": duration_ms,
-                    "client": client,
-                    "admin_id": admin_id or "-",
-                    "trace_id": trace_id,
-                }, ensure_ascii=False)
+                json_lib.dumps(
+                    {
+                        "method": method,
+                        "path": path,
+                        "status": status,
+                        "cost_ms": duration_ms,
+                        "client": client,
+                        "admin_id": admin_id or "-",
+                        "trace_id": trace_id,
+                    },
+                    ensure_ascii=False,
+                )
             )
             return response
         except Exception as exc:
             duration_ms = round((time.time() - start) * 1000, 2)
             logger.error(
-                json_lib.dumps({
-                    "method": method,
-                    "path": path,
-                    "status": 500,
-                    "cost_ms": duration_ms,
-                    "client": client,
-                    "admin_id": admin_id or "-",
-                    "trace_id": trace_id,
-                    "error": str(exc),
-                }, ensure_ascii=False),
+                json_lib.dumps(
+                    {
+                        "method": method,
+                        "path": path,
+                        "status": 500,
+                        "cost_ms": duration_ms,
+                        "client": client,
+                        "admin_id": admin_id or "-",
+                        "trace_id": trace_id,
+                        "error": str(exc),
+                    },
+                    ensure_ascii=False,
+                ),
                 exc_info=True,
             )
             raise

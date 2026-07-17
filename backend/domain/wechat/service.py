@@ -113,8 +113,6 @@ class WeChatService:
         content_type = resp.headers.get("content-type", "")
         if "image" not in content_type:
             data = resp.json()
-            raise WeChatAPIError(
-                f"生成小程序码失败: {data.get('errmsg', '未知错误')}"
-            )
+            raise WeChatAPIError(f"生成小程序码失败: {data.get('errmsg', '未知错误')}")
 
         return resp.content

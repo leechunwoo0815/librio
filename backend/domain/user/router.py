@@ -123,11 +123,14 @@ async def phone_login(
         if not user.openid:
             user = user_service.link_openid(user.id, openid)
     else:
-        user_data = UserCreate(openid=openid, phone=data.phone, unionid=wx_data.get("unionid"))
+        user_data = UserCreate(
+            openid=openid, phone=data.phone, unionid=wx_data.get("unionid")
+        )
         created = user_service.create_user(user_data)
         user = user_service.user_repo.get_by_id(created.id)
 
     from backend.domain.user.schemas import UserResponse as UR
+
     user_response = UR.model_validate(user)
 
     token = create_access_token({"sub": str(user.id)})

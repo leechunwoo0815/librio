@@ -139,5 +139,7 @@ class CertificateService:
             level_name=cert.level_name or "",
             badge_emoji=cert.badge_emoji or "",
             certificate_no=cert.certificate_no or "",
-            create_time=cert.create_time.strftime("%Y-%m-%d") if cert.create_time else "",
+            create_time=cert.create_time.strftime("%Y-%m-%d")
+            if cert.create_time
+            else "",
         )

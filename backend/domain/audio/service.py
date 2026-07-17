@@ -36,40 +36,49 @@ class AudioService:
             query = query.filter(AudioFile.reader == reader)
 
         total = query.count()
-        items = query.order_by(AudioFile.create_time.desc()).offset((page - 1) * page_size).limit(page_size).all()
+        items = (
+            query.order_by(AudioFile.create_time.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+            .all()
+        )
 
         result = []
         for a in items:
-            result.append(AudioResponse(
-                id=a.id,
-                filename=a.filename,
-                file_url=a.file_url,
-                book_id=a.book_id,
-                book_title=a.book_title,
-                page_number=a.page_number,
-                page_label=a.page_label or "全文",
-                duration=a.duration,
-                duration_seconds=a.duration_seconds,
-                reader=a.reader,
-                status=a.status,
-                file_size=a.file_size,
-                create_time=a.create_time,
-            ))
+            result.append(
+                AudioResponse(
+                    id=a.id,
+                    filename=a.filename,
+                    file_url=a.file_url,
+                    book_id=a.book_id,
+                    book_title=a.book_title,
+                    page_number=a.page_number,
+                    page_label=a.page_label or "全文",
+                    duration=a.duration,
+                    duration_seconds=a.duration_seconds,
+                    reader=a.reader,
+                    status=a.status,
+                    file_size=a.file_size,
+                    create_time=a.create_time,
+                )
+            )
 
         # 统计数据（使用 SQL 聚合，避免全表加载）
         # 关联图书数
-        book_count = self.db.query(func.count(func.distinct(AudioFile.book_id))).filter(
-            AudioFile.is_deleted == 0,
-            AudioFile.book_id.isnot(None)
-        ).scalar() or 0
+        book_count = (
+            self.db.query(func.count(func.distinct(AudioFile.book_id)))
+            .filter(AudioFile.is_deleted == 0, AudioFile.book_id.isnot(None))
+            .scalar()
+            or 0
+        )
 
         # 总时长
-        total_duration_seconds = self.db.query(
-            func.sum(AudioFile.duration_seconds)
-        ).filter(
-            AudioFile.is_deleted == 0,
-            AudioFile.duration_seconds.isnot(None)
-        ).scalar() or 0
+        total_duration_seconds = (
+            self.db.query(func.sum(AudioFile.duration_seconds))
+            .filter(AudioFile.is_deleted == 0, AudioFile.duration_seconds.isnot(None))
+            .scalar()
+            or 0
+        )
 
         stats = {
             "total": total,
@@ -81,7 +90,11 @@ class AudioService:
 
     def get_audio(self, audio_id: int) -> AudioResponse:
         """获取音频详情"""
-        a = self.db.query(AudioFile).filter(AudioFile.id == audio_id, AudioFile.is_deleted == 0).first()
+        a = (
+            self.db.query(AudioFile)
+            .filter(AudioFile.id == audio_id, AudioFile.is_deleted == 0)
+            .first()
+        )
         if not a:
             raise NotFoundError("音频不存在")
 
@@ -108,7 +121,12 @@ class AudioService:
         page_label = "全文"
         if data.book_id:
             from backend.domain.book.models import Book
-            book = self.db.query(Book).filter(Book.id == data.book_id, Book.is_deleted == 0).first()
+
+            book = (
+                self.db.query(Book)
+                .filter(Book.id == data.book_id, Book.is_deleted == 0)
+                .first()
+            )
             if book:
                 book_title = book.title
         if data.page_number:
@@ -135,7 +153,11 @@ class AudioService:
 
     def update_audio(self, audio_id: int, data: AudioUpdateRequest) -> AudioResponse:
         """更新音频"""
-        audio = self.db.query(AudioFile).filter(AudioFile.id == audio_id, AudioFile.is_deleted == 0).first()
+        audio = (
+            self.db.query(AudioFile)
+            .filter(AudioFile.id == audio_id, AudioFile.is_deleted == 0)
+            .first()
+        )
         if not audio:
             raise NotFoundError("音频不存在")
 
@@ -149,7 +171,12 @@ class AudioService:
             audio.book_id = data.book_id
             if data.book_id:
                 from backend.domain.book.models import Book
-                book = self.db.query(Book).filter(Book.id == data.book_id, Book.is_deleted == 0).first()
+
+                book = (
+                    self.db.query(Book)
+                    .filter(Book.id == data.book_id, Book.is_deleted == 0)
+                    .first()
+                )
                 if book:
                     audio.book_title = book.title
                     audio.status = "linked"
@@ -162,7 +189,11 @@ class AudioService:
 
     def delete_audio(self, audio_id: int) -> dict:
         """删除音频"""
-        audio = self.db.query(AudioFile).filter(AudioFile.id == audio_id, AudioFile.is_deleted == 0).first()
+        audio = (
+            self.db.query(AudioFile)
+            .filter(AudioFile.id == audio_id, AudioFile.is_deleted == 0)
+            .first()
+        )
         if not audio:
             raise NotFoundError("音频不存在")
 

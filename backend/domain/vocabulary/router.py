@@ -7,7 +7,11 @@ from sqlalchemy.orm import Session
 from backend.common.dependencies import get_vocabulary_service
 from backend.common.exceptions import ValidationError
 from backend.database import get_db
-from backend.middleware.ownership import GetOwnedChild, GetOwnedVocab, verify_child_ownership
+from backend.middleware.ownership import (
+    GetOwnedChild,
+    GetOwnedVocab,
+    verify_child_ownership,
+)
 from backend.middleware.auth import get_current_user
 from backend.domain.vocabulary.schemas import (
     WordLookupResponse,

@@ -33,10 +33,17 @@ def book_service(db):
 def test_search_books(book_service, db):
     """测试图书搜索"""
     for i in range(3):
-        db.add(Book(
-            isbn=f"97800{i}", title=f"Book {i}", author="Author",
-            ar_value=Decimal("2.0"), age_min=5, age_max=9, word_count=1000,
-        ))
+        db.add(
+            Book(
+                isbn=f"97800{i}",
+                title=f"Book {i}",
+                author="Author",
+                ar_value=Decimal("2.0"),
+                age_min=5,
+                age_max=9,
+                word_count=1000,
+            )
+        )
     db.commit()
 
     search_params = BookSearch(keyword="Book", page=1, page_size=10)
@@ -49,8 +56,15 @@ def test_search_books(book_service, db):
 
 def test_get_book_detail(book_service, db):
     """测试获取图书详情"""
-    book = Book(isbn="9780064400558", title="Charlotte's Web", author="E.B. White",
-                ar_value=Decimal("3.2"), age_min=7, age_max=9, word_count=31000)
+    book = Book(
+        isbn="9780064400558",
+        title="Charlotte's Web",
+        author="E.B. White",
+        ar_value=Decimal("3.2"),
+        age_min=7,
+        age_max=9,
+        word_count=31000,
+    )
     db.add(book)
     db.commit()
 
@@ -64,5 +78,6 @@ def test_get_book_detail(book_service, db):
 def test_get_book_detail_not_found(book_service, db):
     """测试获取不存在的图书详情"""
     from backend.common.exceptions import NotFoundError
+
     with pytest.raises(NotFoundError):
         book_service.get_book_detail(999)

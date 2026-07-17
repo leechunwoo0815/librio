@@ -24,7 +24,9 @@ class ActivityService:
         self.activity_repo = ActivityRepository(db)
         self.enrollment_repo = ActivityEnrollmentRepository(db)
 
-    def list_activities(self, page: int = 1, page_size: int = 20) -> list[ActivityResponse]:
+    def list_activities(
+        self, page: int = 1, page_size: int = 20
+    ) -> list[ActivityResponse]:
         offset = (page - 1) * page_size
         activities = self.activity_repo.list_all(limit=page_size, offset=offset)
         return [ActivityResponse.model_validate(a) for a in activities]
@@ -32,7 +34,13 @@ class ActivityService:
     def list_with_count(self, page: int = 1, page_size: int = 20) -> dict:
         items = self.list_activities(page=page, page_size=page_size)
         total = self.activity_repo.count()
-        return {"items": items, "total": total, "page": page, "page_size": page_size, "has_next": (page * page_size) < total}
+        return {
+            "items": items,
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "has_next": (page * page_size) < total,
+        }
 
     def get_activity(self, activity_id: int) -> ActivityResponse:
         return ActivityResponse.model_validate(
@@ -67,7 +75,9 @@ class ActivityService:
                     Activity.id == data.activity_id,
                     Activity.current_participants < Activity.max_participants,
                 )
-                .update({Activity.current_participants: Activity.current_participants + 1})
+                .update(
+                    {Activity.current_participants: Activity.current_participants + 1}
+                )
             )
             if not updated:
                 raise ValidationError("报名人数已满")
@@ -75,7 +85,9 @@ class ActivityService:
             updated = (
                 self.db.query(Activity)
                 .filter(Activity.id == data.activity_id)
-                .update({Activity.current_participants: Activity.current_participants + 1})
+                .update(
+                    {Activity.current_participants: Activity.current_participants + 1}
+                )
             )
 
         ticket_code = f"ACT-{uuid.uuid4().hex[:8].upper()}"
@@ -101,7 +113,10 @@ class ActivityService:
 
         enrollment = (
             self.db.query(ActivityEnrollment)
-            .filter(ActivityEnrollment.id == enrollment_id, ActivityEnrollment.is_deleted == 0)
+            .filter(
+                ActivityEnrollment.id == enrollment_id,
+                ActivityEnrollment.is_deleted == 0,
+            )
             .with_for_update()
             .first()
         )
@@ -171,7 +186,11 @@ class ActivityService:
         if enrollment.status == ActivityEnrollment.STATUS_CANCELLED:
             raise ConflictError("报名已取消，不可签到")
         if enrollment.status == ActivityEnrollment.STATUS_SIGNED_IN:
-            return {"id": enrollment.id, "status": enrollment.status, "message": "已签到"}
+            return {
+                "id": enrollment.id,
+                "status": enrollment.status,
+                "message": "已签到",
+            }
 
         if enrollment.status not in (
             ActivityEnrollment.STATUS_APPROVED,
@@ -202,14 +221,14 @@ class ActivityService:
 
         child_ids = [e.child_id for e in enrollments]
         children = {
-            c.id: c for c in
-            self.db.query(Child).filter(Child.id.in_(child_ids)).all()
+            c.id: c for c in self.db.query(Child).filter(Child.id.in_(child_ids)).all()
         }
         user_ids = [c.user_id for c in children.values() if c.user_id]
-        users = {
-            u.id: u for u in
-            self.db.query(User).filter(User.id.in_(user_ids)).all()
-        } if user_ids else {}
+        users = (
+            {u.id: u for u in self.db.query(User).filter(User.id.in_(user_ids)).all()}
+            if user_ids
+            else {}
+        )
 
         results = []
         for e in enrollments:
@@ -236,8 +255,8 @@ class ActivityService:
     def batch_checkin(self, activity_id: int, child_ids: list) -> dict:
         """批量签到"""
         enrollments = {
-            e.child_id: e for e in
-            self.db.query(ActivityEnrollment)
+            e.child_id: e
+            for e in self.db.query(ActivityEnrollment)
             .filter(
                 ActivityEnrollment.activity_id == activity_id,
                 ActivityEnrollment.child_id.in_(child_ids),
@@ -302,10 +321,12 @@ class ActivityService:
             self.db.query(ActivityEnrollment)
             .filter(
                 ActivityEnrollment.activity_id == activity_id,
-                ActivityEnrollment.status.in_([
-                    ActivityEnrollment.STATUS_PENDING,
-                    ActivityEnrollment.STATUS_APPROVED,
-                ]),
+                ActivityEnrollment.status.in_(
+                    [
+                        ActivityEnrollment.STATUS_PENDING,
+                        ActivityEnrollment.STATUS_APPROVED,
+                    ]
+                ),
                 ActivityEnrollment.is_deleted == 0,
             )
             .all()
@@ -313,8 +334,7 @@ class ActivityService:
 
         child_ids = [e.child_id for e in enrollments]
         children = {
-            c.id: c for c in
-            self.db.query(Child).filter(Child.id.in_(child_ids)).all()
+            c.id: c for c in self.db.query(Child).filter(Child.id.in_(child_ids)).all()
         }
 
         cancelled_count = 0
@@ -362,7 +382,9 @@ class ActivityService:
                 logger.warning(f"Notification failed for enrollment {e.id}: {ex}")
 
         self.db.commit()
-        logger.info(f"Activity cancelled: id={activity_id}, enrollments={cancelled_count}, refunds={refund_count}")
+        logger.info(
+            f"Activity cancelled: id={activity_id}, enrollments={cancelled_count}, refunds={refund_count}"
+        )
         return {
             "activity_id": activity_id,
             "cancelled_enrollments": cancelled_count,
@@ -379,6 +401,7 @@ class ActivityService:
     def update_activity(self, activity_id: int, data) -> dict:
         """更新活动"""
         from backend.common.exceptions import NotFoundError
+
         activity = self.activity_repo.get_by_id(activity_id)
         if not activity or activity.is_deleted == 1:
             raise NotFoundError("活动不存在")
@@ -393,6 +416,7 @@ class ActivityService:
     def delete_activity(self, activity_id: int) -> dict:
         """删除活动"""
         from backend.common.exceptions import NotFoundError
+
         activity = self.activity_repo.get_by_id(activity_id)
         if not activity or activity.is_deleted == 1:
             raise NotFoundError("活动不存在")

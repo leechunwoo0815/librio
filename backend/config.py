@@ -25,18 +25,20 @@ class Settings(BaseSettings):
     ENABLE_TEST_TOKEN: bool = False
 
     # 运营主体
-    COMPANY_NAME: str = ""      # 微信小程序认证主体公司全称（用于隐私政策/资质展示）
+    COMPANY_NAME: str = ""  # 微信小程序认证主体公司全称（用于隐私政策/资质展示）
 
     # Mock 网关开关（仅本地开发使用，生产环境必须关闭）
     MOCK_PAYMENT: bool = False  # 支付 Mock 网关（默认关闭，生产安全）
-    MOCK_SMS: bool = False      # 短信 Mock 网关（生产必须关闭——真实 SDK 未接入时本地开发手动设为 True）
+    MOCK_SMS: bool = (
+        False  # 短信 Mock 网关（生产必须关闭——真实 SDK 未接入时本地开发手动设为 True）
+    )
 
     # 生产短信服务商配置
-    SMS_PROVIDER: str = "mock"          # mock / tencent / aliyun
-    SMS_APP_ID: str = ""                # SDK AppID
-    SMS_APP_KEY: str = ""               # SDK AppKey / AccessKeySecret
-    SMS_SIGN_NAME: str = "DmkWords"    # 短信签名（需平台审核通过）
-    SMS_TEMPLATE_CODE: str = ""         # 验证码模板 ID
+    SMS_PROVIDER: str = "mock"  # mock / tencent / aliyun
+    SMS_APP_ID: str = ""  # SDK AppID
+    SMS_APP_KEY: str = ""  # SDK AppKey / AccessKeySecret
+    SMS_SIGN_NAME: str = "DmkWords"  # 短信签名（需平台审核通过）
+    SMS_TEMPLATE_CODE: str = ""  # 验证码模板 ID
 
     # 数据库配置
     DB_HOST: str = "localhost"

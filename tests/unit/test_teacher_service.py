@@ -30,12 +30,23 @@ def _create_test_data(db):
     db.add(user)
     db.commit()
 
-    child = Child(user_id=user.id, name="小明", age=7, grade="二年级", status=Child.STATUS_OFFICIAL)
+    child = Child(
+        user_id=user.id,
+        name="小明",
+        age=7,
+        grade="二年级",
+        status=Child.STATUS_OFFICIAL,
+    )
     db.add(child)
     db.commit()
 
-    teacher = Teacher(name="王老师", phone="13900139000", venue_id=1,
-                      introduction="10年英文教学经验", expertise="初级阅读指导")
+    teacher = Teacher(
+        name="王老师",
+        phone="13900139000",
+        venue_id=1,
+        introduction="10年英文教学经验",
+        expertise="初级阅读指导",
+    )
     db.add(teacher)
     db.commit()
 
@@ -45,8 +56,13 @@ def _create_test_data(db):
 def test_create_teacher(db):
     """创建老师"""
     svc = AdminTeacherService(db)
-    t = svc.create_teacher(name="李老师", phone="13900139001", venue_id=1,
-                           introduction="5年经验", expertise="阅读启蒙")
+    t = svc.create_teacher(
+        name="李老师",
+        phone="13900139001",
+        venue_id=1,
+        introduction="5年经验",
+        expertise="阅读启蒙",
+    )
     assert t.id is not None
     assert t.name == "李老师"
 
@@ -97,7 +113,9 @@ def test_create_schedule(db):
     """创建老师排班"""
     _, _, teacher = _create_test_data(db)
     svc = AdminTeacherService(db)
-    schedule = svc.create_schedule(teacher.id, weekday=1, start_time="10:00", end_time="11:00")
+    schedule = svc.create_schedule(
+        teacher.id, weekday=1, start_time="10:00", end_time="11:00"
+    )
     assert schedule.id is not None
     assert schedule.weekday == 1
 

@@ -14,7 +14,11 @@ from backend.domain.order.models import Order
 from backend.domain.deposit.service import DepositService
 from backend.domain.borrow.service import BorrowService
 from backend.domain.order.service import OrderService
-from backend.domain.deposit.schemas import DepositPayRequest, DepositRefundRequest, DepositDeductRequest
+from backend.domain.deposit.schemas import (
+    DepositPayRequest,
+    DepositRefundRequest,
+    DepositDeductRequest,
+)
 from backend.domain.borrow.schemas import ReturnBookRequest
 from backend.common.types import BorrowStatus, DepositStatus, PayStatus
 from backend.bootstrap import register_event_handlers
@@ -35,17 +39,31 @@ def _make_child(db):
     user = User(openid="test_sm", phone="13800138999")
     db.add(user)
     db.flush()
-    child = Child(user_id=user.id, name="状态机测试", age=7, grade="二年级",
-                  status=Child.STATUS_OFFICIAL, deposit_status=DepositStatus.UNPAID)
+    child = Child(
+        user_id=user.id,
+        name="状态机测试",
+        age=7,
+        grade="二年级",
+        status=Child.STATUS_OFFICIAL,
+        deposit_status=DepositStatus.UNPAID,
+    )
     db.add(child)
     db.flush()
     return user, child
 
 
 def _make_book(db):
-    book = Book(isbn="978SM000001", title="状态机书本", author="A",
-                ar_value=Decimal("2.0"), age_min=5, age_max=9, word_count=1000,
-                total_stock=5, available_stock=5)
+    book = Book(
+        isbn="978SM000001",
+        title="状态机书本",
+        author="A",
+        ar_value=Decimal("2.0"),
+        age_min=5,
+        age_max=9,
+        word_count=1000,
+        total_stock=5,
+        available_stock=5,
+    )
     db.add(book)
     db.flush()
     return book
@@ -61,6 +79,7 @@ class TestDepositStateMachine:
 
     def _gw(self):
         from backend.common.gateways.payment.mock import MockPaymentGateway
+
         return MockPaymentGateway()
 
     @pytest.mark.asyncio
@@ -72,11 +91,17 @@ class TestDepositStateMachine:
         await svc.pay_deposit(DepositPayRequest(child_id=child.id), self._gw(), user)
 
         svc.refund_deposit(DepositRefundRequest(child_id=child.id))
-        await svc.audit_refund(child.id, "approve", admin_id=1, payment_gateway=self._gw())
+        await svc.audit_refund(
+            child.id, "approve", admin_id=1, payment_gateway=self._gw()
+        )
         svc.mark_refunded(child.id)
 
         with pytest.raises(Exception):
-            svc.deduct_deposit(DepositDeductRequest(child_id=child.id, amount=Decimal("100"), reason="test"))
+            svc.deduct_deposit(
+                DepositDeductRequest(
+                    child_id=child.id, amount=Decimal("100"), reason="test"
+                )
+            )
 
     @pytest.mark.asyncio
     async def test_cannot_refund_already_refunded(self, db):
@@ -87,7 +112,9 @@ class TestDepositStateMachine:
         await svc.pay_deposit(DepositPayRequest(child_id=child.id), self._gw(), user)
 
         svc.refund_deposit(DepositRefundRequest(child_id=child.id))
-        await svc.audit_refund(child.id, "approve", admin_id=1, payment_gateway=self._gw())
+        await svc.audit_refund(
+            child.id, "approve", admin_id=1, payment_gateway=self._gw()
+        )
         svc.mark_refunded(child.id)
 
         with pytest.raises(Exception):
@@ -116,9 +143,13 @@ class TestBorrowStateMachine:
         child.deposit_status = DepositStatus.PAID
         db.commit()
 
-        br = BorrowRecord(child_id=child.id, book_id=book.id,
-                          borrow_time=datetime.now(), due_date=datetime.now() + timedelta(days=21),
-                          status=BorrowStatus.RETURNED)
+        br = BorrowRecord(
+            child_id=child.id,
+            book_id=book.id,
+            borrow_time=datetime.now(),
+            due_date=datetime.now() + timedelta(days=21),
+            status=BorrowStatus.RETURNED,
+        )
         db.add(br)
         db.commit()
 
@@ -132,9 +163,13 @@ class TestBorrowStateMachine:
         db.commit()
 
         svc = BorrowService(db)
-        br = BorrowRecord(child_id=child.id, book_id=book.id,
-                          borrow_time=datetime.now(), due_date=datetime.now() + timedelta(days=21),
-                          status=BorrowStatus.BORROWING)
+        br = BorrowRecord(
+            child_id=child.id,
+            book_id=book.id,
+            borrow_time=datetime.now(),
+            due_date=datetime.now() + timedelta(days=21),
+            status=BorrowStatus.BORROWING,
+        )
         db.add(br)
         db.commit()
 
@@ -148,10 +183,13 @@ class TestBorrowStateMachine:
         child.deposit_status = DepositStatus.PAID
         db.commit()
 
-        br = BorrowRecord(child_id=child.id, book_id=book.id,
-                          borrow_time=datetime.now() - timedelta(days=30),
-                          due_date=datetime.now() - timedelta(days=10),
-                          status=BorrowStatus.BORROWING)
+        br = BorrowRecord(
+            child_id=child.id,
+            book_id=book.id,
+            borrow_time=datetime.now() - timedelta(days=30),
+            due_date=datetime.now() - timedelta(days=10),
+            status=BorrowStatus.BORROWING,
+        )
         db.add(br)
         db.commit()
 
@@ -167,8 +205,14 @@ class TestOrderStateMachine:
         user, child = _make_child(db)
         db.commit()
 
-        order = Order(order_no="ORD-SM-001", user_id=user.id, child_id=child.id,
-                      type=3, amount=Decimal("5400"), pay_status=PayStatus.PAID)
+        order = Order(
+            order_no="ORD-SM-001",
+            user_id=user.id,
+            child_id=child.id,
+            type=3,
+            amount=Decimal("5400"),
+            pay_status=PayStatus.PAID,
+        )
         db.add(order)
         db.commit()
 

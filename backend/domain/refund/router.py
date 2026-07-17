@@ -63,7 +63,10 @@ def audit_refund(
             if refund and order:
                 background_tasks.add_task(
                     RefundService._execute_wechat_refund,
-                    refund.id, order.order_no, refund.refund_amount, refund.review_comment or "",
+                    refund.id,
+                    order.order_no,
+                    refund.refund_amount,
+                    refund.review_comment or "",
                 )
 
     return result
@@ -83,7 +86,9 @@ async def refund_callback(
     timestamp = request.headers.get("wechatpay-timestamp", "")
     nonce = request.headers.get("wechatpay-nonce", "")
 
-    valid = await payment_gateway.verify_callback_signature(body_str, signature, timestamp, nonce)
+    valid = await payment_gateway.verify_callback_signature(
+        body_str, signature, timestamp, nonce
+    )
     if not valid:
         raise HTTPException(status_code=400, detail="签名验证失败")
 

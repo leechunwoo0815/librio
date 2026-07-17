@@ -27,6 +27,7 @@ router = APIRouter(prefix="/admin/api/advancement", tags=["晋级管理"])
 
 # ==================== 级别管理 ====================
 
+
 @router.get("/levels", response_model=list)
 def list_levels(
     admin=Depends(require_perm("level.list")),
@@ -47,6 +48,7 @@ def create_level(
     service = AdvancementService(db)
     result = service.create_level(data)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(service.db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -68,6 +70,7 @@ def update_level(
     service = AdvancementService(db)
     result = service.update_level(level_id, data)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(service.db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -88,6 +91,7 @@ def delete_level(
     service = AdvancementService(db)
     result = service.delete_level(level_id)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(service.db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -99,6 +103,7 @@ def delete_level(
 
 
 # ==================== 成就管理 ====================
+
 
 @router.get("/achievements", response_model=list)
 def list_achievements(
@@ -120,6 +125,7 @@ def create_achievement(
     service = AdvancementService(db)
     result = service.create_achievement(data)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(service.db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -141,6 +147,7 @@ def update_achievement(
     service = AdvancementService(db)
     result = service.update_achievement(achievement_id, data)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(service.db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -161,6 +168,7 @@ def delete_achievement(
     service = AdvancementService(db)
     result = service.delete_achievement(achievement_id)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(service.db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -185,6 +193,7 @@ def list_achievement_records(
 
 # ==================== 证书管理 ====================
 
+
 @router.get("/certificates", response_model=AdminActionResponse)
 def list_certificates(
     page: int = Query(1, ge=1),
@@ -197,7 +206,9 @@ def list_certificates(
     return service.list_certificates(page, page_size)
 
 
-@router.post("/certificates/{certificate_id}/regenerate", response_model=AdminActionResponse)
+@router.post(
+    "/certificates/{certificate_id}/regenerate", response_model=AdminActionResponse
+)
 def regenerate_certificate(
     certificate_id: int,
     admin=Depends(require_perm("certificate.regenerate")),
@@ -207,6 +218,7 @@ def regenerate_certificate(
     service = AdvancementService(db)
     result = service.regenerate_certificate(certificate_id)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(service.db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -227,6 +239,7 @@ def delete_certificate(
     service = AdvancementService(db)
     result = service.delete_certificate(certificate_id)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(service.db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -238,6 +251,7 @@ def delete_certificate(
 
 
 # ==================== 测验记录 ====================
+
 
 @router.get("/quizzes", response_model=AdminActionResponse)
 def list_quizzes(
@@ -253,6 +267,7 @@ def list_quizzes(
 
 
 # ==================== 提交审核 ====================
+
 
 @router.get("/submissions", response_model=AdminActionResponse)
 def list_submissions(
@@ -279,6 +294,7 @@ def review_submission(
     service = AdvancementService(db)
     result = service.review_submission(submission_id, data)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(service.db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -290,6 +306,7 @@ def review_submission(
 
 
 # ==================== 题库管理 ====================
+
 
 @router.get("/questions", response_model=AdminActionResponse)
 def list_questions(
@@ -314,6 +331,7 @@ def create_question(
     service = AdvancementService(db)
     result = service.create_question(data)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(service.db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -335,6 +353,7 @@ def update_question(
     service = AdvancementService(db)
     result = service.update_question(question_id, data)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(service.db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -355,6 +374,7 @@ def delete_question(
     service = AdvancementService(db)
     result = service.delete_question(question_id)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(service.db)
     system_service.write_operation_log(
         admin_id=admin.id,
@@ -384,6 +404,7 @@ def bulk_import_questions(
     """批量导入题目"""
     result = service.bulk_import_questions(questions)
     from backend.domain.admin.services.system_service import AdminSystemService
+
     system_service = AdminSystemService(service.db)
     system_service.write_operation_log(
         admin_id=admin.id,

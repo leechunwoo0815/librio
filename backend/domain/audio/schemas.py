@@ -8,6 +8,7 @@ from backend.common.base_schema import BaseSchema, PaginatedResponse
 
 class AudioResponse(BaseSchema):
     """音频响应"""
+
     id: int
     filename: str
     file_url: str
@@ -25,6 +26,7 @@ class AudioResponse(BaseSchema):
 
 class AudioCreateRequest(BaseSchema):
     """创建音频请求"""
+
     filename: str = Field(..., min_length=1, max_length=255)
     file_url: str = Field(..., min_length=1, max_length=500)
     book_id: int | None = None
@@ -37,6 +39,7 @@ class AudioCreateRequest(BaseSchema):
 
 class AudioUpdateRequest(BaseSchema):
     """更新音频请求"""
+
     filename: str | None = None
     book_id: int | None = None
     page_number: int | None = None
@@ -46,4 +49,5 @@ class AudioUpdateRequest(BaseSchema):
 
 class AudioListResponse(PaginatedResponse[AudioResponse]):
     """音频列表响应"""
+
     stats: dict = {}

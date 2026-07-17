@@ -180,7 +180,11 @@ class AdminSystemService:
         )
 
         for name, Model in models_to_check.items():
-            q = self.db.query(Model).filter(Model.is_deleted == 1).order_by(Model.update_time.desc())
+            q = (
+                self.db.query(Model)
+                .filter(Model.is_deleted == 1)
+                .order_by(Model.update_time.desc())
+            )
             items = q.offset((page - 1) * page_size).limit(page_size).all()
             for item in items:
                 results.append(

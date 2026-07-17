@@ -64,5 +64,9 @@ class WeChatAuth:
             data = resp.json()
             if data.get("errcode") == 0:
                 return data["phone_info"]["phoneNumber"]
-            logger.warning("Get phone number failed: errcode=%s, errmsg=%s", data.get("errcode"), data.get("errmsg"))
+            logger.warning(
+                "Get phone number failed: errcode=%s, errmsg=%s",
+                data.get("errcode"),
+                data.get("errmsg"),
+            )
             return None

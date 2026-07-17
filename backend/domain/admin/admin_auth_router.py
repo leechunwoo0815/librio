@@ -78,7 +78,12 @@ def admin_login(
         raise UnauthorizedError("用户名或密码错误")
 
     if admin.status != Admin.STATUS_ACTIVE:
-        logger.warning("Login blocked: username=%s, ip=%s, status=%s", data.username, client_ip, admin.status)
+        logger.warning(
+            "Login blocked: username=%s, ip=%s, status=%s",
+            data.username,
+            client_ip,
+            admin.status,
+        )
         from backend.common.exceptions import ForbiddenError
 
         raise ForbiddenError("账号已禁用")

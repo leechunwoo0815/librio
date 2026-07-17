@@ -29,17 +29,31 @@ from backend.bootstrap import register_event_handlers
 
 def _seed_system_configs(session):
     for key, (value, config_type, desc) in SystemConfig.DEFAULTS.items():
-        session.add(SystemConfig(config_key=key, config_value=value, config_type=config_type, description=desc))
+        session.add(
+            SystemConfig(
+                config_key=key,
+                config_value=value,
+                config_type=config_type,
+                description=desc,
+            )
+        )
     session.commit()
 
 
 def _seed_user_child(session):
-    u = User(openid='concurrency_test', phone='13800138000')
+    u = User(openid="concurrency_test", phone="13800138000")
     session.add(u)
     session.flush()
-    c = Child(name='并发测试', user_id=u.id, english_name='Test', age=8, grade='二年级',
-              status=Child.STATUS_OFFICIAL, deposit_status=DepositStatus.PAID,
-              total_words_read=0)
+    c = Child(
+        name="并发测试",
+        user_id=u.id,
+        english_name="Test",
+        age=8,
+        grade="二年级",
+        status=Child.STATUS_OFFICIAL,
+        deposit_status=DepositStatus.PAID,
+        total_words_read=0,
+    )
     session.add(c)
     session.flush()
     return u.id, c.id
@@ -47,8 +61,10 @@ def _seed_user_child(session):
 
 @pytest.fixture
 def file_db():
-    db_path = tempfile.mktemp(suffix='.db')
-    engine = create_engine(f'sqlite:///{db_path}', connect_args={'check_same_thread': False})
+    db_path = tempfile.mktemp(suffix=".db")
+    engine = create_engine(
+        f"sqlite:///{db_path}", connect_args={"check_same_thread": False}
+    )
     Base.metadata.create_all(bind=engine)
     yield engine
     engine.dispose()
@@ -68,9 +84,18 @@ class TestConcurrencyReservation:
         s = _new_session(engine)
         _seed_system_configs(s)
         uid, cid = _seed_user_child(s)
-        b = Book(title='Test Book', author='Author', isbn='9780000000001',
-                 total_stock=5, available_stock=5, offline_available=1,
-                 ar_value=Decimal('2.0'), age_min=5, age_max=9, word_count=1000)
+        b = Book(
+            title="Test Book",
+            author="Author",
+            isbn="9780000000001",
+            total_stock=5,
+            available_stock=5,
+            offline_available=1,
+            ar_value=Decimal("2.0"),
+            age_min=5,
+            age_max=9,
+            word_count=1000,
+        )
         s.add(b)
         s.commit()
         bid = b.id
@@ -86,7 +111,9 @@ class TestConcurrencyReservation:
             session = _new_session(engine)
             try:
                 svc = ReservationService(session)
-                svc.create_reservation(ReservationCreateRequest(child_id=cid, book_id=bid))
+                svc.create_reservation(
+                    ReservationCreateRequest(child_id=cid, book_id=bid)
+                )
                 with lock:
                     results.append(True)
             except Exception as e:
@@ -101,7 +128,9 @@ class TestConcurrencyReservation:
         for t in threads:
             t.join()
 
-        assert len(results) <= 5, f"Oversell: {len(results)} reservations on 5 stock, errors: {errors[:5]}"
+        assert len(results) <= 5, (
+            f"Oversell: {len(results)} reservations on 5 stock, errors: {errors[:5]}"
+        )
         assert len(results) >= 1, f"No reservations succeeded: {errors[:5]}"
 
     def test_borrow_dedup(self, file_db):
@@ -109,13 +138,22 @@ class TestConcurrencyReservation:
         s = _new_session(engine)
         _seed_system_configs(s)
         uid, cid = _seed_user_child(s)
-        b = Book(title='Dedup Book', author='Author', isbn='9780000000002',
-                 total_stock=1, available_stock=1, offline_available=1,
-                 ar_value=Decimal('2.0'), age_min=5, age_max=9, word_count=1000)
+        b = Book(
+            title="Dedup Book",
+            author="Author",
+            isbn="9780000000002",
+            total_stock=1,
+            available_stock=1,
+            offline_available=1,
+            ar_value=Decimal("2.0"),
+            age_min=5,
+            age_max=9,
+            word_count=1000,
+        )
         s.add(b)
         s.flush()
         bid = b.id
-        copy = BookCopy(book_id=bid, barcode='DEDUP001', status=0)
+        copy = BookCopy(book_id=bid, barcode="DEDUP001", status=0)
         s.add(copy)
         s.commit()
         s.close()
@@ -130,7 +168,7 @@ class TestConcurrencyReservation:
             session = _new_session(engine)
             try:
                 svc = BorrowService(session)
-                svc.scan_and_borrow(cid, 'DEDUP001')
+                svc.scan_and_borrow(cid, "DEDUP001")
                 with lock:
                     results.append(True)
             except Exception as e:
@@ -145,7 +183,9 @@ class TestConcurrencyReservation:
         for t in threads:
             t.join()
 
-        assert len(results) == 1, f"Expected 1 borrow, got {len(results)}, errors: {errors[:5]}"
+        assert len(results) == 1, (
+            f"Expected 1 borrow, got {len(results)}, errors: {errors[:5]}"
+        )
 
         s = _new_session(engine)
         b2 = s.query(Book).filter(Book.id == bid).first()
@@ -157,15 +197,28 @@ class TestConcurrencyReservation:
         s = _new_session(engine)
         _seed_system_configs(s)
         uid, cid = _seed_user_child(s)
-        b = Book(title='Return Dedup', author='Author', isbn='9780000000003',
-                 total_stock=1, available_stock=1, offline_available=1,
-                 ar_value=Decimal('2.0'), age_min=5, age_max=9, word_count=1000)
+        b = Book(
+            title="Return Dedup",
+            author="Author",
+            isbn="9780000000003",
+            total_stock=1,
+            available_stock=1,
+            offline_available=1,
+            ar_value=Decimal("2.0"),
+            age_min=5,
+            age_max=9,
+            word_count=1000,
+        )
         s.add(b)
         s.flush()
         bid = b.id
-        br = BorrowRecord(child_id=cid, book_id=bid, borrow_time=datetime.now(),
-                          due_date=datetime.now() + timedelta(days=21),
-                          status=BorrowStatus.BORROWING)
+        br = BorrowRecord(
+            child_id=cid,
+            book_id=bid,
+            borrow_time=datetime.now(),
+            due_date=datetime.now() + timedelta(days=21),
+            status=BorrowStatus.BORROWING,
+        )
         s.add(br)
         s.commit()
         br_id = br.id
@@ -209,14 +262,16 @@ class TestConcurrencyReservation:
         s = _new_session(engine)
         _seed_system_configs(s)
         uid, cid = _seed_user_child(s)
-        d = DepositRecord(child_id=cid, amount=Decimal('1200.00'), status=DepositStatus.PAID)
+        d = DepositRecord(
+            child_id=cid, amount=Decimal("1200.00"), status=DepositStatus.PAID
+        )
         s.add(d)
         s.commit()
         s.close()
 
         register_event_handlers()
 
-        results = {'refund': 0, 'deduct': 0}
+        results = {"refund": 0, "deduct": 0}
         errors = []
         lock = threading.Lock()
 
@@ -226,7 +281,7 @@ class TestConcurrencyReservation:
                 svc = DepositService(session)
                 svc.refund_deposit(DepositRefundRequest(child_id=cid))
                 with lock:
-                    results['refund'] += 1
+                    results["refund"] += 1
             except Exception as e:
                 with lock:
                     errors.append(f"refund: {e}")
@@ -237,9 +292,13 @@ class TestConcurrencyReservation:
             session = _new_session(engine)
             try:
                 svc = DepositService(session)
-                svc.deduct_deposit(DepositDeductRequest(child_id=cid, amount=Decimal('100'), reason='test'))
+                svc.deduct_deposit(
+                    DepositDeductRequest(
+                        child_id=cid, amount=Decimal("100"), reason="test"
+                    )
+                )
                 with lock:
-                    results['deduct'] += 1
+                    results["deduct"] += 1
             except Exception as e:
                 with lock:
                     errors.append(f"deduct: {e}")
@@ -254,14 +313,19 @@ class TestConcurrencyReservation:
             t.join()
 
         s = _new_session(engine)
-        deposit = s.query(DepositRecord).filter(
-            DepositRecord.child_id == cid, DepositRecord.is_deleted == 0
-        ).first()
+        deposit = (
+            s.query(DepositRecord)
+            .filter(DepositRecord.child_id == cid, DepositRecord.is_deleted == 0)
+            .first()
+        )
         assert deposit is not None
-        assert deposit.status in (DepositStatus.REFUND_PENDING, DepositStatus.DEDUCTED), \
-            f"Expected REFUND_PENDING or DEDUCTED, got {deposit.status}"
-        assert results['refund'] + results['deduct'] >= 1, \
+        assert deposit.status in (
+            DepositStatus.REFUND_PENDING,
+            DepositStatus.DEDUCTED,
+        ), f"Expected REFUND_PENDING or DEDUCTED, got {deposit.status}"
+        assert results["refund"] + results["deduct"] >= 1, (
             f"No operations succeeded, errors: {errors[:5]}"
+        )
 
         s.close()
 
@@ -270,21 +334,47 @@ class TestConcurrencyReservation:
         s = _new_session(engine)
         _seed_system_configs(s)
         uid, cid = _seed_user_child(s)
-        b = Book(title='AntiCheat Book', author='Author', isbn='9780000000004',
-                 total_stock=1, available_stock=1, offline_available=1,
-                 ar_value=Decimal('2.0'), age_min=5, age_max=9, word_count=5000)
+        b = Book(
+            title="AntiCheat Book",
+            author="Author",
+            isbn="9780000000004",
+            total_stock=1,
+            available_stock=1,
+            offline_available=1,
+            ar_value=Decimal("2.0"),
+            age_min=5,
+            age_max=9,
+            word_count=5000,
+        )
         s.add(b)
         s.flush()
         bid = b.id
 
-        q1 = QuestionBank(book_id=bid, question_text='Q1', option_a='A', option_b='B', correct_answer='A')
-        q2 = QuestionBank(book_id=bid, question_text='Q2', option_a='A', option_b='B', correct_answer='B')
+        q1 = QuestionBank(
+            book_id=bid,
+            question_text="Q1",
+            option_a="A",
+            option_b="B",
+            correct_answer="A",
+        )
+        q2 = QuestionBank(
+            book_id=bid,
+            question_text="Q2",
+            option_a="A",
+            option_b="B",
+            correct_answer="B",
+        )
         s.add_all([q1, q2])
         s.flush()
 
         quiz_ids = []
         for _ in range(50):
-            quiz = Quiz(child_id=cid, book_id=bid, status=Quiz.STATUS_IN_PROGRESS, total_questions=2)
+            quiz = Quiz(
+                child_id=cid,
+                book_id=bid,
+                status=Quiz.STATUS_IN_PROGRESS,
+                total_questions=2,
+            )
             s.add(quiz)
             s.flush()
             quiz_ids.append(quiz.id)
@@ -303,8 +393,8 @@ class TestConcurrencyReservation:
             try:
                 svc = AdvancementService(session)
                 answers = [
-                    type('Answer', (), {'question_id': q1_id, 'selected_answer': 'A'}),
-                    type('Answer', (), {'question_id': q2_id, 'selected_answer': 'B'}),
+                    type("Answer", (), {"question_id": q1_id, "selected_answer": "A"}),
+                    type("Answer", (), {"question_id": q2_id, "selected_answer": "B"}),
                 ]
                 result = svc.submit_answers(quiz_id, answers)
                 with lock:
@@ -322,5 +412,7 @@ class TestConcurrencyReservation:
 
         s = _new_session(engine)
         child = s.query(Child).filter(Child.id == cid).first()
-        assert child.total_words_read == 5000, f"Expected 5000 words, got {child.total_words_read}"
+        assert child.total_words_read == 5000, (
+            f"Expected 5000 words, got {child.total_words_read}"
+        )
         s.close()

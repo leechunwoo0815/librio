@@ -19,9 +19,7 @@ router = APIRouter(prefix="/ar-evaluation", tags=["AR测评"])
 # ============================================================
 
 
-@router.post(
-    "/", response_model=AREvaluationResponse, status_code=201
-)
+@router.post("/", response_model=AREvaluationResponse, status_code=201)
 def create_ar_evaluation(
     data: AREvaluationCreate,
     db=Depends(get_db),
@@ -32,9 +30,7 @@ def create_ar_evaluation(
     return service.create_ar_evaluation(data)
 
 
-@router.get(
-    "/child/{child_id}", response_model=list[AREvaluationResponse]
-)
+@router.get("/child/{child_id}", response_model=list[AREvaluationResponse])
 def get_ar_evaluations(
     child_id: int,
     db=Depends(get_db),
@@ -45,9 +41,7 @@ def get_ar_evaluations(
     return service.get_ar_evaluations(child_id)
 
 
-@router.get(
-    "/child/{child_id}/latest", response_model=AREvaluationResponse | None
-)
+@router.get("/child/{child_id}/latest", response_model=AREvaluationResponse | None)
 def get_latest_ar_evaluation(
     child_id: int,
     db=Depends(get_db),

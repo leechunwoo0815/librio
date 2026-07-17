@@ -8,6 +8,7 @@ Fixes remaining drift in observation_report:
 Revision ID: b5f4e3d2c1a0
 Revises: a4b8c7d6e5f4
 """
+
 import logging
 from typing import Sequence, Union
 
@@ -44,21 +45,20 @@ def _fix_observation_report_nulls():
             f"UPDATE observation_report SET {col} = create_time "
             f"WHERE {col} IS NULL AND create_time IS NOT NULL"
         )
-        op.execute(
-            f"UPDATE observation_report SET {col} = NOW() "
-            f"WHERE {col} IS NULL"
-        )
+        op.execute(f"UPDATE observation_report SET {col} = NOW() WHERE {col} IS NULL")
 
 
 def _fix_observation_report_nullable():
     """Set NOT NULL on observation_report date columns"""
     op.alter_column(
-        "observation_report", "start_date",
+        "observation_report",
+        "start_date",
         nullable=False,
         existing_type=_col_type("observation_report", "start_date"),
     )
     op.alter_column(
-        "observation_report", "end_date",
+        "observation_report",
+        "end_date",
         nullable=False,
         existing_type=_col_type("observation_report", "end_date"),
     )
@@ -69,12 +69,15 @@ def _sync_all_column_comments():
     for table, column, comment in _ALL_COMMENTS:
         try:
             op.alter_column(
-                table, column,
+                table,
+                column,
                 comment=comment,
                 existing_type=_col_type(table, column),
             )
         except Exception as e:
-            logger.warning("Comment sync failed: %s.%s = %s (%s)", table, column, comment, e)
+            logger.warning(
+                "Comment sync failed: %s.%s = %s (%s)", table, column, comment, e
+            )
 
 
 _ALL_COMMENTS: list[tuple[str, str, str]] = [

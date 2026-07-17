@@ -1,5 +1,6 @@
 # backend/domain/admin/services/order_service.py
 """管理端订单 Service — 从 AdminService 拆分出来的独立域服务。"""
+
 import logging
 import secrets
 from datetime import datetime
@@ -80,12 +81,20 @@ class AdminOrderService:
 
         users = {}
         if user_ids:
-            for u in self.db.query(User).filter(User.id.in_(user_ids), User.is_deleted == 0).all():
+            for u in (
+                self.db.query(User)
+                .filter(User.id.in_(user_ids), User.is_deleted == 0)
+                .all()
+            ):
                 users[u.id] = u
 
         children = {}
         if child_ids:
-            for c in self.db.query(Child).filter(Child.id.in_(child_ids), Child.is_deleted == 0).all():
+            for c in (
+                self.db.query(Child)
+                .filter(Child.id.in_(child_ids), Child.is_deleted == 0)
+                .all()
+            ):
                 children[c.id] = c
 
         items = []
@@ -195,7 +204,11 @@ class AdminOrderService:
         # 管理员输入的金额始终覆盖打折价
         amount = data.get("amount")
         pay_type = data.get("pay_type")
-        order_no = result.get("order_no") if isinstance(result, dict) else getattr(result, "order_no", None)
+        order_no = (
+            result.get("order_no")
+            if isinstance(result, dict)
+            else getattr(result, "order_no", None)
+        )
         if order_no:
             order = (
                 self.db.query(Order)
@@ -217,7 +230,11 @@ class AdminOrderService:
         from passlib.context import CryptContext
 
         # 检查手机号
-        existing = self.db.query(User).filter(User.phone == data["phone"], User.is_deleted == 0).first()
+        existing = (
+            self.db.query(User)
+            .filter(User.phone == data["phone"], User.is_deleted == 0)
+            .first()
+        )
         if existing:
             raise ValidationError(f"手机号 {data['phone']} 已存在")
         # 创建用户
@@ -250,9 +267,13 @@ class AdminOrderService:
             child_id=child.id,
             type=data["order_type"],
             amount=data.get("amount") or 0,
-            pay_status=PayStatus.PAID if data.get("amount") and data.get("pay_type") else PayStatus.PENDING,
+            pay_status=PayStatus.PAID
+            if data.get("amount") and data.get("pay_type")
+            else PayStatus.PENDING,
             pay_type=data.get("pay_type"),
-            pay_time=datetime.now() if data.get("amount") and data.get("pay_type") else None,
+            pay_time=datetime.now()
+            if data.get("amount") and data.get("pay_type")
+            else None,
             remark=data.get("remark", ""),
         )
         self.db.add(order)

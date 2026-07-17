@@ -1,4 +1,5 @@
 """Tests for WeChat QR code endpoint"""
+
 import os
 
 import pytest
@@ -51,7 +52,9 @@ def test_wechat_endpoint_is_async():
     import inspect
     from backend.domain.wechat.router import get_qr_code
 
-    assert inspect.iscoroutinefunction(get_qr_code), "QR code endpoint must be async def"
+    assert inspect.iscoroutinefunction(get_qr_code), (
+        "QR code endpoint must be async def"
+    )
 
 
 def test_wechat_access_token_double_check_locking():
@@ -90,10 +93,13 @@ def test_wechat_qr_uses_cached_token(monkeypatch):
     def mock_get(*args, **kwargs):
         nonlocal token_fetch_count
         token_fetch_count += 1
-        return httpx.Response(200, json={
-            "access_token": "mock_token_123",
-            "expires_in": 7200,
-        })
+        return httpx.Response(
+            200,
+            json={
+                "access_token": "mock_token_123",
+                "expires_in": 7200,
+            },
+        )
 
     def mock_post(*args, **kwargs):
         return httpx.Response(
@@ -124,10 +130,13 @@ def test_wechat_qr_fetch_token_fails(monkeypatch):
     _clear_token_cache()
 
     def mock_get(*args, **kwargs):
-        return httpx.Response(200, json={
-            "errcode": 40001,
-            "errmsg": "invalid credential",
-        })
+        return httpx.Response(
+            200,
+            json={
+                "errcode": 40001,
+                "errmsg": "invalid credential",
+            },
+        )
 
     monkeypatch.setattr("httpx.get", mock_get)
 
@@ -143,10 +152,13 @@ def test_wechat_qr_api_error_raises(monkeypatch):
     _clear_token_cache()
 
     def mock_get(*args, **kwargs):
-        return httpx.Response(200, json={
-            "access_token": "mock_token_456",
-            "expires_in": 7200,
-        })
+        return httpx.Response(
+            200,
+            json={
+                "access_token": "mock_token_456",
+                "expires_in": 7200,
+            },
+        )
 
     def mock_post(*args, **kwargs):
         return httpx.Response(

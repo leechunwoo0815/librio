@@ -19,38 +19,49 @@ class AdminRefundService:
     def __init__(self, db: Session):
         self.db = db
 
-    def list_refunds(self, page: int = 1, page_size: int = 20, status: str = None) -> dict:
+    def list_refunds(
+        self, page: int = 1, page_size: int = 20, status: str = None
+    ) -> dict:
         """获取退款列表 — 带分页"""
-        query = self.db.query(RefundApplication).filter(RefundApplication.is_deleted == 0)
+        query = self.db.query(RefundApplication).filter(
+            RefundApplication.is_deleted == 0
+        )
         if status:
             query = query.filter(RefundApplication.status == status)
 
         total = query.count()
-        refunds = query.order_by(
-            RefundApplication.create_time.desc()
-        ).offset(
-            (page - 1) * page_size
-        ).limit(page_size).all()
+        refunds = (
+            query.order_by(RefundApplication.create_time.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+            .all()
+        )
 
         # 批量查询 order，避免 N+1
         order_ids = list(set(r.order_id for r in refunds if r.order_id))
         orders = {}
         if order_ids:
-            for o in self.db.query(Order).filter(Order.id.in_(order_ids), Order.is_deleted == 0).all():
+            for o in (
+                self.db.query(Order)
+                .filter(Order.id.in_(order_ids), Order.is_deleted == 0)
+                .all()
+            ):
                 orders[o.id] = o
 
         result = []
         for r in refunds:
             order = orders.get(r.order_id)
-            result.append({
-                "id": r.id,
-                "order_id": r.order_id,
-                "order_no": order.order_no if order else None,
-                "amount": str(r.amount) if r.amount else "0",
-                "reason": r.reason,
-                "status": r.status,
-                "create_time": r.create_time.isoformat() if r.create_time else None,
-            })
+            result.append(
+                {
+                    "id": r.id,
+                    "order_id": r.order_id,
+                    "order_no": order.order_no if order else None,
+                    "amount": str(r.amount) if r.amount else "0",
+                    "reason": r.reason,
+                    "status": r.status,
+                    "create_time": r.create_time.isoformat() if r.create_time else None,
+                }
+            )
 
         return {
             "items": result,
@@ -64,7 +75,9 @@ class AdminRefundService:
         """批准退款"""
         refund = (
             self.db.query(RefundApplication)
-            .filter(RefundApplication.id == refund_id, RefundApplication.is_deleted == 0)
+            .filter(
+                RefundApplication.id == refund_id, RefundApplication.is_deleted == 0
+            )
             .first()
         )
         if not refund:
@@ -94,7 +107,11 @@ class AdminRefundService:
 
     def get_refund_and_order(self, refund_id: int) -> tuple:
         """获取退款申请和关联订单"""
-        refund = self.db.query(RefundApplication).filter(RefundApplication.id == refund_id).first()
+        refund = (
+            self.db.query(RefundApplication)
+            .filter(RefundApplication.id == refund_id)
+            .first()
+        )
         if not refund:
             raise NotFoundError("退款申请不存在")
 
@@ -135,7 +152,9 @@ class AdminRefundService:
             refund_amount=Decimal(str(refund_amount)),
             used_days=used_days,
             reason=reason,
-            status=RefundApplication.STATUS_APPROVED if is_admin else RefundApplication.STATUS_PENDING,
+            status=RefundApplication.STATUS_APPROVED
+            if is_admin
+            else RefundApplication.STATUS_PENDING,
             reviewer_id=admin.id if is_admin else None,
             review_time=datetime.now() if is_admin else None,
         )
