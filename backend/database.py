@@ -36,14 +36,16 @@ def _get_engine():
     """
     global _engine
     if _engine is None:
-        _engine = create_engine(
-            settings.DATABASE_URL,
-            pool_size=10,
-            max_overflow=20,
-            pool_pre_ping=True,
-            pool_recycle=3600,
-            echo=settings.DEBUG,
-        )
+        url = settings.DATABASE_URL
+        kwargs = {"echo": settings.DEBUG}
+        if url.startswith("sqlite"):
+            kwargs["connect_args"] = {"check_same_thread": False}
+        else:
+            kwargs["pool_size"] = 10
+            kwargs["max_overflow"] = 20
+            kwargs["pool_pre_ping"] = True
+            kwargs["pool_recycle"] = 3600
+        _engine = create_engine(url, **kwargs)
     return _engine
 
 
