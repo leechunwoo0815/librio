@@ -32,6 +32,6 @@ jobs:
           MOCK_PAYMENT: "true"
           MOCK_SMS: "true"
           DEBUG: "true"
-          SECRET_KEY: "ci-secret-key-not-for-production"
+          SECRET_KEY: "ci-test-key-short"
           DATABASE_URL: "sqlite:///:memory:"
           ENABLE_TEST_TOKEN: "true"
