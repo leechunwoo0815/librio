@@ -317,8 +317,8 @@ class ReadingService:
         from backend.domain.reading.models import ReadingSession
         from backend.domain.book.models import Book
 
-        sessions = (
-            self.db.query(ReadingSession)
+        rows = (
+            self.db.query(ReadingSession, Book.title)
             .join(Book, ReadingSession.book_id == Book.id)
             .filter(
                 ReadingSession.child_id == child_id,
@@ -330,11 +330,13 @@ class ReadingService:
         )
         return [
             {
-                "date": s.start_time.strftime("%Y-%m-%d") if s.start_time else "",
-                "book_name": s.book.title if s.book else "",
-                "pages": f"{s.pages_read}页" if s.pages_read else "0页",
+                "date": session.start_time.strftime("%Y-%m-%d")
+                if session.start_time
+                else "",
+                "book_name": book_title or "",
+                "pages": f"{session.pages_read}页" if session.pages_read else "0页",
             }
-            for s in sessions
+            for session, book_title in rows
         ]
 
     def get_streak(self, child_id: int) -> StreakResponse:
