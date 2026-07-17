@@ -2,7 +2,7 @@
 
 > **生成时间**: 2026-07-17 GMT+8 (v11)
 > **项目版本**: V3.10 — CI/CD 全量覆盖完成
-> **项目状态**: ✅ CI 7 项全绿 | 36 新测 + 前端静态扫描 + 专家复核零新增阻塞 | ruff 0/0/0 | 210 pytest / 5 skip | behave 138/970 | API 契约 0 mismatch | 模型 53 表一致
+> **项目状态**: ✅ CI 7 项全绿 | 第 4 轮深度穿透: 零 P0 | SQL注入/Import循环/ORM漂移全通过 | rate limit 缺口 P1 | 死代码/覆盖率 P2
 
 ---
 
@@ -120,12 +120,27 @@ DmkWords 是 3-15 岁儿童英文阅读 OMO 平台：微信小程序 31 页 + PC
 
 ---
 
-### 前端静态扫描
+### 深度穿透审查
 
 | 文件 | 说明 |
 |------|------|
-| `docs/frontend-static-scan_20260717.md` | 全量静态 Bug 扫描报告（P0=6, P1=21, P2=305, P3=65） |
-| `专家意见/静态扫描复核.md` | 专家复核结论：P0 ×6 全假阳性，无新增阻塞 |
+| `专家意见/深度穿透审查-第4轮.md` | 第 4 轮深度审查：pytest-cov / vulture / rate-limit / SQL注入 / Import循环 / ORM漂移 |
+| `docs/static-analysis-report_20260717.md` | 静态分析报告：mypy 571 / Bandit 5 / Semgrep 2 / pip-audit 1 CVE |
+| `docs/frontend-static-scan_20260717.md` | 全量前端静态扫描 + 专家复核（P0×6 全假阳性） |
+
+### 第 4 轮穿透审查结论
+
+| 维度 | 结果 |
+|------|------|
+| SQL 注入 | ✅ 零原始 SQL，纯 ORM |
+| Import 循环 | ✅ 145 文件 / 21 域，零循环 |
+| ORM 漂移 | ✅ alembic check 无漂移 |
+| 死代码 (vulture) | ⚠️ 50+ 处，`BookOverdueEvent` 定义未使用，`PayType` 6 值只用 1，`COMPANY_NAME` 定义无读取 |
+| 测试覆盖率 (pytest-cov) | ⚠️ 57% 总量，activity/service.py 仅 12%，7 个核心 service < 30% |
+| Rate Limit | ⚠️ 仅 3 个管理端端点有保护，**9 个资金/用户接口零防护** (P1) |
+| DB 连接泄漏 | ⚠️ test_teacher_service 存在 ResourceWarning |
+
+**P1**: 资金接口无 rate limit（建议生产 nginx `limit_req_zone`）。其余 P2 非阻塞。
 
 ## 四、关键文件索引
 
@@ -139,7 +154,7 @@ DmkWords 是 3-15 岁儿童英文阅读 OMO 平台：微信小程序 31 页 + PC
 | `tests/unit/test_new_routes_http.py` | 21 个 HTTP 层测试 |
 | `docs/ci-verification-strict_20260717.md` | 第一轮严格验证报告 |
 | `docs/ci-verification-strict-round2_20260717.md` | 第二轮严格验证报告 |
-| `docs/ci-verification-strict-round3_20260717.md` | 第三轮严格验证报告（暂缺，见摘要） |
+| `docs/ci-verification-strict-round3_20260717.md` | 第三轮严格验证报告 |
 
 ### 本轮修改
 
