@@ -71,7 +71,6 @@ def _create_book(db, title="测试图书", theme="文学"):
 class TestGetTransferRecords:
     def test_returns_records_for_current_user(self, db):
         from backend.domain.child.service import ChildService
-        from backend.domain.child.repository import ChildRepository
         from backend.domain.child.benefit_transfer_model import (
             BenefitTransferApplication,
         )
@@ -98,7 +97,6 @@ class TestGetTransferRecords:
 
     def test_other_user_records_not_included(self, db):
         from backend.domain.child.service import ChildService
-        from backend.domain.child.repository import ChildRepository
         from backend.domain.child.benefit_transfer_model import (
             BenefitTransferApplication,
         )
@@ -123,7 +121,6 @@ class TestGetTransferRecords:
 
     def test_empty_when_no_records(self, db):
         from backend.domain.child.service import ChildService
-        from backend.domain.child.repository import ChildRepository
 
         svc = ChildService(db)
         user = _create_user(db)
@@ -139,7 +136,6 @@ class TestGetTransferRecords:
 class TestGetRelatedBooks:
     def test_returns_books_with_same_theme(self, db):
         from backend.domain.book.service import BookService
-        from backend.domain.book.repository import BookRepository, BookCopyRepository
 
         svc = BookService(db)
         book1 = _create_book(db, "书A", theme="文学")
@@ -147,13 +143,12 @@ class TestGetRelatedBooks:
         _create_book(db, "书C", theme="科学")  # different theme
 
         related = svc.get_related_books(book1.id)
-        titles = [b.title for b in related]
-        assert "书B" in titles
-        assert "书C" not in titles
+        related_ids = [b.id for b in related]
+        assert book2.id in related_ids
+        assert "书C" not in [b.title for b in related]
 
     def test_excludes_self(self, db):
         from backend.domain.book.service import BookService
-        from backend.domain.book.repository import BookRepository, BookCopyRepository
 
         svc = BookService(db)
         book = _create_book(db, "孤独的书", theme="哲学")
@@ -163,7 +158,6 @@ class TestGetRelatedBooks:
 
     def test_empty_when_no_related(self, db):
         from backend.domain.book.service import BookService
-        from backend.domain.book.repository import BookRepository, BookCopyRepository
 
         svc = BookService(db)
         book = _create_book(db, "唯一的书", theme="唯一主题")
@@ -173,7 +167,6 @@ class TestGetRelatedBooks:
 
     def test_raises_on_nonexistent_book(self, db):
         from backend.domain.book.service import BookService
-        from backend.domain.book.repository import BookRepository, BookCopyRepository
         from backend.common.exceptions import NotFoundError
 
         svc = BookService(db)
@@ -182,7 +175,6 @@ class TestGetRelatedBooks:
 
     def test_respects_limit(self, db):
         from backend.domain.book.service import BookService
-        from backend.domain.book.repository import BookRepository, BookCopyRepository
 
         svc = BookService(db)
         book = _create_book(db, "主体", theme="热门")
@@ -270,7 +262,6 @@ class TestGetCheckinRecords:
 class TestDeleteChild:
     def test_soft_delete_child(self, db):
         from backend.domain.child.service import ChildService
-        from backend.domain.child.repository import ChildRepository
 
         svc = ChildService(db)
         user = _create_user(db)
@@ -286,7 +277,6 @@ class TestDeleteChild:
 
     def test_raises_when_active_borrows_exist(self, db):
         from backend.domain.child.service import ChildService
-        from backend.domain.child.repository import ChildRepository
         from backend.common.exceptions import ValidationError
         from backend.domain.borrow.models import BorrowRecord
         from datetime import datetime
@@ -311,7 +301,6 @@ class TestDeleteChild:
 
     def test_raises_on_nonexistent_child(self, db):
         from backend.domain.child.service import ChildService
-        from backend.domain.child.repository import ChildRepository
         from backend.common.exceptions import NotFoundError
 
         svc = ChildService(db)
@@ -321,7 +310,6 @@ class TestDeleteChild:
 
     def test_raises_on_other_users_child(self, db):
         from backend.domain.child.service import ChildService
-        from backend.domain.child.repository import ChildRepository
         from backend.common.exceptions import ForbiddenError
 
         svc = ChildService(db)
