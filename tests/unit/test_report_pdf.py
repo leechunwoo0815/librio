@@ -3,6 +3,10 @@ import os
 
 import pytest
 
+from fastapi.testclient import TestClient
+from backend.main import app
+from backend.middleware.auth import create_access_token
+
 try:
     import weasyprint  # noqa: F401
     PDF_AVAILABLE = True
@@ -10,10 +14,6 @@ except ImportError:
     PDF_AVAILABLE = False
 
 HAS_MYSQL = not os.environ.get("DATABASE_URL", "").startswith("sqlite")
-
-from fastapi.testclient import TestClient
-from backend.main import app
-from backend.middleware.auth import create_access_token
 
 client = TestClient(app)
 
