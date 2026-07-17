@@ -26,7 +26,7 @@ jobs:
         with:
           python-version: "3.13"
           cache: pip
-      - run: pip install -r requirements.txt pytest httpx
+      - run: pip install -r requirements.txt pytest pytest-asyncio httpx
       - run: python -m pytest tests/ -x -q --tb=short
         env:
           MOCK_PAYMENT: "true"
