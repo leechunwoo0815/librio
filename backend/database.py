@@ -46,6 +46,8 @@ def _get_engine():
             kwargs["pool_pre_ping"] = True
             kwargs["pool_recycle"] = 3600
         _engine = create_engine(url, **kwargs)
+        if url.startswith("sqlite"):
+            Base.metadata.create_all(bind=_engine)
     return _engine
 
 
