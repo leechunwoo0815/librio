@@ -1,15 +1,14 @@
-from logging.config import fileConfig
-
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
-
-from alembic import context
-
-# Import all models so Alembic can detect them
+"""
+Verify all ORM models are self-consistent and can create their schema on SQLite.
+This is a lightweight alternative to `alembic check` that works without MySQL.
+"""
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+os.environ["MOCK_PAYMENT"] = "true"
+os.environ["MOCK_SMS"] = "true"
 
+from sqlalchemy import create_engine
 from backend.database import Base
 
 # Import all domain models to register them with Base.metadata
@@ -41,49 +40,19 @@ from backend.domain.audio.models import AudioFile  # noqa: F401
 from backend.common.dead_letter_model import DeadLetterEvent  # noqa: F401
 from backend.common.config_audit_model import ConfigAuditLog  # noqa: F401
 
-# this is the Alembic Config object
-config = context.config
+errors = []
 
-# Allow DATABASE_URL env var to override alembic.ini (for CI/testing)
-db_url = os.environ.get("DATABASE_URL")
-if db_url:
-    config.set_main_option("sqlalchemy.url", db_url)
+try:
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(bind=engine)
+    tables = Base.metadata.tables
+    print(f"OK: {len(tables)} tables created on SQLite")
+except Exception as e:
+    errors.append(f"Schema creation failed: {e}")
 
-# Interpret the config file for Python logging
-if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+if errors:
+    for err in errors:
+        print(f"FAIL: {err}")
+    sys.exit(1)
 
-# Set target metadata to our Base
-target_metadata = Base.metadata
-
-
-def run_migrations_offline() -> None:
-    """Run migrations in 'offline' mode."""
-    url = config.get_main_option("sqlalchemy.url")
-    context.configure(
-        url=url,
-        target_metadata=target_metadata,
-        literal_binds=True,
-        dialect_opts={"paramstyle": "named"},
-    )
-    with context.begin_transaction():
-        context.run_migrations()
-
-
-def run_migrations_online() -> None:
-    """Run migrations in 'online' mode."""
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
-    with connectable.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
-        with context.begin_transaction():
-            context.run_migrations()
-
-
-if context.is_offline_mode():
-    run_migrations_offline()
-else:
-    run_migrations_online()
+print("Model consistency check: PASSED")
