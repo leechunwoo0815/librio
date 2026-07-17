@@ -125,22 +125,24 @@ DmkWords 是 3-15 岁儿童英文阅读 OMO 平台：微信小程序 31 页 + PC
 | 文件 | 说明 |
 |------|------|
 | `专家意见/深度穿透审查-第4轮.md` | 第 4 轮深度审查：pytest-cov / vulture / rate-limit / SQL注入 / Import循环 / ORM漂移 |
+| `专家意见/管理后台深度审查.md` | 管理台 37 模板 + 7 JS 逐页审查 |
 | `docs/static-analysis-report_20260717.md` | 静态分析报告：mypy 571 / Bandit 5 / Semgrep 2 / pip-audit 1 CVE |
 | `docs/frontend-static-scan_20260717.md` | 全量前端静态扫描 + 专家复核（P0×6 全假阳性） |
 
-### 第 4 轮穿透审查结论
+### 审查结论汇总
 
 | 维度 | 结果 |
 |------|------|
 | SQL 注入 | ✅ 零原始 SQL，纯 ORM |
 | Import 循环 | ✅ 145 文件 / 21 域，零循环 |
 | ORM 漂移 | ✅ alembic check 无漂移 |
-| 死代码 (vulture) | ⚠️ 50+ 处，`BookOverdueEvent` 定义未使用，`PayType` 6 值只用 1，`COMPANY_NAME` 定义无读取 |
-| 测试覆盖率 (pytest-cov) | ⚠️ 57% 总量，activity/service.py 仅 12%，7 个核心 service < 30% |
-| Rate Limit | ⚠️ 仅 3 个管理端端点有保护，**9 个资金/用户接口零防护** (P1) |
-| DB 连接泄漏 | ⚠️ test_teacher_service 存在 ResourceWarning |
+| 管理台 37 模板 | ⚠️ 5 个真实发现：`escapeHtml` 冲突、`filterTab` 类型、22 处 null 保护缺失、27/37 innerHTML、全局函数污染 |
+| 死代码 (vulture) | ⚠️ `BookOverdueEvent` 未使用、`PayType` 6 值只用 1、`COMPANY_NAME` 定义无读取 |
+| 测试覆盖率 | ⚠️ 57% 总量，activity/service.py 仅 12%，7 个核心 service < 30% |
+| Rate Limit | ⚠️ 仅 3 个端点有保护，**9 个资金/用户接口零防护** (P1) |
+| 前端静态扫描 | ⚠️ P0×6 全假阳性（专家复核确认） |
 
-**P1**: 资金接口无 rate limit（建议生产 nginx `limit_req_zone`）。其余 P2 非阻塞。
+**P1**: 资金接口无 rate limit（建议生产 nginx `limit_req_zone`）。**管理后台无阻塞 bug，所有 37 页可用。** 建议下一迭代将内联脚本收敛到 page JS 文件。
 
 ## 四、关键文件索引
 
