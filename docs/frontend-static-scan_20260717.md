@@ -1,9 +1,40 @@
 # 前端全量静态 Bug 扫描报告
 
-> **生成时间**: 2026-07-17 GMT+8  
+> **生成时间**: 2026-07-17 GMT+8 (v2 — 附专家复核结论)  
 > **扫描范围**: 小程序 45 JS + 45 WXML + 45 WXSS | 管理台 33 CSS + 37 HTML | 12 组件  
 > **扫描方式**: 正则静态分析 (Python)，逐文件 grep 模式匹配  
 > **审计用途**: 人工专家审查 — 逐条确认真/误报
+
+---
+
+## 专家复核结论
+
+**复核人**: 专家团队 | **复核文件**: `专家意见/静态扫描复核.md`  
+**核心结论: P0 ×6 = 全部假阳性。P1 大量误报。实际有效约 10-12 项。**
+
+### P0 ×6 复核明细
+
+| # | 文件 | 扫描报告 | 专家发现 | 判定 |
+|---|------|---------|---------|------|
+| 1 | child-manage.js:44 | `.find()` 无保护 | L42 `const safeChildren = children \|\| []` 前置保护 | 假阳性 |
+| 2 | benefit-transfer.js:46 | `.find()` 无保护 | L44 同上模式 | 假阳性 |
+| 3 | messages.js:133 | `.find()` 无保护 | L24 `messages: []` 初始值 + L134 `if (msg && ...)` 双保险 | 假阳性 |
+| 4 | reader.js:78 | `.find()` 无保护 | L76 `if (borrows && borrows.length > 0)` 前置守卫 | 假阳性 |
+| 5 | observation-report.js:116 | `.find()` 无保护 | API 返回 `List[LevelResponse]` 类型保证 + try/catch | 低假阳性 |
+| 6 | activity-list.js:83 | `.find()` 无保护 | L20 `activities: []` + L38 `Array.isArray` 三态兜底 | 假阳性 |
+
+### 主要误报原因
+
+1. **线性扫描局限**: guard 在 `.find()` 所在行前面几行 (`\|\| []` 赋值给变量)，扫描只检查同一行和上一行，遗漏上文变量保护。
+2. **类型系统保障**: observation-report.js 的 API schema 从 Pydantic `List[LevelResponse]` 派生，前端不可能收到 `null` 数组。
+3. **有意为之**: 空 catch 块是震动功能/设备检测的优雅降级；`reader.js` 的定时器是 3 秒打卡动画，不会泄露。
+
+### 剩余有效发现（约 10-12 项）
+
+- `.filter()` 中部分真实裸调用（~10 处，需人工确认）
+- `app.js` 缺全局异常 `onError` 捕获
+
+**结论: 无新增阻塞 bug。扫描方法有价值但假阳性率偏高，不应按原始数字直接施工。**
 
 ---
 
