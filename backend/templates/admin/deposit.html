@@ -95,7 +95,9 @@
     currentFilter = status;
     document.querySelectorAll('.tabs .tab').forEach(function(t) { t.classList.remove('active'); });
     btn.classList.add('active');
-    var filtered = status ? allDeposits.filter(function(d) { return d.status === status || d.status === status.toLowerCase(); }) : allDeposits;
+    var statusMap = { PAID: 1, REFUNDING: 4, REFUNDED: 2, DEDUCTED: 3 };
+    var statusVal = statusMap[status];
+    var filtered = statusVal !== undefined ? allDeposits.filter(function(d) { return d.status === statusVal; }) : allDeposits;
     renderDeposits(filtered);
   }
 

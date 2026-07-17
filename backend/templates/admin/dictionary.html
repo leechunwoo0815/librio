@@ -92,12 +92,13 @@
 var currentPage = 1;
 var pageSize = 15;
 
-function escapeHtml(str) {
-  if (!str) return '';
-  var div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}
+function safeEl(id) { return document.getElementById(id); }
+function setText(id, val) { var el = safeEl(id); if (el) el.textContent = val; }
+function setVal(id, val) { var el = safeEl(id); if (el) el.value = val; }
+function setHtml(id, val) { var el = safeEl(id); if (el) el.innerHTML = val; }
+function showModal(id) { var el = safeEl(id); if (el) el.classList.add('show'); }
+function hideModal(id) { var el = safeEl(id); if (el) el.classList.remove('show'); }
+function setOnClick(id, fn) { var el = safeEl(id); if (el) el.onclick = fn; }
 
 function getTagClass(level) {
   if (!level) return 'tag-ar2';
@@ -118,16 +119,18 @@ function getTagLabel(level) {
 }
 
 async function loadWords() {
-  var keyword = document.getElementById('searchInput').value.trim();
-  var level = document.getElementById('levelFilter').value;
-  var tbody = document.getElementById('wordBody');
+  var keywordEl = safeEl('searchInput');
+  var levelEl = safeEl('levelFilter');
+  var keyword = keywordEl ? keywordEl.value.trim() : '';
+  var level = levelEl ? levelEl.value : '';
+  var tbody = safeEl('wordBody'); if (!tbody) return;
   try {
     var params = '?page=' + currentPage + '&page_size=' + pageSize;
     if (keyword) params += '&keyword=' + encodeURIComponent(keyword);
     if (level) params += '&level=' + encodeURIComponent(level);
     var r = await api.get('/admin/api/dictionary/search' + params);
     var items = r.items || r || [];
-    document.getElementById('totalCount').textContent = '共 ' + (r.total || items.length) + ' 个词条';
+    setText('totalCount', '共 ' + (r.total || items.length) + ' 个词条');
     if (items.length === 0) {
       tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted p-24">暂无词条</td></tr>';
       return;
@@ -146,11 +149,11 @@ async function loadWords() {
       '</tr>';
     }).join('');
     var total = r.total || items.length;
-    document.getElementById('paginationInfo').textContent = Math.min((currentPage - 1) * pageSize + 1, total) + '-' + Math.min(currentPage * pageSize, total) + ' / ' + total;
+    setText('paginationInfo', Math.min((currentPage - 1) * pageSize + 1, total) + '-' + Math.min(currentPage * pageSize, total) + ' / ' + total);
     pageUi(total, pageSize);
   } catch (e) {
     tbody.innerHTML = '<tr><td colspan="6" class="text-center text-error p-24">加载失败: ' + escapeHtml(e.message) + '</td></tr>';
-    document.getElementById('paginationBtns').innerHTML = '';
+    setHtml('paginationBtns', '');
   }
 }
 
@@ -166,7 +169,7 @@ function pageUi(total, pageSize) {
   }
   html += '<button class="action-sm" ' + (currentPage >= pages ? 'disabled' : 'onclick="goPage(' + (currentPage + 1) + ')"') + '>下一页</button>';
   html += '<button class="action-sm" ' + (currentPage >= pages ? 'disabled' : 'onclick="goPage(' + pages + ')"') + '>末页</button>';
-  document.getElementById('paginationBtns').innerHTML = html;
+  setHtml('paginationBtns', html);
 }
 
 function goPage(p) {
@@ -180,9 +183,9 @@ function changePageSize(newSize) {
 }
 
   function showConfirmDialog(title, msg, onConfirm) {
-    document.querySelector('#confirmDialog h2').textContent = title;
-    document.getElementById('confirmMsg').textContent = msg;
-    document.getElementById('confirmBtn').onclick = function() {
+    var titleEl = document.querySelector('#confirmDialog h2'); if (titleEl) titleEl.textContent = title;
+    setText('confirmMsg', msg);
+    setOnClick('confirmBtn', function() {
       closeModal('confirmDialog');
       onConfirm();
     };
@@ -201,33 +204,35 @@ function changePageSize(newSize) {
   }
 
 function openAddModal() {
-  document.getElementById('editId').value = '';
-  document.getElementById('modalTitle').textContent = '添加单词';
-  document.getElementById('submitBtn').textContent = '保存';
-  document.getElementById('wordForm').reset();
-  document.getElementById('wordModal').classList.add('show');
+  setVal('editId', '');
+  setText('modalTitle', '添加单词');
+  setText('submitBtn', '保存');
+  var wf = safeEl('wordForm'); if (wf) wf.reset();
+  showModal('wordModal');
 }
 
 function editWord(id, word, phonetic, cnDef, pos, arLevel) {
-  document.getElementById('editId').value = id;
-  document.getElementById('modalTitle').textContent = '编辑单词';
-  document.getElementById('submitBtn').textContent = '保存修改';
-  var form = document.getElementById('wordForm');
-  form.elements['word'].value = word;
-  form.elements['phonetic'].value = phonetic;
-  form.elements['cn_definition'].value = cnDef;
-  form.elements['pos'].value = pos;
-  form.elements['ar_level'].value = arLevel || '';
-  document.getElementById('wordModal').classList.add('show');
+  setVal('editId', id);
+  setText('modalTitle', '编辑单词');
+  setText('submitBtn', '保存修改');
+  var form = safeEl('wordForm');
+  if (form) {
+    form.elements['word'].value = word;
+    form.elements['phonetic'].value = phonetic;
+    form.elements['cn_definition'].value = cnDef;
+    form.elements['pos'].value = pos;
+    form.elements['ar_level'].value = arLevel || '';
+  }
+  showModal('wordModal');
 }
 
 function closeWordModal() {
-  document.getElementById('wordModal').classList.remove('show');
+  hideModal('wordModal');
 }
 
 async function submitWord(e) {
   e.preventDefault();
-  var form = document.getElementById('wordForm');
+  var form = safeEl('wordForm');
   var fd = new FormData(form);
   var body = {};
   for (var [k, v] of fd.entries()) {
@@ -239,7 +244,8 @@ async function submitWord(e) {
       body[k] = v;
     }
   }
-  var editId = document.getElementById('editId').value;
+  var editIdEl = safeEl('editId');
+  var editId = editIdEl ? editIdEl.value : '';
   try {
     if (editId) {
       await api.put('/admin/api/dictionary/' + editId, body);
