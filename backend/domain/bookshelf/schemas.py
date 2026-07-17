@@ -24,7 +24,13 @@ class BookshelfResponse(BaseSchema):
     book_title: str | None = None
     book_cover: str | None = None
     add_time: datetime | None = None
-    finish_time: datetime | None = None
+    finish_date: str | None = None
+    title: str | None = None
+    author: str | None = None
+    ar_value: float | None = None
+    word_count: int | None = None
+    cover_emoji: str | None = None
+    cover_bg: str | None = None
 
 
 class FavoriteAddRequest(BaseSchema):
@@ -42,3 +48,6 @@ class FavoriteResponse(BaseSchema):
     book_title: str | None = None
     book_cover: str | None = None
     create_time: datetime | None = None
+    title: str | None = None
+    author: str | None = None
+    ar_value: float | None = None

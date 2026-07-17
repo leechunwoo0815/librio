@@ -2,46 +2,48 @@
 <view class="login-container">
   <view class="logo-area">
     <view class="logo-icon">
-      <text class="logo-emoji">📚</text>
+      <text class="logo-emoji"><text class="icon icon-book">书</text></text>
     </view>
-    <view class="app-name">MegaWords</view>
+    <view class="app-name">DmkWords</view>
     <view class="app-slogan">英文原版阅读 · 让阅读成为习惯</view>
   </view>
 
   <view class="login-form">
-    <button class="wx-login-btn" bindtap="handleLogin" loading="{{loading}}">
+    <button class="wx-login-btn {{!privacyChecked || loading ? 'disabled' : ''}}" open-type="getPhoneNumber" bindgetphonenumber="handleLogin" disabled="{{!privacyChecked || loading}}" loading="{{loading}}">
       微信一键登录
     </button>
 
-    <view class="divider">
-      <view class="divider-line"></view>
-      <text>或手机号登录</text>
-      <view class="divider-line"></view>
-    </view>
+    <view class="divider" wx:if="{{showPhoneForm}}"><text>或使用手机号</text></view>
 
-    <view class="phone-form">
+    <view class="phone-form" wx:if="{{showPhoneForm}}">
       <view class="input-row">
-        <text class="input-icon">📱</text>
-        <input class="input-field" type="number" placeholder="请输入手机号" maxlength="11" value="{{phone}}" bindinput="handlePhoneInput" />
+        <text class="input-icon"><text class="icon icon-phone">📱</text></text>
+        <input class="input-field" type="tel" placeholder="请输入手机号" maxlength="11" value="{{phone}}" bindinput="onPhoneInput" />
       </view>
       <view class="sms-row">
         <view class="input-row">
-          <text class="input-icon">🔒</text>
-          <input class="input-field" type="number" placeholder="验证码" maxlength="6" value="{{smsCode}}" bindinput="handleSmsCodeInput" />
+          <text class="input-icon"><text class="icon icon-lock">🔒</text></text>
+          <input class="input-field" type="text" placeholder="验证码" maxlength="6" value="{{smsCode}}" bindinput="onSmsCodeInput" />
         </view>
-        <button class="sms-btn" disabled="{{smsDisabled || countdown > 0}}" bindtap="handleSendSms">
-          {{countdown > 0 ? countdown + 's' : '获取验证码'}}
-        </button>
+        <button class="sms-btn {{smsDisabled ? 'disabled' : ''}}" disabled="{{smsDisabled}}" bindtap="onSendSms">{{smsBtnText}}</button>
       </view>
-      <button class="login-btn" bindtap="handlePhoneLogin">登录</button>
+      <button class="phone-login-btn {{!privacyChecked || loading ? 'disabled' : ''}}" disabled="{{!privacyChecked || loading}}" bindtap="onPhoneLogin" loading="{{loading}}">登录</button>
+    </view>
+
+    <view class="toggle-form" wx:if="{{!showPhoneForm}}" bindtap="togglePhoneForm">
+      <text>手机号登录</text>
+    </view>
+
+    <view class="privacy-checkbox-row">
+      <view class="privacy-checkbox {{privacyChecked ? 'checked' : ''}}" bindtap="onTogglePrivacy">
+        <text wx:if="{{privacyChecked}}"><text class="icon icon-checkmark">✓</text></text>
+      </view>
+      <text class="privacy-checkbox-label">我已阅读并同意</text>
+      <text class="agreement-link" bindtap="onTapService">《服务协议》</text>
+      <text class="agreement-sep">·</text>
+      <text class="agreement-link" bindtap="onTapPrivacy">《隐私政策》</text>
     </view>
   </view>
 </view>
 
-<view class="footer">
-  <view class="footer-links">
-    <text class="link">《服务协议》</text>
-    <text class="sep">和</text>
-    <text class="link">《隐私政策》</text>
-  </view>
-</view>
+

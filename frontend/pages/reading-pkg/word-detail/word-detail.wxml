@@ -1,7 +1,7 @@
 <!-- frontend/pages/reading-pkg/word-detail/word-detail.wxml -->
 <view class="page-bg">
 
-  <error-view wx:if="{{loadError}}" visible="{{loadError}}" icon="😵" title="加载失败" desc="数据加载出错了，请稍后重试" showRetry="{{true}}" retryText="重试" bind:onRetry="onRetry" />
+  <error-view wx:if="{{loadError}}" visible="{{loadError}}" icon="<text class="icon icon-dizzy-face">😵</text>" title="加载失败" desc="数据加载出错了，请稍后重试" showRetry="{{true}}" retryText="重试" bind:onRetry="onRetry" />
   <loading-skeleton wx:elif="{{loading}}" />
   <block wx:if="{{!loadError && !loading}}">
 
@@ -55,7 +55,7 @@
         <text class="source-card-title">来源书籍</text>
       </view>
       <view class="source-item">
-        <text style="font-size:48rpx;">🐷</text>
+        <text style="font-size:48rpx;"><text class="icon icon-pig">🐷</text></text>
         <view class="source-item-info">
           <view class="s-book">{{wordData.source_book}}</view>
           <view class="s-context" wx:if="{{wordData.source_context}}">"{{wordData.source_context}}"</view>
@@ -66,7 +66,7 @@
     <!-- Action buttons -->
     <view class="action-bar" wx:if="{{!inVocab}}">
       <view class="action-btn secondary" bindtap="markMastered">
-        ✅ 已掌握
+        <text class="icon icon-check"><text class="icon icon-checkmark">✓</text></text> 已掌握
       </view>
       <view class="action-btn primary" bindtap="addToVocab">
         + 加入生词本
@@ -75,13 +75,13 @@
 
     <view class="action-bar" wx:if="{{inVocab}}">
       <view class="action-btn secondary {{vocabStatus === 'mastered' ? 'btn-disabled' : ''}}" bindtap="markMastered">
-        {{vocabStatus === 'mastered' ? '✅ 已掌握' : '✅ 已掌握'}}
+        {{vocabStatus === 'mastered' ? '<text class="icon icon-check"><text class="icon icon-checkmark">✓</text></text> 已掌握' : '标记已掌握'}}
       </view>
-      <view class="action-btn primary" wx:if="{{vocabStatus !== 'mastered'}}" bindtap="addToVocab">
+      <view class="action-btn primary" wx:if="{{vocabStatus === 'learning'}}" bindtap="addToVocab">
         已加入生词本
       </view>
       <view class="action-btn danger" wx:if="{{vocabStatus === 'mastered'}}" bindtap="removeFromVocab">
-        移除
+        从生词本移除
       </view>
     </view>
 

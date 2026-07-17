@@ -67,8 +67,11 @@ Page({
         statusClass: STATUS_CLASS[order.pay_status] || '',
         icon: TYPE_ICON[order.type] || '📋',
         typeClass: TYPE_CLASS[order.type] || '',
-        amountText: Number(order.amount).toFixed(2),
+        amountText: (order.amount != null && !isNaN(Number(order.amount))) ? Number(order.amount).toFixed(2) : '0.00',
         timeText: (order.create_time || '').slice(0, 16).replace('T', ' '),
+        showCancel: order.pay_status === 0,
+        showRefund: order.pay_status === 1,
+        showActions: order.pay_status === 0 || order.pay_status === 1,
       }))
 
       const allOrders = page === 1 ? list : [...this.data.allOrders, ...list]
@@ -88,7 +91,49 @@ Page({
     } catch (e) {
       console.error('Load orders failed:', e)
     } finally {
-      this.setData({ loading: false })
+      this.setData({ loading: false });
+    }
+  },
+
+  onCancel(e) {
+    const orderId = e.currentTarget.dataset.id;
+    wx.showModal({
+      title: '确认取消',
+      content: '确定要取消该订单吗？',
+      success: async (res) => {
+        if (!res.confirm) return;
+        try {
+          wx.showLoading({ title: '处理中...' });
+          await api.cancelOrder(orderId);
+          wx.hideLoading();
+          wx.showToast({ title: '订单已取消', icon: 'success' });
+          this.loadOrders(1);
+        } catch (err) {
+          wx.hideLoading();
+          wx.showToast({ title: '取消失败，请稍后重试', icon: 'none' });
+        }
+      },
+    });
+  },
+
+  async onRefund(e) {
+    const orderId = e.currentTarget.dataset.id
+    const res = await wx.showModal({
+      title: '申请退款',
+      content: '确定要申请退款吗？',
+      confirmText: '申请退款',
+      confirmColor: '#ef4444',
+    })
+    if (!res.confirm) return
+    try {
+      wx.showLoading({ title: '申请中...' })
+      await api.refundOrder(orderId)
+      wx.hideLoading()
+      wx.showToast({ title: '退款申请已提交', icon: 'success' })
+      this.loadOrders()
+    } catch (e) {
+      wx.hideLoading()
+      wx.showToast({ title: e.message || '退款失败', icon: 'none' })
     }
   },
 })

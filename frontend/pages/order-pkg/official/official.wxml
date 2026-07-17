@@ -1,76 +1,97 @@
 <!--frontend/pages/order-pkg/official/official.wxml-->
 <view class="page-bg">
-  <view style="display:none" class="best dot highlight pay-bar pay-btn pay-sub title"></view>
   <view class="nav-bar">
     <navigator class="back" open-type="navigateBack" hover-class="none">‹</navigator>
     <text class="nav-title">正式会员报名</text>
   </view>
 
+  <view wx:if="{{isIOS}}" class="ios-restrict">
+    <text class="ios-restrict-icon"><text class="icon icon-apple">🍎</text></text>
+    <text class="ios-restrict-text">当前暂不支持 iOS 端开通，请使用安卓设备或联系客服办理</text>
+  </view>
+  <block wx:else>
+
   <!-- premium hero -->
   <view class="premium-hero">
-    <text class="crown">👑</text>
-    <view class="premium-h1">MegaWords 正式会员</view>
+    <text class="crown"><text class="icon icon-crown">👑</text></text>
+    <view class="premium-h1">DmkWords 正式会员</view>
     <text class="premium-p">365 天全年畅读 · A-Z 26 级进阶体系</text>
+  </view>
+
+  <!-- period tabs -->
+  <view class="period-tabs">
+    <view class="period-tab {{periodType === 3 ? 'active' : ''}}" data-period="3" bindtap="switchPeriod">
+      <text>年卡</text>
+      <text class="period-sub">365天</text>
+    </view>
+    <view class="period-tab {{periodType === 5 ? 'active' : ''}}" data-period="5" bindtap="switchPeriod">
+      <text>半年</text>
+      <text class="period-sub">180天</text>
+    </view>
+    <view class="period-tab {{periodType === 4 ? 'active' : ''}}" data-period="4" bindtap="switchPeriod">
+      <text>季度</text>
+      <text class="period-sub">90天</text>
+    </view>
   </view>
 
   <!-- price -->
   <view class="price-section">
     <view class="price-badges">
       <text class="p-badge p-badge-hot">限时特惠</text>
-      <text class="p-badge p-badge-annual">年度会员</text>
+      <text class="p-badge p-badge-annual">{{currentPeriodName}}</text>
     </view>
-    <text class="original-price" wx:if="{{!isSecondChild}}">原价 ¥6,000 / 年</text>
+    <text class="original-price" wx:if="{{!isSecondChild}}">原价 ¥{{origPrice}} / {{currentPeriodUnit}}</text>
     <view class="price-row">
       <text class="price-sym">¥</text>
       <text class="price-val">{{actualPrice}}</text>
-      <text class="price-unit">/年</text>
+      <text class="price-unit">/{{currentPeriodUnit}}</text>
     </view>
-    <text class="price-savings" wx:if="{{!isSecondChild}}">节省 ¥600</text>
+    <text class="price-savings" wx:if="{{!isSecondChild}}">节省 ¥{{savings}}</text>
     <view class="price-savings" wx:if="{{isSecondChild}}">第 2 孩专属 9 折</view>
     <view class="multi-child">
-      <text class="mc-icon">👨‍👩‍👧‍👦</text>
+      <text class="mc-icon"><text class="icon icon-man">👨</text><text class="icon icon-woman">👩</text><text class="icon icon-girl">👧</text><text class="icon icon-boy">👦</text></text>
       <text>第 2 孩起享 </text>
-      <text class="mc-strong">¥4,860 / 年</text>
+      <text class="mc-strong">¥{{secondChildPrice}} / {{currentPeriodUnit}}</text>
     </view>
   </view>
 
   <!-- benefits -->
   <view class="benefits-card">
     <view class="benefits-h3">
-      <text class="benefits-h3-icon">✓</text>
+      <text class="benefits-h3-icon"><text class="icon icon-checkmark">✓</text></text>
       <text>正式会员权益</text>
     </view>
     <view class="benefits-list">
       <view class="benefits-item">
-        <view class="ben-icon bi1">📚</view>
+        <view class="ben-icon bi1"><text class="icon icon-book">书</text></view>
         <view class="ben-content">
           <text class="ben-title">全量图书在线阅读</text>
           <text class="ben-desc">3,500+ 英文原版图书，A-Z 全级别覆盖</text>
         </view>
       </view>
       <view class="benefits-item">
-        <view class="ben-icon bi2">🏆</view>
+        <view class="ben-icon bi2"><text class="icon icon-trophy">🏆</text></view>
         <view class="ben-content">
           <text class="ben-title">A-Z 26 级晋级体系</text>
           <text class="ben-desc">科学分级，逐级挑战，见证孩子成长</text>
         </view>
       </view>
       <view class="benefits-item">
-        <view class="ben-icon bi3">📊</view>
+        <view class="ben-icon bi3"><text class="icon icon-chart">📊</text></view>
         <view class="ben-content">
           <text class="ben-title">排行榜</text>
           <text class="ben-desc">与小伙伴一起比拼，激发阅读动力</text>
         </view>
       </view>
       <view class="benefits-item">
-        <view class="ben-icon bi4">🎖️</view>
+        <view class="ben-icon bi4"><text class="icon icon-medal-star">🎖</text></view>
         <view class="ben-content">
           <text class="ben-title">晋级证书</text>
           <text class="ben-desc">每通过一级生成精美晋级证书</text>
         </view>
       </view>
       <view class="benefits-item">
-        <view class="ben-icon bi5">⭐</view>
+        <view class="ben-icon bi5"><text class="icon icon-star">★</text></view>
         <view class="ben-content">
           <text class="ben-title">成就系统</text>
           <text class="ben-desc">阅读里程碑、连续打卡、测验满分等多种成就</text>
@@ -91,15 +112,15 @@
           <text class="best-badge">推荐</text>
         </view>
       </view>
-      <view class="compare-tr" wx:for="{{comparisons}}" wx:key="feature">
+      <view class="compare-tr" wx:for="{{comparisons || []}}" wx:key="feature">
         <view class="compare-td compare-td-first">{{item.feature}}</view>
         <view class="compare-td">
-          <text wx:if="{{item.observation === true}}" class="check">✓</text>
+          <text wx:if="{{item.observation === true}}" class="check"><text class="icon icon-checkmark">✓</text></text>
           <text wx:elif="{{item.observation === false}}" class="cross">—</text>
           <text wx:else class="compare-text">{{item.observation}}</text>
         </view>
         <view class="compare-td compare-td-highlight">
-          <text wx:if="{{item.official === true}}" class="check">✓</text>
+          <text wx:if="{{item.official === true}}" class="check"><text class="icon icon-checkmark">✓</text></text>
           <text wx:elif="{{item.official === false}}" class="cross">—</text>
           <text wx:else class="compare-text-bold">{{item.official}}</text>
         </view>
@@ -110,7 +131,7 @@
   <!-- refund info -->
   <view class="info-card">
     <view class="info-h3">
-      <text class="info-h3-icon">ℹ️</text>
+      <text class="info-h3-icon"><text class="icon icon-info">ℹ</text></text>
       <text>退款与说明</text>
     </view>
     <view class="info-list">
@@ -133,10 +154,11 @@
   <view class="fixed-bottom-bar">
     <pay-button
       amount="{{actualPrice}}"
-      buttonText="{{loading ? '处理中...' : '立即开通'}}"
+      buttonText="{{loading ? '处理中...' : '立即开通 · ¥' + actualPrice + ' / ' + currentPeriodUnit}}"
       disabled="{{loading}}"
       bind:pay="handleOrder"
-      bind:iosfallback="showIOSNotice"
     />
+    <text class="bottom-subtitle">{{currentPeriodDays}} 天畅读 · 不满意随时退款</text>
   </view>
+  </block>
 </view>

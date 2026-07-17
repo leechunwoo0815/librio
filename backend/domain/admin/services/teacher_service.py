@@ -3,11 +3,12 @@
 
 import logging
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from backend.common.base_repo import BaseRepository
 from backend.common.exceptions import NotFoundError
-from backend.domain.admin.models import Teacher, TeacherSchedule
+from backend.domain.admin.models import Teacher, TeacherSchedule, Venue
 from backend.domain.admin.repository import TeacherRepository, TeacherScheduleRepository
 from backend.domain.admin.schemas import (
     SuccessResponse,
@@ -33,8 +34,42 @@ class AdminTeacherService:
         offset = (page - 1) * page_size
         items = self.teacher_repo.list_all(limit=page_size, offset=offset)
         total = self.teacher_repo.count()
+
+        # 预加载场馆名与每个老师负责的孩子数
+        venues = {v.id: v.name for v in self.db.query(Venue).filter(Venue.is_deleted == 0).all()}
+        student_counts = {
+            row.teacher_id: row.cnt
+            for row in self.db.query(Child.teacher_id, func.count(Child.id).label("cnt"))
+            .filter(Child.is_deleted == 0, Child.teacher_id.isnot(None))
+            .group_by(Child.teacher_id)
+            .all()
+        }
+
+        # 预加载每个 teacher_id 对应的管理员账号
+        from backend.domain.admin.models import Admin
+        admin_map = {}
+        admins = self.db.query(Admin).filter(
+            Admin.teacher_id.isnot(None),
+            Admin.is_deleted == 0,
+        ).all()
+        for a in admins:
+            role_name = a.role_ref.name if a.role_ref else "未知"
+            admin_map[a.teacher_id] = {"admin_id": a.id, "admin_role_name": role_name}
+
+        enriched = []
+        for t in items:
+            admin_info = admin_map.get(t.id, {})
+            data = {
+                **TeacherResponse.model_validate(t).model_dump(),
+                "venue_name": venues.get(t.venue_id),
+                "student_count": student_counts.get(t.id, 0),
+                "admin_id": admin_info.get("admin_id"),
+                "admin_role_name": admin_info.get("admin_role_name"),
+            }
+            enriched.append(TeacherResponse.model_validate(data))
+
         return {
-            "items": [TeacherResponse.model_validate(t) for t in items],
+            "items": enriched,
             "total": total,
             "page": page,
             "page_size": page_size,
@@ -50,16 +85,22 @@ class AdminTeacherService:
         name: str,
         phone: str,
         venue_id: int,
+        english_name: str | None = None,
+        title: str | None = None,
         introduction: str | None = None,
         expertise: str | None = None,
+        status: str | None = "online",
     ) -> TeacherResponse:
         """创建老师"""
         teacher = Teacher(
             name=name,
+            english_name=english_name,
             phone=phone,
             venue_id=venue_id,
+            title=title,
             introduction=introduction,
             expertise=expertise,
+            status=status or "online",
         )
         created = self.teacher_repo.create(teacher)
         self.db.commit()

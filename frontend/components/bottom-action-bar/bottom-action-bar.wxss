@@ -6,9 +6,11 @@
   background: var(--surface);
   border-top: 1rpx solid var(--border);
   position: fixed;
+    box-sizing: border-box;
   bottom: 0;
   left: 0;
   right: 0;
+  box-sizing: border-box;
 }
 .action-btn {
   flex: 1;

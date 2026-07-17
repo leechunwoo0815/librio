@@ -36,11 +36,6 @@ Page({
     this.loadMessages()
   },
 
-  onShow() {
-    this.setData({ page: 1, hasMore: true })
-    this.loadMessages()
-  },
-
   onPullDownRefresh() {
     this.setData({ page: 1, hasMore: true })
     this.loadMessages().then(() => {
@@ -109,16 +104,38 @@ Page({
   },
 
   filterMessages() {
-    const { messages, activeTab } = this.data
+    const { messages, activeTab, categories } = this.data
     const filtered = activeTab === 'all'
       ? messages
       : messages.filter(m => m.category === activeTab)
     this.setData({ filteredMessages: filtered })
+
+    const unreadByCategory = {}
+    messages.forEach(msg => {
+      if (!msg.is_read) {
+        const cat = msg.category || 'system'
+        unreadByCategory[cat] = (unreadByCategory[cat] || 0) + 1
+      }
+    })
+    const totalUnread = Object.values(unreadByCategory).reduce((a, b) => a + b, 0)
+    const updatedCategories = categories.map(cat => ({
+      ...cat,
+      hasUnread: cat.key === 'all'
+        ? totalUnread > 0
+        : (unreadByCategory[cat.key] || 0) > 0,
+    }))
+    this.setData({ categories: updatedCategories })
   },
 
   toggleMessage(e) {
     const id = e.currentTarget.dataset.id
     const current = this.data.expandedId
+    const msg = this.data.messages.find(m => m.id === id)
+    if (msg && !msg.is_read) {
+      api.markMessageRead(id).catch((err) => { console.error('[markMessageRead failed]', err) })
+      msg.is_read = 1
+      this.setData({ messages: this.data.messages, unreadCount: Math.max(0, (this.data.unreadCount || 1) - 1) })
+    }
     this.setData({ expandedId: current === id ? null : id })
   },
 
@@ -185,15 +202,5 @@ Page({
     }
   },
 
-  async toggleMessage(e) {
-    const id = e.currentTarget.dataset.id
-    const msg = this.data.messages.find(m => m.id === id)
-    if (msg && !msg.is_read) {
-      try {
-        await api.markMessageRead(id)
-        msg.is_read = 1
-        this.setData({ messages: this.data.messages, unreadCount: Math.max(0, (this.data.unreadCount || 1) - 1) })
-      } catch (e) { /* silent */ }
-    }
-  },
+  
 })

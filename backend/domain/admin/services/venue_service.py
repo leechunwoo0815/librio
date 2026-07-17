@@ -38,7 +38,14 @@ class AdminVenueService:
 
     def create_venue(self, data: CreateVenueRequest) -> VenueResponse:
         """创建场馆"""
-        venue = Venue(name=data.name, address=data.address, phone=data.phone)
+        venue = Venue(
+            name=data.name,
+            address=data.address,
+            phone=data.phone,
+            business_hours=data.business_hours,
+            status=data.status or "active",
+            capacity=data.capacity or 0,
+        )
         created = self.venue_repo.create(venue)
         self.db.commit()
         return VenueResponse.model_validate(created)

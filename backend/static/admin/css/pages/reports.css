@@ -126,6 +126,7 @@ thead {
 .panel-overlay {
   display: none;
   position: fixed;
+  box-sizing: border-box;
   inset: 0;
   background: rgba(0, 0, 0, 0.3);
   z-index: 100;
@@ -135,6 +136,7 @@ thead {
 }
 .side-panel {
   position: fixed;
+  box-sizing: border-box;
   top: 0;
   right: -560px;
   width: 560px;

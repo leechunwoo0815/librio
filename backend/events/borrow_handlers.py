@@ -58,6 +58,14 @@ def handle_reservation_expired_for_stock(event, db: Session):
     service.increase_available_stock(event.book_id)
 
 
+def handle_reservation_cancelled_for_stock(event, db: Session):
+    """预约取消 → 释放库存"""
+    from backend.domain.book.service import BookService
+
+    service = BookService(db)
+    service.increase_available_stock(event.book_id)
+
+
 def handle_reservation_fulfilled_for_borrow(event, db: Session):
     """预约取书 → 自动创建借阅记录"""
     from backend.domain.borrow.service import BorrowService

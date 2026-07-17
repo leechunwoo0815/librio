@@ -1,3 +1,4 @@
+{% import "admin/macros.html" as m %}
 {% extends "admin/base.html" %}
 {% block title %}晋级证书管理{% endblock %}
 {% block head %}
@@ -57,24 +58,28 @@
       </tr>
     </thead>
     <tbody id="certBody">
-      <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted)">加载中...</td></tr>
+      <tr><td colspan="6" class="text-center p-40 text-muted">加载中...</td></tr>
     </tbody>
   </table>
 </div>
 
 <!-- Certificate Preview Modal -->
-<div class="modal-overlay" id="certModal" onclick="if(event.target===this)closeCert()">
-  <div style="position:relative">
-    <button class="cert-close" onclick="closeCert()">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
-    <div class="cert-preview" id="certContent">
-      <!-- Populated by JS -->
-    </div>
+{{ m.modal_overlay('certModal', '证书预览', 'lg') }}
+  <div class="cert-preview" id="certContent">
+    <!-- Populated by JS -->
   </div>
-</div>
+{{ m.modal_actions() }}
+  <button class="btn btn-primary" onclick="closeModal('certModal')">关闭</button>
+{{ m.modal_end() }}
 <!-- Hidden ref for JS-generated level badge classes -->
-<div style="display:none" class="level-1 level-2 level-3"></div>
+<div class="hidden level-1 level-2 level-3"></div>
+
+{{ m.modal_overlay("confirmDialog", "确认操作") }}
+  <p id="confirmMsg" class="confirm-msg"></p>
+{{ m.modal_actions() }}
+  <button type="button" class="btn btn-secondary" onclick="closeModal('confirmDialog')">取消</button>
+  <button type="button" class="btn btn-primary" id="confirmBtn">确认</button>
+{{ m.modal_end() }}
 {% endblock %}
 
 {% block scripts %}
@@ -96,7 +101,7 @@
     } catch (err) {
       showToast(err.message || '加载证书数据失败', 'error');
       document.getElementById('certBody').innerHTML =
-        '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--error)">加载失败</td></tr>';
+        '<tr><td colspan="7" class="text-center p-40 text-error">加载失败</td></tr>';
     }
   }
 
@@ -125,7 +130,7 @@
   function renderTable(list) {
     var body = document.getElementById('certBody');
     if (!list.length) {
-      body.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted)">暂无证书记录</td></tr>';
+      body.innerHTML = '<tr><td colspan="6" class="text-center p-40 text-muted">暂无证书记录</td></tr>';
       return;
     }
     body.innerHTML = list.map(function(cert, idx) {
@@ -133,7 +138,7 @@
       var period = formatPeriod(cert.create_time);
       return '<tr data-level="' + escapeAttr(cert.level_name || '') + '" data-period="' + escapeAttr(period) + '">' +
         '<td><strong>' + escapeHtml(cert.child_name || '-') + '</strong>' +
-        (cert.child_id ? '<br><span style="color:var(--muted);font-size:12px">ID: ' + escapeHtml(cert.child_id) + '</span>' : '') +
+        (cert.child_id ? '<br><span class="text-muted text-sm">ID: ' + escapeHtml(cert.child_id) + '</span>' : '') +
         '</td>' +
         '<td><span class="level-badge ' + levelCls + '">Level ' + (cert.level_name || '-') + '</span></td>' +
         '<td><span class="cert-id">' + escapeHtml(cert.certificate_no || '-') + '</span></td>' +
@@ -141,7 +146,7 @@
         '<td>' + escapeHtml((cert.create_time || '-').slice(0,10)) + '</td>' +
         '<td>' +
         '<button class="btn btn-primary btn-sm" onclick="openCert(' + idx + ')">查看</button>' +
-        '<button class="btn btn-outline btn-sm" style="margin-left:4px" onclick="regenerate(\'' + escapeAttr(cert.child_name || '') + '\', ' + cert.id + ')">重新生成</button>' +
+        '<button class="btn btn-outline btn-sm ml-4" onclick="regenerate(\'' + escapeAttr(cert.child_name || '') + '\', ' + cert.id + ')">重新生成</button>' +
         '</td>' +
         '</tr>';
     }).join('');
@@ -188,13 +193,13 @@
     html += '<div class="cert-corner-bl"></div>';
     html += '<div class="cert-corner-tr"></div>';
     html += '<div class="cert-logo">&#128218;</div>';
-    html += '<div class="cert-brand">MegaWords</div>';
+    html += '<div class="cert-brand">DmkWords</div>';
     html += '<div class="cert-title">晋级证书</div>';
     html += '<div class="cert-subtitle">Certificate of Level Advancement</div>';
     html += '<div class="cert-name">' + escapeHtml(c.child_name || '-') + '</div>';
     html += '<div class="cert-desc">';
     html += '恭喜通过 Level ' + levelName + ' 的阅读晋级考核！';
-    html += '特此证明该学员在 MegaWords 英语阅读计划中的优异表现。';
+    html += '特此证明该学员在 DmkWords 英语阅读计划中的优异表现。';
     html += '</div>';
     html += '<div class="cert-level">Level ' + levelName + '</div>';
     html += '<div class="cert-stats">';
@@ -214,15 +219,25 @@
     document.getElementById('certModal').classList.remove('show');
   }
 
-  async function regenerate(name, id) {
-    if (!confirm('确定为 ' + name + ' 重新生成证书？')) return;
-    try {
-      await api.post('/admin/api/advancement/certificates/' + id + '/regenerate');
-      showToast('证书已重新生成');
-      loadCertificates();
-    } catch (err) {
-      showToast(err.message || '重新生成失败', 'error');
-    }
+  function showConfirmDialog(title, msg, onConfirm) {
+    document.querySelector('#confirmDialog h2').textContent = title;
+    document.getElementById('confirmMsg').textContent = msg;
+    document.getElementById('confirmBtn').onclick = function() {
+      closeModal('confirmDialog');
+      onConfirm();
+    };
+    showModal('confirmDialog');
+  }
+
+  function regenerate(name, id) {
+    showConfirmDialog('重新生成证书', '确定为 ' + name + ' 重新生成证书？', function() {
+      api.post('/admin/api/advancement/certificates/' + id + '/regenerate').then(function() {
+        showToast('证书已重新生成');
+        loadCertificates();
+      }).catch(function(err) {
+        showToast(err.message || '重新生成失败', 'error');
+      });
+    });
   }
 
   function filterTable() {

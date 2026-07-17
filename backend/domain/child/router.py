@@ -2,9 +2,10 @@
 """孩子域 API 路由 — 孩子管理、会员状态、权益转让"""
 
 from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
 from backend.common.dependencies import get_child_service
-from backend.middleware.admin_auth import require_role, ROLE_ADMIN, ROLE_STAFF
+from backend.middleware.admin_rbac import require_perm
 from backend.middleware.auth import get_current_user
 from backend.middleware.ownership import GetOwnedChild, verify_child_ownership
 from backend.domain.child.schemas import (
@@ -37,6 +38,7 @@ def get_my_children(
     current_user=Depends(get_current_user),
 ):
     """获取我的所有孩子"""
+    # low-volume: per user, typically <=10 children
     return child_service.get_user_children(current_user.id)
 
 
@@ -64,7 +66,7 @@ def update_child_status(
     child_id: int,
     status_data: ChildStatusUpdate,
     child_service: ChildService = Depends(get_child_service),
-    admin=Depends(require_role(ROLE_ADMIN, ROLE_STAFF)),
+    admin=Depends(require_perm("child.edit")),
 ):
     """更新会员状态（管理员操作）"""
     return child_service.update_status(child_id, status_data)
@@ -75,12 +77,14 @@ def transfer_benefit(
     req: TransferBenefitRequest,
     child_service: ChildService = Depends(get_child_service),
     current_user=Depends(get_current_user),
-    db=Depends(get_db),
+    db: Session = Depends(get_db),
 ):
-    """权益转让 — 同一用户的孩子间"""
+    """权益转让 — 提交转让申请（需管理员审核）"""
     verify_child_ownership(req.source_child_id, current_user, db)
     verify_child_ownership(req.target_child_id, current_user, db)
-    return child_service.transfer_benefit(req.source_child_id, req.target_child_id)
+    return child_service.create_benefit_transfer_application(
+        req.source_child_id, req.target_child_id, current_user.id
+    )
 
 
 @router.get("/{child_id}/can-borrow", response_model=BorrowPermissionResponse)

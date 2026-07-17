@@ -11,7 +11,7 @@
 
   <block wx:else>
     <view class="empty-state" wx:if="{{orders.length === 0}}">
-      <view class="empty-icon">🚫</view>
+      <view class="empty-icon"><text class="icon icon-prohibited">🚫</text></view>
       <text class="empty-text">暂无可退款的订单</text>
     </view>
 
@@ -42,9 +42,9 @@
           <text class="info-label label">支付时间</text>
           <text class="info-value value">{{selectedOrder.pay_time || selectedOrder.create_time}}</text>
         </view>
-        <view class="info-row total" wx:if="{{selectedOrder.expire_date}}">
+        <view class="info-row total" wx:if="{{selectedOrder.start_date || selectedOrder.expire_date}}">
           <text class="info-label label">会员有效期</text>
-          <text class="info-value value">— {{selectedOrder.expire_date}}</text>
+          <text class="info-value value">{{selectedOrder.start_date || '—'}} — {{selectedOrder.expire_date || '—'}}</text>
         </view>
       </view>
 
@@ -73,6 +73,11 @@
           <text class="calc-desc desc">已使用 {{usedDays}} 天（¥{{dailyRate}}/天）</text>
           <text class="calc-amount amount">¥{{usedAmount}}</text>
         </view>
+        <view class="calc-step result">
+          <view class="calc-dot dot calc-dot-eq result">=</view>
+          <text class="calc-desc desc">按比例折算</text>
+          <text class="calc-amount amount">¥{{proratedAmount}}</text>
+        </view>
         <view class="calc-result">
           <text class="calc-result-label label">应退金额</text>
           <text class="calc-result-amount amount">¥{{refundAmount}}</text>
@@ -93,7 +98,7 @@
 
       <!-- Tip Card -->
       <view class="tip-card">
-        <text class="tip-icon">ℹ️</text>
+        <text class="tip-icon"><text class="icon icon-info">ℹ</text></text>
         <text class="tip-text">退款申请提交后将在 1-3 个工作日内审核。</text>
       </view>
 

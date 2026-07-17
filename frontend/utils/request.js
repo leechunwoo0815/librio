@@ -57,8 +57,10 @@ function doRequest(app, method, url, data, options, showLoading, resolve, reject
       if (showLoading) wx.hideLoading()
 
       if (res.statusCode === 401) {
-        if (app.globalData.isTestMode) {
-          reject(new Error('test-mode'))
+        var pages = getCurrentPages()
+        var currentRoute = pages.length > 0 ? pages[pages.length - 1].route : ''
+        if (currentRoute && currentRoute.indexOf('login') !== -1) {
+          reject(new Error('登录已过期'))
           return
         }
         // 清除所有用户相关状态
@@ -91,7 +93,7 @@ function doRequest(app, method, url, data, options, showLoading, resolve, reject
     fail(err) {
       if (showLoading) wx.hideLoading()
       // MP-020: 网络异常区分
-      if (!app.globalData.isTestMode && showError) {
+      if (showError) {
         wx.showToast({ title: '网络异常，请检查网络连接', icon: 'none', duration: 3000 })
       }
       reject(err)

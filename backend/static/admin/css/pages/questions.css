@@ -125,6 +125,16 @@
   border-color: var(--accent);
 }
 
+/* ===== Book Search Results Dropdown ===== */
+.book-search-results { display: none; margin-top: 4px; border: 1px solid var(--border); border-radius: var(--radius-sm); max-height: 160px; overflow-y: auto; background: var(--surface); }
+.book-search-result-item { padding: 8px 12px; cursor: pointer; font-size: 13px; border-bottom: 1px solid var(--border); }
+.book-search-result-item:last-child { border-bottom: none; }
+.book-search-result-item:hover { background: var(--accent-soft); }
+.book-search-noresult { padding: 8px 12px; color: var(--muted); font-size: 13px; }
+
+/* ===== New Question Modal — book search field ===== */
+.newq-book-search { width: 100%; }
+
 /* ===== Filter Select ===== */
 .filter-select {
   height: 38px;

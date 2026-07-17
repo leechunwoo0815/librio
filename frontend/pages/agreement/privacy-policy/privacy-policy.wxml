@@ -1,0 +1,102 @@
+<view class="page-bg">
+  <view class="top-bar">
+    <view class="back-btn" bindtap="goBack">
+      <text>←</text>
+    </view>
+    <text class="top-bar-title">隐私政策</text>
+  </view>
+  <view class="content">
+    <view class="section-title">引言</view>
+    <view class="section-content">
+      本隐私政策（以下简称"本政策"）旨在向您说明 DmkWords 小程序（以下简称"我们"）如何收集、使用、存储和保护您的个人信息。请您在使用我们的服务前仔细阅读并充分理解本政策。您勾选同意本政策后，即视为您已充分理解并同意我们按照本政策处理您的个人信息。
+    </view>
+
+    <view class="section-title">一、运营主体</view>
+    <view class="section-content">
+      运营主体：【公司全称待补充——请商户在 privacy-policy.wxml 中填入认证主体名称】<text>\n</text>联系方式：请通过小程序内"联系客服"通道与我们取得联系。
+    </view>
+
+    <view class="section-title">二、我们收集的信息</view>
+    <view class="section-content">
+      在您使用我们的服务时，我们可能收集以下类型的信息：<text>\n</text>
+      <text>\n</text>
+      1. 微信账号信息：包括微信昵称、头像、OpenID，以及经您授权获取的手机号码，用于创建和管理您的账户。<text>\n</text>
+      <text>\n</text>
+      2. 孩子信息：包括孩子姓名、年龄/年级、英语阅读级别，用于提供个性化的阅读推荐、测评和服务。<text>\n</text>
+      <text>\n</text>
+      3. 阅读数据：包括阅读记录、测评成绩、打卡记录、阅读时长、词汇量等，用于生成阅读报告和晋级评定。<text>\n</text>
+      <text>\n</text>
+      4. 订单信息：包括押金支付、会员订阅、退款申请等交易记录，用于处理您的订单和售后服务。<text>\n</text>
+      <text>\n</text>
+      5. 设备信息：包括设备型号、操作系统版本，用于兼容性适配和问题排查。<text>\n</text>
+      <text>\n</text>
+      6. 日志信息：当您使用小程序时，我们可能自动收集相关操作日志，用于服务优化和故障分析。
+    </view>
+
+    <view class="section-title">三、信息的使用</view>
+    <view class="section-content">
+      我们收集的信息将用于以下目的：<text>\n</text>
+      <text>\n</text>
+      1. 提供、维护和改进我们的服务；<text>\n</text>
+      2. 处理您的订单、支付和退款；<text>\n</text>
+      3. 生成阅读报告和个性化学习建议；<text>\n</text>
+      4. 与您沟通服务相关的重要通知；<text>\n</text>
+      5. 遵守法律法规的要求。
+    </view>
+
+    <view class="section-title">四、信息的存储和保护</view>
+    <view class="section-content">
+      我们采取符合业界标准的安全措施保护您的个人信息，包括但不限于：<text>\n</text>
+      <text>\n</text>
+      1. 数据加密传输和存储；<text>\n</text>
+      2. 严格的访问权限控制；<text>\n</text>
+      3. 定期安全审计和漏洞扫描。<text>\n</text>
+      <text>\n</text>
+      我们仅在实现本政策所述目的所必需的期限内保留您的个人信息，超出期限后将进行删除或匿名化处理。
+    </view>
+
+    <view class="section-title">五、信息的共享和披露</view>
+    <view class="section-content">
+      我们不会向第三方共享您的个人信息，但以下情况除外：<text>\n</text>
+      <text>\n</text>
+      1. 获得您的明确同意后；<text>\n</text>
+      2. 根据法律法规或行政/司法机构的要求；<text>\n</text>
+      3. 为保护我们或其他人的合法权益；<text>\n</text>
+      4. 与为我们提供支付处理等服务的授权合作伙伴共享，且这些合作伙伴无权将您的信息用于其他任何目的。
+    </view>
+
+    <view class="section-title">六、您的权利</view>
+    <view class="section-content">
+      您享有以下权利：<text>\n</text>
+      <text>\n</text>
+      1. 查阅权：您可以查阅我们持有的您的个人信息；<text>\n</text>
+      2. 更正权：如发现信息有误，您可以要求更正；<text>\n</text>
+      3. 删除权：在特定情况下，您可以要求删除您的个人信息；<text>\n</text>
+      4. 撤回同意权：您可以通过清除小程序数据或联系客服的方式撤回对本政策的同意，撤回后我们将停止收集和使用您的相关信息；<text>\n</text>
+      5. 注销权：您可以联系客服申请注销账户，我们将删除您的相关信息。
+    </view>
+
+    <view class="section-title">七、未成年人保护</view>
+    <view class="section-content">
+      我们非常重视对未成年人个人信息的保护。我们的服务主要面向家长或监护人陪同下的未成年人。监护人应当对未成年人的使用行为进行引导和监督。如果我们发现未经监护人同意收集了未成年人的个人信息，我们将尽快删除。
+    </view>
+
+    <view class="section-title">八、隐私政策的更新</view>
+    <view class="section-content">
+      我们可能适时修订本政策。重大变更将通过小程序内弹窗或公告等方式通知您。修改后的政策自发布之日起生效，如您继续使用我们的服务，视为同意更新后的政策。
+    </view>
+
+    <view class="section-title">九、办学资质</view>
+    <view class="section-content">
+      本公司持有中华人民共和国民办学校办学许可证。<text>\n</text>
+      许可证编号：【待补充——请商户在此填写办学许可证编号】<text>\n</text>
+      发证机关：xx 市教育局<text>\n</text>
+      许可证图片：【待补充——请商户上传办学许可证扫描件】
+    </view>
+
+    <view class="section-title">十、联系我们</view>
+    <view class="section-content">
+      如您对本政策有任何疑问、意见或请求，请通过小程序内"联系客服"功能与我们联系。我们将在 15 个工作日内回复您的请求。
+    </view>
+  </view>
+</view>

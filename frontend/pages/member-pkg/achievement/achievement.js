@@ -30,11 +30,6 @@ Page({
   },
 
   onLoad() {
-    const app = getApp()
-    if (app.globalData.isTestMode) {
-      this._loadDemoData()
-      return
-    }
     if (!auth.requireAuth()) return
   },
 
@@ -88,16 +83,51 @@ Page({
     var childId = child.id
     that.setData({ myName: child.name || '', loading: true, loadError: false })
 
-    // Load level, achievements in parallel
+    // Load level, levels, achievements in parallel
     Promise.all([
       api.getCurrentLevel(childId).catch(function () { return null }),
+      api.getLevels().catch(function () { return [] }),
       api.getAchievements().catch(function () { return [] }),
       api.getChildAchievements(childId).catch(function () { return [] }),
     ]).then(function (results) {
       var level = results[0]
-      var adv = null  // 晋级由后端自动触发
-      var allDefs = results[1] || []
-      var earned = results[2] || []
+      var levels = results[1] || []
+      var allDefs = results[2] || []
+      var earned = results[3] || []
+
+      // Build advancement from current level + next level threshold
+      var adv = null
+      var progressPercent = 0
+      if (level) {
+        var levelDef = null
+        var nextLevel = null
+        for (var k = 0; k < levels.length; k++) {
+          if (levels[k].id === level.level_id) {
+            levelDef = levels[k]
+          }
+        }
+        var currentSort = levelDef ? levelDef.sort_order : 0
+        for (var m = 0; m < levels.length; m++) {
+          if (levels[m].sort_order > currentSort) {
+            nextLevel = levels[m]
+            break
+          }
+        }
+        var booksRead = level.books_read_at_level || 0
+        var booksRequired = nextLevel ? nextLevel.required_books : 5
+        progressPercent = booksRequired > 0 ? Math.min(100, Math.round(booksRead / booksRequired * 100)) : 0
+        adv = {
+          books_read: booksRead,
+          books_required: booksRequired,
+          can_advance: booksRead >= booksRequired && !!nextLevel,
+        }
+        // Enrich level for WXML template field names
+        level.badge_emoji = levelDef ? (levelDef.badge_emoji || '⭐') : '⭐'
+        level.books_read = level.books_read_at_level || 0
+        level.quizzes_passed = level.quizzes_passed_at_level || 0
+        level.streak_days = level.streak_days || 0
+        level.level_number = currentSort
+      }
 
       // Build earned lookup
       var earnedMap = {}
@@ -121,6 +151,7 @@ Page({
           earned: !!earnedData,
           achieved_at: earnedData ? earnedData.achieved_at : '',
           dateStr: earnedData ? formatDate(earnedData.achieved_at) : '',
+          progress: earnedData ? 100 : (def.default_progress || 0),
         }
         achievements.push(item)
         if (item.earned) {
@@ -134,12 +165,6 @@ Page({
         return new Date(b.achieved_at) - new Date(a.achieved_at)
       })
       recentEarned = recentEarned.slice(0, 10)
-
-      // Progress
-      var progressPercent = 0
-      if (adv && adv.books_required > 0) {
-        progressPercent = Math.min(100, Math.round(adv.books_read / adv.books_required * 100))
-      }
 
       that.setData({
         currentLevel: level,
@@ -186,49 +211,4 @@ Page({
       })
   },
 
-  _loadDemoData: function () {
-    this.setData({
-      currentLevel: {
-        level_name: 'Level 3 · 故事探索者',
-        level_number: 3,
-        books_read: 12,
-        quizzes_passed: 10,
-        streak_days: 7,
-      },
-      advancement: {
-        books_read: 12,
-        books_required: 20,
-        can_advance: false,
-      },
-      progressPercent: 60,
-      myName: 'Mega',
-      achievements: [
-        { id: 1, name: '初读启航', badge_emoji: '📖', description: '完成第一本书的阅读', trigger_desc: '阅读完任意 1 本书', earned: true, dateStr: '2025-05-10' },
-        { id: 2, name: '连续 7 天', badge_emoji: '🔥', description: '连续阅读打卡 7 天', trigger_desc: '连续 7 天每天阅读满 10 分钟', earned: true, dateStr: '2025-05-20' },
-        { id: 3, name: '满分达人', badge_emoji: '💯', description: '测验获得 100 分', trigger_desc: '任意一次测验得 100 分', earned: true, dateStr: '2025-05-25' },
-        { id: 4, name: '读完 10 本', badge_emoji: '📚', description: '累计阅读 10 本书', trigger_desc: '累计阅读完 10 本书', earned: true, dateStr: '2025-06-01' },
-        { id: 5, name: '朗读之星', badge_emoji: '🎙️', description: '完成 10 次朗读录音', trigger_desc: '累计完成 10 次朗读录音', earned: true, dateStr: '2025-06-03' },
-        { id: 6, name: '词汇先锋', badge_emoji: '📝', description: '积累 100 个生词', trigger_desc: '生词本累计收录 100 个单词', earned: true, dateStr: '2025-06-04' },
-        { id: 7, name: '晋级达人', badge_emoji: '🏆', description: '成功晋级 3 次', trigger_desc: '累计成功晋级 3 次', earned: false, dateStr: '' },
-        { id: 8, name: '速度之王', badge_emoji: '⚡', description: '5 分钟内完成测验满分', trigger_desc: '5 分钟内完成测验并得满分', earned: false, dateStr: '' },
-        { id: 9, name: '阅读大师', badge_emoji: '🌟', description: '累计阅读 100 本书', trigger_desc: '累计阅读完 100 本书', earned: false, dateStr: '' },
-      ],
-      earnedCount: 6,
-      recentEarned: [
-        { id: 6, name: '词汇先锋', badge_emoji: '📝', description: '生词本累计收录 100 个单词', dateStr: '2025-06-04' },
-        { id: 5, name: '朗读之星', badge_emoji: '🎙️', description: '累计完成 10 次朗读录音', dateStr: '2025-06-03' },
-        { id: 4, name: '读完 10 本', badge_emoji: '📚', description: '累计阅读完 10 本书', dateStr: '2025-06-01' },
-        { id: 3, name: '满分达人', badge_emoji: '💯', description: '任意一次测验得 100 分', dateStr: '2025-05-25' },
-        { id: 2, name: '连续 7 天', badge_emoji: '🔥', description: '连续 7 天每天阅读满 10 分钟', dateStr: '2025-05-20' },
-        { id: 1, name: '初读启航', badge_emoji: '📖', description: '阅读完任意 1 本书', dateStr: '2025-05-10' },
-      ],
-      leaderboardData: [
-        { name: '小月', avatar_emoji: '👧', level_name: 'Level 5', books_read: 38 },
-        { name: '小明', avatar_emoji: '👦', level_name: 'Level 5', books_read: 28 },
-        { name: 'Lily', avatar_emoji: '👧', level_name: 'Level 4', books_read: 22 },
-        { name: 'Tom', avatar_emoji: '👦', level_name: 'Level 3', books_read: 18 },
-      ],
-      myRank: 5,
-    })
-  },
 })

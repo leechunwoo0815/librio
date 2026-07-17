@@ -1,5 +1,10 @@
 # backend/middleware/admin_auth.py
-"""管理员认证中间件"""
+"""管理员认证中间件
+
+认证方式：HTTP Bearer Token（Authorization header）
+管理端全部 API 走 Bearer header，浏览器不会自动附带，因此 CSRF 攻击面不适用。
+Cookie 仅在 login 页面写入，用于页面加载时初始 token 同步，未被任何 API 用作认证凭据。
+"""
 
 import logging
 import uuid
@@ -14,16 +19,10 @@ from backend.common.exceptions import ForbiddenError, UnauthorizedError
 from backend.config import get_settings
 from backend.database import get_db
 from backend.domain.admin.models import Admin
-from backend.common.types import AdminRole
-
 logger = logging.getLogger(__name__)
 settings = get_settings()
 security = HTTPBearer()
 
-# 统一使用 AdminRole 枚举值
-ROLE_ADMIN = AdminRole.ADMIN
-ROLE_STAFF = AdminRole.STAFF
-ROLE_TEACHER = AdminRole.TEACHER
 
 
 def create_admin_token(admin_id: int, role: int) -> str:
@@ -80,11 +79,3 @@ async def get_current_admin(
 
     return admin
 
-
-def require_role(*allowed_roles):
-    async def role_checker(admin: Admin = Depends(get_current_admin)) -> Admin:
-        if admin.role not in allowed_roles:
-            raise ForbiddenError("权限不足")
-        return admin
-
-    return role_checker

@@ -9,7 +9,7 @@
     </navigator>
     <text class="title">学习报告</text>
     <view class="share-btn" bindtap="onShareTap">
-      <text class="share-icon">🔗</text>
+      <text class="share-icon"><text class="icon icon-link">🔗</text></text>
       <text>分享</text>
     </view>
   </view>
@@ -56,13 +56,13 @@
         </view>
       </view>
 
-      <!-- AR Trend Chart -->
-      <text class="section-heading">AR 变化趋势</text>
+      <!-- Trend Chart -->
+      <text class="section-heading">{{trendTitle}}</text>
       <view class="ar-trend">
         <view class="ar-col" wx:for="{{trendData}}" wx:key="date">
-          <text class="ar-value">{{item.minutes}}</text>
+          <text class="ar-value {{item.isToday ? 'show' : ''}}">{{item.minutes}}分</text>
           <view class="ar-bar-track">
-            <view class="ar-bar" style="height: {{item.barHeight}}%; background: var(--accent);"></view>
+            <view class="ar-bar {{item.isToday ? 'today' : ''}}" style="height: {{item.barHeight}}%;"></view>
           </view>
           <text class="ar-label">{{item.label}}</text>
         </view>
@@ -73,7 +73,7 @@
 
       <!-- Suggestion -->
       <view class="suggestion" wx:if="{{suggestion}}">
-        <text class="sug-icon">💡</text>
+        <text class="sug-icon"><text class="icon icon-lightbulb">💡</text></text>
         <text class="sug-text">{{suggestion}}</text>
       </view>
     </view>
@@ -81,20 +81,23 @@
     <!-- Share Bar -->
     <view class="share-bar">
       <view class="btn-share" open-type="share">
-        <text class="btn-icon">📤</text>
+        <text class="btn-icon"><text class="icon icon-upload">📤</text></text>
         <text>分享报告</text>
       </view>
       <view class="btn-save" bindtap="onShareTap">
-        <text class="btn-icon">💾</text>
-        <text>保存</text>
+        <text class="btn-icon"><text class="icon icon-link">🔗</text></text>
+        <text>分享图片</text>
       </view>
     </view>
   </block>
 
   <!-- Empty State -->
   <view class="empty-state" wx:if="{{!loading && !child}}">
-    <text class="empty-icon">📊</text>
+    <text class="empty-icon"><text class="icon icon-chart">📊</text></text>
     <text class="empty-text">暂无学习数据</text>
     <text class="empty-sub">开始阅读后即可查看报告</text>
   </view>
+
+  <!-- 分享图离屏 Canvas -->
+  <canvas type="2d" id="shareCanvas" style="width: 1080px; height: 1080px; position: fixed; left: -9999px; top: -9999px; pointer-events: none;"></canvas>
 </view>

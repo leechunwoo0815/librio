@@ -97,7 +97,7 @@
   border: none;
   border-radius: var(--radius-sm);
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -228,6 +228,9 @@
   color: var(--muted);
   font-size: 14px;
 }
+
+/* Max-width constraint for form group */
+.msg-input-max { max-width: 200px; }
 
 /* ===== Pagination ===== */
 .msg-pagination {

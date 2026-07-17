@@ -1,3 +1,4 @@
+{% import "admin/macros.html" as m %}
 {% extends "admin/base.html" %}
 {% block title %}回收站{% endblock %}
 {% block head %}
@@ -30,7 +31,7 @@
       <tr><th>模块</th><th>内容名称</th><th>删除人</th><th>删除时间</th><th>操作</th></tr>
     </thead>
     <tbody id="recycleTable">
-      <tr><td colspan="5" style="text-align:center;padding:40px;color:var(--muted);">加载中...</td></tr>
+      <tr><td colspan="5" class="text-center p-40 text-muted">加载中...</td></tr>
     </tbody>
   </table>
 </div>
@@ -39,25 +40,26 @@
 <div class="pagination" id="pagination"></div>
 
 <!-- Delete Confirmation Modal -->
-<div class="modal-overlay" id="deleteModal">
-  <div class="modal">
-    <div class="modal-header"><h3>确认永久删除</h3></div>
-    <div class="modal-body">
-      <p>您即将永久删除 <span class="item-name" id="deleteItemName"></span></p>
-      <p style="margin-top:8px;color:var(--error)">此操作不可撤销，删除后数据将无法恢复。请确认是否继续？</p>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-cancel" onclick="hideDeleteModal()">取消</button>
-      <button class="btn-danger" onclick="confirmDelete()">确认永久删除</button>
-    </div>
-  </div>
-</div>
+{{ m.modal_overlay('deleteModal', '确认永久删除') }}
+  <p>您即将永久删除 <span class="item-name" id="deleteItemName"></span></p>
+  <p class="mt-8 text-error">此操作不可撤销，删除后数据将无法恢复。请确认是否继续？</p>
+{{ m.modal_actions() }}
+  <button class="btn btn-secondary" onclick="hideDeleteModal()">取消</button>
+  <button class="btn btn-danger" onclick="confirmDelete()">确认永久删除</button>
+{{ m.modal_end() }}
+
+{{ m.modal_overlay("confirmDialog", "确认操作") }}
+  <p id="confirmMsg" class="confirm-msg"></p>
+{{ m.modal_actions() }}
+  <button type="button" class="btn btn-secondary" onclick="closeModal('confirmDialog')">取消</button>
+  <button type="button" class="btn btn-primary" id="confirmBtn">确认</button>
+{{ m.modal_end() }}
 {% endblock %}
 
 {% block scripts %}
 <script>
   var currentPage = 1;
-  var pageSize = 20;
+  var pageSize = 15;
   var deleteTarget = null;
 
   var MODULE_LABELS = { book: '图书', activity: '活动', teacher: '老师', venue: '场馆' };
@@ -68,7 +70,7 @@
   async function loadRecycle(page) {
     currentPage = page;
     var module = document.getElementById('moduleFilter').value;
-    var url = '/admin/recycle-bin?page=' + page + '&page_size=' + pageSize;
+    var url = '/admin/api/recycle-bin?page=' + page + '&page_size=' + pageSize;
     if (module) url += '&module=' + module;
 
     try {
@@ -76,17 +78,17 @@
       var items = data.items || [];
       var total = data.total || 0;
       renderTable(items);
-      renderPagination(total, page);
+      pageUi(total, page, pageSize);
     } catch (err) {
       document.getElementById('recycleTable').innerHTML =
-        '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--muted);">加载失败：' + (err.message || '未知错误') + '</td></tr>';
+        '<tr><td colspan="5" class="text-center p-40 text-muted">加载失败：' + (err.message || '未知错误') + '</td></tr>';
     }
   }
 
   function renderTable(items) {
     var tbody = document.getElementById('recycleTable');
     if (!items.length) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--muted);">回收站为空</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center p-40 text-muted">回收站为空</td></tr>';
       return;
     }
     tbody.innerHTML = items.map(function(item) {
@@ -96,28 +98,39 @@
       return '<tr>' +
         '<td><span class="badge ' + badge + '">' + escapeHtml(label) + '</span></td>' +
         '<td><strong>' + escapeHtml(item.name || '-') + '</strong>' +
-          (item.isbn ? '<br><span style="font-size:11px;color:var(--muted)">ISBN: ' + escapeHtml(item.isbn) + '</span>' : '') +
-          (item.extra_info ? '<br><span style="font-size:11px;color:var(--muted)">' + escapeHtml(item.extra_info) + '</span>' : '') +
+          (item.isbn ? '<br><span class="text-xs text-muted">ISBN: ' + escapeHtml(item.isbn) + '</span>' : '') +
+          (item.extra_info ? '<br><span class="text-xs text-muted">' + escapeHtml(item.extra_info) + '</span>' : '') +
         '</td>' +
         '<td>' + escapeHtml(item.deleted_by || '--') + '</td>' +
-        '<td style="font-size:12px;color:var(--muted)">' + formatDateTime(item.deleted_at) + '</td>' +
+        '<td class="text-sm text-muted">' + formatDateTime(item.deleted_at) + '</td>' +
         '<td>' +
-          '<button class="btn-restore" onclick="restoreItem(\'' + mod + '\', ' + item.id + ')">恢复</button> ' +
-          '<button class="btn-delete-permanent" onclick="showDeleteModal(\'' + escapeHtml(item.name||'').replace(/'/g, "\\'") + '\',\'' + mod + '\',' + item.id + ')">永久删除</button>' +
+          '<button class="btn btn-success" onclick="restoreItem(\'' + mod + '\', ' + item.id + ')">恢复</button> ' +
+          '<button class="btn btn-danger" onclick="showDeleteModal(\'' + jsEscape(item.name||'') + '\',\'' + mod + '\',' + item.id + ')">永久删除</button>' +
         '</td>' +
       '</tr>';
     }).join('');
   }
 
+  function showConfirmDialog(title, msg, onConfirm) {
+    document.querySelector('#confirmDialog h2').textContent = title;
+    document.getElementById('confirmMsg').textContent = msg;
+    document.getElementById('confirmBtn').onclick = function() {
+      closeModal('confirmDialog');
+      onConfirm();
+    };
+    showModal('confirmDialog');
+  }
+
   async function restoreItem(module, id) {
-    if (!confirm('确认恢复该记录？')) return;
-    try {
-      await api.post('/admin/api/recycle-bin/' + module + '/' + id + '/restore');
-      showToast('恢复成功');
-      loadRecycle(currentPage);
-    } catch (err) {
-      showToast(err.message || '恢复失败', 'error');
-    }
+    showConfirmDialog('确认恢复', '确认恢复该记录？', async function() {
+      try {
+        await api.post('/admin/api/recycle-bin/' + module + '/' + id + '/restore');
+        showToast('恢复成功');
+        loadRecycle(currentPage);
+      } catch (err) {
+        showToast(err.message || '恢复失败', 'error');
+      }
+    });
   }
 
   function showDeleteModal(name, module, id) {
@@ -143,11 +156,12 @@
     }
   }
 
-  function renderPagination(total, page) {
+  function pageUi(total, page, pageSize) {
     var el = document.getElementById('pagination');
     var totalPages = Math.ceil(total / pageSize);
     if (totalPages <= 1) { el.innerHTML = ''; return; }
-    var html = '<div class="pagination-info">共 ' + total + ' 条，第 ' + page + '/' + totalPages + ' 页</div>';
+    var html = '<div class="flex-center gap-8"><span class="text-muted">共 ' + total + ' 条</span><span class="text-xs text-muted">每页</span><select class="page-size-select" onchange="changePageSize(this.value)"><option value="15"'+(pageSize===15?' selected':'')+'>15</option><option value="30"'+(pageSize===30?' selected':'')+'>30</option><option value="50"'+(pageSize===50?' selected':'')+'>50</option><option value="100"'+(pageSize===100?' selected':'')+'>100</option></select><span class="text-xs text-muted">条</span></div>';
+    html += '<div class="pagination-info">第 ' + page + '/' + totalPages + ' 页</div>';
     html += '<div class="pagination-pages">';
     if (page > 1) html += '<a href="javascript:void(0)" onclick="loadRecycle(' + (page-1) + ')">&lt;</a>';
     var start = Math.max(1, page - 2);
@@ -158,6 +172,11 @@
     if (page < totalPages) html += '<a href="javascript:void(0)" onclick="loadRecycle(' + (page+1) + ')">&gt;</a>';
     html += '</div>';
     el.innerHTML = html;
+  }
+
+  function changePageSize(newSize) {
+    pageSize = parseInt(newSize);
+    loadRecycle(1);
   }
 
   function escapeHtml(str) {

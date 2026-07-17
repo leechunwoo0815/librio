@@ -2,16 +2,20 @@
 """押金域业务逻辑 — V3.1 状态机管理
 
 UNPAID → PAID → REFUNDED / DEDUCTED
+       → PENDING → PAID (真实网关路径)
 """
 
 import logging
+import uuid
 from datetime import datetime
 from decimal import Decimal
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from backend.common.events import DepositPaidEvent, event_bus
-from backend.common.exceptions import ConflictError, NotFoundError, ValidationError
+from backend.common.exceptions import ConflictError, NotFoundError, PaymentError, ValidationError
+from backend.common.gateways.payment import PaymentGateway, PaymentOrderRequest, PaymentRefundRequest
 from backend.common.types import BorrowStatus, DepositStatus
 from backend.domain.borrow.models import BorrowRecord
 from backend.domain.child.models import Child
@@ -21,14 +25,13 @@ from backend.domain.deposit.schemas import (
     DepositPayRequest,
     DepositRefundRequest,
     DepositDeductRequest,
+    DepositPayResponse,
     DepositResponse,
 )
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_DEPOSIT_AMOUNT = Decimal(
-    "1200.00"
-)  # 默认值，通过 ConfigService.get_decimal(db, "deposit_amount", ...) 读取
+DEFAULT_DEPOSIT_AMOUNT = Decimal("1200.00")
 
 
 class DepositService:
@@ -38,48 +41,199 @@ class DepositService:
         self.db = db
         self.deposit_repo = DepositRepository(db)
 
-    def pay_deposit(self, data: DepositPayRequest) -> DepositResponse:
-        """缴纳押金"""
-        # 检查是否已缴纳（加行锁防并发）
+    def _generate_order_no(self) -> str:
+        return f"DP{uuid.uuid4().hex[:24].upper()}"
+
+    async def pay_deposit(
+        self,
+        data: DepositPayRequest,
+        payment_gateway: PaymentGateway,
+        current_user=None,
+    ) -> DepositResponse:
+        """缴纳押金 — 必须经过支付网关"""
         existing = self.deposit_repo.get_active_by_child_for_update(data.child_id)
         if existing:
             raise ConflictError("押金已缴纳")
 
-        # 从配置读取押金金额
         from backend.common.config_service import ConfigService
 
         deposit_amount = ConfigService.get_decimal(
             self.db, "deposit_amount", DEFAULT_DEPOSIT_AMOUNT
         )
 
+        from backend.domain.user.models import User
+        user = self.db.query(User).filter(User.id == current_user.id).first()
+        if not user or not user.openid:
+            raise ValidationError("用户openid不存在")
+
+        order_no = self._generate_order_no()
+        amount_cent = int(deposit_amount * 100)
+
+        openid = user.openid
+        order_req = PaymentOrderRequest(
+            out_trade_no=order_no,
+            amount=amount_cent,
+            description="押金",
+            openid=openid,
+            attach="deposit",
+        )
+        result = await payment_gateway.create_order(order_req)
+        if not result.success:
+            raise PaymentError(result.error_message)
+
+        is_instant = payment_gateway.supports_instant_payment
+        status = DepositStatus.PAID if is_instant else DepositStatus.PENDING
+        pay_time = datetime.now() if is_instant else None
+
         record = DepositRecord(
             child_id=data.child_id,
             amount=deposit_amount,
-            status=DepositStatus.PAID,
-            pay_time=datetime.now(),
+            status=status,
+            pay_time=pay_time,
+            pay_order_id=order_no,
         )
         created = self.deposit_repo.create(record)
 
-        # 发布押金支付事件
+        if is_instant:
+            event_bus.publish(
+                DepositPaidEvent(
+                    child_id=data.child_id,
+                    deposit_id=created.id,
+                    amount=deposit_amount,
+                ),
+                db=self.db,
+            )
+
+        self.db.commit()
+        return DepositPayResponse(
+            deposit=DepositResponse.model_validate(created),
+            pay_params=result.pay_params,
+        )
+
+    def handle_callback(self, order_no: str, amount: Decimal | None = None) -> DepositResponse:
+        """支付回调 — PENDING → PAID"""
+        record = (
+            self.db.query(DepositRecord)
+            .filter(
+                DepositRecord.pay_order_id == order_no,
+                DepositRecord.status == DepositStatus.PENDING,
+                DepositRecord.is_deleted == 0,
+            )
+            .with_for_update()
+            .first()
+        )
+        if not record:
+            raise NotFoundError(f"未找到押金记录 order_no={order_no}")
+
+        if amount is not None and amount != record.amount:
+            from backend.common.exceptions import PaymentError
+            raise PaymentError(f"押金金额不一致: 回调{amount}, 记录{record.amount}")
+
+        record.status = DepositStatus.PAID
+        record.pay_time = datetime.now()
+        self.deposit_repo.update(record)
+
+        child = (
+            self.db.query(Child)
+            .filter(Child.id == record.child_id, Child.is_deleted == 0)
+            .first()
+        )
+        if child:
+            child.deposit_status = DepositStatus.PAID
+
         event_bus.publish(
             DepositPaidEvent(
-                child_id=data.child_id,
-                deposit_id=created.id,
-                amount=deposit_amount,
+                child_id=record.child_id,
+                deposit_id=record.id,
+                amount=record.amount,
             ),
             db=self.db,
         )
 
         self.db.commit()
-        return DepositResponse.model_validate(created)
+        return DepositResponse.model_validate(record)
+
+    async def repay_deposit(
+        self,
+        child_id: int,
+        payment_gateway: PaymentGateway,
+        current_user=None,
+    ) -> DepositResponse:
+        """重新缴纳押金（DEDUCTED/REFUNDED → PAID），必须经过支付网关"""
+        child = (
+            self.db.query(Child)
+            .filter(Child.id == child_id, Child.is_deleted == 0)
+            .first()
+        )
+        if not child:
+            raise NotFoundError("孩子不存在")
+
+        existing = self.deposit_repo.get_active_by_child_for_update(child_id)
+        if existing and existing.status == DepositStatus.PAID:
+            raise ConflictError("押金已缴纳，无需重复缴纳")
+
+        from backend.common.config_service import ConfigService
+
+        deposit_amount = ConfigService.get_decimal(
+            self.db, "deposit_amount", DEFAULT_DEPOSIT_AMOUNT
+        )
+
+        from backend.domain.user.models import User
+        user = self.db.query(User).filter(User.id == child.user_id).first()
+        if not user or not user.openid:
+            raise ValidationError("用户openid不存在")
+
+        order_no = self._generate_order_no()
+        amount_cent = int(deposit_amount * 100)
+
+        order_req = PaymentOrderRequest(
+            out_trade_no=order_no,
+            amount=amount_cent,
+            description="押金（重新缴纳）",
+            openid=user.openid,
+            attach="deposit",
+        )
+        result = await payment_gateway.create_order(order_req)
+        if not result.success:
+            raise PaymentError(result.error_message)
+
+        is_instant = payment_gateway.supports_instant_payment
+        status = DepositStatus.PAID if is_instant else DepositStatus.PENDING
+        pay_time = datetime.now() if is_instant else None
+
+        record = DepositRecord(
+            child_id=child_id,
+            amount=deposit_amount,
+            status=status,
+            pay_time=pay_time,
+            pay_order_id=order_no,
+        )
+        created = self.deposit_repo.create(record)
+
+        child.deposit_status = status
+
+        if is_instant:
+            event_bus.publish(
+                DepositPaidEvent(
+                    child_id=child_id,
+                    deposit_id=created.id,
+                    amount=deposit_amount,
+                ),
+                db=self.db,
+            )
+
+        self.db.commit()
+        return DepositPayResponse(
+            deposit=DepositResponse.model_validate(created),
+            pay_params=result.pay_params,
+        )
 
     def refund_deposit(self, data: DepositRefundRequest) -> DepositResponse:
-        """退还押金 — 需校验无未还书 + 无未缴罚款"""
+        """申请退还押金 — 进入 REFUND_PENDING 等待管理员审核"""
         record = self.deposit_repo.get_active_by_child_for_update(data.child_id)
         if not record:
             raise NotFoundError("未找到已缴纳的押金记录")
 
-        # 校验无活跃借阅记录
         active_borrows = (
             self.db.query(BorrowRecord)
             .filter(
@@ -95,7 +249,6 @@ class DepositService:
                 f"请先归还所有借阅图书（当前 {active_borrows} 本未还）"
             )
 
-        # 校验无未缴罚款
         child = (
             self.db.query(Child)
             .filter(Child.id == data.child_id, Child.is_deleted == 0)
@@ -105,23 +258,23 @@ class DepositService:
         if child and child.outstanding_fines and child.outstanding_fines > 0:
             raise ValidationError(f"请先结清未缴罚款 {child.outstanding_fines} 元")
 
-        record.status = DepositStatus.REFUNDING
-        record.refund_time = datetime.now()
-        record.refund_amount = record.amount
+        record.status = DepositStatus.REFUND_PENDING
         self.deposit_repo.update(record)
 
-        # 同步更新孩子状态
         if child:
-            child.deposit_status = DepositStatus.REFUNDING
+            child.deposit_status = DepositStatus.REFUND_PENDING
 
         self.db.commit()
+        logger.info(f"Refund requested: child_id={data.child_id}, status=REFUND_PENDING")
         return DepositResponse.model_validate(record)
 
     def deduct_deposit(self, data: DepositDeductRequest) -> DepositResponse:
-        """扣除押金 — 图书丢失/严重损坏"""
+        """扣除押金 — 仅允许 PAID 状态下扣除"""
         record = self.deposit_repo.get_active_by_child_for_update(data.child_id)
         if not record:
             raise NotFoundError("未找到已缴纳的押金记录")
+        if record.status != DepositStatus.PAID:
+            raise ConflictError(f"当前状态({record.status})不允许扣除，仅 PAID 可扣除")
 
         if data.amount > record.amount:
             raise ValidationError("扣除金额超过押金余额")
@@ -131,10 +284,10 @@ class DepositService:
         record.deduct_reason = data.reason
         self.deposit_repo.update(record)
 
-        # 同步更新孩子状态
         child = (
             self.db.query(Child)
             .filter(Child.id == data.child_id, Child.is_deleted == 0)
+            .with_for_update()
             .first()
         )
         if child:
@@ -154,6 +307,7 @@ class DepositService:
         record = (
             self.db.query(BorrowRecord)
             .filter(BorrowRecord.id == borrow_record_id, BorrowRecord.is_deleted == 0)
+            .with_for_update()
             .first()
         )
         if not record:
@@ -161,7 +315,6 @@ class DepositService:
         if record.status not in (BorrowStatus.BORROWING, BorrowStatus.OVERDUE):
             raise ValidationError(f"当前状态({record.status})不允许标记丢失")
 
-        # 从配置读取丢书罚款倍率
         multiplier = ConfigService.get_decimal(
             self.db, "lost_book_fine_multiplier", Decimal("1.5")
         )
@@ -169,11 +322,9 @@ class DepositService:
         book_price = book.price if book and book.price else Decimal("0")
         fine_amount = book_price * multiplier
 
-        # 更新借阅记录
         record.status = BorrowStatus.LOST
         record.fine_amount = fine_amount
 
-        # 更新孩子罚款余额
         child = (
             self.db.query(Child)
             .filter(Child.id == record.child_id, Child.is_deleted == 0)
@@ -182,9 +333,14 @@ class DepositService:
         if child:
             child.outstanding_fines = (child.outstanding_fines or 0) + fine_amount
 
-        # 丢书不恢复库存（实体书已丢失），但总库存 -1
         if book:
-            book.total_stock = max((book.total_stock or 0) - 1, 0)
+            self.db.query(Book).filter(Book.id == record.book_id).update(
+                {
+                    Book.total_stock: func.greatest(Book.total_stock - 1, 0),
+                    Book.available_stock: func.greatest(Book.available_stock - 1, 0),
+                },
+                synchronize_session='fetch',
+            )
 
         self.db.commit()
         logger.info(
@@ -196,47 +352,130 @@ class DepositService:
             "fine_amount": str(fine_amount),
         }
 
-    def repay_deposit(self, child_id: int) -> DepositResponse:
-        """重新缴纳押金（DEDUCTED/REFUNDED → PAID）"""
+    async def audit_refund(
+        self, child_id: int, action: str, admin_id: int,
+        payment_gateway: PaymentGateway | None = None,
+    ) -> DepositResponse:
+        """审核押金退款 — approve 触发真实退款，reject 回退 PAID"""
+        record = self.deposit_repo.get_active_by_child_for_update(child_id)
+        if not record:
+            raise NotFoundError("未找到押金记录")
+        if record.status != DepositStatus.REFUND_PENDING:
+            raise ConflictError(f"当前状态({record.status})不允许审核，仅 REFUND_PENDING 可审核")
+
         child = (
             self.db.query(Child)
             .filter(Child.id == child_id, Child.is_deleted == 0)
+            .with_for_update()
             .first()
         )
-        if not child:
-            raise NotFoundError("孩子不存在")
 
-        existing = self.deposit_repo.get_active_by_child(child_id)
-        if existing and existing.status == DepositStatus.PAID:
-            raise ConflictError("押金已缴纳，无需重复缴纳")
+        if action == "approve":
+            active_borrows = (
+                self.db.query(BorrowRecord)
+                .filter(
+                    BorrowRecord.child_id == child_id,
+                    BorrowRecord.status.in_([BorrowStatus.BORROWING, BorrowStatus.OVERDUE]),
+                    BorrowRecord.is_deleted == 0,
+                )
+                .with_for_update()
+                .count()
+            )
+            if active_borrows > 0:
+                raise ValidationError(
+                    f"该孩子有 {active_borrows} 本未还书，请先归还再退款"
+                )
 
-        from backend.common.config_service import ConfigService
+            record.status = DepositStatus.REFUNDING
+            record.refund_time = datetime.now()
+            record.refund_amount = record.amount
+            if child:
+                child.deposit_status = DepositStatus.REFUNDING
 
-        deposit_amount = ConfigService.get_decimal(
-            self.db, "deposit_amount", DEFAULT_DEPOSIT_AMOUNT
+            if payment_gateway:
+                try:
+                    result = await payment_gateway.refund(PaymentRefundRequest(
+                        out_trade_no=str(record.pay_order_id) if record.pay_order_id else "",
+                        total_amount=record.amount,
+                        refund_amount=record.amount,
+                        reason="押金退款（审核通过）",
+                    ))
+                    if hasattr(result, 'success') and not result.success:
+                        raise PaymentError(getattr(result, 'error_message', '退款接口返回失败'))
+                except Exception as e:
+                    self.db.rollback()
+                    logger.error(f"Refund failed, transaction rolled back: child={child_id}, error={e}")
+                    raise PaymentError(f"押金退款调用失败: {e}")
+
+        elif action == "reject":
+            record.status = DepositStatus.PAID
+            record.refund_time = None
+            record.refund_amount = None
+            if child:
+                child.deposit_status = DepositStatus.PAID
+        else:
+            raise ValidationError(f"未知审核动作: {action}，仅支持 approve/reject")
+
+        self.deposit_repo.update(record)
+        self.db.commit()
+
+        from backend.domain.admin.services.system_service import AdminSystemService
+        system_service = AdminSystemService(self.db)
+        system_service.write_operation_log(
+            admin_id=admin_id,
+            module="deposit",
+            operation=f"refund_{action}",
+            content=f"押金退款审核 [{action}]: 孩子 #{child_id}",
         )
+        return DepositResponse.model_validate(record)
 
-        record = DepositRecord(
-            child_id=child_id,
-            amount=deposit_amount,
-            status=DepositStatus.PAID,
-            pay_time=datetime.now(),
+    def cancel_refund(self, child_id: int) -> DepositResponse:
+        """取消退款申请 — REFUNDING/REFUND_PENDING → PAID"""
+        record = self.deposit_repo.get_active_by_child_for_update(child_id)
+        if not record:
+            raise NotFoundError("未找到已缴纳的押金记录")
+        if record.status not in (DepositStatus.REFUNDING, DepositStatus.REFUND_PENDING):
+            raise ConflictError("当前状态不是退款中或待审核，无法取消")
+
+        record.status = DepositStatus.PAID
+        record.refund_time = None
+        record.refund_amount = None
+
+        child = (
+            self.db.query(Child)
+            .filter(Child.id == child_id, Child.is_deleted == 0)
+            .with_for_update()
+            .first()
         )
-        created = self.deposit_repo.create(record)
-
-        child.deposit_status = DepositStatus.PAID
-
-        event_bus.publish(
-            DepositPaidEvent(
-                child_id=child_id,
-                deposit_id=created.id,
-                amount=deposit_amount,
-            ),
-            db=self.db,
-        )
+        if child:
+            child.deposit_status = DepositStatus.PAID
 
         self.db.commit()
-        return DepositResponse.model_validate(created)
+        return DepositResponse.model_validate(record)
+
+    def mark_refunded(self, child_id: int) -> DepositResponse:
+        """标记押金已到账退款 — REFUNDING → REFUNDED"""
+        record = self.deposit_repo.get_active_by_child_for_update(child_id)
+        if not record:
+            raise NotFoundError("未找到已缴纳的押金记录")
+        if record.status != DepositStatus.REFUNDING:
+            raise ConflictError("当前状态不是退款中，无法标记到账")
+
+        record.status = DepositStatus.REFUNDED
+        record.refund_time = record.refund_time or datetime.now()
+        record.refund_amount = record.refund_amount or record.amount
+
+        child = (
+            self.db.query(Child)
+            .filter(Child.id == child_id, Child.is_deleted == 0)
+            .with_for_update()
+            .first()
+        )
+        if child:
+            child.deposit_status = DepositStatus.REFUNDED
+
+        self.db.commit()
+        return DepositResponse.model_validate(record)
 
     def get_deposit_status(self, child_id: int) -> dict:
         """查询押金状态"""

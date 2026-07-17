@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 ECDICT 词库导入脚本
-将 ECDICT SQLite 数据导入到 MegaWords 的 dictionary_word 表
+将 ECDICT SQLite 数据导入到 DmkWords 的 dictionary_word 表
 
 用法:
     python -m backend.seeds.import_ecdict [--limit N] [--mysql]
@@ -10,9 +10,12 @@ ECDICT 词库导入脚本
 """
 
 import argparse
+import logging
 import os
 import sqlite3
 import sys
+
+logger = logging.getLogger(__name__)
 
 # ECDICT 字段映射:
 # word → word
@@ -134,14 +137,14 @@ def import_to_sqlite(limit: int = None):
                 count += 1
                 if count % 10000 == 0:
                     conn.commit()
-                    print(f"  Imported {count} words...")
+                    logger.info(f"  Imported {count} words...")
             except Exception:
                 pass  # skip duplicates
 
         conn.commit()
 
     src.close()
-    print(f"Done! Imported {count} words into dictionary_word")
+    logger.info(f"Done! Imported {count} words into dictionary_word")
 
 
 def import_to_mysql(limit: int = None):
@@ -151,11 +154,12 @@ def import_to_mysql(limit: int = None):
     src = sqlite3.connect(ECDICT_PATH)
     src.row_factory = sqlite3.Row
 
+    db_password = os.environ.get("MYSQL_PASSWORD", "")
     conn = pymysql.connect(
-        host="localhost",
-        user="root",
-        password="",
-        database="megawords",
+        host=os.environ.get("MYSQL_HOST", "localhost"),
+        user=os.environ.get("MYSQL_USER", "root"),
+        password=db_password,
+        database=os.environ.get("MYSQL_DATABASE", "dmkwords"),
         charset="utf8mb4",
     )
     cursor = conn.cursor()
@@ -189,7 +193,7 @@ def import_to_mysql(limit: int = None):
             count += 1
             if count % 10000 == 0:
                 conn.commit()
-                print(f"  Imported {count} words...")
+                logger.info(f"  Imported {count} words...")
         except Exception:
             pass
 
@@ -197,11 +201,12 @@ def import_to_mysql(limit: int = None):
     cursor.close()
     conn.close()
     src.close()
-    print(f"Done! Imported {count} words into MySQL dictionary_word")
+    logger.info(f"Done! Imported {count} words into MySQL dictionary_word")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Import ECDICT into MegaWords")
+    logging.basicConfig(level=logging.INFO)
+    parser = argparse.ArgumentParser(description="Import ECDICT into DmkWords")
     parser.add_argument(
         "--limit", type=int, default=None, help="Limit number of words to import"
     )
@@ -211,11 +216,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if not os.path.exists(ECDICT_PATH):
-        print(f"ECDICT database not found at {ECDICT_PATH}")
-        print("Please download from: https://github.com/skywind3000/ECDICT/releases")
+        logger.info(f"ECDICT database not found at {ECDICT_PATH}")
+        logger.info("Please download from: https://github.com/skywind3000/ECDICT/releases")
         sys.exit(1)
 
-    print(f"Starting ECDICT import (limit={args.limit}, mysql={args.mysql})...")
+    logger.info(f"Starting ECDICT import (limit={args.limit}, mysql={args.mysql})...")
     if args.mysql:
         import_to_mysql(args.limit)
     else:

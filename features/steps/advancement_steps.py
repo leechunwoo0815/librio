@@ -541,10 +541,16 @@ def step_child_finish_listening(context):
 
 @when(u'孩子再次通过"{title}"的测验')
 def step_child_repass_quiz(context, title):
+    from backend.common.exceptions import ConflictError
     svc = AdvancementService(context.db)
-    quiz2 = svc.start_quiz(context.child.id, QuizStartRequest(book_id=context.book.id))
-    answers = [{"question_id": q.id, "answer": q.correct_answer} for q in context.questions]
-    context.quiz_result_2 = svc.submit_answers(quiz2.id, answers)
+    try:
+        quiz2 = svc.start_quiz(context.child.id, QuizStartRequest(book_id=context.book.id))
+        answers = [{"question_id": q.id, "answer": q.correct_answer} for q in context.questions]
+        context.quiz_result_2 = svc.submit_answers(quiz2.id, answers)
+    except ConflictError as e:
+        assert "测验冷却中" in str(e), f"预期 cooldown 但收到: {e}"
+        context.quiz_result_2 = None
+        context.cooldown_triggered = True
 
 
 @when('系统记录词数积分')
@@ -562,12 +568,12 @@ def step_child_score_increased(context, words):
 def step_score_not_duplicated(context):
     if hasattr(context, 'quiz_result_2') and context.quiz_result_2 is not None:
         result = context.quiz_result_2
-    elif hasattr(context, 'quiz_result'):
-        result = context.quiz_result
+        wc = result.get("word_count", 0) if isinstance(result, dict) else 0
+        assert wc == 0, f"word_count should be 0 but got {wc}"
     else:
-        result = {}
-    wc = result.get("word_count", 0) if isinstance(result, dict) else 0
-    assert wc == 0, f"word_count should be 0 but got {wc}"
+        assert getattr(context, 'cooldown_triggered', False), (
+            "预期测验冷却应阻止重考，但未触发 ConflictError"
+        )
 
 
 @then(u'借阅记录的测评状态更新为"{status}"')

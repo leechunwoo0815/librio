@@ -1,5 +1,35 @@
 /* profile.css — 个人名片管理页面专属样式 */
 
+/* Profile container */
+.profile-container { max-width: 800px; margin: 0 auto; padding: 24px; }
+
+/* Profile cards */
+.profile-card { background: var(--surface); border-radius: 12px; padding: 32px; margin-bottom: 24px; border: 1px solid var(--border); }
+
+/* Avatar */
+.profile-avatar { width: 80px; height: 80px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 32px; color: white; }
+
+/* Name */
+.profile-name { margin: 0 0 8px 0; font-size: 24px; }
+
+/* Role */
+.profile-role { margin: 0; color: var(--muted); font-size: 14px; }
+
+/* Info grid */
+.profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+/* Info label */
+.profile-label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+
+/* Info value */
+.profile-value { font-weight: 500; }
+
+/* Password form title */
+.password-title { margin: 0 0 20px 0; font-size: 18px; }
+
+/* Log item */
+.log-item { display: flex; justify-content: space-between; padding: 12px; background: var(--bg); border-radius: 8px; }
+
 /* Stats grid — 4 columns specific to this page */
 .stats-grid-4 {
   display: grid;
@@ -55,11 +85,11 @@
   font-size: 11px;
   font-weight: 600;
 }
-.level-1 { background: rgba(57, 195, 75, 0.15); color: #2a9d3a; }
-.level-2 { background: rgba(85, 96, 207, 0.12); color: #4a52b8; }
+.level-1 { background: rgba(57, 195, 75, 0.15); color: #2a9d3a; /* intentional */ }
+.level-2 { background: rgba(85, 96, 207, 0.12); color: #4a52b8; /* intentional */ }
 .level-3 { background: var(--accent-soft); color: var(--accent); }
-.level-4 { background: rgba(148, 237, 90, 0.15); color: #5a9e2e; }
-.level-5 { background: var(--warning-soft); color: #b08800; }
+.level-4 { background: rgba(148, 237, 90, 0.15); color: #5a9e2e; /* intentional */ }
+.level-5 { background: var(--warning-soft); color: #b08800; /* intentional */ }
 
 /* Search bar */
 .search-bar {
@@ -104,7 +134,7 @@
 }
 .profile-card-banner {
   height: 120px;
-  background: linear-gradient(135deg, var(--accent) 0%, #7c5ecf 100%);
+  background: linear-gradient(135deg, var(--accent) 0%, #7c5ecf 100%); /* intentional */
   position: relative;
   display: flex;
   align-items: center;

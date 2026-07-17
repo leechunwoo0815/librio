@@ -1,8 +1,8 @@
 {
   "version": 1,
   "kind": "html",
-  "title": "MegaWords 英文原版阅读 · 原型导航",
-  "entry": "megawords-prototype.html",
+  "title": "DmkWords 英文原版阅读 · 原型导航",
+  "entry": "dmkwords-prototype.html",
   "renderer": "html",
   "status": "complete",
   "exports": [
@@ -14,7 +14,7 @@
   "updatedAt": "2026-06-04T05:02:31.583Z",
   "sourceSkillId": "agent-browser",
   "metadata": {
-    "identifier": "megawords-prototype",
+    "identifier": "dmkwords-prototype",
     "artifactType": "text/html",
     "inferred": false
   }

@@ -1,11 +1,11 @@
 <!-- frontend/pages/reading-pkg/quiz/quiz.wxml -->
 <view class="page-bg flex-col quiz-page">
-  <error-view wx:if="{{loadError}}" visible="{{loadError}}" icon="😵" title="加载失败" desc="数据加载出错了，请稍后重试" showRetry="{{true}}" retryText="重试" bind:onRetry="onRetry" />
-  <loading-skeleton wx:elif="{{loading}}" />
+  <error-view wx:if="{{loadError}}" visible="{{loadError}}" icon="<text class="icon icon-dizzy-face">😵</text>" title="加载失败" desc="数据加载出错了，请稍后重试" showRetry="{{true}}" retryText="重试" showBack="{{true}}" backText="返回" bind:onRetry="onRetry" bind:onBack="goBack" />
+  <view wx:elif="{{loading}}" class="loading-wrapper"><loading-skeleton /><view class="loading-cancel" bindtap="goBack" style="text-align:center;padding:24rpx"><text style="color:var(--muted,#999);font-size:28rpx">取消加载</text></view></view>
   <block wx:if="{{!loadError && !loading}}">
   <!-- MP-009: 题库为空占位 -->
   <view class="empty-state" wx:if="{{noQuestions}}" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:80vh;padding:40rpx;">
-    <view style="font-size:80rpx;margin-bottom:24rpx;">📝</view>
+    <view style="font-size:80rpx;margin-bottom:24rpx;"><text class="icon icon-note">📝</text></view>
     <view style="font-size:32rpx;font-weight:600;margin-bottom:12rpx;">题目还在准备中</view>
     <view style="font-size:26rpx;color:var(--muted);margin-bottom:32rpx;text-align:center;">这本书的测验题目正在由老师精心准备，请稍后再来</view>
     <button class="btn-primary" bindtap="goBookshelf" style="width:300rpx;">先去看看其他书</button>
@@ -14,6 +14,10 @@
   <!-- Header: Progress (MP-011: 彩色进度条) -->
   <view class="quiz-header" wx:if="{{!noQuestions}}">
     <view class="quiz-book-name">{{bookTitle}}</view>
+    <view class="quiz-timer">
+      <text class="timer-icon">⏱</text>
+      <text class="timer-text">{{Math.floor(elapsedSeconds / 60)}}:{{String(elapsedSeconds % 60).padStart(2, '0')}}</text>
+    </view>
     <view class="quiz-progress-row">
       <view class="quiz-progress-bar">
         <view class="quiz-progress-fill" style="width: {{(currentQ + 1) / totalQ * 100}}%;"></view>
@@ -27,51 +31,48 @@
     <view class="question-num text-primary text-bold">第 {{currentQ + 1}} 题</view>
     <view class="question-text">{{question.question_text}}<text class="en" wx:if="{{question.question_cn}}" style="display:block;">{{question.question_cn}}</text></view>
 
-    <!-- Feedback -->
-    <view class="feedback {{feedbackType ? 'show' : ''}} {{feedbackType}}" wx:if="{{!noQuestions}}">
-      <view class="feedback-icon">✓</view>
-      <text class="feedback-text">{{feedbackText}}</text>
-    </view>
-
     <!-- MP-010: 选项触控区域优化（最小 96rpx） -->
     <view class="options">
       <view class="option {{selected === 'A' ? 'selected' : ''}} {{resultA === 'correct' ? 'correct' : ''}} {{resultA === 'wrong' ? 'wrong' : ''}}" bindtap="selectOption" data-ans="A">
         <view class="option-letter {{selected === 'A' ? 'option-letter-active' : ''}}">A</view>
         <text class="option-text">{{question.option_a}}</text>
-        <view class="check-icon" wx:if="{{selected === 'A' || resultA}}">✓</view>
+        <view class="check-icon" wx:if="{{selected === 'A' || resultA}}"><text class="icon icon-checkmark">✓</text></view>
       </view>
       <view class="option {{selected === 'B' ? 'selected' : ''}} {{resultB === 'correct' ? 'correct' : ''}} {{resultB === 'wrong' ? 'wrong' : ''}}" bindtap="selectOption" data-ans="B">
         <view class="option-letter {{selected === 'B' ? 'option-letter-active' : ''}}">B</view>
         <text class="option-text">{{question.option_b}}</text>
-        <view class="check-icon" wx:if="{{selected === 'B' || resultB}}">✓</view>
+        <view class="check-icon" wx:if="{{selected === 'B' || resultB}}"><text class="icon icon-checkmark">✓</text></view>
       </view>
       <view class="option {{selected === 'C' ? 'selected' : ''}} {{resultC === 'correct' ? 'correct' : ''}} {{resultC === 'wrong' ? 'wrong' : ''}}" bindtap="selectOption" data-ans="C" wx:if="{{question.option_c}}">
         <view class="option-letter {{selected === 'C' ? 'option-letter-active' : ''}}">C</view>
         <text class="option-text">{{question.option_c}}</text>
-        <view class="check-icon" wx:if="{{selected === 'C' || resultC}}">✓</view>
+        <view class="check-icon" wx:if="{{selected === 'C' || resultC}}"><text class="icon icon-checkmark">✓</text></view>
       </view>
       <view class="option {{selected === 'D' ? 'selected' : ''}} {{resultD === 'correct' ? 'correct' : ''}} {{resultD === 'wrong' ? 'wrong' : ''}}" bindtap="selectOption" data-ans="D" wx:if="{{question.option_d}}">
         <view class="option-letter {{selected === 'D' ? 'option-letter-active' : ''}}">D</view>
         <text class="option-text">{{question.option_d}}</text>
-        <view class="check-icon" wx:if="{{selected === 'D' || resultD}}">✓</view>
+        <view class="check-icon" wx:if="{{selected === 'D' || resultD}}"><text class="icon icon-checkmark">✓</text></view>
       </view>
+    </view>
+
+    <!-- Feedback -->
+    <view class="feedback {{feedbackType ? 'show' : ''}} {{feedbackType}}" wx:if="{{!noQuestions}}">
+      <view class="feedback-icon"><text class="icon icon-checkmark">✓</text></view>
+      <text class="feedback-text">{{feedbackText}}</text>
     </view>
   </view>
 
   <!-- Footer: Navigation buttons -->
   <view class="quiz-footer safe-bottom" wx:if="{{!noQuestions}}">
-    <view class="flex gap-sm">
-      <button class="btn-outline flex-1" wx:if="{{currentQ > 0}}" bindtap="prevQuestion">上一题</button>
-      <button class="{{currentQ < totalQ - 1 ? 'next-btn' : 'submit-btn'}} {{!selected ? 'btn-disabled' : ''}}" bindtap="nextQuestion" disabled="{{!selected}}">
-        {{currentQ < totalQ - 1 ? '下一题' : '提交答案'}}
-      </button>
-    </view>
+    <button class="{{currentQ < totalQ - 1 ? 'next-btn' : 'submit-btn'}} {{!selected ? 'btn-disabled' : ''}}" bindtap="nextQuestion" disabled="{{!selected}}">
+      {{currentQ < totalQ - 1 ? '下一题' : '提交答案'}}
+    </button>
   </view>
 
   <!-- Confirm Dialog -->
   <view class="confirm-overlay {{showConfirm ? 'show' : ''}}" catchtap="hideConfirm">
     <view class="confirm-dialog" catchtap="">
-      <view class="cd-emoji">📝</view>
+      <view class="cd-emoji"><text class="icon icon-note">📝</text></view>
       <view class="cd-title">确认提交？</view>
       <view class="cd-sub">还可以检查一遍哦！<br/>你已作答全部 {{totalQ}} 道题目。</view>
       <view class="cd-actions flex gap-sm">

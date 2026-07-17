@@ -12,6 +12,7 @@ from decimal import Decimal
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from sqlalchemy import func as sql_func
+from backend.common.distributed_lock import distributed_lock
 from backend.common.types import MemberStatus
 
 logger = logging.getLogger(__name__)
@@ -171,6 +172,7 @@ def _create_message(
     db.add(msg)
 
 
+@distributed_lock("job:check_member_expiry", timeout=600)
 def check_member_expiry():
     """
     [What] 会员到期提醒
@@ -222,6 +224,7 @@ def check_member_expiry():
         db.close()
 
 
+@distributed_lock("job:check_grace_period_shutdown", timeout=600)
 def check_grace_period_shutdown():
     """
     [What] 检查缓冲期关停
@@ -266,6 +269,7 @@ def check_grace_period_shutdown():
         db.close()
 
 
+@distributed_lock("job:generate_weekly_reports", timeout=600)
 def generate_weekly_reports():
     """
     [What] 生成周报
@@ -306,6 +310,7 @@ def generate_weekly_reports():
         db.close()
 
 
+@distributed_lock("job:generate_monthly_reports", timeout=600)
 def generate_monthly_reports():
     """
     [What] 生成月报 + 平台级月度统计
@@ -477,6 +482,7 @@ def generate_monthly_reports():
         db.close()
 
 
+@distributed_lock("job:close_expired_orders", timeout=120)
 def close_expired_orders():
     """
     [What] 关闭超时未支付订单
@@ -515,6 +521,7 @@ def close_expired_orders():
         db.close()
 
 
+@distributed_lock("job:migrate_activity_status", timeout=120)
 def migrate_activity_status():
     """
     [What] 活动状态自动迁移
@@ -581,6 +588,7 @@ def migrate_activity_status():
         db.close()
 
 
+@distributed_lock("job:remind_pending_submissions", timeout=120)
 def remind_pending_submissions():
     """
     [What] 晋级待审超过7天提醒
@@ -626,6 +634,7 @@ def remind_pending_submissions():
         db.close()
 
 
+@distributed_lock("job:alert_stale_refunds", timeout=120)
 def alert_stale_refunds():
     """
     [What] 退款7天未到账告警
@@ -669,6 +678,7 @@ def alert_stale_refunds():
         db.close()
 
 
+@distributed_lock("job:check_due_date_reminders", timeout=600)
 def check_due_date_reminders():
     """
     [What] 借阅到期提醒
@@ -731,6 +741,7 @@ def check_due_date_reminders():
         db.close()
 
 
+@distributed_lock("job:expire_reservations", timeout=120)
 def expire_reservations():
     """
     [What] 预约过期检查
@@ -774,6 +785,7 @@ def expire_reservations():
         db.close()
 
 
+@distributed_lock("job:mark_overdue_books", timeout=600)
 def mark_overdue_books():
     """
     [What] 逾期检测 + 罚款按日累计
@@ -853,6 +865,7 @@ def mark_overdue_books():
         db.close()
 
 
+@distributed_lock("job:check_observation_expiry", timeout=600)
 def check_observation_expiry():
     """
     [What] 观察期到期检查 + 自动生成评估报告
@@ -906,6 +919,7 @@ def check_observation_expiry():
         db.close()
 
 
+@distributed_lock("job:check_observation_reminders", timeout=600)
 def check_observation_reminders():
     """
     [What] 观察期到期提醒
@@ -958,6 +972,7 @@ def check_observation_reminders():
         db.close()
 
 
+@distributed_lock("job:check_activity_reminders", timeout=120)
 def check_activity_reminders():
     """活动开始前 3 天提醒 — 每天 10:00 执行"""
     db = _get_db_session()

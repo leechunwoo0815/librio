@@ -14,6 +14,7 @@
 /* Confetti */
 .confetti-container {
   position: fixed;
+    box-sizing: border-box;
   top: 0;
   left: 0;
   width: 100%;
@@ -21,6 +22,7 @@
   pointer-events: none;
   z-index: 99;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 .confetti-piece {
@@ -71,11 +73,11 @@
 }
 
 .result-icon-pass {
-  background: rgba(57, 195, 75, 0.1);
+  background: rgba(var(--success-rgb), 0.1);
 }
 
 .result-icon-fail {
-  background: rgba(230, 173, 0, 0.1);
+  background: rgba(var(--warning-rgb), 0.1);
 }
 
 .icon-check {
@@ -101,12 +103,12 @@
 }
 
 .badge-pass {
-  background: rgba(57, 195, 75, 0.1);
+  background: rgba(var(--success-rgb), 0.1);
   color: var(--success);
 }
 
 .badge-fail {
-  background: rgba(230, 173, 0, 0.1);
+  background: rgba(var(--warning-rgb), 0.1);
   color: var(--warning);
 }
 
@@ -126,23 +128,29 @@
   width: 240rpx;
   height: 240rpx;
   border-radius: 50%;
-  border: 16rpx solid var(--border);
   position: absolute;
   top: 0;
   left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .ring-pass {
-  border-color: var(--success);
+  background: conic-gradient(var(--success) 0%, var(--success) var(--pct, 0%), var(--border) var(--pct, 0%), var(--border) 100%);
 }
 
 .ring-fail {
-  border-color: var(--warning);
+  background: conic-gradient(var(--warning) 0%, var(--warning) var(--pct, 0%), var(--border) var(--pct, 0%), var(--border) 100%);
 }
 
 .score-inner {
+  width: 208rpx;
+  height: 208rpx;
+  border-radius: 50%;
+  background: var(--bg);
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: center;
   position: relative;
   z-index: 1;
@@ -154,12 +162,6 @@
   font-weight: 700;
   color: var(--fg);
   line-height: 1;
-}
-
-.score-text {
-  font-family: var(--font-display);
-  font-size: 72rpx;
-  font-weight: 700;
   position: relative;
   z-index: 1;
 }
@@ -230,8 +232,8 @@
   margin-top: 32rpx;
   padding: 28rpx;
   border-radius: var(--radius-sm);
-  background: rgba(57, 195, 75, 0.1);
-  border: 2rpx solid rgba(57, 195, 75, 0.2);
+  background: rgba(var(--success-rgb), 0.1);
+  border: 2rpx solid rgba(var(--success-rgb), 0.2);
 }
 
 .aa-title {
@@ -254,11 +256,6 @@
   color: var(--success);
   font-weight: 700;
   font-size: 28rpx;
-}
-
-.check {
-  color: var(--success);
-  font-weight: 700;
 }
 
 /* Wrong Questions Review */
@@ -308,15 +305,15 @@
   margin-top: 32rpx;
   padding: 32rpx;
   border-radius: var(--radius);
-  background: linear-gradient(135deg, rgba(85, 96, 207, 0.12), rgba(57, 195, 75, 0.08));
-  border: 2rpx solid rgba(85, 96, 207, 0.15);
+  background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.12), rgba(var(--success-rgb), 0.08));
+  border: 2rpx solid rgba(var(--accent-rgb), 0.15);
   text-align: center;
   animation: shimmer 2s ease infinite;
 }
 
 @keyframes shimmer {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(85, 96, 207, 0); }
-  50% { box-shadow: 0 0 40rpx 8rpx rgba(85, 96, 207, 0.15); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(var(--accent-rgb), 0); }
+  50% { box-shadow: 0 0 40rpx 8rpx rgba(var(--accent-rgb), 0.15); }
 }
 
 .lu-emoji {
@@ -343,8 +340,8 @@
   margin-top: 32rpx;
   padding: 40rpx;
   border-radius: var(--radius);
-  background: linear-gradient(135deg, rgba(85, 96, 207, 0.12), rgba(57, 195, 75, 0.08));
-  border: 2rpx solid rgba(85, 96, 207, 0.15);
+  background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.12), rgba(var(--success-rgb), 0.08));
+  border: 2rpx solid rgba(var(--accent-rgb), 0.15);
   text-align: center;
   animation: shimmer 2s ease infinite;
 }
@@ -387,6 +384,10 @@
   margin-top: 48rpx;
 }
 
+.btn-block {
+  width: 100%;
+}
+
 .btn-primary {
   width: 100%;
   padding: 28rpx;
@@ -419,16 +420,18 @@
 /* Level Up Celebration Overlay */
 .level-up-overlay {
   position: fixed;
+    box-sizing: border-box;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(85, 96, 207, 0.85), rgba(230, 173, 0, 0.75));
+  background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.85), rgba(var(--warning-rgb), 0.75));
   z-index: 200;
   display: flex;
   align-items: center;
   justify-content: center;
   animation: overlayFadeIn 0.3s ease;
+  box-sizing: border-box;
 }
 
 @keyframes overlayFadeIn {
@@ -504,7 +507,7 @@
 .encourage-box {
   margin-top: 24rpx;
   padding: 20rpx 24rpx;
-  background: rgba(230, 173, 0, 0.1);
+  background: rgba(var(--warning-rgb), 0.1);
   border-radius: var(--radius);
   font-size: 28rpx;
   color: var(--warning);
@@ -577,70 +580,3 @@
   color: var(--fg);
 }
 
-/* 通过结果图标 */
-.result-icon-pass svg {
-  width: 88rpx;
-  height: 88rpx;
-  color: var(--success);
-}
-
-/* 失败结果图标 */
-.result-icon-fail svg {
-  width: 88rpx;
-  height: 88rpx;
-  color: var(--warning);
-}
-
-/* 通过徽章 */
-.badge-pass {
-  background: var(--success-soft);
-  color: var(--success);
-}
-
-/* 失败徽章 */
-.badge-fail {
-  background: var(--warning-soft);
-  color: var(--warning);
-}
-
-/* 通过结果标题 */
-.result-title-pass {
-  color: var(--success);
-}
-
-/* 失败结果标题 */
-.result-title-fail {
-  color: var(--warning);
-}
-
-/* 提交按钮活跃态 */
-.btn-primary:active {
-  opacity: 0.85;
-}
-
-/* ===== 原型缺失选择器补全 ===== */
-
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-.result-icon-pass .celebration { position: absolute; font-size: 24px;
-      animation: floatUp 0.8s ease forwards; }
-@keyframes floatUp { 0% 
-      50% 
-      100% }
-.result-badge.pass { background: var(--success-soft); color: var(--success); }
-.result-badge.fail { background: var(--warning-soft); color: var(--warning); }
-.score-circle svg { position: absolute; width: 120px; height: 120px; transform: rotate(-90deg); }
-.score-circle .score-text { position: relative; z-index: 1;
-      font-family: var(--font-display); font-size: 36px; font-weight: 700; }
-.score-circle .score-unit { font-size: 16px; font-weight: 400; }
-.result-title.pass { color: var(--success); }
-.result-title.fail { color: var(--warning); }
-.stat-item .stat-val { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: var(--accent); }
-.stat-item .stat-label { font-size: 11px; color: var(--muted); }
-.level-up-banner .lu-emoji { font-size: 32px; margin-bottom: 8px; }
-.level-up-banner .lu-text { font-family: var(--font-display); font-size: 16px; font-weight: 600; color: var(--accent); }
-.level-up-banner .lu-sub { font-size: 13px; color: var(--muted); margin-top: 4px; }
-.auto-actions .aa-title { font-size: 13px; font-weight: 600; color: var(--success);
-      margin-bottom: 6px; }
-.auto-actions .aa-item { font-size: 12px; color: var(--fg); padding: 2px 0;
-      display: flex; align-items: center; gap: 6px; }
-.auto-actions .aa-item .check { color: var(--success); font-weight: 700; }

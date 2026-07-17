@@ -8,12 +8,14 @@ module.exports = {
 
   // 孩子
   getChildren() { return req.get('/child/') },
+  getTiers() { return req.get('/order/tiers') },
   getChild(id) { return req.get(`/child/${id}`) },
   createChild(data) { return req.post('/child/', data) },
 
   // 图书
   searchBooks(params) { return req.get('/book/search', null, { params }) },
   getBookDetail(id) { return req.get(`/book/${id}`) },
+  getRelatedBooks(bookId, limit = 6) { return req.get(`/book/${bookId}/related`, null, { params: { limit } }) },
 
   // 书架
   getBookshelf(childId) { return req.get('/bookshelf/', null, { params: { child_id: childId } }) },
@@ -28,12 +30,13 @@ module.exports = {
   // 阅读
   getBookPages(bookId) { return req.get(`/reading/pages/${bookId}`) },
   getProgress(bookId, childId) { return req.get(`/reading/progress/${childId}/${bookId}`) },
-  saveProgress(childId, bookId, page, total) { return req.post('/reading/progress', { book_id: bookId, current_page: page, total_pages: total }) },
+  saveProgress(childId, bookId, page, total) { return req.post('/reading/progress', { child_id: childId, book_id: bookId, current_page: page, total_pages: total }) },
   startSession(childId, bookId) { return req.post('/reading/session/start', { book_id: bookId, child_id: childId }) },
-  endSession(sid, pages, words) { return req.put(`/reading/session/${sid}/end`, { pages_read: pages, words_read: words }) },
+  endSession(sid, pages, words, minutes) { return req.put(`/reading/session/${sid}/end`, { pages_read: pages, words_read: words, reading_minutes: minutes }) },
 
   // 打卡
   getCheckinCalendar(childId, year, month) { return req.get(`/reading/checkin/${childId}`, null, { params: { year, month } }) },
+  getCheckinRecords(childId) { return req.get(`/reading/checkin/${childId}/records`) },
   getStreak(childId) { return req.get(`/reading/streak/${childId}`) },
 
   // 借阅
@@ -43,6 +46,7 @@ module.exports = {
   lookupWord(word) { return req.get(`/vocabulary/lookup/${word}`) },
   addToVocab(childId, word, bookId) { return req.post('/vocabulary/', { word, child_id: childId, book_id: bookId }) },
   getVocabList(childId, status) { return req.get(`/vocabulary/${childId}`, null, { params: { status } }) },
+  getLearningWords(childId) { return req.get(`/vocabulary/${childId}/learning-words`) },
   getVocabStats(childId) { return req.get(`/vocabulary/${childId}/stats`) },
   markMastered(vocabId) { return req.put(`/vocabulary/${vocabId}/master`) },
   removeVocab(vocabId) { return req.del(`/vocabulary/${vocabId}`) },
@@ -83,6 +87,7 @@ module.exports = {
 
   // 订单
   createOrder(childId, type) { return req.post('/order/', { child_id: childId, type }) },
+  cancelOrder(orderId) { return req.post(`/order/${orderId}/cancel`) },
   getOrder(id) { return req.get(`/order/${id}`) },
   getPayParams(orderId) { return req.get(`/order/${orderId}/pay-params`) },
   getOrders(page) { return req.get('/order/', null, { params: { page: page || 1 } }) },
@@ -97,7 +102,7 @@ module.exports = {
   transferBenefit(sourceChildId, targetChildId) { return req.post('/child/transfer', { source_child_id: sourceChildId, target_child_id: targetChildId }) },
 
   // 场馆
-  getVenues() { return req.get('/admin/venues') },
+  getVenues() { return req.get('/admin/api/venues') },
 
   // 活动
   getActivities() { return req.get('/activity/') },
@@ -108,7 +113,7 @@ module.exports = {
 
   // 押金
   getDepositStatus(childId) { return req.get('/deposit/status', null, { params: { child_id: childId } }) },
-  payDeposit(childId, amount) { return req.post('/deposit/pay', { child_id: childId, amount }) },
+  payDeposit(childId) { return req.post('/deposit/pay', { child_id: childId }) },
   refundDeposit(childId) { return req.post('/deposit/refund', { child_id: childId }) },
   repayDeposit(childId) { return req.post('/deposit/repay', null, { params: { child_id: childId } }) },
 
@@ -124,5 +129,10 @@ module.exports = {
   // 预约
   createReservation(childId, bookId) { return req.post('/reservation/', { child_id: childId, book_id: bookId }) },
   getReservations(childId) { return req.get(`/reservation/${childId}`) },
+  cancelReservation(reservationId) { return req.post(`/reservation/${reservationId}/cancel`) },
   fulfillReservation(reservationId, childId) { return req.post('/reservation/fulfill', { reservation_id: reservationId, child_id: childId }) },
+
+  // 转让记录
+  getTransferRecords() { return req.get('/child/transfer/records') },
+  deleteChild(childId) { return req.del(`/child/${childId}`) },
 }

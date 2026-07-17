@@ -51,13 +51,13 @@
 
 /* Profile Card */
 .profile-card {
-  background: linear-gradient(160deg, var(--accent) 0%, #3d2d9a 45%, #322680 100%);
+  background: linear-gradient(160deg, var(--accent) 0%, var(--accent-dark) 45%, var(--accent-darker) 100%);
   border-radius: 40rpx;
   padding: 56rpx 48rpx 48rpx;
   color: var(--surface);
   position: relative;
   overflow: hidden;
-  box-shadow: 0 16rpx 64rpx rgba(85, 96, 207, 0.25);
+  box-shadow: 0 16rpx 64rpx rgba(var(--accent-rgb), 0.25);
 }
 
 /* Decorative circles (replacing CSS pseudo-elements) */
@@ -141,7 +141,7 @@
   width: 88rpx;
   height: 88rpx;
   border-radius: 24rpx;
-  background: linear-gradient(135deg, #c89632, #a87a28);
+  background: linear-gradient(135deg, var(--gold), var(--gold-dark));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -149,7 +149,7 @@
   font-size: 44rpx;
   font-weight: 800;
   color: var(--surface);
-  box-shadow: 0 8rpx 24rpx rgba(200, 150, 50, 0.35);
+  box-shadow: 0 8rpx 24rpx rgba(var(--warning-rgb), 0.35);
 }
 
 .level-text {
@@ -265,6 +265,12 @@
   align-items: center;
   justify-content: center;
   padding: 8rpx;
+
+.qr-image {
+  width: 100%;
+  height: 100%;
+  border-radius: 8rpx;
+}
   flex-shrink: 0;
 }
 
@@ -383,6 +389,7 @@
 /* Toast */
 .toast {
   position: fixed;
+    box-sizing: border-box;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
@@ -392,6 +399,7 @@
   font-size: 28rpx;
   font-weight: 500;
   color: var(--surface);
+  box-sizing: border-box;
   z-index: 100;
   pointer-events: none;
   opacity: 0;
@@ -410,18 +418,3 @@
   color: var(--muted);
 }
 
-/* ===== 原型缺失选择器补全 ===== */
-
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-.nav-bar .back svg { width: 20px; height: 20px; }
-.profile-card::before { content: ''; position: absolute; top: -40px; right: -30px;
-      width: 140px; height: 140px; border-radius: 50%;
-      background: rgba(255,255,255,0.06); }
-.profile-card::after { content: ''; position: absolute; bottom: -20px; left: -20px;
-      width: 100px; height: 100px; border-radius: 50%;
-      background: rgba(255,255,255,0.04); }
-.level-text .level-title { font-family: var(--font-display); font-size: 16px; font-weight: 600; }
-.level-text .level-subtitle { font-size: 12px; opacity: 0.7; margin-top: 1px; }
-.qr-code svg { width: 100%; height: 100%; }
-.qr-text strong { font-weight: 600; opacity: 1; display: block; font-size: 13px; margin-bottom: 2px; }
-.btn svg { width: 18px; height: 18px; }

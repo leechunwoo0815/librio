@@ -26,7 +26,7 @@
   width: 100%;
   padding: 6rpx;
   border-radius: var(--radius-lg);
-  background: linear-gradient(135deg, #f5e6a3, var(--warning), #b38600, var(--warning), #f5e6a3);
+  background: linear-gradient(135deg, var(--gold-light), var(--warning), var(--gold), var(--warning), var(--gold-light));
   position: relative;
 }
 
@@ -73,7 +73,7 @@
 
 .cert-header {
   font-size: 22rpx;
-  color: #b38600;
+  color: var(--gold);
   text-transform: uppercase;
   letter-spacing: 6rpx;
   margin-bottom: 12rpx;
@@ -83,12 +83,15 @@
   font-family: var(--font-display);
   font-size: 40rpx;
   font-weight: 700;
-  background: linear-gradient(135deg, #b38600, var(--accent));
+  background: linear-gradient(135deg, var(--gold), var(--accent));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   margin-bottom: 40rpx;
   position: relative;
+}
+@supports not (background-clip: text) {
+  .cert-logo { color: var(--gold); -webkit-text-fill-color: var(--gold); }
 }
 .cert-title {
   font-family: var(--font-display);
@@ -147,7 +150,7 @@
   color: var(--muted);
 }
 .cert-level.to {
-  background: linear-gradient(135deg, var(--warning), #b38600);
+  background: linear-gradient(135deg, var(--warning), var(--gold));
   color: var(--surface);
 }
 .cert-arrow {
@@ -185,7 +188,7 @@
 .cert-number {
   font-family: 'Courier New', monospace;
   font-size: 22rpx;
-  color: #b38600;
+  color: var(--gold);
   letter-spacing: 2rpx;
   margin-top: 4rpx;
 }
@@ -253,6 +256,7 @@
 /* 分享弹窗 */
 .share-modal {
   position: fixed;
+    box-sizing: border-box;
   top: 0;
   left: 0;
   width: 100%;
@@ -265,6 +269,7 @@
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.25s ease;
+  box-sizing: border-box;
 }
 .share-modal.show {
   opacity: 1;
@@ -312,10 +317,12 @@
 /* 隐藏 canvas */
 .cert-canvas {
   position: fixed;
+    box-sizing: border-box;
   left: -2000rpx;
   top: -2000rpx;
   width: 600px;
   height: 900px;
+  box-sizing: border-box;
 }
 
 /* 证书列表 */
@@ -363,7 +370,7 @@
   position: absolute;
   inset: -8rpx;
   border-radius: calc(var(--radius-lg) + 8rpx);
-  background: linear-gradient(135deg, #f5e6a3, #daa520, #8b6914, #daa520, #f5e6a3);
+  background: linear-gradient(135deg, var(--gold-light), var(--gold), var(--gold-dark), var(--gold), var(--gold-light));
   opacity: 0.3;
   filter: blur(16rpx);
   z-index: -1;
@@ -377,8 +384,8 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: radial-gradient(circle at 10% 10%, rgba(230, 173, 0, 0.04), transparent 50%),
-              radial-gradient(circle at 90% 90%, rgba(85, 96, 207, 0.04), transparent 50%);
+  background: radial-gradient(circle at 10% 10%, rgba(var(--warning-rgb), 0.04), transparent 50%),
+              radial-gradient(circle at 90% 90%, rgba(var(--accent-rgb), 0.04), transparent 50%);
   pointer-events: none;
 }
 
@@ -390,7 +397,7 @@
   left: 24rpx;
   right: 24rpx;
   bottom: 24rpx;
-  border: 2rpx solid rgba(230, 173, 0, 0.2);
+  border: 2rpx solid rgba(var(--warning-rgb), 0.2);
   border-radius: 36rpx;
   pointer-events: none;
 }
@@ -401,14 +408,3 @@
   flex-shrink: 0;
 }
 
-/* ===== 原型缺失选择器补全 ===== */
-
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-.cert-corner.tl { top: 20px; left: 20px; border-width: 2px 0 0 2px; }
-.cert-corner.tr { top: 20px; right: 20px; border-width: 2px 2px 0 0; }
-.cert-corner.bl { bottom: 20px; left: 20px; border-width: 0 0 2px 2px; }
-.cert-corner.br { bottom: 20px; right: 20px; border-width: 0 2px 2px 0; }
-.btn-save:active { opacity: 0.85; }
-.btn-save svg { width: 18px; height: 18px; }
-.btn-share:active { opacity: 0.85; }
-.btn-share svg { width: 18px; height: 18px; }

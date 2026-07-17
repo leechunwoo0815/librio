@@ -18,7 +18,6 @@ from backend.domain.advancement.schemas import (
     AchievementResponse,
     ChildAchievementResponse,
     LeaderboardEntryResponse,
-    CreateQuestionRequest,
 )
 from backend.domain.advancement.service import AdvancementService
 from backend.domain.advancement.leaderboard_service import LeaderboardService
@@ -73,16 +72,6 @@ def get_quiz_questions(
 ):
     """获取图书测验题目"""
     return service.get_quiz_questions(book_id)
-
-
-@router.post("/questions", status_code=201)
-def create_question(
-    data: CreateQuestionRequest,
-    service: AdvancementService = Depends(get_advancement_service),
-    current_user=Depends(get_current_user),
-):
-    """创建题库题目"""
-    return service.create_question(**data.model_dump())
 
 
 @router.post("/quiz/{quiz_id}/submit", response_model=QuizResultResponse)

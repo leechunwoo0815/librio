@@ -40,8 +40,8 @@
   margin: 32rpx;
   padding: 56rpx 40rpx;
   border-radius: var(--radius-lg);
-  background: linear-gradient(135deg, rgba(85,96,207,0.15), rgba(57,195,75,0.1));
-  border: 2rpx solid rgba(85,96,207,0.2);
+  background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.15), rgba(var(--success-rgb), 0.1));
+  border: 2rpx solid rgba(var(--accent-rgb), 0.2);
   text-align: center;
   position: relative;
   overflow: hidden;
@@ -60,6 +60,31 @@
 .premium-p {
   font-size: 28rpx;
   color: var(--muted);
+}
+
+/* period tabs */
+.period-tabs {
+  display: flex;
+  gap: 16rpx;
+  margin: 24rpx 32rpx;
+}
+.period-tab {
+  flex: 1;
+  padding: 20rpx;
+  text-align: center;
+  border: 2rpx solid var(--border);
+  border-radius: 16rpx;
+  background: var(--surface);
+}
+.period-tab.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.period-sub {
+  font-size: 22rpx;
+  color: var(--muted);
+  display: block;
+  margin-top: 4rpx;
 }
 
 /* price section */
@@ -135,8 +160,8 @@
   margin-top: 20rpx;
   padding: 20rpx 32rpx;
   border-radius: var(--radius-sm);
-  background: rgba(230,173,0,0.08);
-  border: 2rpx solid rgba(230,173,0,0.15);
+  background: rgba(var(--warning-rgb), 0.08);
+  border: 2rpx solid rgba(var(--warning-rgb), 0.15);
   font-size: 26rpx;
   display: flex;
   align-items: center;
@@ -199,9 +224,9 @@
   flex-shrink: 0;
 }
 .bi1 { background: var(--accent-soft); }
-.bi2 { background: rgba(57,195,75,0.12); }
+.bi2 { background: rgba(var(--success-rgb), 0.12); }
 .bi3 { background: var(--success-soft); }
-.bi4 { background: rgba(230,173,0,0.12); }
+.bi4 { background: rgba(var(--warning-rgb), 0.12); }
 .bi5 { background: rgba(238,52,59,0.08); }
 .ben-content {
   flex: 1;
@@ -254,7 +279,7 @@
   text-align: left;
 }
 .compare-th-highlight {
-  background: rgba(85,96,207,0.06);
+  background: rgba(var(--accent-rgb), 0.06);
   border-radius: 24rpx 24rpx 0 0;
   color: var(--accent);
 }
@@ -290,7 +315,7 @@
   font-size: 26rpx;
 }
 .compare-td-highlight {
-  background: rgba(85,96,207,0.03);
+  background: rgba(var(--accent-rgb), 0.03);
 }
 .check {
   color: var(--success);
@@ -359,6 +384,7 @@
 /* pay bar */
 .pay-bar {
   position: fixed;
+    box-sizing: border-box;
   bottom: 0;
   left: 0;
   right: 0;
@@ -379,7 +405,7 @@
   font-size: 32rpx;
   font-weight: 600;
   text-align: center;
-  box-shadow: 0 8rpx 32rpx rgba(85,96,207,0.3);
+  box-shadow: 0 8rpx 32rpx rgba(var(--accent-rgb), 0.3);
 }
 .pay-btn:active {
   opacity: 0.92;
@@ -395,18 +421,6 @@
   display: block;
 }
 
-/* Premium hero 装饰圆形 */
-.premium-hero::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  right: -30%;
-  width: 400rpx;
-  height: 400rpx;
-  background: radial-gradient(circle, rgba(230, 173, 0, 0.1) 0%, transparent 70%);
-  border-radius: 50%;
-}
-
 /* 支付按钮活跃态 */
 .pay-btn:active {
   transform: scale(0.98);
@@ -414,47 +428,26 @@
 
 /* 支付按钮阴影 */
 .pay-btn {
-  box-shadow: 0 8rpx 32rpx rgba(85, 96, 207, 0.3);
+  box-shadow: 0 8rpx 32rpx rgba(var(--accent-rgb), 0.3);
 }
 
-/* ===== 原型缺失选择器补全 ===== */
+/* iOS 限制提示 */
+.ios-restrict {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+  padding: 48rpx;
+}
+.ios-restrict-icon {
+  font-size: 72rpx;
+  margin-bottom: 32rpx;
+}
+.ios-restrict-text {
+  font-size: 28rpx;
+  color: var(--text-secondary);
+  text-align: center;
+  line-height: 1.6;
+}
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-.nav-bar .back svg { width: 20px; height: 20px; }
-.nav-bar .title { font-family: var(--font-display); font-size: 17px; font-weight: 600; }
-.premium-hero .crown { font-size: 48px; margin-bottom: 8px; }
-.premium-hero h1 { font-family: var(--font-display); font-size: 22px; font-weight: 700; margin-bottom: 6px; }
-.premium-hero p { font-size: 14px; color: var(--muted); }
-.multi-child svg { width: 16px; height: 16px; color: var(--muted); }
-.multi-child strong { color: var(--muted); }
-.benefits-card h3 { font-family: var(--font-display); font-size: 15px; font-weight: 600;
-      margin-bottom: 14px; display: flex; align-items: center; gap: 6px; }
-.benefits-card h3 svg { width: 18px; height: 18px; color: var(--accent); }
-.benefits-list li { display: flex; align-items: center; gap: 12px; padding: 10px 0;
-      border-bottom: 1px solid var(--border); font-size: 14px; }
-.benefits-list li:last-child { border-bottom: none; }
-.ben-icon.bi1 { background: var(--accent-soft); }
-.ben-icon.bi2 { background: var(--secondary-soft); }
-.ben-icon.bi3 { background: var(--success-soft); }
-.ben-icon.bi4 { background: var(--muted); }
-.ben-icon.bi5 { background: var(--muted); }
-.compare-card h3 { font-family: var(--font-display); font-size: 15px; font-weight: 600;
-      padding: 16px 16px 0; margin-bottom: 12px; text-align: center; }
-.compare-table thead th { padding: 10px 12px; font-weight: 600; font-size: 13px; text-align: center;
-      border-bottom: 1px solid var(--border); }
-.compare-table thead th:first-child { text-align: left; }
-.compare-table thead th.highlight { background: var(--accent-soft); color: var(--accent); border-radius: 12px 12px 0 0; }
-.compare-table td { padding: 10px 12px; text-align: center; border-bottom: 1px solid var(--border); }
-.compare-table td:first-child { text-align: left; color: var(--muted); font-size: 13px; }
-.compare-table td.highlight { background: var(--muted); }
-.compare-table tr:last-child td { border-bottom: none; }
-.compare-table .check { color: var(--success); font-weight: 600; }
-.compare-table .cross { color: var(--muted); }
-.compare-table .best { background: var(--accent); color: white; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
-.info-card h3 { font-family: var(--font-display); font-size: 15px; font-weight: 600;
-      margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
-.info-card h3 svg { width: 18px; height: 18px; color: var(--accent); }
-.info-list li { padding: 8px 0; font-size: 13px; display: flex; align-items: flex-start; gap: 8px;
-      border-bottom: 1px solid var(--border); }
-.info-list li:last-child { border-bottom: none; }
-.info-list .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); flex-shrink: 0; margin-top: 7px; }

@@ -3,11 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MegaWords 观察期报告</title>
+<title>DmkWords 观察期报告</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: -apple-system, "PingFang SC", "Helvetica Neue", sans-serif; background: #f5f5f5; color: #333; }
-.report { max-width: 800px; margin: 20px auto; background: #fff; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden; }
+body { font-family: "Noto Sans CJK SC", "PingFang SC", "Helvetica Neue", sans-serif; }
+
+@media screen {
+  body { background: #f5f5f5; color: #333; }
+  .report { max-width: 800px; margin: 20px auto; background: #fff; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden; }
+}
+
+@page { size: A4; margin: 15mm; }
+@media print {
+  body { background: #fff; color: #000; }
+  .report { max-width: none; margin: 0; border-radius: 0; box-shadow: none; }
+}
+
 .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; padding: 40px 30px; text-align: center; }
 .header h1 { font-size: 28px; margin-bottom: 8px; }
 .header p { font-size: 14px; opacity: 0.9; }
@@ -26,21 +37,27 @@ body { font-family: -apple-system, "PingFang SC", "Helvetica Neue", sans-serif; 
 .info-table { width: 100%; border-collapse: collapse; }
 .info-table td { padding: 10px 12px; border-bottom: 1px solid #f0f0f0; }
 .info-table td:first-child { color: #888; width: 120px; }
+
+@media print {
+  .header { background: #667eea !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .stat-card { background: #f8f9ff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .comment-box { background: #fffbe6 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
 </style>
 </head>
 <body>
 <div class="report">
   <div class="header">
     <h1>观察期阅读报告</h1>
-    <p>MegaWords 英文阅读平台</p>
+    <p>DmkWords 英文阅读平台</p>
   </div>
   <div class="body">
     <div class="section">
       <h2>基本信息</h2>
       <table class="info-table">
-        <tr><td>姓名</td><td>{child_name} ({english_name})</td></tr>
-        <tr><td>观察期</td><td>{obs_start} 至 {obs_end}</td></tr>
-        <tr><td>当前级别</td><td>{badge_emoji} {level_name}</td></tr>
+        <tr><td>姓名</td><td>{{ child_name }} ({{ english_name }})</td></tr>
+        <tr><td>观察期</td><td>{{ obs_start }} 至 {{ obs_end }}</td></tr>
+        <tr><td>当前级别</td><td><span class="badge">{{ badge_emoji }}</span> {{ level_name }}</td></tr>
       </table>
     </div>
 
@@ -48,15 +65,15 @@ body { font-family: -apple-system, "PingFang SC", "Helvetica Neue", sans-serif; 
       <h2>阅读统计</h2>
       <div class="stats-grid">
         <div class="stat-card">
-          <div class="number">{total_books}</div>
+          <div class="number">{{ total_books }}</div>
           <div class="label">读完图书</div>
         </div>
         <div class="stat-card">
-          <div class="number">{total_words}</div>
+          <div class="number">{{ total_words }}</div>
           <div class="label">阅读词数</div>
         </div>
         <div class="stat-card">
-          <div class="number">{total_minutes}</div>
+          <div class="number">{{ total_minutes }}</div>
           <div class="label">阅读分钟</div>
         </div>
       </div>
@@ -66,26 +83,33 @@ body { font-family: -apple-system, "PingFang SC", "Helvetica Neue", sans-serif; 
       <h2>测验统计</h2>
       <div class="stats-grid">
         <div class="stat-card">
-          <div class="number">{quizzes_attempted}</div>
+          <div class="number">{{ quizzes_attempted }}</div>
           <div class="label">参加测验</div>
         </div>
         <div class="stat-card">
-          <div class="number">{quizzes_passed}</div>
+          <div class="number">{{ quizzes_passed }}</div>
           <div class="label">通过测验</div>
         </div>
         <div class="stat-card">
-          <div class="number">{pass_rate}%</div>
+          <div class="number">{{ pass_rate }}%</div>
           <div class="label">通过率</div>
         </div>
       </div>
     </div>
 
-    {teacher_comment_section}
+    {% if teacher_comment_section %}
+    <div class="section">
+      <h2>老师评语</h2>
+      <div class="comment-box">
+        <div class="comment-text">{{ teacher_comment_section }}</div>
+      </div>
+    </div>
+    {% endif %}
 
   </div>
   <div class="footer">
-    <p>报告生成时间：{generated_at}</p>
-    <p>MegaWords 英文阅读平台 · 让阅读成为习惯</p>
+    <p>报告生成时间：{{ generated_at }}</p>
+    <p>DmkWords 英文阅读平台 · 让阅读成为习惯</p>
   </div>
 </div>
 </body>

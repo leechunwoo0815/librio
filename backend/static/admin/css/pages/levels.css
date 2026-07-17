@@ -110,6 +110,17 @@ thead {
   gap: 12px;
   align-items: flex-end;
 }
+.level-adjust-form .form-group {
+  flex: 1;
+  margin: 0;
+}
+
+/* ===== Modal Grid Layouts ===== */
+.modal-grid-1-2 { display: grid; grid-template-columns: 1fr 2fr; gap: 12px; }
+.modal-grid-1-1 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* ===== Accent Checkbox ===== */
+.checkbox-accent { accent-color: var(--accent); }
 
 /* ===== Form Textarea ===== */
 .form-textarea {

@@ -12,7 +12,6 @@ const QUOTES = [
 
 Page({
   data: {
-    isTestMode: false,
     child: null,
     currentLevel: null,
     advancement: null,
@@ -23,48 +22,26 @@ Page({
     // Carousel
     currentSlide: 0,
     // Venue
-    currentVenue: { name: '人广馆', address: '上海市黄浦区南京东路 800 号 3 楼', hours: '周二至周日 10:00–18:00' },
+    currentVenue: null,
     showVenueSheet: false,
     selectedVenueIndex: 0,
-    venues: [
-      { name: '人广馆', address: '黄浦区南京东路 800 号 3 楼' },
-      { name: '徐汇馆', address: '徐汇区漕溪北路 398 号 2 楼' },
-      { name: '陆家嘴馆', address: '浦东新区陆家嘴环路 1000 号 B1' },
-      { name: '松江馆', address: '松江区谷阳北路 166 号 1 楼' },
-    ],
-    // Achievements
-    achievements: [
-      { id: 1, emoji: '📚', name: '读完10本' },
-      { id: 2, emoji: '🏅', name: '首次满分' },
-      { id: 3, emoji: '⭐', name: '连续7天' },
-      { id: 4, emoji: '🏆', name: '词汇达人' },
-      { id: 5, emoji: '🎯', name: '精准答题' },
-    ],
-    // Students
-    students: [
-      { name: 'Lucy', age: 7, books_read: 268 },
-      { name: 'Tom', age: 10, books_read: 512 },
-      { name: 'Mia', age: 5, books_read: 96 },
-      { name: 'Leo', age: 12, books_read: 389 },
-      { name: 'Emma', age: 8, books_read: 185 },
-    ],
-    // FAQ
-    faqs: [
-      { question: '几岁可以开始英文原版阅读？', answer: '3 岁即可开始。我们根据孩子的年龄和英文基础，匹配适合的 AR 级别读物，从绘本启蒙到章节书循序渐进。', open: false },
-      { question: '99 元亲子课包含什么内容？', answer: '一节 45 分钟线下亲子阅读体验课，专业老师一对一引导，含阅读能力评估报告一份。课后可直接办理观察期或正式会员。', open: false },
-      { question: '书架上的书读完怎么办？', answer: '测评通过后书会自动从书架移除，您可以继续从图书馆选择新书加入书架。', open: false },
-      { question: '书架最多放多少本书？', answer: '每位会员书架最多 20 本书。收藏夹不限数量。', open: false },
-      { question: '多孩家庭有优惠吗？', answer: '第二个孩子起享受 8 折优惠，会员期与第一个孩子同步。报名时选择"多孩优惠"即可自动计算。', open: false },
-    ],
+    venues: [],
+    achievements: [],
+    students: [],
+    faqs: [],
     // Messages
-    hasUnread: true,
+    hasUnread: false,
     loadError: false,
+    fabButtonText: '加载中...',
     alerts: [],
     children: [],
     showChildSwitcher: false,
   },
 
   async onShow() {
+    const app = getApp()
+    if (!app.globalData.token) { return }
+
     this.setData({ quote: QUOTES[Math.floor(Math.random() * QUOTES.length)] })
     // 从后端加载场馆数据
     try {
@@ -73,11 +50,7 @@ Page({
         this.setData({ venues, currentVenue: venues[0] })
       }
     } catch (e) { /* 使用默认数据 */ }
-    const app = getApp()
-    this.setData({ isTestMode: app.globalData.isTestMode || app.globalData.token === 'test-token-mock' })
 
-    // 先显示示例数据，再尝试加载真实数据
-    this._loadDemoData()
     this.loadData()
     this.loadAlerts()
   },
@@ -86,7 +59,7 @@ Page({
     try {
       const children = await api.getChildren()
       if (!children || children.length === 0) {
-        this._loadDemoData()
+        this.setData({ loadError: true })
         return
       }
 
@@ -107,24 +80,63 @@ Page({
         api.searchBooks({ page_size: 6 }).catch(() => ({ list: [] })),
       ])
 
+      let advancement = null
+      try {
+        advancement = await api.getAdvancement(child.id)
+      } catch (e) { /* 静默降级 */ }
+
+      let students = []
+      try {
+        const studentData = await api.getStudents(child.id).catch(() => null)
+        students = (studentData && studentData.list) || []
+      } catch (e) { /* 静默降级 */ }
+      if (students.length === 0) {
+        students = [
+          { name: '小悦', age: 5, books_read: 128 },
+          { name: '子轩', age: 6, books_read: 96 },
+          { name: '雨桐', age: 5, books_read: 84 },
+          { name: '明哲', age: 7, books_read: 156 },
+          { name: '思琪', age: 6, books_read: 112 },
+        ]
+      }
+
+      let faqs = []
+      try {
+        const faqData = await api.getFAQs().catch(() => null)
+        faqs = (faqData && faqData.list) || []
+      } catch (e) { /* 静默降级 */ }
+      if (faqs.length === 0) {
+        faqs = [
+          { question: '如何开始借书？', answer: '办理会员后，可在图书馆线下扫码借书，或在 App 上预约借书。' },
+          { question: '如何查看阅读进度？', answer: '在我的页面可以查看孩子的阅读统计和连续打卡天数。' },
+          { question: '图书可以借多久？', answer: '单次借阅周期为21天，逾期将锁死音频播放功能。' },
+        ]
+      }
+
       const statusMap = { 0: '体验用户', 1: '观察期会员', 2: '正式会员', 3: '已过期', 4: '已退出' }
+      var fabText = '立即报名 99 元亲子课'
+      try {
+        var tierData = await api.getTiers()
+        var course = (tierData.tiers || []).find(function(t) { return t.type === 1 })
+        if (course) fabText = '立即报名 ' + course.price + ' 元亲子课'
+      } catch (e) { /* 静默降级 */ }
+
       this.setData({
         child: { ...child, ...stats, statusText: statusMap[child.status] || '' },
         currentLevel: level,
+        advancement,
+        students,
+        faqs,
         achievements: (achievements || []).slice(0, 5).map(a => ({
           id: a.achievement_id, emoji: a.achievement_emoji || '🏅', name: a.achievement_name || '成就'
         })),
         todayStats,
         streak: streak.current_streak || 0,
         featuredBooks: books.list || [],
+        fabButtonText: fabText,
       })
     } catch (e) {
-      const app = getApp()
-      if (app.globalData.isTestMode || app.globalData.token === 'test-token-mock') {
-        this._loadDemoData()
-      } else {
-        this.setData({ loadError: true })
-      }
+      this.setData({ loadError: true })
     }
   },
 
@@ -133,27 +145,7 @@ Page({
     this.loadData()
   },
 
-  _loadDemoData() {
-    this.setData({
-      child: { name: '小明', english_name: 'Tom', status: 2, statusText: '正式会员' },
-      currentLevel: { level_name: 'A', badge_emoji: '🌱' },
-      advancement: { books_read: 3, books_required: 10, can_advance: false, progress: 30 },
-      todayStats: { reading_minutes: 25, words_read: 1200, pages_read: 8 },
-      streak: 7,
-      featuredBooks: [
-        { id: 1, title: "Charlotte's Web", ar_value: 4.4, word_count: 31836 },
-        { id: 2, title: 'The Cat in the Hat', ar_value: 2.1, word_count: 1624 },
-        { id: 3, title: 'Green Eggs and Ham', ar_value: 1.5, word_count: 820 },
-        { id: 4, title: 'Goodnight Moon', ar_value: 1.8, word_count: 131 },
-        { id: 5, title: 'Where the Wild Things Are', ar_value: 3.2, word_count: 1018 },
-        { id: 6, title: 'The Very Hungry Caterpillar', ar_value: 2.9, word_count: 224 },
-      ],
-    })
-  },
-
   async loadAlerts() {
-    var app = getApp()
-    if (app.globalData.isTestMode || app.globalData.token === 'test-token-mock') return
     var child = auth.getCurrentChild()
     if (!child) return
 
@@ -181,6 +173,12 @@ Page({
       }
 
       this.setData({ alerts: alerts })
+      try {
+        const msgs = await api.getMessages('unread', 1)
+        this.setData({ hasUnread: msgs && msgs.list && msgs.list.length > 0 })
+      } catch (e) {
+        this.setData({ hasUnread: false })
+      }
     } catch (e) {
       // 静默失败，不影响首页
     }
@@ -199,17 +197,20 @@ Page({
   goDetail(e) { wx.navigateTo({ url: `/pages/reading-pkg/book-detail/book-detail?id=${e.currentTarget.dataset.id}` }) },
   goLogin() { wx.navigateTo({ url: '/pages/login/login' }) },
   goHome() { /* already on home, do nothing or scroll to top */ },
-  goActivities() { wx.navigateTo({ url: '/pages/activity-pkg/activity/activity' }) },
-  goMember() { wx.navigateTo({ url: '/pages/member/member' }) },
+  goActivities() { wx.navigateTo({ url: '/pages/activity-pkg/activity-detail/activity-detail' }) },
+  goMember() { wx.switchTab({ url: '/pages/member/member' }) },
   goMessages() { wx.navigateTo({ url: '/pages/order-pkg/messages/messages' }) },
   goAchievement() { wx.navigateTo({ url: '/pages/member-pkg/achievement/achievement' }) },
   goCourse() { wx.navigateTo({ url: '/pages/order-pkg/observation/observation' }) },
 
-  goDebugNav() { /* 仅 DEBUG 模式可用 */ },
   goVenueNav() {
     const venue = this.data.currentVenue
     if (venue) {
-      wx.openLocation({ name: venue.name, address: venue.address })
+      if (venue.latitude && venue.longitude) {
+        wx.openLocation({ name: venue.name, address: venue.address, latitude: Number(venue.latitude), longitude: Number(venue.longitude) })
+      } else {
+        wx.showToast({ title: '该场馆暂无定位信息', icon: 'none' })
+      }
     }
   },
 
@@ -251,7 +252,7 @@ Page({
   // Child Switcher
   onSwitchChild(e) {
     const childId = e.currentTarget.dataset.id
-    const child = this.data.children.find(c => c.id === childId)
+    const child = (this.data.children || []).find(c => c.id === childId)
     if (child) {
       auth.selectChild([child])
       this.setData({ child, showChildSwitcher: false })

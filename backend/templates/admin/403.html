@@ -1,0 +1,11 @@
+{% extends "admin/base.html" %}
+{% block title %}权限不足{% endblock %}
+{% block page_title %}权限不足{% endblock %}
+{% block content %}
+<div class="error-page" style="text-align:center;padding:80px 20px;">
+  <div style="font-size:64px;margin-bottom:16px;">🔒</div>
+  <h2 style="margin-bottom:12px;">您没有权限访问此页面</h2>
+  <p style="color:var(--muted);margin-bottom:24px;">请联系超级管理员获取相应权限</p>
+  <a href="/admin/view/dashboard" class="btn btn-primary">返回首页</a>
+</div>
+{% endblock %}

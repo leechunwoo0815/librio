@@ -2,6 +2,11 @@
 {% block title %}消息管理{% endblock %}
 {% block head %}
 <link rel="stylesheet" href="/static/admin/css/pages/message_manage.css" />
+<style>
+  .role-group-row { display:flex; gap:16px; padding-top:4px; }
+  .checkbox-inline { display:flex; align-items:center; gap:4px; font-size:13px; cursor:pointer; }
+  .checkbox-inline input { margin:0; }
+</style>
 {% endblock %}
 {% block page_title %}消息管理{% endblock %}
 {% block content %}
@@ -9,7 +14,7 @@
 <!-- Compose -->
 <div class="msg-compose">
   <h2>发送消息</h2>
-  <form id="msgForm" onsubmit="return sendMessage(event)">
+  <form id="msgForm" onsubmit="sendMessage(event);return false">
     <div class="form-row">
       <div class="form-group">
         <label for="msgTitle">标题</label>
@@ -23,7 +28,7 @@
       </div>
     </div>
     <div class="form-row">
-      <div class="form-group" style="max-width:200px">
+      <div class="form-group msg-input-max">
         <label for="msgType">消息类型</label>
         <select id="msgType">
           <option value="1">系统通知</option>
@@ -33,7 +38,7 @@
           <option value="5">阅读提醒</option>
         </select>
       </div>
-      <div class="form-group" style="max-width:200px">
+      <div class="form-group msg-input-max">
         <label for="msgPriority">优先级</label>
         <select id="msgPriority">
           <option value="0">低</option>
@@ -49,13 +54,26 @@
           <select id="msgTarget" onchange="toggleTargetUser()">
             <option value="all">全部用户</option>
             <option value="user">指定用户</option>
+            <option value="teacher">全部老师</option>
+            <option value="teacher_single">指定老师</option>
           </select>
-          <input type="number" id="msgTargetUserId" placeholder="用户ID" style="display:none" />
+          <input type="number" id="msgTargetUserId" placeholder="用户ID" class="hidden" />
+          <input type="number" id="msgTargetTeacherId" placeholder="老师ID" class="hidden" />
+        </div>
+      </div>
+    </div>
+    <div class="form-row" id="roleGroupRow">
+      <div class="form-group">
+        <label>可见分组</label>
+        <div class="role-group-row">
+          <label class="checkbox-inline"><input type="checkbox" class="role-group-cb" value="trial" checked /> 体验课</label>
+          <label class="checkbox-inline"><input type="checkbox" class="role-group-cb" value="observation" checked /> 观察期</label>
+          <label class="checkbox-inline"><input type="checkbox" class="role-group-cb" value="member" checked /> 正式会员</label>
         </div>
       </div>
     </div>
     <div class="compose-actions">
-      <button type="submit" class="btn-send" id="btnSend">发送</button>
+      <button type="submit" class="btn btn-primary" id="btnSend">发送</button>
     </div>
   </form>
 </div>
@@ -67,7 +85,7 @@
   </div>
   <div class="table-wrap">
     <div id="msgSkeleton"></div>
-    <table class="msg-table-wrap" id="msgTable" style="display:none">
+    <table class="msg-table-wrap hidden" id="msgTable">
       <thead>
         <tr>
           <th>ID</th>
@@ -76,6 +94,7 @@
           <th>类型</th>
           <th>优先级</th>
           <th>用户ID</th>
+          <th>可见分组</th>
           <th>状态</th>
           <th>发送时间</th>
         </tr>
@@ -83,7 +102,7 @@
       <tbody id="msgTableBody"></tbody>
     </table>
   </div>
-  <div id="msgEmpty" class="msg-empty" style="display:none">暂无消息记录</div>
+  <div id="msgEmpty" class="msg-empty hidden">暂无消息记录</div>
   <div id="msgPagination" class="msg-pagination"></div>
 </div>
 
@@ -97,12 +116,20 @@
   var currentPage = 1;
   var pageSize = 20;
 
+  var groupNameMap = {'trial':'体验课', 'observation':'观察期', 'member':'正式会员'};
+
   window.toggleTargetUser = function() {
     var sel = document.getElementById('msgTarget').value;
-    var inp = document.getElementById('msgTargetUserId');
-    inp.style.display = sel === 'user' ? 'block' : 'none';
-    if (sel === 'user') inp.required = true;
-    else { inp.required = false; inp.value = ''; }
+    var userInp = document.getElementById('msgTargetUserId');
+    var teacherInp = document.getElementById('msgTargetTeacherId');
+    var groupRow = document.getElementById('roleGroupRow');
+    userInp.style.display = sel === 'user' ? 'block' : 'none';
+    teacherInp.style.display = sel === 'teacher_single' ? 'block' : 'none';
+    userInp.required = sel === 'user';
+    teacherInp.required = sel === 'teacher_single';
+    groupRow.style.display = sel === 'all' ? 'flex' : 'none';
+    if (sel !== 'user') userInp.value = '';
+    if (sel !== 'teacher_single') teacherInp.value = '';
   };
 
   window.sendMessage = function(e) {
@@ -113,9 +140,14 @@
     var priority = parseInt(document.getElementById('msgPriority').value);
     var target = document.getElementById('msgTarget').value;
     var targetUserId = document.getElementById('msgTargetUserId').value;
+    var targetTeacherId = document.getElementById('msgTargetTeacherId').value;
 
     if (!title || !content) { showToast('请填写标题和内容', 'error'); return false; }
     if (target === 'user' && !targetUserId) { showToast('请输入用户ID', 'error'); return false; }
+    if (target === 'teacher_single' && !targetTeacherId) { showToast('请输入老师ID', 'error'); return false; }
+
+    // 前端选项映射到后端 target 枚举
+    var apiTarget = target === 'teacher_single' ? 'teacher' : target;
 
     var btn = document.getElementById('btnSend');
     btn.disabled = true;
@@ -126,9 +158,15 @@
       content: content,
       msg_type: msgType,
       priority: priority,
-      target: target,
+      target: apiTarget,
     };
     if (target === 'user') body.target_user_id = parseInt(targetUserId);
+    if (target === 'teacher_single') body.target_teacher_id = parseInt(targetTeacherId);
+    if (target === 'all') {
+      var groups = [];
+      document.querySelectorAll('.role-group-cb:checked').forEach(function(cb) { groups.push(cb.value); });
+      if (groups.length > 0) body.target_role_groups = groups;
+    }
 
     api.post('/admin/api/messages/send', body).then(function(data) {
       btn.disabled = false;
@@ -175,13 +213,22 @@
           var tr = document.createElement('tr');
           var shortContent = m.content.length > 40 ? m.content.substring(0, 40) + '...' : m.content;
           var time = m.create_time ? m.create_time.replace('T', ' ').substring(0, 19) : '-';
+          var groups = '';
+          if (m.target_groups && m.target_groups.length > 0) {
+            groups = m.target_groups.map(function(g) { return groupNameMap[g] || g; }).join(', ');
+          } else if (m.user_id) {
+            groups = '个人';
+          } else {
+            groups = '全部';
+          }
           tr.innerHTML =
             '<td>' + m.id + '</td>' +
             '<td>' + escHtml(m.title) + '</td>' +
             '<td title="' + escHtml(m.content) + '">' + escHtml(shortContent) + '</td>' +
             '<td><span class="msg-type-badge type-' + m.msg_type + '">' + (typeNames[m.msg_type] || m.msg_type) + '</span></td>' +
             '<td><span class="priority-badge priority-' + m.priority + '">' + (priorityNames[m.priority] || m.priority) + '</span></td>' +
-            '<td>' + m.user_id + '</td>' +
+            '<td>' + (m.user_id || '-') + '</td>' +
+            '<td class="text-xs">' + groups + '</td>' +
             '<td>' + (m.is_read ? '已读' : '未读') + '</td>' +
             '<td>' + time + '</td>';
           tbody.appendChild(tr);

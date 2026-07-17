@@ -51,7 +51,8 @@ def test_get_book_detail(book_service, db):
     """测试获取图书详情"""
     book = Book(isbn="9780064400558", title="Charlotte's Web", author="E.B. White",
                 ar_value=Decimal("3.2"), age_min=7, age_max=9, word_count=31000)
-    db.add(book); db.commit()
+    db.add(book)
+    db.commit()
 
     result = book_service.get_book_detail(book.id)
 

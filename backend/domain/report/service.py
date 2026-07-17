@@ -5,12 +5,12 @@
 跨域数据通过模型直接引用（报告域是只读聚合域）。
 """
 
-import html as html_module
 import logging
 import os
 from datetime import date, datetime, timedelta
 from typing import Optional
 
+from jinja2 import Template
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -35,6 +35,7 @@ from backend.domain.report.schemas import (
     TrendEntryResponse,
     WeeklyReportResponse,
 )
+from backend.domain.voice.models import VoiceRecording
 from backend.domain.vocabulary.models import UserVocabulary
 
 logger = logging.getLogger(__name__)
@@ -136,16 +137,17 @@ class ReportService:
             .all()
         )
 
+        child_ids = [c.id for c in children]
+        existing_report_ids = {
+            r.child_id
+            for r in self.db.query(ObservationReport.child_id)
+            .filter(ObservationReport.child_id.in_(child_ids))
+            .all()
+        }
+
         generated = []
         for child in children:
-            existing = (
-                self.db.query(ObservationReport)
-                .filter(
-                    ObservationReport.child_id == child.id,
-                )
-                .first()
-            )
-            if existing:
+            if child.id in existing_report_ids:
                 continue
 
             report = self._generate_for_child(child)
@@ -271,12 +273,10 @@ class ReportService:
         return {"success": True, "teacher_comment": comment, "teacher_id": teacher_id}
 
     def render_report_html(self, child_id: int) -> str | None:
-        """渲染观察期报告为HTML"""
+        """渲染观察期报告为HTML（Jinja2模板）"""
         report = (
             self.db.query(ObservationReport)
-            .filter(
-                ObservationReport.child_id == child_id,
-            )
+            .filter(ObservationReport.child_id == child_id)
             .order_by(ObservationReport.id.desc())
             .first()
         )
@@ -286,44 +286,44 @@ class ReportService:
         child = self.child_repo.get_by_id(child_id)
         level_name = getattr(report, "level_at_end", None) or "未分级"
 
+        # 查询级别对应的 badge_emoji
+        badge_emoji = ""
+        if level_name != "未分级":
+            from backend.domain.advancement.models import Level
+            level = (
+                self.db.query(Level)
+                .filter(Level.name == level_name, Level.is_deleted == 0)
+                .first()
+            )
+            if level and level.badge_emoji:
+                badge_emoji = level.badge_emoji
+
         pass_rate = 0
         quizzes_attempted = getattr(report, "quizzes_attempted", 0)
         quizzes_passed = getattr(report, "quizzes_passed", 0)
         if quizzes_attempted and quizzes_attempted > 0:
             pass_rate = round(quizzes_passed / quizzes_attempted * 100)
 
-        teacher_comment_section = ""
+        teacher_comment = ""
         if report.teacher_comment:
-            teacher_comment_section = f"""
-    <div class="section">
-      <h2>老师评语</h2>
-      <div class="comment-box">
-        <div class="comment-text">{html_module.escape(report.teacher_comment)}</div>
-      </div>
-    </div>"""
+            teacher_comment = report.teacher_comment
 
         template_path = os.path.join(
-            os.path.dirname(__file__),
-            "..",
-            "..",
-            "templates",
-            "observation_report.html",
+            os.path.dirname(__file__), "..", "..", "templates", "observation_report.html"
         )
         try:
             with open(template_path, encoding="utf-8") as f:
-                template = f.read()
+                template = Template(f.read())
         except FileNotFoundError:
             logger.warning(f"Template not found: {template_path}")
             return None
 
-        html = template.format(
+        return template.render(
             child_name=child.name if child else "",
             english_name=child.english_name if child else "",
-            obs_start=report.start_date.strftime("%Y-%m-%d")
-            if report.start_date
-            else "",
+            obs_start=report.start_date.strftime("%Y-%m-%d") if report.start_date else "",
             obs_end=report.end_date.strftime("%Y-%m-%d") if report.end_date else "",
-            badge_emoji="",
+            badge_emoji=badge_emoji,
             level_name=level_name,
             total_books=report.total_books_read,
             total_words=f"{report.total_words_read:,}",
@@ -331,12 +331,21 @@ class ReportService:
             quizzes_attempted=quizzes_attempted,
             quizzes_passed=quizzes_passed,
             pass_rate=pass_rate,
-            teacher_comment_section=teacher_comment_section,
-            generated_at=report.create_time.strftime("%Y-%m-%d %H:%M")
-            if report.create_time
-            else "",
+            teacher_comment_section=teacher_comment,
+            generated_at=report.create_time.strftime("%Y-%m-%d %H:%M") if report.create_time else "",
         )
-        return html
+
+    async def render_report_pdf(self, child_id: int) -> bytes | None:
+        """渲染观察期报告为PDF（异步线程，避免阻塞事件循环）"""
+        import asyncio
+        from backend.common.pdf_service import PDFService
+
+        html = self.render_report_html(child_id)
+        if not html:
+            return None
+
+        svc = PDFService()
+        return await asyncio.to_thread(svc.render_pdf, html)
 
     # ==================== 阅读统计 ====================
 
@@ -373,7 +382,14 @@ class ReportService:
             )
             .count()
         )
-        voice_count = 0  # VoiceRecording not yet in domain layer
+        voice_count = (
+            self.db.query(VoiceRecording)
+            .filter(
+                VoiceRecording.child_id == child_id,
+                VoiceRecording.is_deleted == 0,
+            )
+            .count()
+        )
 
         child = self.child_repo.get_by_id(child_id)
         return SummaryResponse(
@@ -409,26 +425,32 @@ class ReportService:
         )
 
     def get_trend(self, child_id: int, days: int = 7) -> list[TrendEntryResponse]:
-        """阅读趋势（最近N天）"""
+        """阅读趋势（最近N天）— 单次 GROUP BY 查询"""
+        since = date.today() - timedelta(days=days - 1)
+        rows = (
+            self.db.query(
+                func.date(ReadingSession.start_time).label("day"),
+                func.sum(ReadingSession.duration_seconds),
+                func.sum(ReadingSession.words_read),
+            )
+            .filter(
+                ReadingSession.child_id == child_id,
+                ReadingSession.start_time >= since,
+            )
+            .group_by(func.date(ReadingSession.start_time))
+            .all()
+        )
+        stats_by_day = {r[0]: r for r in rows}
         result = []
         for i in range(days - 1, -1, -1):
             d = date.today() - timedelta(days=i)
-            stats = (
-                self.db.query(
-                    func.sum(ReadingSession.duration_seconds),
-                    func.sum(ReadingSession.words_read),
-                )
-                .filter(
-                    ReadingSession.child_id == child_id,
-                    func.date(ReadingSession.start_time) == d,
-                )
-                .first()
-            )
+            ds = d.isoformat()
+            stats = stats_by_day.get(ds)
             result.append(
                 TrendEntryResponse(
-                    date=d.isoformat(),
-                    reading_minutes=(stats[0] or 0) // 60,
-                    words_read=stats[1] or 0,
+                    date=ds,
+                    reading_minutes=(stats[1] or 0) // 60 if stats else 0,
+                    words_read=stats[2] or 0 if stats else 0,
                 )
             )
         return result
@@ -492,7 +514,16 @@ class ReportService:
             total_words=week_stats[1] or 0,
             books_finished=books_this_week,
             new_vocabulary=new_vocab,
-            voice_practices=0,  # VoiceRecording not yet in domain layer
+            voice_practices=(
+                self.db.query(VoiceRecording)
+                .filter(
+                    VoiceRecording.child_id == child_id,
+                    VoiceRecording.is_deleted == 0,
+                    func.date(VoiceRecording.create_time) >= week_start,
+                    func.date(VoiceRecording.create_time) <= week_end,
+                )
+                .count()
+            ),
             checkin_days=checkin_days,
             current_ar_level=float(child.ar_level)
             if child and child.ar_level

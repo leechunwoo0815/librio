@@ -16,12 +16,17 @@ class AdminReportService:
         self.db = db
 
     def list_observation_reports(
-        self, page: int = 20, page_size: int = 20, keyword: str = None
+        self, page: int = 20, page_size: int = 20, keyword: str = None, child_ids: list[int] | None = None
     ) -> dict:
         """获取观察报告列表 — 带分页"""
         from backend.domain.report.models import ObservationReport
 
         query = self.db.query(ObservationReport).filter(ObservationReport.is_deleted == 0)
+
+        if child_ids is not None:
+            if not child_ids:
+                return {"items": [], "total": 0, "page": page, "page_size": page_size, "has_next": False}
+            query = query.filter(ObservationReport.child_id.in_(child_ids))
 
         # 如果有关键词，先搜索匹配的 child
         if keyword:

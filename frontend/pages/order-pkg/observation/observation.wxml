@@ -1,15 +1,20 @@
 <!--frontend/pages/order-pkg/observation/observation.wxml-->
 <view class="page-bg">
-  <view style="display:none" class="open pay-bar pay-btn pay-sub title"></view>
   <view class="nav-bar">
     <navigator class="back" open-type="navigateBack" hover-class="none">‹</navigator>
     <text class="nav-title">观察期报名</text>
   </view>
 
+  <view wx:if="{{isIOS}}" class="ios-restrict">
+    <text class="ios-restrict-icon"><text class="icon icon-apple">🍎</text></text>
+    <text class="ios-restrict-text">当前暂不支持 iOS 端开通，请使用安卓设备或联系客服办理</text>
+  </view>
+  <block wx:else>
+
   <!-- hero intro -->
   <view class="hero">
-    <text class="hero-icon">🔭</text>
-    <view class="hero-h1">MegaWords 观察期体验</view>
+    <text class="hero-icon"><text class="icon icon-telescope">🔭</text></text>
+    <view class="hero-h1">DmkWords 观察期体验</view>
     <text class="hero-p">30 天沉浸式英语阅读之旅\n配备 1 对 1 专业老师全程指导</text>
   </view>
 
@@ -18,7 +23,7 @@
     <text class="duration-badge">30 天体验期</text>
     <view class="price-row">
       <text class="price-sym">¥</text>
-      <text class="price-val">500</text>
+      <text class="price-val">{{price}}</text>
       <text class="price-unit">/ 30天</text>
     </view>
     <text class="price-note">升级正式会员时可全额抵扣</text>
@@ -27,40 +32,40 @@
   <!-- includes list -->
   <view class="includes-card">
     <view class="includes-h3">
-      <text class="includes-h3-icon">✓</text>
+      <text class="includes-h3-icon"><text class="icon icon-checkmark">✓</text></text>
       <text>包含内容</text>
     </view>
     <view class="includes-list">
       <view class="includes-item">
-        <view class="inc-icon ic1">📚</view>
+        <view class="inc-icon ic1"><text class="icon icon-book">书</text></view>
         <view class="inc-content">
           <text class="inc-title">在线阅读全量图书</text>
           <text class="inc-desc">A-Z 全级别 3,500+ 英文原版图书</text>
         </view>
       </view>
       <view class="includes-item">
-        <view class="inc-icon ic2">✅</view>
+        <view class="inc-icon ic2"><text class="icon icon-check"><text class="icon icon-checkmark">✓</text></text></view>
         <view class="inc-content">
           <text class="inc-title">每日阅读打卡</text>
           <text class="inc-desc">培养孩子坚持阅读的好习惯</text>
         </view>
       </view>
       <view class="includes-item">
-        <view class="inc-icon ic3">📊</view>
+        <view class="inc-icon ic3"><text class="icon icon-chart">📊</text></view>
         <view class="inc-content">
           <text class="inc-title">阅读数据统计</text>
           <text class="inc-desc">实时追踪阅读时长、词汇量、进度</text>
         </view>
       </view>
       <view class="includes-item">
-        <view class="inc-icon ic4">👩‍🏫</view>
+        <view class="inc-icon ic4"><text class="icon icon-woman">👩</text><text class="icon icon-school">🏫</text></view>
         <view class="inc-content">
           <text class="inc-title">老师定期评估</text>
           <text class="inc-desc">专业老师每周阅读能力评估与反馈</text>
         </view>
       </view>
       <view class="includes-item">
-        <view class="inc-icon ic5">📋</view>
+        <view class="inc-icon ic5"><text class="icon icon-clipboard">📋</text></view>
         <view class="inc-content">
           <text class="inc-title">观察期结束报告</text>
           <text class="inc-desc">30 天后生成个性化阅读能力分析报告</text>
@@ -71,17 +76,17 @@
 
   <!-- guarantee -->
   <view class="guarantee-box">
-    <text class="guarantee-icon">🛡️</text>
-    <text class="g-text"><text class="g-strong">无忧退款：</text>按剩余天数结算，计算公式：500 / 30 x 剩余天数，3 个工作日内原路返回。</text>
+    <text class="guarantee-icon"><text class="icon icon-shield">🛡</text></text>
+    <text class="g-strong">无忧退款：</text><text>按剩余天数结算，计算公式：{{price}} / 30 x 剩余天数，3 个工作日内原路返回。</text>
   </view>
 
   <!-- FAQ -->
   <view class="faq-card">
     <view class="faq-header">
-      <text class="faq-header-icon">❓</text>
+      <text class="faq-header-icon"><text class="icon icon-question">?</text></text>
       <text>常见问题</text>
     </view>
-    <view class="faq-item {{item.open ? 'faq-item-open' : ''}}" wx:for="{{faqList}}" wx:key="q">
+    <view class="faq-item {{item.open ? 'faq-item-open' : ''}}" wx:for="{{faqList || []}}" wx:key="q">
       <view class="faq-q" bindtap="toggleFaq" data-index="{{index}}">
         <text class="faq-q-text">{{item.q}}</text>
         <text class="faq-arrow {{item.open ? 'faq-arrow-open' : ''}}">‹</text>
@@ -95,11 +100,12 @@
   <!-- pay bar -->
   <view class="fixed-bottom-bar">
     <pay-button
-      amount="{{500}}"
+      amount="{{price}}"
       buttonText="{{loading ? '处理中...' : '立即报名'}}"
       disabled="{{loading}}"
       bind:pay="handleOrder"
-      bind:iosfallback="showIOSNotice"
     />
+    <text class="bottom-subtitle">30 天观察期 · 不满意随时退款</text>
   </view>
+  </block>
 </view>

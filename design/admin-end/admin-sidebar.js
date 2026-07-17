@@ -1,5 +1,5 @@
 /**
- * MegaWords Admin — 全局侧边栏组件
+ * DmkWords Admin — 全局侧边栏组件
  * 版本: 1.0.0
  *
  * 使用方式:
@@ -106,7 +106,7 @@
     html += '<aside class="sidebar">';
     html += '<div class="sidebar-logo">';
     html += '<div class="logo-icon">M</div>';
-    html += '<div><div class="logo-text">MegaWords</div>';
+    html += '<div><div class="logo-text">DmkWords</div>';
     html += '<div class="logo-sub">管理后台</div></div>';
     html += '</div>';
     html += '<nav class="sidebar-nav" data-scroll="' + scrollPos + '">';

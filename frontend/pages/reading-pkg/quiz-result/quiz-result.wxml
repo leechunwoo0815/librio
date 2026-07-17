@@ -1,9 +1,16 @@
 <!-- frontend/pages/reading-pkg/quiz-result/quiz-result.wxml -->
 <view class="page-bg flex-center result-page">
   <view style="display:none" class="pass wrong-q wrong-review"></view>
-  <error-view wx:if="{{loadError}}" visible="{{loadError}}" icon="😵" title="加载失败" desc="数据加载出错了，请稍后重试" showRetry="{{true}}" retryText="重试" bind:onRetry="onRetry" />
+  <error-view wx:if="{{loadError}}" visible="{{loadError}}" icon="<text class="icon icon-dizzy-face">😵</text>" title="加载失败" desc="数据加载出错了，请稍后重试" showRetry="{{true}}" retryText="重试" bind:onRetry="onRetry" />
   <loading-skeleton wx:elif="{{loading}}" />
-  <block wx:if="{{!loadError && !loading}}">
+  <block wx:if="{{!loadError && !loading && total > 0}}">
+  </block>
+  <view wx:elif="{{!loadError && !loading && total === 0}}" class="empty-state" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:80vh;padding:40rpx;">
+    <text style="font-size:80rpx;margin-bottom:24rpx;"><text class="icon icon-note">📝</text></text>
+    <text style="font-size:32rpx;font-weight:600;margin-bottom:12rpx;">暂无测评数据</text>
+    <text style="font-size:26rpx;color:var(--muted,#999);margin-bottom:32rpx;">请完成测评后续查看结果</text>
+    <button bindtap="goBackToShelf" class="btn-primary" style="width:300rpx;">返回书架</button>
+  </view>
   <!-- Confetti (pass only) -->
   <view class="confetti-container" wx:if="{{passed}}">
     <view class="confetti-piece" wx:for="{{confettiPieces}}" wx:key="index"
@@ -14,7 +21,7 @@
   <view class="result-card">
     <!-- Pass Icon -->
     <view class="result-icon result-icon-pass" wx:if="{{passed}}">
-      <text class="icon-check">✓</text>
+      <text class="icon-check"><text class="icon icon-checkmark">✓</text></text>
     </view>
     <!-- Fail Icon -->
     <view class="result-icon result-icon-fail" wx:else>
@@ -28,9 +35,9 @@
 
     <!-- Score Circle -->
     <view class="score-circle">
-      <view class="score-ring {{passed ? 'ring-pass' : 'ring-fail'}}">
+      <view class="score-ring {{passed ? 'ring-pass' : 'ring-fail'}}" style="--pct: {{score}}%;">
         <view class="score-inner">
-          <text class="score-value score-text">{{score}}</text>
+          <text class="score-value">{{score}}</text>
           <text class="score-unit">%</text>
         </view>
       </view>
@@ -64,38 +71,38 @@
     <view class="auto-actions" wx:if="{{passed}}">
       <view class="aa-title">已自动完成</view>
       <view class="aa-item">
-        <text class="aa-check check">✓</text>
+        <text class="aa-check check"><text class="icon icon-checkmark">✓</text></text>
         <text>本书已从书架归还</text>
       </view>
       <view class="aa-item">
-        <text class="aa-check check">✓</text>
+        <text class="aa-check check"><text class="icon icon-checkmark">✓</text></text>
         <text>积分已更新</text>
       </view>
       <view class="aa-item">
-        <text class="aa-check check">✓</text>
+        <text class="aa-check check"><text class="icon icon-checkmark">✓</text></text>
         <text>晋级检测完成</text>
       </view>
     </view>
 
     <!-- Level Up Banner (pass + can advance) -->
     <view class="level-up-banner" wx:if="{{passed && canAdvance}}">
-      <text class="lu-emoji">🏆</text>
+      <text class="lu-emoji"><text class="icon icon-trophy">🏆</text></text>
       <view class="lu-text text-primary text-bold">恭喜晋级！</view>
       <view class="lu-sub text-secondary text-sm">你已达到晋级标准，继续加油！</view>
     </view>
 
     <!-- 鼓励文案 -->
     <view class="encourage-box" wx:if="{{!passed}}">
-      <text wx:if="{{score < 60}}">💡 再听一遍故事，下次一定能做得更好！</text>
-      <text wx:elif="{{score < 80}}">💡 差一点点就通过了，再试试吧！</text>
-      <text wx:else>💡 就差一道题！再试一次？</text>
+      <text wx:if="{{score < 60}}"><text class="icon icon-lightbulb">💡</text> 再听一遍故事，下次一定能做得更好！</text>
+      <text wx:elif="{{score < 80}}"><text class="icon icon-lightbulb">💡</text> 差一点点就通过了，再试试吧！</text>
+      <text wx:else><text class="icon icon-lightbulb">💡</text> 就差一道题！再试一次？</text>
     </view>
   </view>
 
   <!-- 错题回顾 -->
   <view class="wrong-review-section" wx:if="{{wrongQuestions.length > 0}}">
     <view class="wrong-toggle" bindtap="toggleWrongReview">
-      <text>📝 查看错题 ({{wrongQuestions.length}} 道)</text>
+      <text><text class="icon icon-note">📝</text> 查看错题 ({{wrongQuestions.length}} 道)</text>
       <text class="toggle-arrow">{{showWrongReview ? '▲' : '▼'}}</text>
     </view>
     <view wx:if="{{showWrongReview}}" class="wrong-list">
@@ -118,7 +125,7 @@
 
   <!-- Promotion Celebration Card (shown when level up) -->
   <view class="promo-card" wx:if="{{passed && canAdvance}}">
-    <view class="promo-emoji">🎓</view>
+    <view class="promo-emoji"><text class="icon icon-graduation">🎓</text></view>
     <view class="promo-title">恭喜晋级！</view>
     <view class="promo-sub text-secondary">你已成功晋级，快来查看你的晋级证书吧！</view>
     <view class="promo-link" bindtap="viewCertificate">查看晋级证书</view>
@@ -127,7 +134,7 @@
   <!-- Level Up Celebration Overlay -->
   <view class="level-up-overlay" wx:if="{{showLevelUp}}">
     <view class="level-up-card">
-      <text class="level-up-emoji">🎉</text>
+      <text class="level-up-emoji"><text class="icon icon-party">🎉</text></text>
       <text class="level-up-title">恭喜晋级！</text>
       <text class="level-up-desc">你已晋升到 {{newLevel}} 级</text>
       <button class="btn-primary" bindtap="closeLevelUp">太棒了！</button>
@@ -138,15 +145,12 @@
   <view class="btn-group">
     <!-- Pass buttons -->
     <block wx:if="{{passed}}">
-      <button class="btn-primary btn-block" bindtap="viewCertificate">查看晋级证书</button>
-      <button class="btn-outline btn-block" bindtap="goBackToReader">继续阅读</button>
-      <button class="btn-outline btn-block" bindtap="goBackToShelf">返回书架</button>
+      <button class="btn-primary btn-block" bindtap="goBackToShelf">返回书架</button>
     </block>
     <!-- Fail buttons -->
     <block wx:else>
-      <button class="btn-primary btn-block" bindtap="retakeQuiz">重新测评</button>
-      <button class="btn-outline btn-secondary btn-block" bindtap="goBackToReader">继续阅读</button>
-      <button class="btn-outline btn-secondary btn-block" bindtap="goBackToShelf">返回书架</button>
+      <button class="btn-primary btn-block" bindtap="retakeQuiz">重新测验</button>
+      <button class="btn-outline btn-block" bindtap="goBackToShelf">返回书架</button>
     </block>
   </view>
   </block>

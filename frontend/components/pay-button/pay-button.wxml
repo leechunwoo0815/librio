@@ -5,8 +5,9 @@
       <text wx:if="{{amount > 0}}" class="pay-amount">¥{{amount}}</text>
     </button>
   </block>
-  <view wx:else class="ios-notice">
-    <text class="ios-icon">ℹ️</text>
-    <text class="ios-text">因苹果政策限制，请前往线下门店或使用安卓设备办理</text>
-  </view>
+  <block wx:else>
+    <view class="pay-ios-tip">
+      <text>当前暂不支持 iOS 端开通，请使用安卓设备或联系客服办理</text>
+    </view>
+  </block>
 </view>

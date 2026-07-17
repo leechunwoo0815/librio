@@ -1,0 +1,80 @@
+<!--frontend/pages/order-pkg/reservation/reservation.wxml-->
+<view class="page-bg">
+  <view class="nav-bar">
+    <view class="back" bindtap="goBack">‹</view>
+    <text class="title">预约管理</text>
+  </view>
+
+  <view class="tip-banner">
+    <text class="tip-icon"><text class="icon icon-lightbulb">💡</text></text>
+    <text>预约图书到馆后将保留 48 小时，超时未取将自动取消预约。请留意倒计时提醒。</text>
+  </view>
+
+  <view class="loading-state" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+
+  <block wx:else>
+    <view class="section-label" wx:if="{{activeReservations.length > 0}}">
+      <text>进行中的预约</text>
+      <text class="section-count">{{activeReservations.length}}</text>
+    </view>
+
+    <view class="reservation-list" wx:if="{{activeReservations.length > 0}}">
+      <view class="reservation-card" wx:for="{{activeReservations}}" wx:key="id">
+        <view class="reservation-cover">
+          <image wx:if="{{item.cover && item.cover.indexOf('http') === 0}}" src="{{item.cover}}" mode="aspectFill" />
+          <text wx:else>{{item.cover || '<text class="icon icon-book">书</text>'}}</text>
+        </view>
+        <view class="reservation-info">
+          <view class="reservation-title">{{item.title}}</view>
+          <view class="reservation-author">{{item.author}}</view>
+          <view class="reservation-time"><text class="icon icon-calendar">📅</text> 预约时间：{{item.formattedTime}}</view>
+          <view class="countdown-row">
+            <view wx:if="{{item.showCountdown}}" class="countdown {{item.isUrgent ? 'urgent' : 'normal'}}">
+              <text class="clock"><text class="icon icon-alarm">⏰</text></text>
+              <text>{{item.countdownText}}</text>
+            </view>
+            <view wx:elif="{{item.showQueue}}" class="queue-badge">
+              <text><text class="icon icon-hourglass-flow">⏳</text> {{item.queueText}}</text>
+            </view>
+            <view wx:else></view>
+            <view class="reservation-actions">
+              <button class="fulfill-btn" data-id="{{item.id}}" bindtap="fulfillReservation">立即取书</button>
+              <button class="cancel-btn" data-id="{{item.id}}" bindtap="cancelReservation">取消预约</button>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="section-label" wx:if="{{expiredReservations.length > 0}}">
+      <text>已过期</text>
+      <text class="section-count section-count-muted">{{expiredReservations.length}}</text>
+    </view>
+
+    <view class="reservation-list" wx:if="{{expiredReservations.length > 0}}">
+      <view class="reservation-card expired" wx:for="{{expiredReservations}}" wx:key="id">
+        <view class="reservation-cover">
+          <image wx:if="{{item.cover && item.cover.indexOf('http') === 0}}" src="{{item.cover}}" mode="aspectFill" />
+          <text wx:else>{{item.cover || '<text class="icon icon-book">书</text>'}}</text>
+        </view>
+        <view class="reservation-info">
+          <view class="reservation-title">{{item.title}}</view>
+          <view class="reservation-author">{{item.author}}</view>
+          <view class="reservation-time"><text class="icon icon-calendar">📅</text> 预约时间：{{item.formattedTime}}</view>
+          <view class="countdown-row">
+            <view class="expired-badge">
+              <text>{{item.expiredBadgeText}} <text class="icon icon-close"><text class="icon icon-ballot-x">✗</text></text></text>
+            </view>
+            <text class="expired-reason" wx:if="{{item.expiredReason}}">{{item.expiredReason}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <empty-state wx:if="{{activeReservations.length === 0 && expiredReservations.length === 0}}" icon="<text class="icon icon-book">书</text>" title="暂无预约记录" desc="去图书馆预约感兴趣的图书吧"></empty-state>
+  </block>
+
+  <view class="safe-bottom"></view>
+</view>

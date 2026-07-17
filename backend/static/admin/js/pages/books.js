@@ -6,8 +6,11 @@
 
   const searchInput = document.getElementById('searchInput');
   const booksTable = document.getElementById('booksTable');
+  var pageSize = 15;
   let isSubmitting = false;
   let booksData = [];
+  let currentKeyword = '';
+  let currentPage = 1;
 
   document.addEventListener('DOMContentLoaded', () => {
     loadBooks();
@@ -26,40 +29,52 @@
       const countEl = document.getElementById('selectedCount');
       const bar = document.getElementById('batchBar');
       if (countEl) countEl.textContent = ids.length;
-      if (bar) bar.style.display = ids.length > 0 ? 'block' : 'none';
+      if (bar) bar.classList.toggle('hidden', ids.length === 0);
     });
   });
 
-  async function loadBooks(keyword) {
+  async function loadBooks(keyword, page) {
+    currentKeyword = keyword !== undefined ? keyword : currentKeyword;
+    currentPage = page !== undefined ? page : currentPage;
     try {
-      const url = keyword ? `/admin/api/books?keyword=${encodeURIComponent(keyword)}` : '/admin/api/books?keyword=';
+      const url = `/admin/api/books?keyword=${encodeURIComponent(currentKeyword || '')}&page=${currentPage}&page_size=${pageSize}`;
       const data = await api.get(url);
       booksData = data.items || data || [];
       renderBooks(booksData, data.total || booksData.length, data.stats || null);
     } catch (err) {
       showToast(err.message || '加载图书失败', 'error');
-      booksTable.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:40px;color:var(--error);">加载失败</td></tr>';
+      booksTable.innerHTML = '<tr><td colspan="14" class="text-center p-40 text-error">加载失败</td></tr>';
     }
   }
 
   function searchBooks() {
     const keyword = searchInput ? searchInput.value.trim() : '';
-    loadBooks(keyword);
+    loadBooks(keyword, 1);
+  }
+
+  function goToPage(page) {
+    loadBooks(currentKeyword, page);
+  }
+
+  function changePageSize(newSize) {
+    pageSize = parseInt(newSize);
+    currentPage = 1;
+    loadBooks();
   }
 
   function renderBooks(books, total, stats) {
-    if (!books.length) {
-      booksTable.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:40px;color:var(--muted);">暂无图书数据</td></tr>';
-      document.getElementById('statTotal').textContent = total || 0;
-      document.getElementById('statAudio').textContent = stats ? stats.audio_books : 0;
-      document.getElementById('statQuiz').textContent = stats ? stats.quiz_books : 0;
-      document.getElementById('paginationInfo').textContent = '共 ' + (total || 0) + ' 条';
-      return;
-    }
-    document.getElementById('statTotal').textContent = total || books.length;
+    const pageTotal = total || books.length;
+    document.getElementById('statTotal').textContent = pageTotal;
     document.getElementById('statAudio').textContent = stats ? stats.audio_books : books.filter(b => b.has_audio).length;
     document.getElementById('statQuiz').textContent = stats ? stats.quiz_books : books.filter(b => b.question_count && b.question_count > 0).length;
-    document.getElementById('paginationInfo').textContent = '共 ' + (total || books.length) + ' 条';
+    document.getElementById('paginationInfo').textContent = '共 ' + pageTotal + ' 条';
+
+    if (!books.length) {
+      booksTable.innerHTML = '<tr><td colspan="14" style="text-align:center;padding:40px;color:var(--muted);">暂无图书数据</td></tr>';
+      document.getElementById('paginationPages').innerHTML = '';
+      return;
+    }
+
     booksTable.innerHTML = books.map(b => {
       const hasAudio = b.has_audio;
       const series = b.theme || '';
@@ -67,7 +82,12 @@
       const wc = b.word_count !== null && b.word_count !== undefined ? Number(b.word_count).toLocaleString() : '-';
       const qCount = b.difficulty_level || '-';
       const totalStock = b.total_stock || 0;
-      const availStock = b.offline_available !== null && b.offline_available !== undefined ? b.offline_available : totalStock;
+      const availStock = b.available_stock !== null && b.available_stock !== undefined ? b.available_stock : totalStock;
+      const published = b.is_published !== 0;
+      const statusText = published ? '上架' : '下架';
+      const statusCls = published ? 'badge-success' : 'badge-muted';
+      const barcode = b.barcode || (b.copies && b.copies.length ? b.copies[0].barcode : '-');
+      const publishAction = published ? '下架' : '上架';
       return '<tr>' +
         '<td><input type="checkbox" class="row-check" value="' + b.id + '"></td>' +
         '<td style="font-family:var(--font-mono);font-size:12px;color:var(--muted)">' + escapeHtml(b.isbn || '-') + '</td>' +
@@ -79,11 +99,13 @@
         '<td>' + (series ? '<span class="badge badge-accent">' + escapeHtml(series) + '</span>' : '<span class="badge badge-muted">-</span>') + '</td>' +
         '<td>' + (hasAudio ? '<span class="badge badge-success">有</span>' : '<span class="badge badge-muted">无</span>') + '</td>' +
         '<td>' + qCount + '</td>' +
+        '<td><span class="badge ' + statusCls + '">' + statusText + '</span></td>' +
+        '<td style="font-family:var(--font-mono);font-size:12px;">' + escapeHtml(barcode) + '</td>' +
         '<td>' + totalStock + ' / ' + availStock + '</td>' +
         '<td><div class="ops">' +
           '<a href="#" onclick="window.booksPage.viewBook(\'' + b.id + '\')">查看</a>' +
           '<span class="sep">|</span>' +
-          '<a href="#" onclick="window.booksPage.togglePublish(\'' + b.id + '\',\'' + escapeHtml(b.title).replace(/\\'/g, "\\'") + '\',' + totalStock + ',' + availStock + ')">下架</a>' +
+          '<a href="#" onclick="window.booksPage.togglePublish(\'' + b.id + '\',\'' + jsEscape(b.title) + '\',' + totalStock + ',' + availStock + ')">' + publishAction + '</a>' +
           '<span class="sep">|</span>' +
           '<a href="#" style="color:var(--error)" onclick="window.booksPage.deleteBook(\'' + b.id + '\')">删除</a>' +
         '</div></td>' +
@@ -93,8 +115,11 @@
     // 重新绑定批量选择事件
     BatchSelect.init('#booksTable', (ids) => {
       document.getElementById('selectedCount').textContent = ids.length;
-      document.getElementById('batchBar').style.display = ids.length > 0 ? 'block' : 'none';
+      document.getElementById('batchBar').classList.toggle('hidden', ids.length === 0);
     });
+
+    // 渲染分页
+    renderPagination('paginationPages', pageTotal, currentPage, pageSize, 'window.booksPage.goToPage', 'window.booksPage.changePageSize');
   }
 
   function openAddModal() {
@@ -131,7 +156,7 @@
       showToast('图书添加成功');
       clearDraft();
       closeAddModal();
-      loadBooks(searchInput ? searchInput.value.trim() : '');
+      loadBooks(currentKeyword, 1);
     } catch (err) {
       showToast(err.message || '添加失败', 'error');
     } finally {
@@ -204,12 +229,12 @@
 
   async function togglePublish(bookId, title, totalStock, availableStock) {
     const borrowedCount = totalStock - availableStock;
-    const message = `该书"${title}"当前有 ${totalStock} 本库存、${borrowedCount} 本借出，确认下架？`;
+    const message = `该书"${title}"当前有 ${totalStock} 本库存、${borrowedCount} 本借出，确认切换上下架状态？`;
     AdminConfirm.show('上下架操作', message, async function() {
       try {
         await api.put('/admin/api/books/' + bookId + '/toggle-publish');
         showToast('操作成功');
-        loadBooks(searchInput ? searchInput.value.trim() : '');
+        loadBooks(currentKeyword, currentPage);
       } catch (err) {
         showToast(err.message || '操作失败', 'error');
       }
@@ -221,7 +246,7 @@
       try {
         await api.del('/admin/api/books/' + bookId);
         showToast('已删除');
-        loadBooks(searchInput ? searchInput.value.trim() : '');
+        loadBooks(currentKeyword, currentPage);
       } catch (err) {
         showToast(err.message || '删除失败', 'error');
       }
@@ -242,7 +267,7 @@
           await api.del('/admin/api/books/' + id);
         }
         showToast('已删除 ' + ids.length + ' 本图书');
-        loadBooks(searchInput ? searchInput.value.trim() : '');
+        loadBooks(currentKeyword, 1);
       } catch (err) {
         showToast(err.message || '批量删除失败', 'error');
       }
@@ -299,7 +324,7 @@
       return;
     }
     const sizeMB = (uploadFile.size / 1024 / 1024).toFixed(1);
-    document.getElementById('uploadFileInfo').style.display = 'block';
+    document.getElementById('uploadFileInfo').classList.remove('hidden');
     document.getElementById('uploadFileInfo').innerHTML =
       '<div style="padding:12px;background:var(--success-soft);border:1px solid var(--success);border-radius:var(--radius-sm);font-size:13px;">' +
       '&#x1F4C4; <strong>' + escapeHtml(uploadFile.name) + '</strong> (' + sizeMB + ' MB)</div>';
@@ -311,7 +336,7 @@
     const btn = document.getElementById('uploadBtn');
     btn.disabled = true;
     btn.textContent = '上传中...';
-    document.getElementById('uploadProgress').style.display = 'block';
+    document.getElementById('uploadProgress').classList.remove('hidden');
     document.getElementById('uploadFileName').textContent = uploadFile.name;
 
     if (uploadFile.size <= CHUNK_SIZE) {
@@ -433,6 +458,8 @@
     handleFileSelect,
     startUpload,
     searchBooks,
-    loadBooks
+    loadBooks,
+    goToPage,
+    changePageSize
   };
 })();

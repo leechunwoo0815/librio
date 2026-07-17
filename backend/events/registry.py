@@ -26,6 +26,7 @@ def register_event_handlers():
         handle_book_borrowed_for_copy_status,
         handle_book_returned_for_copy_status,
         handle_reservation_created_for_stock,
+        handle_reservation_cancelled_for_stock,
         handle_reservation_expired_for_stock,
         handle_reservation_fulfilled_for_borrow,
         handle_book_overdue_for_fines,
@@ -33,6 +34,10 @@ def register_event_handlers():
     from backend.events.misc_handlers import (
         handle_level_advanced_for_certificate,
         handle_checkin_for_child_streak,
+    )
+    from backend.events.reading_handlers import (
+        handle_book_finished_for_advancement,
+        handle_session_completed_for_child_stats,
     )
 
     # ── 测验通过 ──
@@ -63,6 +68,9 @@ def register_event_handlers():
     # ── 预约创建 ──
     event_bus.subscribe("reservation.created", handle_reservation_created_for_stock)
 
+    # ── 预约取消 ──
+    event_bus.subscribe("reservation.cancelled", handle_reservation_cancelled_for_stock)
+
     # ── 预约过期 ──
     event_bus.subscribe("reservation.expired", handle_reservation_expired_for_stock)
 
@@ -77,4 +85,14 @@ def register_event_handlers():
     # ── 图书逾期 ──
     event_bus.subscribe("book.overdue", handle_book_overdue_for_fines)
 
-    logger.info("Event handlers registered: 12 event types, 16 handlers")
+    # ── 阅读读完一本书 ──
+    event_bus.subscribe(
+        "reading.book_finished", handle_book_finished_for_advancement
+    )
+
+    # ── 阅读会话结束 ──
+    event_bus.subscribe(
+        "reading.session_completed", handle_session_completed_for_child_stats
+    )
+
+    logger.info("Event handlers registered: 14 event types, 18 handlers")

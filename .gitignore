@@ -48,3 +48,14 @@ logs/
 *.tmp
 *.temp
 node_modules
+
+# AI / Tooling internal state
+.claude/
+.matt-pocock-skills.json
+.workbuddy/
+.ai/
+.mcp.json
+
+# Reports (generated artifacts)
+reports/
+!reports/*.md

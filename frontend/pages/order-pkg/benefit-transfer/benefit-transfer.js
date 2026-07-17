@@ -20,57 +20,31 @@ Page({
     targetStatusText: '',
     loading: true,
     submitting: false,
-    testMode: false,
     daysUsed: 0,
     daysRemaining: 0,
     checks: [],
+    records: [],
+    recordsLoading: true,
   },
 
   onLoad() {
-    const app = getApp()
-    if (app.globalData.isTestMode) {
-      this.setData({ testMode: true, loading: false })
-      this.loadTestData()
-      return
-    }
     if (!auth.requireAuth()) return
+    this.computeBenefitData(auth.getCurrentChild())
+    this.loadRecords()
   },
 
   async onShow() {
-    if (this.data.testMode) return
     await this.loadChildren()
-  },
-
-  loadTestData() {
-    const testChildren = [
-      { id: 1, name: 'Mega', age: 8, level: 3, avatar: '👦', avatarClass: 'a', status: 2 },
-      { id: 2, name: 'Mini', age: 5, level: 1, avatar: '👧', avatarClass: 'b', status: 0 },
-      { id: 3, name: '小明', age: 10, level: 5, avatar: '👦', avatarClass: 'a', status: 2 },
-    ]
-    this.setData({
-      children: testChildren,
-      sourceChild: testChildren[0],
-      targetOptions: testChildren.filter(c => c.id !== testChildren[0].id),
-      sourceStatusText: statusMap[testChildren[0].status] || '体验用户',
-      targetChild: null,
-      targetStatusText: '',
-      daysUsed: 45,
-      daysRemaining: 320,
-      checks: [
-        { text: '所有图书已归还（0 本在借）', pass: true },
-        { text: '无未完成的测验', pass: true },
-        { text: '无未处理的退款申请', pass: true },
-      ],
-    })
   },
 
   async loadChildren() {
     this.setData({ loading: true })
     try {
       const children = await api.getChildren()
+      const safeChildren = children || []
       const currentChild = auth.getCurrentChild()
-      const sourceChild = children.find(c => c.id === (currentChild ? currentChild.id : 0)) || children[0] || null
-      const targetOptions = sourceChild ? children.filter(c => c.id !== sourceChild.id) : children
+      const sourceChild = safeChildren.find(c => c.id === (currentChild ? currentChild.id : 0)) || safeChildren[0] || null
+      const targetOptions = sourceChild ? safeChildren.filter(c => c.id !== sourceChild.id) : safeChildren
 
       this.setData({
         children,
@@ -81,16 +55,50 @@ Page({
         targetStatusText: '',
         loading: false,
       })
+      this.computeBenefitData(sourceChild)
     } catch (e) {
       console.error(e)
       this.setData({ loading: false })
     }
   },
 
+  computeBenefitData(child) {
+    if (!child) {
+      this.setData({ daysUsed: 0, daysRemaining: 0, checks: [] })
+      return
+    }
+
+    const checks = []
+    let daysUsed = 0
+    let daysRemaining = 0
+
+    if (child.member_start_time) {
+      const start = new Date(child.member_start_time.replace(' ', 'T'))
+      const now = new Date()
+      daysUsed = Math.max(0, Math.floor((now - start) / (1000 * 60 * 60 * 24)))
+    }
+
+    if (child.member_expire_time) {
+      const expire = new Date(child.member_expire_time.replace(' ', 'T'))
+      const now = new Date()
+      daysRemaining = Math.max(0, Math.floor((expire - now) / (1000 * 60 * 60 * 24)))
+    }
+
+    if (child.status === 0) {
+      checks.push({ pass: false, text: '体验用户，暂无权益可转让' })
+    } else if (child.status === 3) {
+      checks.push({ pass: false, text: '该孩子会员已过期，无权益可转让' })
+    } else if (child.status === 4) {
+      checks.push({ pass: false, text: '该孩子已退出，无权益可转让' })
+    }
+
+    this.setData({ daysUsed, daysRemaining, checks })
+  },
+
   onSourceChange(e) {
     const idx = e.detail.value
     const sourceChild = this.data.children[idx]
-    const targetOptions = this.data.children.filter(c => c.id !== sourceChild.id)
+    const targetOptions = (this.data.children || []).filter(c => c.id !== sourceChild.id)
     const targetChild = this.data.targetChild && this.data.targetChild.id === sourceChild.id ? null : this.data.targetChild
     this.setData({
       sourceChild,
@@ -98,6 +106,7 @@ Page({
       targetOptions,
       sourceStatusText: statusMap[sourceChild.status] || '体验用户',
     })
+    this.computeBenefitData(sourceChild)
   },
 
   onTargetChange(e) {
@@ -127,13 +136,28 @@ Page({
 
     this.setData({ submitting: true })
     try {
-      await api.transferBenefit(sourceChild.id, targetChild.id)
-      wx.showToast({ title: '转让成功', icon: 'success' })
-      await this.loadChildren()
+      const res = await api.transferBenefit(sourceChild.id, targetChild.id)
+      this.setData({ submitting: false })
+      wx.showToast({ title: '申请已提交，等待管理员审核', icon: 'success' })
+      this._navTimer = setTimeout(() => { wx.navigateBack() }, 1500)
     } catch (e) {
-      wx.showToast({ title: e.message || '转让失败', icon: 'none' })
-    } finally {
+      wx.showToast({ title: e.message || '提交失败', icon: 'none' })
       this.setData({ submitting: false })
     }
+  },
+
+  async loadRecords() {
+    this.setData({ recordsLoading: true })
+    try {
+      const records = await api.getTransferRecords()
+      this.setData({ records: Array.isArray(records) ? records : [], recordsLoading: false })
+    } catch (e) {
+      console.error('Load records failed:', e)
+      this.setData({ records: [], recordsLoading: false })
+    }
+  },
+
+  onUnload() {
+    if (this._navTimer) { clearTimeout(this._navTimer); this._navTimer = null }
   },
 })

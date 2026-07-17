@@ -2,7 +2,7 @@
   display: inline-flex;
   align-items: center;
   padding: 4rpx 16rpx;
-  background: linear-gradient(135deg, #FFD700, #FFA000);
+  background: linear-gradient(135deg, #FFD700, #FFA000); /* intentional decorative */
   border-radius: 20rpx;
 }
 .level-badge--small {

@@ -10,19 +10,15 @@ Component({
   lifetimes: {
     attached() {
       try {
-        var sysInfo = wx.getSystemInfoSync();
-        this.setData({ isIOS: sysInfo.platform === 'ios' });
+        var windowInfo = wx.getWindowInfo();
+        this.setData({ isIOS: windowInfo.platform === 'ios' });
       } catch (e) {}
     }
   },
   methods: {
     onTap() {
       if (this.data.disabled) return;
-      if (this.data.isIOS) {
-        this.triggerEvent('iosfallback');
-      } else {
-        this.triggerEvent('pay');
-      }
+      this.triggerEvent('pay');
     }
   }
 });

@@ -14,11 +14,13 @@ Page({
     descExpanded: false,
     shelfLoading: false,
     favLoading: false,
+    loadError: false,
+    relatedBooks: [],
   },
 
   async onLoad(options) {
     const app = getApp()
-    const id = options.id;
+    const id = parseInt(options.id) || parseInt(options.bookId);
     if (!id) return;
 
     try {
@@ -26,19 +28,11 @@ Page({
       const readingTime = this._calcReadingTime(book.word_count);
       this.setData({ book, readingTime, loading: false });
       wx.setNavigationBarTitle({ title: book.title });
+      this._loadRelatedBooks(book.id);
       await this._loadChildAndStatus(book.id);
     } catch (e) {
       console.error('load book detail failed', e);
-      // API失败时显示示例数据
-      this.setData({
-        book: {
-          id: id, title: "Charlotte's Web", author: "E.B. White",
-          ar_value: "4.4", word_count: 31836, age_min: 7, age_max: 11,
-          summary: "经典英文儿童文学作品，讲述了一只名叫Charlotte的蜘蛛和一只名叫Wilbur的小猪之间的友谊故事。",
-        },
-        readingTime: "约5小时",
-        loading: false,
-      });
+      this.setData({ loadError: true, loading: false });
     }
   },
 
@@ -98,23 +92,6 @@ Page({
     this.setData({ shelfLoading: false });
   },
 
-  async startReading() {
-    const { book, child } = this.data;
-    if (!child) {
-      wx.showToast({ title: '请先选择孩子', icon: 'none' });
-      return;
-    }
-    try {
-      const session = await api.startSession(child.id, book.id);
-      wx.navigateTo({
-        url: '/pages/reading-pkg/reader/reader?bookId=' + book.id + '&sessionId=' + session.session_id + '&childId=' + child.id,
-      });
-    } catch (e) {
-      console.error('start reading failed', e);
-      wx.showToast({ title: '启动阅读失败', icon: 'none' });
-    }
-  },
-
   async addFavorite() {
     const { book, child } = this.data;
     if (!child) {
@@ -136,5 +113,29 @@ Page({
 
   toggleDesc() {
     this.setData({ descExpanded: !this.data.descExpanded });
+  },
+
+  async reserveBook(e) {
+    const { book, child } = this.data;
+    if (!child) { wx.showToast({ title: '请先选择孩子', icon: 'none' }); return; }
+    try {
+      wx.showLoading({ title: '预约中...' });
+      await api.createReservation(child.id, book.id);
+      wx.hideLoading();
+      wx.showToast({ title: '预约成功', icon: 'success' });
+    } catch (err) {
+      wx.hideLoading();
+      wx.showModal({ title: '预约失败', content: err.errMsg || '请稍后重试', showCancel: false });
+    }
+  },
+
+  async _loadRelatedBooks(bookId) {
+    try {
+      const related = await api.getRelatedBooks(bookId);
+      this.setData({ relatedBooks: related || [] });
+    } catch (e) {
+      console.error('load related books failed', e);
+      this.setData({ relatedBooks: [] });
+    }
   },
 });

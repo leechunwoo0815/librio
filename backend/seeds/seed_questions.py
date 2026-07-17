@@ -1,6 +1,7 @@
 # backend/seeds/seed_questions.py
 """题库种子数据 — 为测试环境创建示例题目"""
 
+import logging
 import sys
 import os
 
@@ -9,6 +10,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 from backend.database import get_session, Base, _get_engine
 from backend.domain.advancement.models import QuestionBank
 from backend.domain.book.models import Book
+
+logger = logging.getLogger(__name__)
 
 
 # 每本书 5 道示例题目（英文阅读理解）
@@ -78,14 +81,14 @@ def seed():
     # 检查是否已有题目
     existing = db.query(QuestionBank).count()
     if existing > 0:
-        print(f"题库已有 {existing} 道题目，跳过种子数据")
+        logger.info(f"题库已有 {existing} 道题目，跳过种子数据")
         db.close()
         return
 
     # 获取所有图书
     books = db.query(Book).filter(Book.is_deleted == 0).all()
     if not books:
-        print("没有图书数据，请先运行 seed_test_data")
+        logger.info("没有图书数据，请先运行 seed_test_data")
         db.close()
         return
 
@@ -108,9 +111,10 @@ def seed():
             count += 1
 
     db.commit()
-    print(f"题库种子数据创建成功: {count} 道题目（{len(books)} 本书）")
+    logger.info(f"题库种子数据创建成功: {count} 道题目（{len(books)} 本书）")
     db.close()
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     seed()

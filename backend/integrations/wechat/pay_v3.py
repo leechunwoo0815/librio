@@ -30,6 +30,7 @@ import uuid
 from pathlib import Path
 
 import httpx
+from decimal import Decimal
 
 # cryptography 是运行时依赖，生产环境部署时需安装
 # 开发环境下若未安装，类实例化时会报错，但不影响模块导入
@@ -44,16 +45,28 @@ try:
 except ImportError:
     _CRYPTO_AVAILABLE = False
 
+from backend.common.gateways.payment.base import PaymentGateway
+from backend.common.gateways.payment.types import (
+    PaymentCallbackData,
+    PaymentOrderRequest,
+    PaymentOrderResponse,
+    PaymentRefundRequest,
+    PaymentRefundResponse,
+)
 from backend.config import get_settings
 from backend.common.exceptions import PaymentError
 
 logger = logging.getLogger(__name__)
 
 
-class WeChatPayV3:
+class WeChatPayV3(PaymentGateway):
     """微信支付 V3 — SHA256-RSA 签名"""
 
     BASE_URL = "https://api.mch.weixin.qq.com"
+
+    @property
+    def supports_instant_payment(self) -> bool:
+        return False
 
     def __init__(self):
         if not _CRYPTO_AVAILABLE:
@@ -70,10 +83,16 @@ class WeChatPayV3:
 
         # 加载商户私钥
         key_path = Path(getattr(settings, "WECHAT_PRIVATE_KEY_PATH", ""))
-        if key_path.exists():
-            self.private_key = serialization.load_pem_private_key(
-                key_path.read_bytes(), password=None
-            )
+        if key_path.is_file():
+            # TODO: 支持 password-protected PEM 文件 — 当前仅处理无密码私钥
+            # 如果商户私钥设有密码，需从安全配置读取密码并传入 password= 参数
+            try:
+                self.private_key = serialization.load_pem_private_key(
+                    key_path.read_bytes(), password=None
+                )
+            except Exception:
+                logger.error("无法加载商户私钥，请检查 PEM 文件格式或是否设有密码保护")
+                raise
         else:
             self.private_key = None
 
@@ -81,7 +100,7 @@ class WeChatPayV3:
         # TODO: 生产环境应实现自动轮换 — 定期调用 /v3/certificates API 获取最新平台证书
         # 微信平台证书有效期约 1 年，到期后验签全部失败
         cert_path = Path(getattr(settings, "WECHAT_PLATFORM_CERT_PATH", ""))
-        if cert_path.exists():
+        if cert_path.is_file():
             self.platform_cert = load_pem_x509_certificate(cert_path.read_bytes())
         else:
             self.platform_cert = None
@@ -107,6 +126,23 @@ class WeChatPayV3:
             f'timestamp="{timestamp}",serial_no="{self.serial_no}",'
             f'signature="{signature}"'
         )
+
+    async def create_order(self, request: PaymentOrderRequest) -> PaymentOrderResponse:
+        """统一下单 — 实现 PaymentGateway ABC"""
+        amount_cent = int(request.amount)
+        try:
+            pay_params = await self.create_jsapi_order(
+                openid=request.openid,
+                order_no=request.out_trade_no,
+                amount_cent=amount_cent,
+                description=request.description,
+            )
+            prepay_id = pay_params.get("package", "").replace("prepay_id=", "")
+            return PaymentOrderResponse(
+                success=True, prepay_id=prepay_id, pay_params=pay_params
+            )
+        except PaymentError as e:
+            return PaymentOrderResponse(success=False, error_message=str(e))
 
     async def create_jsapi_order(
         self, openid: str, order_no: str, amount_cent: int, description: str
@@ -174,43 +210,40 @@ class WeChatPayV3:
             "paySign": pay_sign,
         }
 
-    def verify_callback(self, headers: dict, body: str) -> dict | None:
-        """
-        验证支付回调签名并解密
-
-        返回：解密后的通知内容，验签失败返回 None
-        """
+    async def verify_callback_signature(self, body: str, signature: str, timestamp: str, nonce: str) -> bool:
+        """验证回调签名 — 实现 PaymentGateway ABC"""
         if not self.platform_cert:
             raise RuntimeError("微信平台证书未配置，无法验签")
-
-        # 1. 验证签名
-        signature_b64 = headers.get("wechatpay-signature", "")
-        timestamp = headers.get("wechatpay-timestamp", "")
-        nonce = headers.get("wechatpay-nonce", "")
         sign_message = f"{timestamp}\n{nonce}\n{body}\n"
-
         try:
             self.platform_cert.public_key().verify(
-                base64.b64decode(signature_b64),
+                base64.b64decode(signature),
                 sign_message.encode(),
                 padding.PKCS1v15(),
                 hashes.SHA256(),
             )
+            return True
         except InvalidSignature:
-            return None
-        except Exception:
-            raise
+            return False
 
-        # 2. 解密通知内容
-        encrypted = json.loads(body).get("resource", {})
-        nonce_bytes = encrypted["nonce"].encode()
-        associated_data = encrypted.get("associated_data", "").encode()
-        ciphertext = base64.b64decode(encrypted["ciphertext"])
-
-        aes_key = self.api_key_v3.encode()
-        aesgcm = AESGCM(aes_key)
-        plaintext = aesgcm.decrypt(nonce_bytes, ciphertext, associated_data)
-        return json.loads(plaintext)
+    async def decrypt_callback_data(self, ciphertext: str, nonce: str, associated_data: str) -> PaymentCallbackData:
+        """解密回调通知 — 实现 PaymentGateway ABC"""
+        aesgcm = AESGCM(self.api_key_v3.encode())
+        plaintext = aesgcm.decrypt(
+            nonce.encode(),
+            base64.b64decode(ciphertext),
+            associated_data.encode(),
+        )
+        data = json.loads(plaintext)
+        amount_raw = data.get("amount", {}).get("total")
+        amount = Decimal(str(amount_raw)) / Decimal("100") if amount_raw is not None else None
+        return PaymentCallbackData(
+            out_trade_no=data.get("out_trade_no", ""),
+            transaction_id=data.get("transaction_id", ""),
+            trade_state=data.get("trade_state", ""),
+            amount=amount,
+            raw_body=plaintext.decode(),
+        )
 
     async def query_order(self, out_trade_no: str) -> dict:
         """查询订单"""
@@ -231,21 +264,18 @@ class WeChatPayV3:
             raise PaymentError(f"微信查询订单失败: {error_msg}")
         return resp.json()
 
-    async def refund(
-        self,
-        out_trade_no: str,
-        out_refund_no: str,
-        total_cent: int,
-        refund_cent: int,
-        reason: str = "",
-    ) -> dict:
-        """申请退款"""
+    async def refund(self, request: PaymentRefundRequest) -> PaymentRefundResponse:
+        """申请退款 — 实现 PaymentGateway ABC"""
         url = "/v3/refund/domestic/refunds"
         body = {
-            "out_trade_no": out_trade_no,
-            "out_refund_no": out_refund_no,
-            "amount": {"refund": refund_cent, "total": total_cent, "currency": "CNY"},
-            "reason": reason or "用户申请退款",
+            "out_trade_no": request.out_trade_no,
+            "out_refund_no": request.out_refund_no or f"refund_{uuid.uuid4().hex[:16]}",
+            "amount": {
+                "refund": int(request.refund_amount),
+                "total": int(request.total_amount),
+                "currency": "CNY",
+            },
+            "reason": request.reason or "用户申请退款",
         }
         body_str = json.dumps(body, ensure_ascii=False)
 
@@ -264,8 +294,9 @@ class WeChatPayV3:
                 error_msg = resp.json().get("message", "未知错误")
             except Exception:
                 error_msg = f"HTTP {resp.status_code}: {resp.text[:200]}"
-            raise PaymentError(f"微信退款申请失败: {error_msg}")
-        return resp.json()
+            return PaymentRefundResponse(success=False, error_message=error_msg)
+        data = resp.json()
+        return PaymentRefundResponse(success=True, refund_id=data.get("refund_id", ""))
 
     async def refresh_platform_cert(self) -> bool:
         """从微信 API 下载最新平台证书

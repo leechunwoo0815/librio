@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """
-MegaWords 测试数据种子脚本
+DmkWords 测试数据种子脚本
 创建完整的测试数据，覆盖所有业务场景
 
 用法:
     venv/bin/python -m backend.seeds.seed_test_data
 """
 
+import logging
 import sys
 import os
 
@@ -31,13 +32,15 @@ from backend.domain.bookshelf.models import Bookshelf, Favorites
 from backend.domain.message.models import SystemMessage
 from backend.domain.activity.models import Activity
 
+logger = logging.getLogger(__name__)
+
 
 def seed():
     engine = _get_engine()
     Session = sessionmaker(bind=engine)
     db = Session()
 
-    print("🌱 开始创建测试数据...")
+    logger.info("🌱 开始创建测试数据...")
 
     # ==================== 1. 用户和孩子 ====================
     user = db.query(User).filter(User.phone == "13800000001").first()
@@ -45,7 +48,7 @@ def seed():
         user = User(openid="test_openid_demo", phone="13800000001")
         db.add(user)
         db.flush()
-    print(f"  ✅ 用户: id={user.id}")
+    logger.info(f"  ✅ 用户: id={user.id}")
 
     child = db.query(Child).filter(Child.user_id == user.id).first()
     if not child:
@@ -65,7 +68,7 @@ def seed():
         )
         db.add(child)
         db.flush()
-    print(f"  ✅ 孩子: {child.name}({child.english_name}), 状态={child.status}")
+    logger.info(f"  ✅ 孩子: {child.name}({child.english_name}), 状态={child.status}")
 
     # ==================== 2. 级别 ====================
     levels = (
@@ -114,7 +117,7 @@ def seed():
         )
         db.add(cl)
         db.flush()
-    print(f"  ✅ 级别: {levels[0].name}级, 已读{cl.books_read_at_level}本")
+    logger.info(f"  ✅ 级别: {levels[0].name}级, 已读{cl.books_read_at_level}本")
 
     # ==================== 3. 图书（6本） ====================
     books_data = [
@@ -257,7 +260,7 @@ def seed():
             )
         created_books.append(book)
     db.commit()
-    print(f"  ✅ 图书: {len(created_books)} 本（含页面内容）")
+    logger.info(f"  ✅ 图书: {len(created_books)} 本（含页面内容）")
 
     # ==================== 4. 题库（每本书5道题） ====================
     questions_data = {
@@ -407,7 +410,7 @@ def seed():
                 )
             )
     db.commit()
-    print("  ✅ 题库: 每本书5道选择题（含答案）")
+    logger.info("  ✅ 题库: 每本书5道选择题（含答案）")
 
     # ==================== 5. 书架和收藏 ====================
     for i, book in enumerate(created_books[:5]):
@@ -440,7 +443,7 @@ def seed():
         if not existing:
             db.add(Favorites(child_id=child.id, book_id=book.id))
     db.commit()
-    print(f"  ✅ 书架: 5本在借, {len(created_books) - 5}本收藏")
+    logger.info(f"  ✅ 书架: 5本在借, {len(created_books) - 5}本收藏")
 
     # ==================== 6. 阅读进度 ====================
     for i, book in enumerate(created_books[:3]):
@@ -465,7 +468,7 @@ def seed():
                 )
             )
     db.commit()
-    print("  ✅ 阅读进度: 3本书")
+    logger.info("  ✅ 阅读进度: 3本书")
 
     # ==================== 7. 成就 ====================
     ach_data = [
@@ -499,11 +502,11 @@ def seed():
         if not existing:
             db.add(ChildAchievement(child_id=child.id, achievement_id=ach.id))
     db.commit()
-    print(f"  ✅ 成就: {len(achievements)}个定义, 孩子已获3个")
+    logger.info(f"  ✅ 成就: {len(achievements)}个定义, 孩子已获3个")
 
     # ==================== 8. 系统消息 ====================
     msg_data = [
-        ("欢迎加入 MegaWords", "欢迎成为正式会员！开始你的英文阅读之旅吧。", 1),
+        ("欢迎加入 DmkWords", "欢迎成为正式会员！开始你的英文阅读之旅吧。", 1),
         ("会员续费提醒", "您的会员将在30天后到期，建议提前续费。", 5),
         ("新书上架通知", "本月新增10本英文原版图书，快来图书馆看看吧！", 2),
     ]
@@ -516,7 +519,7 @@ def seed():
                 )
             )
     db.commit()
-    print(f"  ✅ 系统消息: {len(msg_data)}条")
+    logger.info(f"  ✅ 系统消息: {len(msg_data)}条")
 
     # ==================== 9. 活动 ====================
     activity = db.query(Activity).first()
@@ -534,16 +537,17 @@ def seed():
             )
         )
         db.commit()
-    print("  ✅ 活动: 1个")
+    logger.info("  ✅ 活动: 1个")
 
-    print("\n🎉 测试数据创建完成！")
-    print(f"   用户ID: {user.id}, 孩子ID: {child.id}")
-    print(f"   图书: {len(created_books)}本, 题库: 每本5题")
-    print(f"   书架: 5本, 收藏: {len(created_books) - 5}本")
-    print(f"   成就: {len(achievements)}个, 消息: {len(msg_data)}条")
+    logger.info("\n🎉 测试数据创建完成！")
+    logger.info(f"   用户ID: {user.id}, 孩子ID: {child.id}")
+    logger.info(f"   图书: {len(created_books)}本, 题库: 每本5题")
+    logger.info(f"   书架: 5本, 收藏: {len(created_books) - 5}本")
+    logger.info(f"   成就: {len(achievements)}个, 消息: {len(msg_data)}条")
 
     db.close()
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     seed()

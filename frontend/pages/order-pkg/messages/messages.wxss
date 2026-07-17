@@ -253,12 +253,3 @@
   opacity: 0.6;
 }
 
-/* ===== 原型缺失选择器补全 ===== */
-
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-.nav-bar .back svg { width: 20px; height: 20px; }
-.msg-icon svg { width: 20px; height: 20px; }
-.msg-icon.system svg { color: var(--accent); }
-.msg-icon.borrow svg { color: var(--success); }
-.msg-icon.event svg { color: var(--muted); }
-.msg-icon.teacher svg { color: var(--muted); }

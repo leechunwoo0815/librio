@@ -41,13 +41,13 @@
   <div class="chart-card">
     <h3>用户阅读时长排行 (Top 10)</h3>
     <div class="bar-chart" id="topReadersChart">
-      <div style="text-align:center;padding:40px;color:var(--muted)">加载中...</div>
+      <div class="chart-loading">加载中...</div>
     </div>
   </div>
   <div class="chart-card">
     <h3>日活跃趋势 (近14天)</h3>
-    <div id="trendChart" style="height:200px">
-      <div style="text-align:center;padding:40px;color:var(--muted)">加载中...</div>
+    <div id="trendChart" class="trend-chart">
+      <div class="chart-loading">加载中...</div>
     </div>
   </div>
 </div>
@@ -82,7 +82,7 @@
       var readers = data.top_readers || [];
       var chartEl = document.getElementById('topReadersChart');
       if (!readers.length) {
-        chartEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)">暂无数据</div>';
+        chartEl.innerHTML = '<div class="chart-loading">暂无数据</div>';
         return;
       }
       var maxMinutes = readers[0].minutes || 1;
@@ -101,7 +101,7 @@
       var trends = data.trends || [];
       var chartEl = document.getElementById('trendChart');
       if (!trends.length) {
-        chartEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)">暂无数据</div>';
+        chartEl.innerHTML = '<div class="chart-loading">暂无数据</div>';
         return;
       }
 
@@ -116,12 +116,12 @@
       var labels = trends.map(function(t, i) {
         if (i % 2 === 0) {
           var x = (i / (trends.length - 1)) * 800;
-          return '<text x="' + x + '" y="195" font-size="11" fill="var(--muted)" text-anchor="middle">' + t.date + '</text>';
+          return '<text x="' + x + '" y="195" font-size="11" text-anchor="middle" class="chart-label">' + t.date + '</text>';
         }
         return '';
       }).join('');
 
-      chartEl.innerHTML = '<svg viewBox="0 0 800 200" style="width:100%;height:200px">' +
+      chartEl.innerHTML = '<svg viewBox="0 0 800 200" class="w-full" style="height:200px">' +
         '<polyline points="' + points + '" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"/>' +
         labels +
         '</svg>';

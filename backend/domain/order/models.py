@@ -61,6 +61,7 @@ class Order(BaseModel):
     )
     refund_amount = Column(Numeric(10, 2), nullable=True, comment="已退款金额")
     refund_time = Column(DateTime, nullable=True, comment="退款完成时间")
+    refund_remark = Column(String(255), nullable=True, comment="退款备注")
 
     remark = Column(String(255), nullable=True, comment="订单备注")
 

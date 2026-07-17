@@ -1,6 +1,6 @@
-# MegaWords V3.5 UML状态图 + 数据库ER图
+# DmkWords V3.8 UML状态图 + 数据库ER图
 
-> 版本：V3.5（2026-06-26，45表全量对齐实际代码）
+> 版本：V3.8（2026-07-15，9张状态图+18张ER子图，49表全量对齐实际代码）
 > 所有图表采用 Mermaid 标准语法
 
 ---
@@ -132,6 +132,19 @@ stateDiagram-v2
 
 代码常量（`reservation.status`）：0=待取 1=已备 2=已取 3=取消
 
+### 1.9 权益转让申请状态流转图 ★ V3.8
+
+```mermaid
+stateDiagram-v2
+    [*] --> PENDING: 家长提交申请
+    PENDING --> APPROVED: 运营审核通过
+    PENDING --> REJECTED: 运营审核驳回
+    APPROVED --> [*]
+    REJECTED --> [*]
+```
+
+代码常量（`benefit_transfer_application.status`）：0=PENDING 1=APPROVED 2=REJECTED
+
 ---
 
 ## 二、数据库ER图
@@ -205,14 +218,45 @@ erDiagram
         varchar username UK
         varchar password_hash
         varchar name
-        tinyint role "0=超管 1=运营 2=老师"
+        tinyint role "0=超管 1=运营 2=老师 (deprecated)"
+        bigint admin_role_id FK "RBAC角色ID"
+        bigint teacher_id FK "关联教师ID"
         bigint venue_id FK
         tinyint status "0=禁用 1=启用"
+    }
+
+    ROLE {
+        bigint id PK
+        varchar code UK "super_admin/staff/teacher"
+        varchar name "显示名称"
+        varchar description
+        tinyint is_system "1=内置不可删"
+        int sort_order
+    }
+
+    PERMISSION {
+        bigint id PK
+        varchar code UK "group.action"
+        varchar name "权限名称"
+        varchar group_name "分组名称"
+        varchar description
+        tinyint is_system
+        int sort_order
+    }
+
+    ROLE_PERMISSION {
+        bigint id PK
+        bigint role_id FK
+        varchar permission_code "权限代码（无FK约束）"
     }
 
     VENUE ||--o{ TEACHER : "has"
     TEACHER ||--o{ TEACHER_SCHEDULE : "has"
     VENUE ||--o{ ADMIN : "has"
+    ROLE ||--o{ ROLE_PERMISSION : "has"
+    PERMISSION ||--o{ ROLE_PERMISSION : "has"
+    ADMIN }o--|| ROLE : "admin_role_id"
+    ADMIN }o--|| TEACHER : "teacher_id"
 ```
 
 ### 2.3 图书模块
@@ -745,6 +789,27 @@ erDiagram
     }
 
     BOOK ||--o{ BOOK_PAGE : "has_pages"
+```
+
+### 2.18 权益转让模块 ★ V3.8
+
+```mermaid
+erDiagram
+    BENEFIT_TRANSFER_APPLICATION {
+        bigint id PK
+        bigint source_child_id FK "源孩子ID"
+        bigint target_child_id FK "目标孩子ID"
+        bigint user_id FK "申请人ID"
+        tinyint status "0=PENDING 1=APPROVED 2=REJECTED"
+        text remark
+        datetime reviewed_at
+        bigint reviewer_id
+        text review_remark
+    }
+
+    CHILD ||--o{ BENEFIT_TRANSFER_APPLICATION : "as_source"
+    CHILD ||--o{ BENEFIT_TRANSFER_APPLICATION : "as_target"
+    USER ||--o{ BENEFIT_TRANSFER_APPLICATION : "applies"
 ```
 
 ---

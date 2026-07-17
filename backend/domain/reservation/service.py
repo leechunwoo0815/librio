@@ -12,12 +12,13 @@ from sqlalchemy.orm import Session
 
 from backend.common.base_repo import BaseRepository
 from backend.common.events import (
+    ReservationCancelledEvent,
     ReservationCreatedEvent,
     ReservationFulfilledEvent,
     ReservationExpiredEvent,
     event_bus,
 )
-from backend.common.exceptions import ConflictError, ValidationError
+from backend.common.exceptions import ConflictError, NotFoundError, ValidationError
 from backend.common.types import ReservationStatus
 from backend.domain.book.models import Book
 from backend.domain.reservation.models import Reservation
@@ -45,7 +46,14 @@ class ReservationService:
 
     def create_reservation(self, data: ReservationCreateRequest) -> ReservationResponse:
         """创建预约 — 锁定库存"""
-        book = self.book_repo.get_by_id_or_raise(data.book_id)
+        book = (
+            self.db.query(Book)
+            .filter(Book.id == data.book_id, Book.is_deleted == 0)
+            .with_for_update()
+            .first()
+        )
+        if not book:
+            raise NotFoundError("书不存在")
         if not book.offline_available:
             raise ValidationError("该书不支持线下借阅")
         if (book.available_stock or 0) <= 0:
@@ -164,15 +172,42 @@ class ReservationService:
         records = self.reservation_repo.get_active_by_child(child_id)
         return [ReservationResponse.model_validate(r) for r in records]
 
-    def cancel_reservation(self, reservation_id: int) -> dict:
+    def cancel_reservation(self, reservation_id: int, user_id: int | None = None) -> dict:
         """取消预约"""
-        from backend.common.exceptions import NotFoundError
-        record = self.reservation_repo.get_by_id(reservation_id)
-        if not record or record.is_deleted == 1:
+        from backend.common.exceptions import ForbiddenError, NotFoundError
+        from backend.domain.child.models import Child
+
+        record = (
+            self.db.query(Reservation)
+            .filter(Reservation.id == reservation_id, Reservation.is_deleted == 0)
+            .with_for_update()
+            .first()
+        )
+        if not record:
             raise NotFoundError("预约不存在")
         if record.status == 3:  # 已取消
             raise ConflictError("预约已取消")
-        record.status = 3  # Cancelled
+
+        if user_id is not None:
+            child = (
+                self.db.query(Child)
+                .filter(Child.id == record.child_id, Child.is_deleted == 0)
+                .first()
+            )
+            if not child or child.user_id != user_id:
+                raise ForbiddenError("无权操作该预约")
+
+        record.status = ReservationStatus.CANCELLED
         self.reservation_repo.update(record)
+
+        event_bus.publish(
+            ReservationCancelledEvent(
+                child_id=record.child_id,
+                book_id=record.book_id,
+                reservation_id=record.id,
+            ),
+            db=self.db,
+        )
+
         self.db.commit()
         return {"success": True, "message": "预约已取消"}

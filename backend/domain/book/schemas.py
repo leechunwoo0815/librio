@@ -52,12 +52,21 @@ class BookResponse(BaseSchema):
     word_count: int | None = None
     has_audio: int = 0
     audio_url: str | None = None
+    series_name: str | None = None
     difficulty_level: str | None = None
     total_stock: int = 0
     available_stock: int = 0
     offline_available: int = 0
     question_count: int | None = None
     create_time: datetime
+    description: str | None = None
+    available_copies: int = 0
+    total_copies: int = 0
+    quiz_count: int | None = None
+    publish_year: str | None = None
+    toc: str | None = None
+    audio_narrator: str | None = None
+    audio_duration: int | None = None
 
 
 class BookSearch(BaseSchema):

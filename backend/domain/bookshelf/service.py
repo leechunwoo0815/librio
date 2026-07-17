@@ -61,7 +61,21 @@ class BookshelfService:
         created = self.shelf_repo.create(entry)
         self.db.commit()
         logger.info(f"Book added to shelf: child={child_id}, book={book_id}")
-        return BookshelfResponse.model_validate(created)
+        self.db.refresh(created)
+        book = created.book
+        return BookshelfResponse(
+            id=created.id,
+            child_id=created.child_id,
+            book_id=created.book_id,
+            status=created.status,
+            book_title=book.title if book else None,
+            book_cover=book.cover if book else None,
+            add_time=created.create_time,
+            title=book.title if book else None,
+            author=book.author if book else None,
+            ar_value=float(book.ar_value) if book and book.ar_value else None,
+            word_count=book.word_count if book else None,
+        )
 
     def mark_as_finished(self, child_id: int, book_id: int) -> BookshelfResponse:
         """标记为已读"""
@@ -72,7 +86,20 @@ class BookshelfService:
         entry.status = BookshelfStatus.FINISHED
         self.shelf_repo.update(entry)
         self.db.commit()
-        return BookshelfResponse.model_validate(entry)
+        self.db.refresh(entry)
+        book = entry.book
+        return BookshelfResponse(
+            id=entry.id,
+            child_id=entry.child_id,
+            book_id=entry.book_id,
+            status=entry.status,
+            book_title=book.title if book else None,
+            book_cover=book.cover if book else None,
+            add_time=entry.create_time,
+            title=book.title if book else None,
+            author=book.author if book else None,
+            ar_value=float(book.ar_value) if book and book.ar_value else None,
+        )
 
     def remove_from_shelf(self, child_id: int, book_id: int) -> dict:
         """从书架移除"""
@@ -89,14 +116,19 @@ class BookshelfService:
         entries = self.shelf_repo.get_shelf(child_id)
         results = []
         for e in entries:
+            book = e.book
             resp = BookshelfResponse(
                 id=e.id,
                 child_id=e.child_id,
                 book_id=e.book_id,
                 status=e.status,
-                book_title=e.book.title if e.book else None,
-                book_cover=e.book.cover if e.book else None,
+                book_title=book.title if book else None,
+                book_cover=book.cover if book else None,
                 add_time=e.create_time,
+                title=book.title if book else None,
+                author=book.author if book else None,
+                ar_value=float(book.ar_value) if book and book.ar_value else None,
+                word_count=book.word_count if book else None,
             )
             results.append(resp)
         return results
@@ -105,23 +137,33 @@ class BookshelfService:
         """收藏图书"""
         existing = self.fav_repo.get_by_child_and_book(child_id, book_id)
         if existing:
+            book = existing.book
             return FavoriteResponse(
                 id=existing.id,
                 child_id=child_id,
                 book_id=book_id,
-                book_title=existing.book.title if existing.book else None,
-                book_cover=existing.book.cover if existing.book else None,
+                book_title=book.title if book else None,
+                book_cover=book.cover if book else None,
                 create_time=existing.create_time,
+                title=book.title if book else None,
+                author=book.author if book else None,
+                ar_value=float(book.ar_value) if book and book.ar_value else None,
             )
 
         fav = Favorites(child_id=child_id, book_id=book_id)
         created = self.fav_repo.create(fav)
         self.db.commit()
+        book = created.book
         return FavoriteResponse(
             id=created.id,
             child_id=child_id,
             book_id=book_id,
+            book_title=book.title if book else None,
+            book_cover=book.cover if book else None,
             create_time=created.create_time,
+            title=book.title if book else None,
+            author=book.author if book else None,
+            ar_value=float(book.ar_value) if book and book.ar_value else None,
         )
 
     def get_favorites(self, child_id: int) -> list[FavoriteResponse]:
@@ -129,14 +171,18 @@ class BookshelfService:
         favs = self.fav_repo.get_favorites(child_id)
         results = []
         for f in favs:
+            book = f.book
             results.append(
                 FavoriteResponse(
                     id=f.id,
                     child_id=f.child_id,
                     book_id=f.book_id,
-                    book_title=f.book.title if f.book else None,
-                    book_cover=f.book.cover if f.book else None,
+                    book_title=book.title if book else None,
+                    book_cover=book.cover if book else None,
                     create_time=f.create_time,
+                    title=book.title if book else None,
+                    author=book.author if book else None,
+                    ar_value=float(book.ar_value) if book and book.ar_value else None,
                 )
             )
         return results

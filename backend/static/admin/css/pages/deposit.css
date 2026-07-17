@@ -75,8 +75,9 @@ tr:hover td { background: var(--accent-soft); }
 .status-pending { background: var(--warning-soft); color: var(--warning); }
 
 /* Action link */
-.action-link { color: var(--accent); font-size: 12px; cursor: pointer; }
-.action-link:hover { text-decoration: underline; }
+
+/* Font mono utility for deposit table */
+.font-mono-date { font-family: var(--font-mono); }
 
 /* Amount column */
 .amount {

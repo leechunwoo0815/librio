@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-07-07T10:11:13.972845",
+  "timestamp": "2026-07-07T14:45:32.237657",
   "total": 119,
   "pass": 119,
   "fail": 0,
@@ -17,7 +17,7 @@
       "status": 200,
       "ok": true,
       "expected": 200,
-      "body": "{\"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwicm9sZSI6MCwiZXhwIjoxNzgzNDE5MDczLCJ0eXBlIjoiYWRtaW4iLCJq",
+      "body": "{\"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwicm9sZSI6MCwiZXhwIjoxNzgzNDM1NTMxLCJ0eXBlIjoiYWRtaW4iLCJq",
       "note": ""
     },
     {
@@ -50,7 +50,7 @@
       "status": 200,
       "ok": true,
       "expected": 200,
-      "body": "{\"total_users\": 1, \"total_children\": 47, \"total_orders\": 7, \"total_revenue\": 5499.0, \"daily_active_users\": 1, \"new_users",
+      "body": "{\"total_users\": 11, \"total_children\": 45, \"total_orders\": 6, \"total_revenue\": 7929.0, \"daily_active_users\": 1, \"new_user",
       "note": ""
     },
     {
@@ -61,7 +61,7 @@
       "status": 200,
       "ok": true,
       "expected": 200,
-      "body": "{\"items\": [{\"id\": 1, \"phone\": \"13800000001\", \"parent_name\": \"未设置\", \"avatar\": null, \"create_time\": \"2026-06-10T14:41:08\",",
+      "body": "{\"items\": [{\"id\": 2, \"phone\": \"13900000001\", \"parent_name\": \"张女士\", \"avatar\": null, \"create_time\": \"2026-07-07T13:18:44\",",
       "note": ""
     },
     {
@@ -72,7 +72,7 @@
       "status": 200,
       "ok": true,
       "expected": 200,
-      "body": "{\"items\": [{\"id\": 1, \"phone\": \"13800000001\", \"parent_name\": \"未设置\", \"avatar\": null, \"create_time\": \"2026-06-10T14:41:08\",",
+      "body": "{\"items\": [{\"id\": 2, \"phone\": \"13900000001\", \"parent_name\": \"张女士\", \"avatar\": null, \"create_time\": \"2026-07-07T13:18:44\",",
       "note": ""
     },
     {
@@ -138,7 +138,7 @@
       "status": 200,
       "ok": true,
       "expected": 200,
-      "body": "{\"success\": true, \"message\": null, \"items\": [{\"id\": 1, \"name\": \"测试场馆\", \"address\": \"北京市朝阳区\", \"phone\": \"010-12345678\", \"cr",
+      "body": "{\"success\": true, \"message\": null, \"items\": [{\"id\": 1, \"name\": \"测试场馆\", \"address\": \"北京市朝阳区\", \"phone\": \"010-12345678\", \"bu",
       "note": ""
     },
     {
@@ -149,7 +149,7 @@
       "status": 200,
       "ok": true,
       "expected": 200,
-      "body": "{\"success\": true, \"message\": null, \"items\": [{\"id\": 1, \"name\": \"张老师\", \"phone\": \"13800000002\", \"venue_id\": 1, \"introducti",
+      "body": "{\"success\": true, \"message\": null, \"items\": [{\"id\": 1, \"name\": \"张老师\", \"english_name\": null, \"phone\": \"13800000002\", \"ven",
       "note": ""
     },
     {
@@ -171,7 +171,7 @@
       "status": 200,
       "ok": true,
       "expected": 200,
-      "body": "[{\"id\": 56, \"name\": \"测试级别E\", \"badge_icon\": null, \"badge_emoji\": null, \"sort_order\": 0, \"required_books\": 5, \"required_qu",
+      "body": "[{\"id\": 56, \"name\": \"测试级别E\", \"code\": null, \"badge_icon\": null, \"badge_emoji\": null, \"sort_order\": 0, \"required_books\": 5",
       "note": ""
     },
     {
@@ -182,7 +182,7 @@
       "status": 200,
       "ok": true,
       "expected": null,
-      "body": "{\"total_users\": 1, \"total_children\": 47, \"total_orders\": 7, \"total_revenue\": 5499.0, \"daily_active_users\": 1, \"new_users",
+      "body": "{\"total_users\": 11, \"total_children\": 45, \"total_orders\": 6, \"total_revenue\": 7929.0, \"daily_active_users\": 1, \"new_user",
       "note": ""
     },
     {
@@ -193,7 +193,7 @@
       "status": 200,
       "ok": true,
       "expected": null,
-      "body": "{\"items\": [{\"id\": 1, \"phone\": \"13800000001\", \"parent_name\": \"未设置\", \"avatar\": null, \"create_time\": \"2026-06-10T14:41:08\",",
+      "body": "{\"items\": [{\"id\": 2, \"phone\": \"13900000001\", \"parent_name\": \"张女士\", \"avatar\": null, \"create_time\": \"2026-07-07T13:18:44\",",
       "note": ""
     },
     {
@@ -237,7 +237,7 @@
       "status": 200,
       "ok": true,
       "expected": null,
-      "body": "{\"success\": true, \"message\": null, \"items\": [{\"id\": 6, \"child_id\": 6, \"child_name\": \"正式测试孩子\", \"amount\": 1200.0, \"status\"",
+      "body": "{\"success\": true, \"message\": null, \"items\": [{\"id\": 6, \"child_id\": 6, \"child_name\": \"菲利克斯\", \"amount\": 1200.0, \"status\": ",
       "note": ""
     },
     {
@@ -259,7 +259,7 @@
       "status": 200,
       "ok": true,
       "expected": null,
-      "body": "{\"success\": true, \"message\": null, \"items\": [{\"id\": 1, \"name\": \"张老师\", \"phone\": \"13800000002\", \"venue_id\": 1, \"introducti",
+      "body": "{\"success\": true, \"message\": null, \"items\": [{\"id\": 1, \"name\": \"张老师\", \"english_name\": null, \"phone\": \"13800000002\", \"ven",
       "note": ""
     },
     {
@@ -358,7 +358,7 @@
       "status": 200,
       "ok": true,
       "expected": null,
-      "body": "{\"success\": true, \"message\": null, \"items\": [{\"id\": 6, \"child_id\": 1, \"child_name\": \"小明\", \"book_id\": 1, \"book_title\": \"C",
+      "body": "{\"success\": true, \"message\": null, \"items\": [{\"id\": 8, \"child_id\": 6, \"child_name\": \"菲利克斯\", \"book_id\": 1, \"book_title\": ",
       "note": ""
     },
     {
@@ -369,7 +369,7 @@
       "status": 200,
       "ok": true,
       "expected": null,
-      "body": "{\"success\": true, \"message\": null, \"items\": [{\"id\": 1, \"name\": \"测试场馆\", \"address\": \"北京市朝阳区\", \"phone\": \"010-12345678\", \"cr",
+      "body": "{\"success\": true, \"message\": null, \"items\": [{\"id\": 1, \"name\": \"测试场馆\", \"address\": \"北京市朝阳区\", \"phone\": \"010-12345678\", \"bu",
       "note": ""
     },
     {
@@ -446,7 +446,7 @@
       "status": 200,
       "ok": true,
       "expected": 200,
-      "body": "[{\"id\": 1, \"user_id\": 1, \"name\": \"小明\", \"english_name\": \"Tom\", \"age\": 7, \"grade\": \"二年级\", \"status\": 3, \"member_start_time\"",
+      "body": "[{\"id\": 1, \"user_id\": 1, \"name\": \"小明\", \"english_name\": \"Tom\", \"age\": 7, \"grade\": \"二年级\", \"status\": 2, \"member_start_time\"",
       "note": ""
     },
     {
@@ -457,7 +457,7 @@
       "status": 200,
       "ok": true,
       "expected": 200,
-      "body": "{\"id\": 1, \"user_id\": 1, \"name\": \"小明\", \"english_name\": \"Tom\", \"age\": 7, \"grade\": \"二年级\", \"status\": 3, \"member_start_time\":",
+      "body": "{\"id\": 1, \"user_id\": 1, \"name\": \"小明\", \"english_name\": \"Tom\", \"age\": 7, \"grade\": \"二年级\", \"status\": 2, \"member_start_time\":",
       "note": ""
     },
     {
@@ -468,7 +468,7 @@
       "status": 201,
       "ok": true,
       "expected": 201,
-      "body": "{\"id\": 48, \"user_id\": 1, \"name\": \"正式测试孩子\", \"english_name\": null, \"age\": 7, \"grade\": \"一年级\", \"status\": 0, \"member_start_ti",
+      "body": "{\"id\": 69, \"user_id\": 1, \"name\": \"正式测试孩子\", \"english_name\": null, \"age\": 7, \"grade\": \"一年级\", \"status\": 0, \"member_start_ti",
       "note": ""
     },
     {
@@ -600,7 +600,7 @@
       "status": 200,
       "ok": true,
       "expected": 200,
-      "body": "{\"items\": [{\"id\": 14, \"user_id\": 1, \"title\": \"最终验证\", \"content\": \"test\", \"msg_type\": 1, \"priority\": 0, \"is_read\": 0, \"cre",
+      "body": "{\"items\": [{\"id\": 17, \"user_id\": 1, \"title\": \"test\", \"content\": \"test content\", \"msg_type\": 1, \"priority\": 1, \"is_read\":",
       "note": ""
     },
     {
@@ -611,7 +611,7 @@
       "status": 200,
       "ok": true,
       "expected": 200,
-      "body": "{\"items\": [{\"id\": 14, \"user_id\": 1, \"title\": \"最终验证\", \"content\": \"test\", \"msg_type\": 1, \"priority\": 0, \"is_read\": 0, \"cre",
+      "body": "{\"items\": [{\"id\": 17, \"user_id\": 1, \"title\": \"test\", \"content\": \"test content\", \"msg_type\": 1, \"priority\": 1, \"is_read\":",
       "note": ""
     },
     {
@@ -630,10 +630,10 @@
       "name": "转让接口",
       "method": "POST",
       "path": "/child/transfer",
-      "status": 422,
+      "status": 403,
       "ok": true,
       "expected": null,
-      "body": "{\"detail\": \"源孩子状态不允许转让\"}",
+      "body": "{\"detail\": \"目标孩子已有会员权益，无法转让\"}",
       "note": ""
     },
     {
@@ -655,7 +655,7 @@
       "status": 200,
       "ok": true,
       "expected": 200,
-      "body": "{\"id\": 1, \"parent_name\": null, \"phone\": \"13800000001\", \"avatar\": null, \"current_child_id\": null, \"create_time\": \"2026-06",
+      "body": "{\"id\": 1, \"parent_name\": \"家长1\", \"phone\": \"13800138001\", \"avatar\": null, \"current_child_id\": null, \"create_time\": \"2026-0",
       "note": ""
     },
     {
@@ -666,7 +666,7 @@
       "status": 200,
       "ok": true,
       "expected": 200,
-      "body": "[{\"id\": 1, \"book_id\": 1, \"page_number\": 1, \"content_type\": 0, \"text_content\": \"Chapter 1: Before Breakfast\\n\\n'Where's P",
+      "body": "[{\"id\": 1, \"book_id\": 1, \"page_number\": 1, \"content_type\": 0, \"text_content\": \"test content\", \"image_url\": null, \"audio_",
       "note": ""
     },
     {
@@ -688,7 +688,7 @@
       "status": 201,
       "ok": true,
       "expected": 201,
-      "body": "{\"id\": 46, \"child_id\": 1, \"book_id\": 1, \"start_time\": \"2026-07-07T10:11:14\", \"end_time\": null, \"duration_seconds\": 0, \"p",
+      "body": "{\"id\": 67, \"child_id\": 1, \"book_id\": 1, \"start_time\": \"2026-07-07T14:45:32\", \"end_time\": null, \"duration_seconds\": 0, \"p",
       "note": ""
     },
     {
@@ -721,7 +721,7 @@
       "status": 200,
       "ok": true,
       "expected": 200,
-      "body": "[{\"id\": 1, \"word\": \"elephant\", \"phonetic\": \"'elifәnt\", \"chinese_meaning\": \"n. 象\", \"status\": 0, \"lookup_count\": 40, \"last",
+      "body": "[{\"id\": 1, \"word\": \"elephant\", \"phonetic\": \"'elifәnt\", \"chinese_meaning\": \"n. 象\", \"status\": 0, \"lookup_count\": 61, \"last",
       "note": ""
     },
     {
@@ -754,7 +754,7 @@
       "status": 201,
       "ok": true,
       "expected": 201,
-      "body": "{\"id\": 1, \"word\": \"elephant\", \"phonetic\": \"'elifәnt\", \"chinese_meaning\": \"n. 象\", \"status\": 0, \"lookup_count\": 41, \"last_",
+      "body": "{\"id\": 1, \"word\": \"elephant\", \"phonetic\": \"'elifәnt\", \"chinese_meaning\": \"n. 象\", \"status\": 0, \"lookup_count\": 62, \"last_",
       "note": ""
     },
     {
@@ -765,7 +765,7 @@
       "status": 200,
       "ok": true,
       "expected": 200,
-      "body": "[{\"id\": 56, \"name\": \"测试级别E\", \"badge_icon\": null, \"badge_emoji\": null, \"sort_order\": 0, \"required_books\": 5, \"required_qu",
+      "body": "[{\"id\": 56, \"name\": \"测试级别E\", \"code\": null, \"badge_icon\": null, \"badge_emoji\": null, \"sort_order\": 0, \"required_books\": 5",
       "note": ""
     },
     {
@@ -776,7 +776,7 @@
       "status": 200,
       "ok": true,
       "expected": null,
-      "body": "{\"id\": 1, \"child_id\": 1, \"level_id\": 1, \"level_name\": \"A\", \"achieved_at\": \"2026-06-10T14:41:08\", \"books_read_at_level\": ",
+      "body": "{\"id\": 1, \"child_id\": 1, \"level_id\": 1, \"level_name\": \"测试级别修改\", \"achieved_at\": \"2026-06-10T14:41:08\", \"books_read_at_lev",
       "note": ""
     },
     {
@@ -831,7 +831,7 @@
       "status": 201,
       "ok": true,
       "expected": 201,
-      "body": "{\"id\": 41, \"child_id\": 1, \"book_id\": 1, \"status\": 0, \"total_questions\": 5, \"correct_count\": 0, \"score\": null}",
+      "body": "{\"id\": 62, \"child_id\": 1, \"book_id\": 1, \"status\": 0, \"total_questions\": 5, \"correct_count\": 0, \"score\": null}",
       "note": ""
     },
     {
@@ -919,7 +919,7 @@
       "status": 200,
       "ok": true,
       "expected": null,
-      "body": "{\"id\": 1, \"child_id\": 1, \"teacher_id\": null, \"content\": null, \"teacher_comment\": \"小明同学在观察期内表现优秀，阅读习惯良好，理解能力强，建议转为正式会员继续学",
+      "body": "{\"id\": 1, \"child_id\": 1, \"teacher_id\": 1, \"content\": null, \"teacher_comment\": \"测试评语\", \"total_books_read\": 8, \"total_word",
       "note": ""
     },
     {
@@ -1260,7 +1260,7 @@
       "status": 200,
       "ok": true,
       "expected": null,
-      "body": "{\"id\": 1, \"child_id\": 1, \"teacher_id\": null, \"content\": null, \"teacher_comment\": \"小明同学在观察期内表现优秀，阅读习惯良好，理解能力强，建议转为正式会员继续学",
+      "body": "{\"id\": 1, \"child_id\": 1, \"teacher_id\": 1, \"content\": null, \"teacher_comment\": \"测试评语\", \"total_books_read\": 8, \"total_word",
       "note": ""
     },
     {

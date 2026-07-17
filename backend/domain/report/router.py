@@ -2,7 +2,7 @@
 """报告域 API 路由 — 学习报告/观察期报告/阅读统计"""
 
 from fastapi import APIRouter, Depends, Query
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 
 from backend.common.dependencies import get_report_service
 from backend.domain.report.schemas import (
@@ -18,7 +18,7 @@ from backend.domain.report.schemas import (
     WeeklyReportResponse,
 )
 from backend.domain.report.service import ReportService
-from backend.middleware.admin_auth import get_current_admin
+from backend.middleware.admin_rbac import require_perm
 from backend.middleware.auth import get_current_user
 from backend.middleware.ownership import GetOwnedChild, GetOwnedChildFromQuery
 
@@ -93,7 +93,7 @@ def get_observation_report_detail(
 @router.post("/observation/generate", response_model=GenerateReportsResponse)
 def generate_observation_reports(
     service: ReportService = Depends(get_report_service),
-    admin=Depends(get_current_admin),
+    admin=Depends(require_perm("report.generate")),
 ):
     """手动触发生成到期的观察期报告"""
     return service.generate_due_reports()
@@ -114,7 +114,7 @@ def add_observation_comment(
     report_id: int,
     comment: str = Query(...),
     service: ReportService = Depends(get_report_service),
-    admin=Depends(get_current_admin),
+    admin=Depends(require_perm("report.comment")),
 ):
     """老师添加评语"""
     return service.add_teacher_comment(report_id, admin.id, comment)
@@ -132,6 +132,26 @@ def get_observation_report_html(
 
         raise NotFoundError("暂无观察期报告")
     return HTMLResponse(content=html)
+
+
+@router.get("/observation/{child_id}/pdf")
+async def get_observation_report_pdf(
+    child=Depends(GetOwnedChild()),
+    service: ReportService = Depends(get_report_service),
+):
+    """获取观察期报告PDF"""
+    pdf = await service.render_report_pdf(child.id)
+    if not pdf:
+        from backend.common.exceptions import NotFoundError
+
+        raise NotFoundError("暂无观察期报告")
+    return StreamingResponse(
+        iter([pdf]),
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f"inline; filename=observation_report_{child.id}.pdf"
+        },
+    )
 
 
 @router.get("/learning/{child_id}", response_model=LearningReportResponse | None)

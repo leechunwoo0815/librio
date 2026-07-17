@@ -143,7 +143,7 @@
   align-items: center;
   justify-content: center;
   font-size: 96rpx;
-  background: linear-gradient(135deg, var(--accent-soft), rgba(85,96,207,0.15));
+  background: linear-gradient(135deg, var(--bg), var(--border));
   position: relative;
 }
 
@@ -228,7 +228,7 @@
 .card-meta {
   font-size: 20rpx;
   color: var(--muted);
-  margin-bottom: 16rpx;
+  margin-bottom: 8rpx;
 }
 
 .card-meta .audio-icon {
@@ -307,7 +307,7 @@
   border: 2rpx solid var(--border);
   position: relative;
   overflow: hidden;
-  background: linear-gradient(135deg, var(--accent-soft), rgba(85,96,207,0.15));
+  background: linear-gradient(135deg, var(--bg), var(--border));
 }
 
 .book-cover-img {
@@ -458,6 +458,7 @@
 /* 底部导航 */
 .bottom-nav {
   position: fixed;
+    box-sizing: border-box;
   bottom: 0;
   left: 0;
   right: 0;
@@ -512,6 +513,7 @@
 /* 底部导航 */
 .bottom-nav {
   position: fixed;
+    box-sizing: border-box;
   bottom: 0;
   left: 0;
   right: 0;
@@ -558,18 +560,3 @@
   color: var(--muted);
 }
 
-/* ===== 原型缺失选择器补全 ===== */
-
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-.nav-bar { display: flex; align-items: center; gap: 12px; padding: 12px 16px;
-      background: var(--surface); border-bottom: 1px solid var(--border);
-      position: sticky; top: 0; z-index: 10; }
-.nav-bar .back { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 10px; }
-.nav-bar .back svg { width: 20px; height: 20px; }
-.nav-bar .title { font-family: var(--font-display); font-size: 17px; font-weight: 600; }
-.search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
-      font-size: 16px; pointer-events: none; }
-.search-input::placeholder { color: var(--muted); }
-.filter-scroll::-webkit-scrollbar { display: none; }
-.filter-chip:hover:not(.active) { border-color: var(--accent); }
-.reserve-btn:hover { background: var(--accent-soft); }

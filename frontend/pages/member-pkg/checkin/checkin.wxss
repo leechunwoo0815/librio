@@ -37,7 +37,7 @@
   margin: 32rpx;
   padding: 40rpx;
   border-radius: var(--radius-lg);
-  background: linear-gradient(135deg, var(--accent), #4550b8);
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
   color: var(--surface);
   text-align: center;
 }
@@ -397,6 +397,7 @@
 /* 底部导航 */
 .bottom-nav {
   position: fixed;
+    box-sizing: border-box;
   bottom: 0;
   left: 0;
   right: 0;
@@ -434,6 +435,7 @@
 /* 底部导航 */
 .bottom-nav {
   position: fixed;
+    box-sizing: border-box;
   bottom: 0;
   left: 0;
   right: 0;
@@ -468,18 +470,3 @@
   filter: grayscale(1);
 }
 
-/* ===== 原型缺失选择器补全 ===== */
-
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-.nav-bar .back svg { width: 20px; height: 20px; }
-.auto-trigger svg { width: 16px; height: 16px; color: var(--accent); flex-shrink: 0; }
-.auto-trigger span { font-size: 12px; color: var(--fg); }
-.share-btn:active { opacity: 0.85; }
-.share-btn svg { width: 18px; height: 18px; }
-.cal-header .nav-btns button { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 6px; }
-.cal-day.other { color: var(--border); }
-.cal-day.future { color: var(--muted); }
-.records h3 { font-family: var(--font-display); font-size: 15px; font-weight: 600; margin-bottom: 4px; }
-.nav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 10px; color: var(--muted); padding: 4px 12px; }
-.nav-item.active { color: var(--accent); }
-.nav-item svg { width: 22px; height: 22px; }

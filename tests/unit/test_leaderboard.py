@@ -6,7 +6,6 @@
 """
 
 import pytest
-from decimal import Decimal
 from datetime import datetime, timedelta
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -31,7 +30,8 @@ def db():
 def _setup(db):
     """创建2个孩子，各有不同的阅读量"""
     user = User(openid="lb_user", phone="13800138002")
-    db.add(user); db.commit()
+    db.add(user)
+    db.commit()
 
     child1 = Child(user_id=user.id, name="小明", age=7, grade="二年级",
                    english_name="Tom", total_words_read=5000,
@@ -39,20 +39,24 @@ def _setup(db):
     child2 = Child(user_id=user.id, name="小红", age=5, grade="幼儿园大班",
                    english_name="Lucy", total_words_read=8000,
                    total_books_finished=3, current_streak_days=5)
-    db.add_all([child1, child2]); db.commit()
+    db.add_all([child1, child2])
+    db.commit()
 
     level = Level(name="A", sort_order=1, required_books=10, max_borrow_count=20)
-    db.add(level); db.commit()
+    db.add(level)
+    db.commit()
 
     cl1 = ChildLevel(child_id=child1.id, level_id=level.id, is_current=True)
     cl2 = ChildLevel(child_id=child2.id, level_id=level.id, is_current=True)
-    db.add_all([cl1, cl2]); db.commit()
+    db.add_all([cl1, cl2])
+    db.commit()
 
     book1 = Book(isbn="978001", title="Book1", author="A", ar_value=2.0,
                  age_min=5, age_max=9, word_count=3000)
     book2 = Book(isbn="978002", title="Book2", author="B", ar_value=3.0,
                  age_min=5, age_max=9, word_count=5000)
-    db.add_all([book1, book2]); db.commit()
+    db.add_all([book1, book2])
+    db.commit()
 
     return user, child1, child2, book1, book2
 
@@ -76,7 +80,8 @@ def test_leaderboard_medals(db):
     # 添加第3个孩子
     child3 = Child(user_id=user.id, name="小华", age=8, grade="三年级",
                    english_name="Mike", total_words_read=2000)
-    db.add(child3); db.commit()
+    db.add(child3)
+    db.commit()
     svc = LeaderboardService(db)
     board = svc.get_leaderboard(period="total", limit=10)
     assert board[0]["medal"] == "🥇"
@@ -112,7 +117,8 @@ def test_weekly_leaderboard(db):
         submitted_at=datetime.now() - timedelta(days=10),
         word_count=book2.word_count,
     )
-    db.add_all([sub1, sub2]); db.commit()
+    db.add_all([sub1, sub2])
+    db.commit()
 
     svc = LeaderboardService(db)
     board = svc.get_leaderboard(period="7d", limit=10)

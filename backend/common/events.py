@@ -25,7 +25,7 @@
 
 ADR-001 决策记录：
   为什么用同步事件总线而不是消息队列？
-  1. MegaWords 用户量级（数千儿童），单进程 FastAPI 足够
+  1. DmkWords 用户量级（数千儿童），单进程 FastAPI 足够
   2. 同步事件在同一事务内完成，失败自动回滚，不需要补偿机制
   3. 引入消息队列会增加部署复杂度，当前阶段不值得
   4. 升级时机：定时任务执行时间超过 30 秒，或需要跨服务通信时
@@ -214,7 +214,7 @@ class DepositPaidEvent(DomainEvent):
     event_type: str = "deposit.paid"
     child_id: int = 0
     deposit_id: int = 0
-    amount: float = 0.0
+    amount: Decimal = Decimal("0")
 
 
 @dataclass
@@ -250,6 +250,21 @@ class ReservationFulfilledEvent(DomainEvent):
 
 
 @dataclass
+class ReservationCancelledEvent(DomainEvent):
+    """预约取消事件
+
+    发布者：ReservationService.cancel_reservation()
+    订阅者：
+      - book: 释放库存
+    """
+
+    event_type: str = "reservation.cancelled"
+    child_id: int = 0
+    book_id: int = 0
+    reservation_id: int = 0
+
+
+@dataclass
 class ReservationExpiredEvent(DomainEvent):
     """预约过期事件
 
@@ -262,6 +277,35 @@ class ReservationExpiredEvent(DomainEvent):
     child_id: int = 0
     book_id: int = 0
     reservation_id: int = 0
+
+
+@dataclass
+class ReadingBookFinishedEvent(DomainEvent):
+    """阅读完成一本书事件
+
+    发布者：ReadingService.save_progress()
+    订阅者：
+      - advancement: increment_books_read + check_and_advance
+    """
+
+    event_type: str = "reading.book_finished"
+    child_id: int = 0
+    book_id: int = 0
+    word_count: int = 0
+
+
+@dataclass
+class ReadingSessionCompletedEvent(DomainEvent):
+    """阅读会话结束事件
+
+    发布者：ReadingService.end_session()
+    订阅者：
+      - child: update_reading_stats (阅读时长累计)
+    """
+
+    event_type: str = "reading.session_completed"
+    child_id: int = 0
+    duration_minutes: int = 0
 
 
 # ============================================================
@@ -353,6 +397,11 @@ class EventBus:
                     # 重试一次
                     try:
                         retry_session = get_session()()
+                    except Exception as create_err:
+                        logger.error(f"Failed to create retry session: {create_err}")
+                        self._record_dead_letter(event, handler.__name__, str(create_err))
+                        continue
+                    try:
                         handler(event, retry_session)
                         retry_session.commit()
                     except Exception as retry_err:

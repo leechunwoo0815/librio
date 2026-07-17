@@ -18,15 +18,25 @@ Page({
     certList: [],      // list of certificates
     loading: false,
     childId: 0,
+    showShare: false,
+    qrCodeUrl: '',
   },
 
   onLoad: function (options) {
-    var app = getApp()
-    if (app.globalData.isTestMode) {
-      this._loadDemoData()
-      return
-    }
     if (!auth.requireAuth()) return
+
+    // 从二维码扫码进入：options.scene 包含 scene 值
+    if (options.scene) {
+      var scene = decodeURIComponent(options.scene)
+      if (scene.indexOf('cert_') === 0) {
+        var certId = parseInt(scene.substring(5))
+        if (certId) {
+          this.setData({ mode: 'list' })
+          this._loadChildCerts(certId)
+          return
+        }
+      }
+    }
 
     if (options.certId) {
       // Single cert by ID — load from child's certs
@@ -64,7 +74,9 @@ Page({
             id: c.id,
             level_name: c.level_name,
             child_name: c.child_name,
+            english_name: c.english_name,
             badge_emoji: c.badge_emoji,
+            from_level: c.from_level,
             certificate_no: c.certificate_no,
             created_at: c.created_at,
             dateStr: formatDate(c.created_at),
@@ -98,6 +110,7 @@ Page({
             child_name: c.child_name,
             english_name: c.english_name,
             badge_emoji: c.badge_emoji,
+            from_level: c.from_level,
             certificate_no: c.certificate_no,
             created_at: c.created_at,
             dateStr: formatDate(c.created_at),
@@ -267,58 +280,67 @@ Page({
           },
           fail: function () {
             wx.hideLoading()
-            // MP-031: 分享失败兜底 — 提供复制文字版
-            wx.showModal({
-              title: '图片生成失败',
-              content: '无法生成证书图片，是否复制证书信息到剪贴板？',
-              confirmText: '复制文字',
-              cancelText: '重试',
-              success: function(modalRes) {
-                if (modalRes.confirm) {
-                  var cert = that.data.certificates[that.data.currentCertIndex] || {}
-                  var text = '🏆 MegaWords 晋级证书\n' +
-                    '姓名：' + (cert.child_name || '') + '\n' +
-                    '级别：' + (cert.level_name || '') + '\n' +
-                    '证书编号：' + (cert.certificate_no || '') + '\n' +
-                    '颁发日期：' + (cert.issued_at || '')
-                  wx.setClipboardData({
-                    data: text,
-                    success: function() { wx.showToast({ title: '已复制到剪贴板', icon: 'success' }) }
-                  })
-                } else if (modalRes.cancel) {
-                  that.saveCertificate()
-                }
-              }
-            })
+            wx.showToast({ title: '图片生成失败，请重试', icon: 'none' })
           }
         })
       })
   },
 
+  showShareModal: function () {
+    this.setData({ showShare: true, qrCodeUrl: '' })
+
+    var cert = this.data.cert
+    if (!cert || !cert.id) return
+
+    var scene = 'cert_' + cert.id
+    var page = 'pages/member-pkg/certificate/certificate'
+    var baseURL = getApp().globalData.baseURL || 'https://api.dmkwords.cn'
+    var url = baseURL + '/wechat/qr-code?scene=' + scene + '&page=' + page
+    var retries = 0
+    var self = this
+
+    function download() {
+      wx.downloadFile({
+        url: url,
+        success: function (res) {
+          self.setData({ qrCodeUrl: res.tempFilePath })
+        },
+        fail: function () {
+          retries++
+          if (retries < 2) {
+            self._qrTimer = setTimeout(download, 1000)
+          } else {
+            wx.showToast({ title: '加载小程序码失败', icon: 'none' })
+          }
+        }
+      })
+    }
+
+    download()
+  },
+
+  closeShare: function () {
+    this.setData({ showShare: false });
+  },
+
   // 分享给朋友
   onShareAppMessage: function () {
     var cert = this.data.cert
+    var path = '/pages/member-pkg/certificate/certificate?'
+    if (cert && cert.id) {
+      path += 'certId=' + cert.id
+    } else {
+      path += 'childId=' + (this.data.childId || 0)
+    }
     return {
       title: cert
         ? (cert.child_name + '成功晋级至' + cert.level_name + '！')
-        : 'MegaWords 晋级证书',
-      path: '/pages/member-pkg/certificate/certificate?childId=' + this.data.childId,
+        : 'DmkWords 晋级证书',
+      path: path,
     }
   },
 
-  _loadDemoData: function () {
-    this.setData({
-      mode: 'single',
-      cert: {
-        id: 1,
-        level_name: '故事探索者',
-        child_name: 'Mega',
-        english_name: 'Mega (英文名)',
-        badge_emoji: '🏆',
-        certificate_no: 'MW-2025-0605-0032',
-        created_at: '2025-06-05',
-        dateStr: '2025年6月5日',
-      },
-    })
+  onUnload() {
+    if (this._qrTimer) { clearTimeout(this._qrTimer); this._qrTimer = null }
   },
 })

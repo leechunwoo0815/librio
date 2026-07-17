@@ -35,11 +35,6 @@ Page({
   },
 
   onLoad() {
-    const app = getApp()
-    if (app.globalData.isTestMode) {
-      this._loadTestModeData()
-      return
-    }
     if (!auth.requireAuth()) return;
   },
 
@@ -50,27 +45,6 @@ Page({
     if (!child) return;
     this.setData({ child });
     this.loadTabData(this.data.activeTab);
-  },
-
-  _loadTestModeData() {
-    const learning = [
-      { id: '1', word: 'ax', phonetic: '/æks/', chinese_meaning: '斧头', part_of_speech: 'n.', status: 'learning', lookup_count: 3 },
-      { id: '2', word: 'runt', phonetic: '/rʌnt/', chinese_meaning: '一窝中最小的动物', part_of_speech: 'n.', status: 'learning', lookup_count: 2 },
-      { id: '3', word: 'sobbed', phonetic: '/sɑbd/', chinese_meaning: '哭泣，呜咽（sob 的过去式）', part_of_speech: 'v.', status: 'learning', lookup_count: 5 },
-    ]
-    const mastered = [
-      { id: '4', word: 'caterpillar', phonetic: '/ˈkætərpɪlər/', chinese_meaning: '毛毛虫', part_of_speech: 'n.', status: 'mastered', lookup_count: 8 },
-      { id: '5', word: 'burrow', phonetic: '/ˈbɜːroʊ/', chinese_meaning: '洞穴 v. 挖掘', part_of_speech: 'n.', status: 'mastered', lookup_count: 4 },
-    ]
-
-    this.setData({
-      learning,
-      mastered,
-      learningCount: learning.length,
-      masteredCount: mastered.length,
-      currentList: learning.concat(mastered),
-      loading: false,
-    })
   },
 
   onPullDownRefresh() {
@@ -99,6 +73,7 @@ Page({
       list = this.data.mastered
     }
     this.setData({ currentList: list })
+    this._sortCurrentList(this.data.sortIndex)
   },
 
   async loadTabData(tabIndex) {
@@ -141,6 +116,7 @@ Page({
           loading: false,
         });
       }
+      this._sortCurrentList(this.data.sortIndex);
     } catch (e) {
       console.error('load vocab data failed:', e);
       this.setData({ loading: false, loadError: true });
@@ -162,24 +138,24 @@ Page({
   async onMarkMastered(e) {
     const vocabId = e.currentTarget.dataset.id;
     const index = e.currentTarget.dataset.index;
+    const { activeTab, learning, mastered, currentList } = this.data;
+    const item = currentList[index];
+    if (!item || item.status === 'mastered') return;
 
     try {
       await api.markMastered(vocabId);
       // Move item from learning to mastered
-      const item = this.data.learning[index];
-      const learning = this.data.learning.filter(function (_, i) {
-        return i !== index;
-      });
+      const newLearning = learning.filter(function (v) { return v.id !== vocabId; });
       item.status = 'mastered';
-      const mastered = this.data.mastered.concat([item]);
+      const newMastered = mastered.concat([item]);
       this.setData({
-        learning: learning,
-        mastered: mastered,
-        learningCount: learning.length,
-        masteredCount: mastered.length,
+        learning: newLearning,
+        mastered: newMastered,
+        learningCount: newLearning.length,
+        masteredCount: newMastered.length,
       });
       // Update current list based on active tab
-      this._updateCurrentList(this.data.activeTab);
+      this._updateCurrentList(activeTab);
       wx.showToast({ title: '已掌握', icon: 'success' });
     } catch (e) {
       console.error('mark mastered failed:', e);
@@ -187,9 +163,31 @@ Page({
     }
   },
 
+  onPlayAudio(e) {
+    const audioUrl = e.currentTarget.dataset.audio
+    if (!audioUrl) return
+    const audio = wx.createInnerAudioContext()
+    audio.src = audioUrl
+    audio.play()
+  },
+
   onSortChange(e) {
     const sortIndex = Number(e.detail.value)
     this.setData({ sortIndex })
+    this._sortCurrentList(sortIndex)
+  },
+
+  _sortCurrentList(sortOption) {
+    const { currentList } = this.data
+    if (!currentList || currentList.length === 0) return
+    const sortValue = this.data.sortOptions[sortOption]?.value || 'time'
+    let sorted = [...currentList]
+    switch (sortValue) {
+      case 'time': sorted.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || '')); break
+      case 'book': sorted.sort((a, b) => (a.source_book || '').localeCompare(b.source_book || '')); break
+      case 'alpha': sorted.sort((a, b) => (a.word || '').localeCompare(b.word || '')); break
+    }
+    this.setData({ currentList: sorted })
   },
 
   startReview() {
@@ -222,7 +220,26 @@ Page({
     })
   },
 
-  reviewResult(e) {
+  async reviewResult(e) {
+    const result = e.currentTarget.dataset.result
+    if (result === 'got') {
+      const currentWord = this.data.reviewWords[this.data.reviewIndex]
+      if (currentWord && currentWord.id) {
+        try {
+          await api.markMastered(currentWord.id)
+          const newLearning = this.data.learning.filter(v => v.id !== currentWord.id)
+          if (newLearning.length < this.data.learning.length) {
+            currentWord.status = 'mastered'
+            this.setData({
+              learning: newLearning,
+              mastered: this.data.mastered.concat([currentWord]),
+              learningCount: newLearning.length,
+              masteredCount: this.data.mastered.length + 1,
+            })
+          }
+        } catch (e) { console.error(e) }
+      }
+    }
     let reviewIndex = this.data.reviewIndex + 1
     if (reviewIndex >= this.data.reviewWords.length) {
       this.setData({

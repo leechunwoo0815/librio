@@ -17,8 +17,11 @@
 <!-- QR Scan -->
 <div class="scan-area">
   <input class="scan-input" id="scanInput" type="text" placeholder="扫描或输入签到码..." />
-  <button class="btn-confirm" onclick="doSignIn()">确认签到</button>
+  <button class="btn btn-primary" onclick="doSignIn()">确认签到</button>
 </div>
+<p class="text-sm text-muted scan-hint">
+   签到码说明：请扫描用户报名后生成的电子门票二维码（/activity/enroll 返回的 ticket_no），不是会员二维码。
+</p>
 
 <!-- Stats -->
 <div class="stats-row">
@@ -36,7 +39,7 @@
   <table>
     <thead><tr><th>孩子姓名</th><th>状态</th><th>签到时间</th><th>家长手机</th><th>操作</th></tr></thead>
     <tbody id="attendeeBody">
-      <tr><td colspan="5" style="text-align:center;padding:40px;color:var(--muted);">请选择活动查看签到列表</td></tr>
+      <tr><td colspan="5" class="text-center p-40 text-muted">请选择活动查看签到列表</td></tr>
     </tbody>
   </table>
 </div>
@@ -54,7 +57,7 @@
       items.forEach(function(a) {
         var opt = document.createElement('option');
         opt.value = a.id;
-        opt.textContent = (a.name||'') + '（' + (a.start_time||'').slice(0,10) + '）';
+        opt.textContent = (a.title||'') + '（' + (a.start_time||'').slice(0,10) + '）';
         sel.appendChild(opt);
       });
     } catch (e) {
@@ -71,7 +74,7 @@
       renderAttendees(items);
       updateProgress(items);
     } catch (e) {
-      document.getElementById('attendeeBody').innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--error);">加载失败</td></tr>';
+      document.getElementById('attendeeBody').innerHTML = '<tr><td colspan="5" class="text-center p-40 text-error">加载失败</td></tr>';
     }
   }
 
@@ -89,7 +92,7 @@
 
   function renderAttendees(items) {
     if (!items.length) {
-      document.getElementById('attendeeBody').innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--muted);">暂无报名记录</td></tr>';
+      document.getElementById('attendeeBody').innerHTML = '<tr><td colspan="5" class="text-center p-40 text-muted">暂无报名记录</td></tr>';
       return;
     }
     document.getElementById('attendeeBody').innerHTML = items.map(function(e) {
@@ -98,13 +101,13 @@
       var time = isChecked ? formatDateTime(e.sign_in_time) : '--';
       var phone = e.parent_phone ? e.parent_phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2') : '--';
       var actions = isChecked
-        ? '<span class="action-link" style="color:var(--muted);">--</span>'
-        : '<span class="action-link" onclick="manualSignIn(' + e.id + ')">手动签到</span>';
+        ? '<span class="action-link text-muted">--</span>'
+        : '<span class="action-link" onclick="manualSignIn(' + JSON.stringify(e.ticket_code || '').replace(/"/g, '&quot;') + ')">手动签到</span>';
       return '<tr>' +
         '<td>' + escapeHtml(e.child_name || e.child_id || '--') + '</td>' +
         '<td>' + statusBadge + '</td>' +
-        '<td style="font-family:var(--font-mono)">' + time + '</td>' +
-        '<td style="font-family:var(--font-mono);font-size:12px">' + phone + '</td>' +
+        '<td class="font-mono">' + time + '</td>' +
+        '<td class="font-mono text-sm">' + phone + '</td>' +
         '<td>' + actions + '</td>' +
       '</tr>';
     }).join('');
@@ -114,7 +117,7 @@
     var code = document.getElementById('scanInput').value.trim();
     if (!code) { showToast('请输入签到码', 'error'); return; }
     try {
-      await api.put('/admin/api/enrollments/' + code + '/sign-in');
+      await api.put('/admin/api/activities/enroll/' + encodeURIComponent(code) + '/sign-in');
       showToast('签到成功');
       document.getElementById('scanInput').value = '';
       loadAttendees();
@@ -123,9 +126,10 @@
     }
   }
 
-  async function manualSignIn(enrollId) {
+  async function manualSignIn(ticketCode) {
+    if (!ticketCode) { showToast('缺少签到码', 'error'); return; }
     try {
-      await api.put('/admin/api/enrollments/' + enrollId + '/sign-in');
+      await api.put('/admin/api/activities/enroll/' + encodeURIComponent(ticketCode) + '/sign-in');
       showToast('手动签到成功');
       loadAttendees();
     } catch (e) {

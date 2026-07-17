@@ -40,8 +40,8 @@
   margin: 32rpx;
   padding: 56rpx 40rpx;
   border-radius: var(--radius-lg);
-  background: linear-gradient(135deg, rgba(57,195,75,0.1), rgba(85,96,207,0.08));
-  border: 2rpx solid rgba(57,195,75,0.15);
+  background: linear-gradient(135deg, rgba(var(--success-rgb), 0.1), rgba(var(--accent-rgb), 0.08));
+  border: 2rpx solid rgba(var(--success-rgb), 0.15);
   text-align: center;
 }
 .hero-icon {
@@ -157,8 +157,8 @@
 }
 .ic1 { background: var(--accent-soft); }
 .ic2 { background: var(--success-soft); }
-.ic3 { background: rgba(57,195,75,0.12); }
-.ic4 { background: rgba(230,173,0,0.12); }
+.ic3 { background: rgba(var(--success-rgb), 0.12); }
+.ic4 { background: rgba(var(--warning-rgb), 0.12); }
 .ic5 { background: rgba(238,52,59,0.08); }
 .inc-content {
   flex: 1;
@@ -179,8 +179,8 @@
   margin: 0 32rpx 32rpx;
   padding: 28rpx 32rpx;
   border-radius: var(--radius);
-  background: rgba(57,195,75,0.12);
-  border: 2rpx solid rgba(57,195,75,0.2);
+  background: rgba(var(--success-rgb), 0.12);
+  border: 2rpx solid rgba(var(--success-rgb), 0.2);
   display: flex;
   align-items: flex-start;
   gap: 20rpx;
@@ -260,6 +260,7 @@
 /* pay bar */
 .pay-bar {
   position: fixed;
+    box-sizing: border-box;
   bottom: 0;
   left: 0;
   right: 0;
@@ -280,7 +281,7 @@
   font-size: 32rpx;
   font-weight: 600;
   text-align: center;
-  box-shadow: 0 8rpx 32rpx rgba(85,96,207,0.3);
+  box-shadow: 0 8rpx 32rpx rgba(var(--accent-rgb), 0.3);
 }
 .pay-btn:active {
   opacity: 0.92;
@@ -324,7 +325,7 @@
 
 /* 支付按钮阴影 */
 .pay-btn {
-  box-shadow: 0 8rpx 32rpx rgba(85, 96, 207, 0.3);
+  box-shadow: 0 8rpx 32rpx rgba(var(--accent-rgb), 0.3);
 }
 
 /* FAQ 问题文本 flex */
@@ -355,42 +356,26 @@
 
 /* 支付按钮阴影 */
 .pay-btn {
-  box-shadow: 0 8rpx 32rpx rgba(85, 96, 207, 0.3);
+  box-shadow: 0 8rpx 32rpx rgba(var(--accent-rgb), 0.3);
 }
 
-/* ===== 原型缺失选择器补全 ===== */
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-.nav-bar .back svg { width: 20px; height: 20px; }
-.nav-bar .title { font-family: var(--font-display); font-size: 17px; font-weight: 600; }
-.hero h1 { font-family: var(--font-display); font-size: 22px; font-weight: 700; margin-bottom: 6px; }
-.hero p { font-size: 14px; color: var(--muted); }
-.price-section .duration-badge { display: inline-block; padding: 4px 14px; border-radius: 999px;
-      background: var(--accent-soft); color: var(--accent); font-size: 13px; font-weight: 600; margin-bottom: 12px; }
-.price-section .price-row { display: flex; align-items: baseline; justify-content: center; gap: 4px; margin-bottom: 4px; }
-.price-section .price-sym { font-size: 20px; font-weight: 700; color: var(--accent); }
-.price-section .price-val { font-family: var(--font-display); font-size: 48px; font-weight: 700; color: var(--accent); line-height: 1; }
-.price-section .price-unit { font-size: 15px; color: var(--muted); }
-.price-section .price-note { font-size: 13px; color: var(--muted); margin-top: 8px; }
-.price-section .price-note svg { width: 14px; height: 14px; vertical-align: -2px; margin-right: 2px; }
-.includes-card h3 { font-family: var(--font-display); font-size: 15px; font-weight: 600;
-      margin-bottom: 14px; display: flex; align-items: center; gap: 6px; }
-.includes-card h3 svg { width: 18px; height: 18px; color: var(--accent); }
-.includes-list li { display: flex; align-items: center; gap: 12px; padding: 10px 0;
-      border-bottom: 1px solid var(--border); font-size: 14px; }
-.includes-list li:last-child { border-bottom: none; }
-.includes-list .inc-icon { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center;
-      font-size: 18px; flex-shrink: 0; }
-.includes-list .inc-icon.ic1 { background: var(--accent-soft); }
-.includes-list .inc-icon.ic2 { background: var(--success-soft); }
-.includes-list .inc-icon.ic3 { background: var(--secondary-soft); }
-.includes-list .inc-icon.ic4 { background: var(--muted); }
-.includes-list .inc-icon.ic5 { background: var(--muted); }
-.includes-list .inc-title { font-weight: 600; font-size: 14px; }
-.includes-list .inc-desc { font-size: 12px; color: var(--muted); margin-top: 1px; }
-.guarantee-box svg { width: 20px; height: 20px; color: var(--muted); flex-shrink: 0; margin-top: 1px; }
-.guarantee-box .g-text { font-size: 13px; line-height: 1.5; }
-.faq-card h3 { font-family: var(--font-display); font-size: 15px; font-weight: 600;
-      padding: 16px 16px 0; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
-.faq-q svg { width: 18px; height: 18px; color: var(--muted); transition: transform 0.2s; flex-shrink: 0; }
-.faq-item.open .faq-q svg { transform: rotate(180deg); }
+/* iOS 限制提示 */
+.ios-restrict {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+  padding: 48rpx;
+}
+.ios-restrict-icon {
+  font-size: 72rpx;
+  margin-bottom: 32rpx;
+}
+.ios-restrict-text {
+  font-size: 28rpx;
+  color: var(--text-secondary);
+  text-align: center;
+  line-height: 1.6;
+}

@@ -294,6 +294,7 @@
 /* Submit */
 .submit-wrap {
   position: fixed;
+    box-sizing: border-box;
   bottom: 0;
   left: 0;
   right: 0;
@@ -422,10 +423,3 @@
   opacity: 0.5;
 }
 
-/* ===== 原型缺失选择器补全 ===== */
-
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-.nav-bar .back svg { width: 20px; height: 20px; }
-.nav-bar .title { font-family: var(--font-display); font-size: 17px; font-weight: 600; }
-.reason-card h3 { font-family: var(--font-display); font-size: 15px; font-weight: 600; margin-bottom: 12px; }
-.tip-card svg { width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; }

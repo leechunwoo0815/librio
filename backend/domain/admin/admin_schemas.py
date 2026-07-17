@@ -9,6 +9,7 @@
 """
 
 from datetime import datetime
+from decimal import Decimal
 from pydantic import BaseModel, Field, ConfigDict, model_validator
 
 
@@ -76,6 +77,17 @@ class ConfigResponse(BaseModel):
 
     items: dict = {}
     total: int = 0
+
+
+class UpdateUserRequest(BaseModel):
+    """更新用户/家长信息请求"""
+    model_config = ConfigDict(extra="forbid")
+
+    parent_name: str | None = Field(None, min_length=1, max_length=50)
+    phone: str | None = Field(None, min_length=1, max_length=11)
+    child_status: int | None = Field(
+        None, ge=0, le=4, description="主孩子状态: 0=体验课 1=观察期 2=正式会员 3=已过期 4=已退出"
+    )
 
 
 class UserListResponse(BaseModel):
@@ -154,6 +166,9 @@ class VenueResponse(BaseModel):
     name: str | None = None
     address: str | None = None
     phone: str | None = None
+    business_hours: str | None = None
+    status: str | None = None
+    capacity: int | None = None
     create_time: datetime | None = None
 
 
@@ -164,6 +179,9 @@ class CreateVenueRequest(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
     address: str = Field(..., min_length=1, max_length=200)
     phone: str | None = Field(None, max_length=20)
+    business_hours: str | None = Field(None, max_length=100)
+    status: str | None = Field("active", max_length=20)
+    capacity: int | None = Field(0, ge=0)
 
 
 class UpdateVenueRequest(BaseModel):
@@ -173,20 +191,30 @@ class UpdateVenueRequest(BaseModel):
     name: str | None = Field(None, min_length=1, max_length=100)
     address: str | None = Field(None, min_length=1, max_length=200)
     phone: str | None = Field(None, max_length=20)
+    business_hours: str | None = Field(None, max_length=100)
+    status: str | None = Field(None, max_length=20)
+    capacity: int | None = Field(None, ge=0)
 
 
 # ==================== 老师管理 ====================
 
 class TeacherResponse(BaseModel):
     """老师响应"""
-    model_config = ConfigDict(from_attributes=True, extra="forbid")
+    model_config = ConfigDict(from_attributes=True, extra="allow")
 
     id: int
     name: str | None = None
+    english_name: str | None = None
     phone: str | None = None
     venue_id: int | None = None
+    title: str | None = None
     introduction: str | None = None
     expertise: str | None = None
+    status: str | None = None
+    student_count: int | None = None
+    venue_name: str | None = None
+    admin_id: int | None = None
+    admin_role_name: str | None = None
     create_time: datetime | None = None
 
 
@@ -198,8 +226,10 @@ class CreateTeacherRequest(BaseModel):
     english_name: str | None = Field(None, max_length=50)
     phone: str = Field(..., min_length=1, max_length=11)
     venue_id: int
+    title: str | None = Field(None, max_length=50)
     introduction: str | None = None
     expertise: str | None = None
+    status: str | None = Field("online", max_length=20)
 
 
 class UpdateTeacherRequest(BaseModel):
@@ -210,8 +240,10 @@ class UpdateTeacherRequest(BaseModel):
     english_name: str | None = Field(None, max_length=50)
     phone: str | None = Field(None, min_length=1, max_length=11)
     venue_id: int | None = None
+    title: str | None = Field(None, max_length=50)
     introduction: str | None = None
     expertise: str | None = None
+    status: str | None = Field(None, max_length=20)
 
 
 class AssignTeacherRequest(BaseModel):
@@ -283,8 +315,10 @@ class SendMessageRequest(BaseModel):
     content: str = Field(..., min_length=1)
     msg_type: int = Field(default=1, ge=1, le=5, description="1=系统通知 2=活动通知 3=借阅通知 4=老师消息 5=阅读提醒")
     priority: int = Field(default=0, ge=0, le=2, description="0=低 1=中 2=高")
-    target: str = Field(default="all", description="all=全部用户, user=指定用户")
+    target: str = Field(default="all", description="all=全部用户, user=指定用户, teacher=指定老师/全部老师")
     target_user_id: int | None = Field(None, description="指定用户ID，target=user时必填")
+    target_teacher_id: int | None = Field(None, description="指定老师ID，target=teacher时可选")
+    target_role_groups: list[str] | None = Field(None, description="目标用户分组: trial/observation/member, target=all时可选, 默认全部")
 
 
 class MessageRecord(BaseModel):
@@ -292,13 +326,14 @@ class MessageRecord(BaseModel):
     model_config = ConfigDict(from_attributes=True, extra="forbid")
 
     id: int
-    user_id: int
+    user_id: int | None = None
     title: str
     content: str
     msg_type: int
     priority: int
     is_read: int = 0
     create_time: datetime
+    target_groups: list[str] | None = None
 
 
 class MessageListAdminResponse(BaseModel):
@@ -320,7 +355,7 @@ class CreateActivityRequest(BaseModel):
     title: str = Field(..., min_length=1, max_length=200)
     type: int = Field(..., ge=1, le=6)
     is_free: bool = True
-    price: float = Field(0, ge=0)
+    price: Decimal = Field(Decimal("0"), ge=0)
     start_time: str
     end_time: str
     location: str | None = None
@@ -335,7 +370,7 @@ class UpdateActivityRequest(BaseModel):
     title: str | None = Field(None, min_length=1, max_length=200)
     type: int | None = Field(None, ge=1, le=6)
     is_free: bool | None = None
-    price: float | None = Field(None, ge=0)
+    price: Decimal | None = Field(None, ge=0)
     start_time: str | None = None
     end_time: str | None = None
     location: str | None = None
@@ -403,6 +438,24 @@ class BulkImportBookItem(BaseModel):
     age_min: int = 3
     age_max: int = 15
     word_count: int = 0
+
+
+class CreateBookCopyRequest(BaseModel):
+    """创建图书副本请求（支持扫码枪故障时手动输入条码）"""
+    model_config = ConfigDict(extra="forbid")
+
+    barcode: str | None = Field(None, min_length=1, max_length=50, description="副本条码，为空时系统自动生成")
+    location: str | None = Field(None, max_length=50, description="存放位置")
+    condition_note: str | None = Field(None, max_length=255, description="入库状况备注")
+
+
+class SaveBookPageRequest(BaseModel):
+    """保存图书页面内容请求"""
+    model_config = ConfigDict(extra="forbid")
+
+    text_content: str | None = Field(None, description="页面文本内容")
+    image_url: str | None = Field(None, max_length=255, description="页面图片URL")
+    audio_url: str | None = Field(None, max_length=255, description="页面音频URL")
 
 
 # ==================== 借阅管理 ====================
@@ -473,8 +526,10 @@ class AdminCreateOrderRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     child_id: int
-    type: str
+    order_type: int
     remark: str = ""
+    amount: Decimal | None = Field(None, gt=0, decimal_places=2, description="实收金额（已支付时必填）")
+    pay_type: int | None = Field(None, ge=1, le=6, description="付款方式（已支付时必填）")
 
 
 class UpdateOrderStatusRequest(BaseModel):
@@ -482,6 +537,22 @@ class UpdateOrderStatusRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     pay_status: int | None = None
+
+
+class AdminOfflineCreateOrderRequest(BaseModel):
+    """管理员线下创建用户+订单请求"""
+    model_config = ConfigDict(extra="forbid")
+
+    parent_name: str = Field(..., min_length=1, max_length=50)
+    phone: str = Field(..., min_length=11, max_length=11)
+    child_name: str = Field(..., min_length=1, max_length=50)
+    child_age: int = Field(..., ge=3, le=15)
+    child_grade: str = Field(..., max_length=20)
+    venue_id: int | None = None
+    order_type: int = Field(..., ge=1, le=5)
+    amount: Decimal | None = Field(None, gt=0, decimal_places=2, description="实收金额（已支付时必填）")
+    pay_type: int | None = Field(None, ge=1, le=6, description="付款方式（已支付时必填）")
+    remark: str = ""
 
 
 # ==================== 报告管理 ====================
@@ -507,6 +578,7 @@ class CreateLevelRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     name: str = Field(..., min_length=1, max_length=50)
+    code: str | None = Field(None, max_length=10, description="级别代码（如 A-Z）")
     badge_emoji: str | None = None
     sort_order: int | None = None
     required_books: int = Field(5, ge=1)
@@ -521,6 +593,7 @@ class UpdateLevelRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     name: str | None = Field(None, min_length=1, max_length=50)
+    code: str | None = Field(None, max_length=10, description="级别代码（如 A-Z）")
     badge_emoji: str | None = None
     sort_order: int | None = None
     required_books: int | None = Field(None, ge=1)
@@ -536,6 +609,7 @@ class LevelResponse(BaseModel):
 
     id: int
     name: str
+    code: str | None = None
     badge_emoji: str | None = None
     sort_order: int | None = None
     required_books: int | None = None
@@ -663,7 +737,7 @@ class RefundResponse(BaseModel):
     id: int
     order_no: str | None = None
     child_id: int | None = None
-    amount: float | None = None
+    amount: Decimal | None = None
     status: int | None = None
     reason: str | None = None
     admin_comment: str | None = None
@@ -680,6 +754,8 @@ class CreateAdminRequest(BaseModel):
     password: str = Field(..., min_length=6, max_length=128)
     name: str | None = None
     role: int = Field(1, ge=0, le=2)
+    admin_role_id: int | None = Field(None, description="RBAC角色ID，优先于 role")
+    teacher_id: int | None = Field(None, description="关联教师ID (role=teacher时必填)")
 
 
 class UpdateAdminRequest(BaseModel):
@@ -688,6 +764,30 @@ class UpdateAdminRequest(BaseModel):
 
     name: str | None = None
     role: int | None = Field(None, ge=0, le=2)
+    admin_role_id: int | None = Field(None, description="RBAC角色ID，优先于 role")
+    teacher_id: int | None = Field(None, description="关联教师ID (role=teacher时必填)")
     status: int | None = Field(None, ge=0, le=1)
     phone: str | None = None
     password: str | None = Field(None, min_length=6, max_length=128)
+
+
+class ChangePasswordRequest(BaseModel):
+    """修改密码请求"""
+    model_config = ConfigDict(extra="forbid")
+
+    old_password: str = Field(..., min_length=1)
+    new_password: str = Field(..., min_length=6, max_length=128)
+
+
+class AdminCreateUserRequest(BaseModel):
+    """管理员创建用户请求"""
+    model_config = ConfigDict(extra="forbid")
+
+    parent_name: str = Field(..., min_length=1, max_length=50, description="家长姓名")
+    phone: str = Field(..., min_length=11, max_length=11, description="手机号")
+    password: str | None = Field(None, min_length=6, max_length=128, description="初始密码（可选，默认手机号后6位）")
+    # 同时创建孩子（可选）
+    child_name: str | None = Field(None, max_length=50, description="孩子姓名")
+    child_age: int | None = Field(None, ge=3, le=15, description="孩子年龄")
+    child_grade: str | None = Field(None, max_length=20, description="孩子年级")
+    venue_id: int | None = Field(None, description="所属场馆ID")

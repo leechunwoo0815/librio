@@ -7,8 +7,7 @@ from sqlalchemy.orm import sessionmaker
 from backend.database import Base
 from backend.domain.user.models import User
 from backend.domain.child.models import Child
-from backend.domain.advancement.models import Level, ChildLevel
-from backend.domain.certificate.models import LevelCertificate
+from backend.domain.advancement.models import Level
 from backend.domain.certificate.service import CertificateService
 
 
@@ -24,17 +23,20 @@ def db():
 
 def _setup(db):
     user = User(openid="cert_user", phone="13800138004")
-    db.add(user); db.commit()
+    db.add(user)
+    db.commit()
 
     child = Child(user_id=user.id, name="小明", age=7, grade="二年级",
                   english_name="Tom", status=Child.STATUS_OFFICIAL)
-    db.add(child); db.commit()
+    db.add(child)
+    db.commit()
 
     level_a = Level(name="A", sort_order=1, required_books=10,
                     max_borrow_count=20, badge_emoji="🌱")
     level_b = Level(name="B", sort_order=2, required_books=15,
                     max_borrow_count=20, badge_emoji="🌿")
-    db.add_all([level_a, level_b]); db.commit()
+    db.add_all([level_a, level_b])
+    db.commit()
 
     return user, child, level_a, level_b
 

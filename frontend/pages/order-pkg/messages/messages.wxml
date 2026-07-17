@@ -38,15 +38,17 @@
   <!-- Message list -->
   <view class="msg-list" wx:elif="{{filteredMessages.length > 0}}">
     <block wx:for="{{filteredMessages}}" wx:key="id">
+    <view wx:if="{{!item}}"></view>
+    <block wx:else>
     <view class="msg-date" wx:if="{{item.showDate}}">{{item.dateText}}</view>
     <view wx:if="{{item.is_read}}" class="msg-item read" data-id="{{item.id}}" bindtap="toggleMessage">
       <view wx:if="{{item.category === 'system'}}" class="msg-icon system">
         <text>{{item.icon}}</text>
       </view>
-      <view wx:elif="{{item.category === 'borrow'}}" class="msg-icon borrow">
+      <view wx:elif="{{item.category === 'reading'}}" class="msg-icon reading">
         <text>{{item.icon}}</text>
       </view>
-      <view wx:elif="{{item.category === 'event'}}" class="msg-icon event">
+      <view wx:elif="{{item.category === 'activity'}}" class="msg-icon activity">
         <text>{{item.icon}}</text>
       </view>
       <view wx:elif="{{item.category === 'teacher'}}" class="msg-icon teacher">
@@ -67,10 +69,10 @@
       <view wx:if="{{item.category === 'system'}}" class="msg-icon system">
         <text>{{item.icon}}</text>
       </view>
-      <view wx:elif="{{item.category === 'borrow'}}" class="msg-icon borrow">
+      <view wx:elif="{{item.category === 'reading'}}" class="msg-icon reading">
         <text>{{item.icon}}</text>
       </view>
-      <view wx:elif="{{item.category === 'event'}}" class="msg-icon event">
+      <view wx:elif="{{item.category === 'activity'}}" class="msg-icon activity">
         <text>{{item.icon}}</text>
       </view>
       <view wx:elif="{{item.category === 'teacher'}}" class="msg-icon teacher">
@@ -89,11 +91,12 @@
       </view>
     </view>
     </block>
+    </block>
   </view>
 
   <!-- Empty state -->
   <view class="empty-state" wx:elif="{{!loading}}">
-    <view class="emoji">📭</view>
+    <view class="emoji"><text class="icon icon-mail-open">📭</text></view>
     <text class="text">{{emptyText}}</text>
   </view>
 

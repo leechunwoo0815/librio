@@ -58,6 +58,9 @@ def step_apply_transfer(context, source, target, membership):
         "/child/transfer",
         json={"source_child_id": src.id, "target_child_id": tgt.id},
         headers=context.headers)
+    data = context.response.json()
+    if context.response.status_code == 200 and "application_id" in data:
+        context.application_id = data["application_id"]
 
 
 @when('用户尝试申请权益转让')
@@ -91,10 +94,29 @@ def step_transfer_success(context):
 
 @given('用户提交了权益转让申请')
 def step_transfer_submitted(context):
-    # Ensure source and target children exist for transfer
     assert context.user is not None
-    if hasattr(context, 'children'):
-        assert len(context.children) >= 1
+    if not hasattr(context, 'children') or not context.children:
+        context.children = {}
+        src = Child(user_id=context.user.id, name="小明", age=7, grade="二年级",
+                    status=Child.STATUS_OFFICIAL, member_start_time=datetime.now())
+        context.db.add(src)
+        tgt = Child(user_id=context.user.id, name="小红", age=5, grade="幼儿园大班",
+                    status=Child.STATUS_TRIAL)
+        context.db.add(tgt)
+        context.db.commit()
+        context.children["小明"] = src
+        context.children["小红"] = tgt
+    if not hasattr(context, 'application_id') or not context.application_id:
+        children = list(context.children.values())
+        if len(children) >= 2:
+            context.response = context.client.post(
+                "/child/transfer",
+                json={"source_child_id": children[0].id, "target_child_id": children[1].id},
+                headers=context.headers,
+            )
+            data = context.response.json()
+            if "application_id" in data:
+                context.application_id = data["application_id"]
 
 
 @then('系统自动执行权益转移')

@@ -23,20 +23,24 @@ def db():
 
 def _setup(db):
     user = User(openid="profile_user", phone="13800138005")
-    db.add(user); db.commit()
+    db.add(user)
+    db.commit()
 
     child = Child(user_id=user.id, name="小明", age=7, grade="二年级",
                   english_name="Tom", status=Child.STATUS_OFFICIAL,
                   total_words_read=30000, total_books_finished=10,
                   current_streak_days=15, longest_streak_days=20)
-    db.add(child); db.commit()
+    db.add(child)
+    db.commit()
 
     level = Level(name="A", sort_order=1, required_books=10,
                   max_borrow_count=20, badge_emoji="🌱")
-    db.add(level); db.commit()
+    db.add(level)
+    db.commit()
 
     cl = ChildLevel(child_id=child.id, level_id=level.id, is_current=True)
-    db.add(cl); db.commit()
+    db.add(cl)
+    db.commit()
 
     return user, child, level, cl
 
@@ -83,10 +87,12 @@ def test_get_profile_achievements(db):
 
     ach = Achievement(name="首次读完", type=Achievement.TYPE_BOOK_MILESTONE,
                       badge_emoji="📚")
-    db.add(ach); db.commit()
+    db.add(ach)
+    db.commit()
 
     ca = ChildAchievement(child_id=child.id, achievement_id=ach.id)
-    db.add(ca); db.commit()
+    db.add(ca)
+    db.commit()
 
     svc = ProfileService(db)
     profile = svc.get_profile(child.id)

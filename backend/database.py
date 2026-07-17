@@ -5,10 +5,14 @@
 [How] 使用SQLAlchemy的create_engine和sessionmaker，延迟初始化
 """
 
+import logging
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 from backend.config import get_settings
+
+logger = logging.getLogger(__name__)
 
 settings = get_settings()
 
@@ -67,7 +71,11 @@ def get_db():
     try:
         yield db
     except Exception:
-        db.rollback()
+        logger.error("Request processing failed", exc_info=True)
+        try:
+            db.rollback()
+        except Exception:
+            logger.error("Session rollback failed", exc_info=True)
         raise
     finally:
         db.close()

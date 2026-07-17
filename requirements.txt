@@ -1,0 +1,39 @@
+# DmkWords production dependencies
+# Install: pip install -r requirements.txt
+
+# Web framework
+fastapi>=0.136.0
+uvicorn>=0.49.0
+starlette>=1.2.0
+python-multipart>=0.0.30
+
+# Database
+sqlalchemy>=2.0.50
+pymysql>=1.2.0
+alembic>=1.18.0
+
+# Validation & config
+pydantic>=2.13.0
+pydantic-settings>=2.14.0
+
+# Auth & security
+python-jose>=3.5.0
+passlib[bcrypt]>=1.7.0
+cryptography>=44.0.0
+
+# HTTP client
+httpx>=0.28.0
+
+# Task scheduling
+APScheduler>=3.11.0
+
+# Templating
+Jinja2>=3.1.0
+
+# PDF generation
+weasyprint>=62.0
+
+# SMS SDK (可选 — 用于生产短信发送)
+# tencentcloud-sdk-python>=3.0.0
+# alibabacloud-dysmsapi20170525>=2.0.0
+# alibabacloud-tea-openapi>=0.3.0

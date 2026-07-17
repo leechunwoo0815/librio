@@ -1,52 +1,5 @@
 /* pages/venues.css — 场馆管理页专属样式 */
 
-/* ===== Toolbar Extensions ===== */
-.toolbar-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-/* ===== Search Box ===== */
-.search-box {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  width: 260px;
-}
-.search-box svg {
-  width: 16px;
-  height: 16px;
-  color: var(--muted);
-  flex-shrink: 0;
-}
-.search-box input {
-  border: none;
-  outline: none;
-  background: none;
-  font-size: 13px;
-  width: 100%;
-  color: var(--fg);
-}
-.search-box input::placeholder {
-  color: var(--muted);
-}
-
-/* ===== Filter Select ===== */
-.filter-select {
-  padding: 8px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  font-size: 13px;
-  color: var(--fg);
-  background: var(--surface);
-  cursor: pointer;
-}
-
 /* ===== Venue Name Cell ===== */
 .venue-name-cell {
   display: flex;
@@ -62,18 +15,9 @@
   place-items: center;
   flex-shrink: 0;
 }
-.venue-icon-sm svg {
-  width: 18px;
-  height: 18px;
-  color: var(--accent);
-}
-.venue-name-text {
-  font-weight: 500;
-}
-.venue-addr-text {
-  font-size: 12px;
-  color: var(--muted);
-}
+.venue-icon-sm svg { width: 18px; height: 18px; color: var(--accent); }
+.venue-name-text { font-weight: 500; }
+.venue-addr-text { font-size: 12px; color: var(--muted); }
 
 /* ===== Status Badge with Dot ===== */
 .status-badge {
@@ -81,110 +25,21 @@
   align-items: center;
   gap: 4px;
   padding: 3px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   font-size: 12px;
   font-weight: 500;
 }
-.status-active {
-  background: var(--success-soft);
-  color: var(--success);
-}
-.status-inactive {
-  background: var(--bg);
-  color: var(--muted);
-}
-.status-maintenance {
-  background: var(--warning-soft);
-  color: var(--warning);
-}
+.status-active { background: var(--success-soft); color: var(--success); }
+.status-inactive { background: var(--bg); color: var(--muted); }
+.status-maintenance { background: var(--warning-soft); color: var(--warning); }
 .status-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
 }
-.status-active .status-dot {
-  background: var(--success);
-}
-.status-inactive .status-dot {
-  background: var(--muted);
-}
-.status-maintenance .status-dot {
-  background: var(--warning);
-}
-
-/* ===== Action Buttons (inline in table) ===== */
-.action-btns {
-  display: flex;
-  gap: 6px;
-}
-.action-btn {
-  padding: 5px 10px;
-  border-radius: var(--radius-sm);
-  font-size: 12px;
-  color: var(--muted);
-  border: 1px solid var(--border);
-  background: var(--surface);
-  transition: all 0.12s ease;
-}
-.action-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-.action-btn.danger:hover {
-  border-color: var(--error);
-  color: var(--error);
-}
-
-/* ===== Cancel Button ===== */
-.btn-cancel {
-  padding: 8px 18px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  background: var(--surface);
-  font-size: 13px;
-  color: var(--fg);
-}
-.btn-cancel:hover {
-  background: var(--bg);
-}
-
-/* ===== Pagination ===== */
-.pagination {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 16px;
-  border-top: 1px solid var(--border);
-}
-.pagination .info {
-  font-size: 12px;
-  color: var(--muted);
-}
-.pagination .pages {
-  display: flex;
-  gap: 4px;
-}
-.page-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-sm);
-  display: grid;
-  place-items: center;
-  font-size: 13px;
-  color: var(--muted);
-  border: 1px solid var(--border);
-  background: var(--surface);
-  transition: all 0.12s ease;
-}
-.page-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-.page-btn.active {
-  background: var(--accent);
-  color: white;
-  border-color: var(--accent);
-}
+.status-active .status-dot { background: var(--success); }
+.status-inactive .status-dot { background: var(--muted); }
+.status-maintenance .status-dot { background: var(--warning); }
 
 /* ===== Venue Stats Row ===== */
 .venue-stats {
@@ -198,12 +53,11 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 16px;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s ease;
 }
-.vstat-label {
-  font-size: 12px;
-  color: var(--muted);
-  margin-bottom: 4px;
-}
+.vstat-card:hover { box-shadow: var(--shadow); }
+.vstat-label { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
 .vstat-value {
   font-family: var(--font-display);
   font-size: 22px;
@@ -211,138 +65,12 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* ===== thead bg override ===== */
-thead {
-  background: var(--bg);
-}
-
-/* ===== Form Row (two-column) ===== */
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-/* ===== Modal ===== */
-.modal h2 {
-  font-family: var(--font-display);
-  font-size: 18px;
-  font-weight: 600;
-  margin-bottom: 20px;
-}
-.modal .form-input {
-  width: 100%;
-  padding: 9px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  font-size: 13px;
-  color: var(--fg);
-  background: var(--bg);
-  outline: none;
-}
-.modal .form-input:focus {
-  border-color: var(--accent);
-}
-.modal .form-group {
-  margin-bottom: 16px;
-}
-.modal .form-group label {
-  display: block;
-  font-size: 13px;
-  font-weight: 500;
-  margin-bottom: 6px;
-  color: var(--fg);
-}
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 24px;
-}
-
 /* ===== Responsive ===== */
 @media (max-width: 1024px) {
-  .venue-stats {
-    grid-template-columns: repeat(2, 1fr);
-  }
+  .venue-stats { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 768px) {
-  .venue-stats {
-    grid-template-columns: 1fr;
-  }
-  .toolbar {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .search-box {
-    width: 100%;
-  }
+  .venue-stats { grid-template-columns: 1fr; }
+  .toolbar { flex-direction: column; align-items: stretch; }
+  .search-box { width: 100%; }
 }
-/* toolbar */
-    
-    .toolbar-left { display: flex; align-items: center; gap: 10px; }
-    .search-box { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); width: 260px; }
-    .search-box svg { width: 16px; height: 16px; color: var(--muted); flex-shrink: 0; }
-    .search-box 
-    .search-box 
-    .filter-select { padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; color: var(--fg); background: var(--surface); cursor: pointer; }
-    
-    
-    
-    /* table */
-    
-    
-    thead { background: var(--muted); }
-    
-    
-    tr:last-child 
-    tr:hover 
-    .venue-name-cell { display: flex; align-items: center; gap: 10px; }
-    .venue-icon-sm { width: 36px; height: 36px; border-radius: var(--radius-sm); background: var(--accent-soft); display: grid; place-items: center; flex-shrink: 0; }
-    .venue-icon-sm svg { width: 18px; height: 18px; color: var(--accent); }
-    .venue-name-text { font-weight: 500; }
-    .venue-addr-text { font-size: 12px; color: var(--muted); }
-    .status-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 500; }
-    .status-active { background: var(--success-soft); color: var(--success); }
-    .status-inactive { background: var(--error-soft); color: var(--error); }
-    .status-maintenance { background: var(--warning-soft); color: var(--warning); }
-    .status-dot { width: 6px; height: 6px; border-radius: 50%; }
-    .status-active .status-dot { background: var(--success); }
-    .status-inactive .status-dot { background: var(--muted); }
-    .status-maintenance .status-dot { background: var(--warning); }
-    .action-btns { display: flex; gap: 6px; }
-    .action-btn { padding: 5px 10px; border-radius: var(--radius-sm); font-size: 12px; color: var(--muted); border: 1px solid var(--border); background: var(--surface); transition: all 0.12s ease; }
-    .action-btn:hover { border-color: var(--accent); color: var(--accent); }
-    .action-btn.danger:hover { border-color: var(--error); color: var(--error); }
-    /* pagination */
-    .pagination { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-top: 1px solid var(--border); }
-    .pagination .info { font-size: 12px; color: var(--muted); }
-    .pagination .pages { display: flex; gap: 4px; }
-    .page-btn { width: 32px; height: 32px; border-radius: var(--radius-sm); display: grid; place-items: center; font-size: 13px; color: var(--muted); border: 1px solid var(--border); background: var(--surface); transition: all 0.12s ease; }
-    .page-btn:hover { border-color: var(--accent); color: var(--accent); }
-    .page-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
-    /* modal overlay */
-    
-    
-    
-    
-    
-    
-    
-    
-    .btn-cancel { padding: 8px 18px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); font-size: 13px; color: var(--fg); }
-    .btn-cancel:hover { background: var(--muted); }
-    /* stat row */
-    .venue-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
-    .vstat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
-    .vstat-label { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
-    .vstat-value { font-family: var(--font-display); font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
-    /* responsive */
-    @media (max-width: 1024px) {
-      
-      .venue-stats { grid-template-columns: repeat(2, 1fr); }
-    }
-    @media (max-width: 768px) { .venue-stats { grid-template-columns: 1fr; }
-      
-      .search-box { width: 100%; }
-    }

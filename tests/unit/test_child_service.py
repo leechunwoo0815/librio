@@ -28,7 +28,8 @@ def child_service(db):
 
 def test_create_child(child_service, db):
     user = User(openid="test_child_user", phone="13800138010")
-    db.add(user); db.commit()
+    db.add(user)
+    db.commit()
 
     child_data = ChildCreate(name="小明", age=7, grade="二年级")
     result = child_service.create_child(user.id, child_data)
@@ -41,10 +42,12 @@ def test_create_child(child_service, db):
 def test_can_borrow_books_observation(child_service, db):
     """观察期会员+已交押金可以借书"""
     user = User(openid="obs_user", phone="13800138011")
-    db.add(user); db.commit()
+    db.add(user)
+    db.commit()
     child = Child(user_id=user.id, name="测试", age=6, grade="一年级",
                   status=Child.STATUS_OBSERVATION, deposit_status=1)
-    db.add(child); db.commit()
+    db.add(child)
+    db.commit()
 
     assert child_service.can_borrow_books(child.id) is True
 
@@ -52,10 +55,12 @@ def test_can_borrow_books_observation(child_service, db):
 def test_can_borrow_books_official(child_service, db):
     """正式会员+已交押金可以借书"""
     user = User(openid="official_user", phone="13800138012")
-    db.add(user); db.commit()
+    db.add(user)
+    db.commit()
     child = Child(user_id=user.id, name="测试", age=6, grade="一年级",
                   status=Child.STATUS_OFFICIAL, deposit_status=1)
-    db.add(child); db.commit()
+    db.add(child)
+    db.commit()
 
     assert child_service.can_borrow_books(child.id) is True
 
@@ -63,9 +68,11 @@ def test_can_borrow_books_official(child_service, db):
 def test_can_borrow_books_expired(child_service, db):
     """过期会员不可借书"""
     user = User(openid="expired_user", phone="13800138013")
-    db.add(user); db.commit()
+    db.add(user)
+    db.commit()
     child = Child(user_id=user.id, name="测试", age=6, grade="一年级", status=Child.STATUS_EXPIRED)
-    db.add(child); db.commit()
+    db.add(child)
+    db.commit()
 
     assert child_service.can_borrow_books(child.id) is False
 

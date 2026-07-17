@@ -12,49 +12,32 @@ Page({
     maxMinutes: 1,
     suggestion: '',
     barLabels: [],
-    testMode: false,
+    trendTitle: '阅读时长趋势',
     reportTitle: '',
     reportPeriod: '',
   },
 
-  onLoad() {
-    const app = getApp()
-    if (app.globalData.isTestMode) {
-      this.setData({ testMode: true, loading: false })
-      this.loadTestData()
-      return
-    }
+  onLoad(options) {
     if (!auth.requireAuth()) return
+
+    // 从二维码扫码进入：解析 scene
+    if (options && options.scene) {
+      var scene = decodeURIComponent(options.scene)
+      if (scene.indexOf('report_') === 0) {
+        var parts = scene.split('_')
+        if (parts.length >= 3) {
+          var childId = parseInt(parts[1])
+          var period = parts[2]
+          if (childId && (period === 'week' || period === 'month')) {
+            this.setData({ period: period })
+          }
+        }
+      }
+    }
   },
 
   onShow() {
-    if (this.data.testMode) return
     this.loadReport()
-  },
-
-  loadTestData() {
-    this.setData({
-      child: { id: 1, name: 'Mega' },
-      summary: {
-        total_minutes: 120,
-        total_words: 8,
-        books_finished: 8,
-        checkin_days: 5,
-      },
-      trendData: [
-        { date: '2026-06-03', minutes: 15, barHeight: 40, label: '一' },
-        { date: '2026-06-04', minutes: 20, barHeight: 50, label: '二' },
-        { date: '2026-06-05', minutes: 22, barHeight: 60, label: '三' },
-        { date: '2026-06-06', minutes: 28, barHeight: 75, label: '四' },
-        { date: '2026-06-07', minutes: 30, barHeight: 85, label: '五' },
-        { date: '2026-06-08', minutes: 5, barHeight: 15, label: '六' },
-        { date: '2026-06-09', minutes: 0, barHeight: 0, label: '日' },
-      ],
-      suggestion: '本周 AR 值稳步提升至 4.4，阅读速度也有明显进步。建议继续保持每天 20 分钟阅读习惯，可以开始尝试 AR 4.5-5.0 级别的桥梁书，挑战稍长篇幅的章节书。',
-      reportTitle: '本周学习报告',
-      reportPeriod: '2026年6月 · 第1周',
-      loading: false,
-    })
   },
 
   async loadReport() {
@@ -92,11 +75,12 @@ Page({
 
       const recentTrend = Array.isArray(trend) ? trend.slice(-7) : []
       const maxVal = Math.max(1, ...recentTrend.map(d => d.reading_minutes || d.minutes || 0))
-      const barData = recentTrend.map(d => ({
+      const barData = recentTrend.map((d, i) => ({
         ...d,
         minutes: d.reading_minutes || d.minutes || 0,
         barHeight: Math.round(((d.reading_minutes || d.minutes || 0) / maxVal) * 100),
         label: this.formatBarLabel(d.date),
+        isToday: i === recentTrend.length - 1,
       }))
       const barLabels = barData.map(d => d.label)
 
@@ -105,14 +89,21 @@ Page({
         ? `${now.getFullYear()}年${now.getMonth() + 1}月 · 第${Math.ceil(now.getDate() / 7)}周`
         : `${now.getFullYear()}年${now.getMonth() + 1}月`
 
+      const mergedSummary = {
+        total_minutes: summary.total_reading_minutes || summary.total_minutes || 0,
+        total_words: summary.total_words_read || summary.total_words || 0,
+        books_finished: summary.total_books_read || summary.books_finished || 0,
+        checkin_days: summary.checkin_days || summary.total_checkin_days || 0,
+      }
+      if (learningReport) {
+        mergedSummary.total_minutes = learningReport.total_minutes || mergedSummary.total_minutes
+        mergedSummary.total_words = learningReport.total_words || mergedSummary.total_words
+        mergedSummary.books_finished = learningReport.books_finished || mergedSummary.books_finished
+        mergedSummary.checkin_days = learningReport.checkin_days || mergedSummary.checkin_days
+      }
+
       this.setData({
-        summary: {
-          total_minutes: summary.total_reading_minutes || summary.total_minutes || 0,
-          total_words: summary.total_words_read || summary.total_words || 0,
-          books_finished: summary.total_books_read || summary.books_finished || 0,
-          checkin_days: summary.checkin_days || summary.total_checkin_days || 0,
-        },
-        learningReport: learningReport || null,
+        summary: mergedSummary,
         trendData: barData,
         maxMinutes: maxVal,
         suggestion: summary.suggestion || '',
@@ -145,14 +136,178 @@ Page({
 
   onShareAppMessage() {
     const child = this.data.child
+    const period = this.data.period || 'week'
     const name = child ? child.name : '小朋友'
+    const scene = child ? 'report_' + child.id + '_' + period : ''
+    const path = scene
+      ? '/pages/member-pkg/learning-report/learning-report?scene=' + scene
+      : '/pages/member-pkg/learning-report/learning-report'
     return {
-      title: `${name}的学习报告 - MegaWords`,
-      path: '/pages/member-pkg/learning-report/learning-report',
+      title: `${name}的学习报告 - DmkWords`,
+      path: path,
     }
   },
 
   onShareTap() {
-    wx.showShareMenu({ withShareTicket: true })
+    this.generateShareImage()
+  },
+
+  async generateShareImage() {
+    const query = wx.createSelectorQuery()
+    query.select('#shareCanvas')
+      .fields({ node: true, size: true })
+      .exec(async (res) => {
+        const canvas = res[0].node
+        const ctx = canvas.getContext('2d')
+
+        const dpr = wx.getWindowInfo().pixelRatio || 2
+        const W = 1080, H = 1080
+        canvas.width = W * dpr
+        canvas.height = H * dpr
+        ctx.scale(dpr, dpr)
+
+        // 1. 背景渐变
+        const gradient = ctx.createLinearGradient(0, 0, 0, H)
+        gradient.addColorStop(0, '#667eea')
+        gradient.addColorStop(1, '#764ba2')
+        ctx.fillStyle = gradient
+        ctx.fillRect(0, 0, W, H)
+
+        // 2. 标题
+        ctx.fillStyle = '#ffffff'
+        ctx.font = 'bold 48px sans-serif'
+        ctx.textAlign = 'center'
+        ctx.fillText('DmkWords 学习报告', W / 2, 100)
+
+        // 3. 白色卡片背景
+        ctx.fillStyle = 'rgba(255,255,255,0.95)'
+        const cardX = 60, cardY = 160, cardW = 960, cardH = 760
+        this.roundRect(ctx, cardX, cardY, cardW, cardH, 24)
+        ctx.fill()
+
+        // 4. 孩子名 + 周期
+        ctx.fillStyle = '#333333'
+        ctx.font = 'bold 40px sans-serif'
+        ctx.textAlign = 'left'
+        const childName = (this.data.child && this.data.child.name) || '小朋友'
+        ctx.fillText(childName, cardX + 40, cardY + 60)
+
+        ctx.fillStyle = '#888888'
+        ctx.font = '28px sans-serif'
+        const periodText = this.data.reportTitle || '本周学习报告'
+        ctx.fillText(periodText, cardX + 40, cardY + 105)
+
+        // 5. 四个数据块
+        const summary = this.data.summary || {}
+        const dataBlocks = [
+          { label: '阅读时长', value: this.formatMinutes(summary.total_minutes || 0) },
+          { label: '读完本书', value: String(summary.books_finished || 0) },
+          { label: '阅读词数', value: String(summary.total_words || 0) },
+          { label: '打卡天数', value: String(summary.checkin_days || 0) },
+        ]
+
+        const blockW = 200, blockH = 160
+        const blockGap = 24
+        const totalBlocksW = blockW * 4 + blockGap * 3
+        const startX = cardX + (cardW - totalBlocksW) / 2
+        const blockY = cardY + 150
+
+        dataBlocks.forEach((block, i) => {
+          const bx = startX + i * (blockW + blockGap)
+          ctx.fillStyle = '#f0f4ff'
+          this.roundRect(ctx, bx, blockY, blockW, blockH, 16)
+          ctx.fill()
+
+          ctx.fillStyle = '#667eea'
+          ctx.font = 'bold 48px sans-serif'
+          ctx.textAlign = 'center'
+          ctx.fillText(block.value, bx + blockW / 2, blockY + 80)
+
+          ctx.fillStyle = '#888888'
+          ctx.font = '24px sans-serif'
+          ctx.fillText(block.label, bx + blockW / 2, blockY + 130)
+        })
+
+        // 6. 底部提示
+        ctx.fillStyle = '#999999'
+        ctx.font = '24px sans-serif'
+        ctx.textAlign = 'center'
+        ctx.fillText('长按查看完整报告', W / 2, cardY + cardH - 40)
+
+        // 7. 小程序码 — 等待加载完成
+        try {
+          await this.loadQrCodeOntoCanvas(canvas, ctx, cardX + cardW - 180, cardY + cardH - 180, 160, 160)
+        } catch (e) {
+          console.warn('QR code load failed, continue without it', e)
+        }
+
+        // 8. 转临时文件并分享
+        wx.canvasToTempFilePath({
+          canvas,
+          success: (res) => {
+            wx.shareImageMenu({
+              path: res.tempFilePath,
+              fail: () => {
+                wx.showToast({ title: '分享已取消', icon: 'none' })
+              }
+            })
+          },
+          fail: () => {
+            wx.showToast({ title: '生成图片失败', icon: 'none' })
+          }
+        }, this)
+      })
+  },
+
+  roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath()
+    ctx.moveTo(x + r, y)
+    ctx.lineTo(x + w - r, y)
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r)
+    ctx.lineTo(x + w, y + h - r)
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h)
+    ctx.lineTo(x + r, y + h)
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r)
+    ctx.lineTo(x, y + r)
+    ctx.quadraticCurveTo(x, y, x + r, y)
+    ctx.closePath()
+  },
+
+  loadQrCodeOntoCanvas(canvas, ctx, x, y, w, h) {
+    return new Promise(function (resolve, reject) {
+      const childId = (this.data.child && this.data.child.id) || ''
+      const period = this.data.period || 'week'
+      const scene = 'report_' + childId + '_' + period
+      const page = 'pages/member-pkg/learning-report/learning-report'
+      const baseURL = getApp().globalData.baseURL || 'https://api.dmkwords.cn'
+      const url = baseURL + '/wechat/qr-code?scene=' + scene + '&page=' + page
+
+      wx.downloadFile({
+        url: url,
+        success: function (res) {
+          var img = canvas.createImage()
+          img.src = res.tempFilePath
+          img.onload = function () {
+            ctx.drawImage(img, x, y, w, h)
+            resolve()
+          }
+          img.onerror = function () {
+            reject(new Error('QR image decode failed'))
+          }
+        },
+        fail: function () {
+          reject(new Error('QR code download failed'))
+        }
+      })
+    }.bind(this))
+  },
+
+  formatMinutes(minutes) {
+    if (minutes >= 60) {
+      const h = Math.floor(minutes / 60)
+      const m = minutes % 60
+      return m > 0 ? `${h}h${m}m` : `${h}h`
+    }
+    return `${minutes}min`
   },
 })

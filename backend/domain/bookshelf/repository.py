@@ -1,7 +1,7 @@
 # backend/domain/bookshelf/repository.py
 """书架域数据访问层"""
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from backend.common.base_repo import BaseRepository
 from backend.domain.bookshelf.models import Bookshelf, Favorites
@@ -33,8 +33,16 @@ class BookshelfRepository(BaseRepository[Bookshelf]):
 
     def get_shelf(self, child_id: int) -> list[Bookshelf]:
         """获取孩子书架列表"""
-        return self.list_all(
-            limit=100, child_id=child_id, status=BookshelfStatus.WANT_READ
+        return (
+            self.db.query(Bookshelf)
+            .options(joinedload(Bookshelf.book))
+            .filter(
+                Bookshelf.child_id == child_id,
+                Bookshelf.status == BookshelfStatus.WANT_READ,
+                Bookshelf.is_deleted == 0,
+            )
+            .limit(100)
+            .all()
         )
 
 
@@ -57,4 +65,10 @@ class FavoritesRepository(BaseRepository[Favorites]):
 
     def get_favorites(self, child_id: int) -> list[Favorites]:
         """获取收藏夹"""
-        return self.list_all(limit=100, child_id=child_id)
+        return (
+            self.db.query(Favorites)
+            .options(joinedload(Favorites.book))
+            .filter(Favorites.child_id == child_id, Favorites.is_deleted == 0)
+            .limit(100)
+            .all()
+        )

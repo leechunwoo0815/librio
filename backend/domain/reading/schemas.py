@@ -56,6 +56,7 @@ class EndSessionRequest(BaseSchema):
 
     pages_read: int = 0
     words_read: int = 0
+    reading_minutes: int = 0
 
 
 class SessionResponse(BaseSchema):

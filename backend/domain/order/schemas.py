@@ -53,6 +53,31 @@ class RefundPreviewResponse(BaseSchema):
     order_id: int
     used_days: int
     refund_amount: Decimal
+    daily_rate: Decimal = Decimal("0")
+    used_amount: Decimal = Decimal("0")
+    total_days: int = 0
 
 
 OrderListResponse = PaginatedResponse[OrderResponse]
+
+
+class TierFeature(BaseSchema):
+    icon: str = ""
+    title: str
+    desc: str = ""
+
+
+class TierInfo(BaseSchema):
+    type: int
+    name: str
+    price: int
+    unit: str
+    original_price: int | None = None
+    discount_tag: str | None = None
+    sort_order: int = 0
+    features: list[TierFeature] = []
+    cta: str = ""
+
+
+class ProductTiersResponse(BaseSchema):
+    tiers: list[TierInfo]

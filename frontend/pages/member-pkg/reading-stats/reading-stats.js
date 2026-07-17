@@ -20,85 +20,8 @@ Page({
   },
 
   async onShow() {
-    const app = getApp()
-    if (app.globalData.isTestMode) {
-      this._loadTestModeData()
-      return
-    }
     if (!auth.requireAuth()) return
     await this.loadData()
-  },
-
-  _loadTestModeData() {
-    const leaderboard = [
-      { child_id: '1', child_name: 'Tom', score: 3120, avatar: '🧑' },
-      { child_id: '2', child_name: 'Lily', score: 2450, avatar: '👩' },
-      { child_id: '3', child_name: '小明', score: 1980, avatar: '👦' },
-      { child_id: '4', child_name: 'Anna', score: 1650, avatar: '🐶' },
-      { child_id: '5', child_name: 'Mike', score: 1520, avatar: '🐻' },
-      { child_id: '6', child_name: 'Emma', score: 1380, avatar: '🦊' },
-      { child_id: '7', child_name: 'Mega', score: 1200, avatar: '🐱' },
-    ]
-
-    const trend = [
-      { date: '2026-05-29', reading_minutes: 20, label: '5/29', barHeight: 50 },
-      { date: '2026-05-30', reading_minutes: 28, label: '5/30', barHeight: 69 },
-      { date: '2026-05-31', reading_minutes: 35, label: '5/31', barHeight: 88 },
-      { date: '2026-06-01', reading_minutes: 15, label: '6/1', barHeight: 38 },
-      { date: '2026-06-02', reading_minutes: 32, label: '6/2', barHeight: 80 },
-      { date: '2026-06-03', reading_minutes: 40, label: '6/3', barHeight: 100 },
-      { date: '2026-06-04', reading_minutes: 25, label: '6/4', barHeight: 63, isToday: true },
-    ]
-
-    const wordTrend = [
-      { date: '2026-05-29', words: 180, label: '5/29', barHeight: 56 },
-      { date: '2026-05-30', words: 250, label: '5/30', barHeight: 78 },
-      { date: '2026-05-31', words: 300, label: '5/31', barHeight: 94 },
-      { date: '2026-06-01', words: 200, label: '6/1', barHeight: 63 },
-      { date: '2026-06-02', words: 270, label: '6/2', barHeight: 84 },
-      { date: '2026-06-03', words: 320, label: '6/3', barHeight: 100 },
-      { date: '2026-06-04', words: 280, label: '6/4', barHeight: 88, isToday: true },
-    ]
-
-    this.setData({
-      summary: {
-        total_reading_minutes: 120,
-        total_words_read: 3200,
-        books_finished: 3,
-        vocabulary_count: 47,
-        level_name: '词汇新手',
-        level_letter: 'B',
-        books_for_next_level: 8,
-        next_level_name: '故事探索者',
-        badge_count: 5,
-        streak_days: 12,
-        perfect_quizzes: 3,
-      },
-      todayStats: {
-        reading_minutes: 25,
-        pages_read: 12,
-        new_words: 5,
-        words_read: 320,
-      },
-      trend,
-      trendMax: 40,
-      wordTrend,
-      leaderboard: leaderboard.slice(0, 3),
-      restLeaderboard: leaderboard.slice(3).map((item, idx) => ({
-        ...item,
-        rank: idx + 4,
-        isMe: item.child_id === '7',
-      })),
-      myRank: 7,
-      myScore: 1200,
-      booksRead: [
-        { emoji: '🐛', name: 'The Very Hungry Caterpillar', bgColor: 'rgba(96, 212, 130, 0.15)' },
-        { emoji: '🐘', name: 'Horton Hears a Who!', bgColor: 'rgba(232, 163, 23, 0.15)' },
-        { emoji: '🐱', name: 'The Cat in the Hat', bgColor: 'rgba(123, 104, 238, 0.12)' },
-        { emoji: '🐶', name: 'Go, Dog. Go!', bgColor: 'rgba(52, 199, 89, 0.15)' },
-        { emoji: '🐻', name: 'Brown Bear', bgColor: 'rgba(215, 60, 60, 0.08)' },
-      ],
-    })
   },
 
   async loadData() {
@@ -110,11 +33,12 @@ Page({
       if (!child) return
       this.setData({ child })
 
-      const [summary, todayStats, trend, board] = await Promise.all([
-        api.getStatsSummary(child.id).catch(() => ({})),
-        api.getTodayStats(child.id).catch(() => ({})),
-        api.getTrend(child.id, this.data.days).catch(() => []),
-        api.getLeaderboard('total', null, 100).catch(() => []),
+      const [summary, todayStats, trend, board, bookshelf] = await Promise.all([
+        api.getStatsSummary(child.id).catch((err) => { console.error('[getStatsSummary failed]', err); return {} }),
+        api.getTodayStats(child.id).catch((err) => { console.error('[getTodayStats failed]', err); return {} }),
+        api.getTrend(child.id, this.data.days).catch((err) => { console.error('[getTrend failed]', err); return [] }),
+        api.getLeaderboard('total', null, 100).catch((err) => { console.error('[getLeaderboard failed]', err); return [] }),
+        api.getBookshelf(child.id).catch((err) => { console.error('[getBookshelf failed]', err); return [] }),
       ])
 
       // Process trend for bar chart
@@ -125,6 +49,23 @@ Page({
         label: (d.date || '').slice(5),
         reading_minutes: d.reading_minutes || 0,
         barHeight: Math.round(((d.reading_minutes || 0) / maxVal) * 100),
+      }))
+
+      // Process word trend for word count bar chart
+      const wordMaxVal = trendArr.reduce((m, d) => Math.max(m, d.words_read || 0), 1)
+      const wordTrendDisplay = trendArr.map(d => ({
+        ...d,
+        label: (d.date || '').slice(5),
+        words_read: d.words_read || 0,
+        barHeight: Math.round(((d.words_read || 0) / wordMaxVal) * 100),
+      }))
+
+      // Process bookshelf into booksRead
+      const shelfItems = Array.isArray(bookshelf) ? bookshelf : []
+      const booksRead = shelfItems.slice(0, 20).map(item => ({
+        name: item.title || item.name || '',
+        emoji: item.emoji || '📚',
+        bgColor: item.bg_color || '#f0f4ff',
       }))
 
       // Process leaderboard: top 3 + rest + current user rank
@@ -144,11 +85,12 @@ Page({
         todayStats,
         trend: trendDisplay,
         trendMax: maxVal,
-        wordTrend: trendDisplay,
+        wordTrend: wordTrendDisplay,
         leaderboard: top3,
         restLeaderboard: rest,
         myRank,
         myScore,
+        booksRead,
       })
     } catch (e) {
       console.error('loadData failed:', e)
@@ -157,7 +99,9 @@ Page({
 
   switchPeriod(e) {
     const period = e.currentTarget.dataset.period
-    this.setData({ period })
+    const days = period === 'day' ? 1 : period === 'week' ? 7 : period === 'month' ? 30 : 365
+    this.setData({ period, days })
+    this.loadData()
   },
 
   goLeaderboard() {

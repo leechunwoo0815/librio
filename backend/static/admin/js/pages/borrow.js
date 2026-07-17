@@ -6,13 +6,21 @@
 
   let currentBook = null;
   let searchTimeout = null;
+  let allChildren = [];
 
   document.addEventListener('DOMContentLoaded', () => {
+    loadAllChildren();
+
     const barcodeInput = document.getElementById('barcodeInput');
     if (barcodeInput) {
       barcodeInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') lookupBarcode();
       });
+    }
+
+    const childSelect = document.getElementById('childSelect');
+    if (childSelect) {
+      childSelect.addEventListener('change', onChildSelectChange);
     }
 
     document.addEventListener('click', (e) => {
@@ -22,6 +30,38 @@
       }
     });
   });
+
+  async function loadAllChildren() {
+    const select = document.getElementById('childSelect');
+    if (!select) return;
+    try {
+      const children = await api.get('/admin/api/children');
+      allChildren = Array.isArray(children) ? children : [];
+      select.innerHTML = '<option value="">-- 请选择 --</option>';
+      allChildren.forEach((c) => {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = (c.name || '未知') + (c.english_name ? ' (' + c.english_name + ')' : '');
+        select.appendChild(opt);
+      });
+    } catch (e) {
+      showToast('加载孩子列表失败: ' + (e.message || ''), 'error');
+    }
+  }
+
+  function onChildSelectChange() {
+    const select = document.getElementById('childSelect');
+    const id = parseInt(select.value, 10);
+    const child = allChildren.find((c) => c.id === id);
+    if (!child) {
+      document.getElementById('childIdInput').value = '';
+      document.getElementById('selectedChild').innerHTML = '';
+      return;
+    }
+    document.getElementById('childIdInput').value = child.id;
+    document.getElementById('childSearchInput').value = child.name || '';
+    selectChild(child.id, child.name, child.status, child.deposit_status, child.current_borrow_count);
+  }
 
   // PC-013: child search with debounce
   function searchChildrenDebounced() {
@@ -40,15 +80,34 @@
       } else {
         const statusMap = { 0: '体验', 1: '观察期', 2: '正式', 3: '过期', 4: '退出' };
         const depositMap = { 0: '押金未交', 1: '押金已交', 2: '已退', 3: '已扣' };
-        dropdown.innerHTML = children.map(c =>
-          '<div style="padding:10px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;" onclick="window.borrowPage.selectChild(' + c.id + ',\'' + (c.name || '').replace(/'/g, "\\'") + '\',' + c.status + ',' + c.deposit_status + ',' + c.current_borrow_count + ')">' +
-            '<strong>' + escapeHtml(c.name || '未知') + '</strong> ' + (c.english_name ? '(' + escapeHtml(c.english_name) + ') ' : '') +
-            '<span style="color:#999;font-size:12px;margin-left:8px;">' + escapeHtml(c.parent_name || '') + ' ' + escapeHtml(c.phone || '') + '</span>' +
-            '<span style="font-size:11px;color:var(--muted);margin-left:8px;">[' + (statusMap[c.status] || c.status) + '] [' + (depositMap[c.deposit_status] || '未知') + '] [借阅:' + c.current_borrow_count + ']</span>' +
-          '</div>'
-        ).join('');
+        dropdown.innerHTML = '';
+        children.forEach(function(c) {
+          var div = document.createElement('div');
+          div.style.cssText = 'padding:10px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;';
+          (function(id, name, status, depositStatus, borrowCount) {
+            div.onclick = function() { window.borrowPage.selectChild(id, name, status, depositStatus, borrowCount); };
+          })(c.id, c.name||'', c.status, c.deposit_status, c.current_borrow_count);
+          var strong = document.createElement('strong');
+          strong.textContent = c.name || '未知';
+          div.appendChild(strong);
+          if (c.english_name) {
+            div.appendChild(document.createTextNode(' '));
+            var engSpan = document.createElement('span');
+            engSpan.textContent = '(' + c.english_name + ') ';
+            div.appendChild(engSpan);
+          }
+          var infoSpan = document.createElement('span');
+          infoSpan.style.cssText = 'color:#999;font-size:12px;margin-left:8px;';
+          infoSpan.textContent = (c.parent_name||'') + ' ' + (c.phone||'');
+          div.appendChild(infoSpan);
+          var statusSpan = document.createElement('span');
+          statusSpan.style.cssText = 'font-size:11px;color:var(--muted);margin-left:8px;';
+          statusSpan.textContent = '[' + (statusMap[c.status] || c.status) + '] [' + (depositMap[c.deposit_status] || '未知') + '] [借阅:' + c.current_borrow_count + ']';
+          div.appendChild(statusSpan);
+          dropdown.appendChild(div);
+        });
       }
-      dropdown.style.display = 'block';
+      dropdown.classList.remove('hidden');
     } catch (e) { dropdown.style.display = 'none'; }
   }
 
@@ -64,11 +123,14 @@
     if (status === 3 || status === 4) warnings.push('会员已过期/退出');
     if (borrowCount >= 20) warnings.push('已达借阅上限');
 
-    let html = name + ' (' + (statusMap[status] || status) + ') · ' + (depositMap[depositStatus] || '未知') + ' · 当前借阅' + borrowCount + '本';
+    var el = document.getElementById('selectedChild');
+    el.textContent = name + ' (' + (statusMap[status] || status) + ') · ' + (depositMap[depositStatus] || '未知') + ' · 当前借阅' + borrowCount + '本';
     if (warnings.length > 0) {
-      html += ' <span style="color:var(--error);font-weight:bold;">&#x26A0;&#xFE0F; ' + warnings.join('、') + '</span>';
+      var warnSpan = document.createElement('span');
+      warnSpan.style.cssText = 'color:var(--error);font-weight:bold;';
+      warnSpan.textContent = '\u26A0\uFE0F ' + warnings.join('、');
+      el.appendChild(warnSpan);
     }
-    document.getElementById('selectedChild').innerHTML = html;
   }
 
   async function lookupBarcode() {
@@ -133,17 +195,33 @@
   async function loadRecords(childId) {
     try {
       const records = await api.get('/admin/api/borrows/' + childId);
-      const tbody = document.getElementById('recordsBody');
+      var tbody = document.getElementById('recordsBody');
       document.getElementById('recordsCount').textContent = '（共 ' + (records || []).length + ' 条）';
-      tbody.innerHTML = (records || []).map(r =>
-        '<tr>' +
-          '<td style="font-family:var(--font-mono);">' + formatDateTime(r.borrow_time) + '</td>' +
-          '<td>' + (r.child_name || r.child_id || '-') + '</td>' +
-          '<td><span class="status-badge ' + (r.status === 0 ? 'status-borrow' : 'status-return') + '">' + (r.status === 0 ? '借出' : r.status === 1 ? '归还' : r.status === 2 ? '逾期' : '丢失') + '</span></td>' +
-          '<td>' + (r.book_title || r.book_id || '-') + '</td>' +
-          '<td style="font-family:var(--font-mono);font-size:12px;">' + (r.barcode || '-') + '</td>' +
-        '</tr>'
-      ).join('');
+      tbody.innerHTML = '';
+      (records || []).forEach(function(r) {
+        var tr = document.createElement('tr');
+        var td1 = document.createElement('td');
+        td1.style.cssText = 'font-family:var(--font-mono);';
+        td1.textContent = formatDateTime(r.borrow_time);
+        tr.appendChild(td1);
+        var td2 = document.createElement('td');
+        td2.textContent = r.child_name || r.child_id || '-';
+        tr.appendChild(td2);
+        var td3 = document.createElement('td');
+        var span = document.createElement('span');
+        span.className = 'status-badge ' + (r.status === 0 ? 'status-borrow' : 'status-return');
+        span.textContent = r.status === 0 ? '借出' : r.status === 1 ? '归还' : r.status === 2 ? '逾期' : '丢失';
+        td3.appendChild(span);
+        tr.appendChild(td3);
+        var td4 = document.createElement('td');
+        td4.textContent = r.book_title || r.book_id || '-';
+        tr.appendChild(td4);
+        var td5 = document.createElement('td');
+        td5.style.cssText = 'font-family:var(--font-mono);font-size:12px;';
+        td5.textContent = r.barcode || '-';
+        tr.appendChild(td5);
+        tbody.appendChild(tr);
+      });
     } catch (e) { /* silent */ }
   }
 

@@ -22,10 +22,13 @@ class AdminMessageService:
         priority: int,
         target: str = "all",
         target_user_id: int | None = None,
+        target_teacher_id: int | None = None,
+        target_role_groups: list[str] | None = None,
     ) -> dict:
-        """运营消息推送 — 支持全部/指定用户"""
-        from backend.domain.message.models import SystemMessage
+        """运营消息推送 — 支持全部用户/指定用户/老师"""
+        from backend.domain.message.models import SystemMessage, TeacherMessage
         from backend.domain.user.models import User
+        from backend.domain.admin.models import Teacher
 
         if target == "user":
             if not target_user_id:
@@ -48,19 +51,53 @@ class AdminMessageService:
             self.db.commit()
             return {"success": True, "sent_count": 1}
 
-        # 全部用户
-        users = self.db.query(User).filter(User.is_deleted == 0).all()
-        for u in users:
-            msg = SystemMessage(
-                user_id=u.id,
-                title=title,
-                content=content,
-                msg_type=msg_type,
-                priority=priority,
-            )
-            self.db.add(msg)
+        if target == "teacher":
+            if target_teacher_id:
+                teacher = (
+                    self.db.query(Teacher)
+                    .filter(Teacher.id == target_teacher_id, Teacher.is_deleted == 0)
+                    .first()
+                )
+                if not teacher:
+                    raise NotFoundError("目标老师不存在")
+                msg = TeacherMessage(
+                    teacher_id=target_teacher_id,
+                    title=title,
+                    content=content,
+                    msg_type=msg_type,
+                    priority=priority,
+                )
+                self.db.add(msg)
+                self.db.commit()
+                return {"success": True, "sent_count": 1}
+
+            # 全部老师
+            teachers = self.db.query(Teacher).filter(Teacher.is_deleted == 0).all()
+            for t in teachers:
+                msg = TeacherMessage(
+                    teacher_id=t.id,
+                    title=title,
+                    content=content,
+                    msg_type=msg_type,
+                    priority=priority,
+                )
+                self.db.add(msg)
+            self.db.commit()
+            return {"success": True, "sent_count": len(teachers)}
+
+        # 全部用户 — 共享消息（1条，不遍历用户）
+        groups = target_role_groups or ["trial", "observation", "member"]
+        user_count = self.db.query(User).filter(User.is_deleted == 0).count()
+        msg = SystemMessage(
+            title=title,
+            content=content,
+            msg_type=msg_type,
+            priority=priority,
+            target_role_codes=groups,
+        )
+        self.db.add(msg)
         self.db.commit()
-        return {"success": True, "sent_count": len(users)}
+        return {"success": True, "sent_count": user_count}
 
     def list_messages(self, page: int = 1, page_size: int = 20) -> dict:
         """已发送消息列表"""
@@ -87,6 +124,7 @@ class AdminMessageService:
                     "priority": m.priority,
                     "is_read": m.is_read,
                     "create_time": m.create_time.isoformat() if m.create_time else None,
+                    "target_groups": m.target_role_codes,
                 }
                 for m in messages
             ],
@@ -143,19 +181,30 @@ class AdminMessageService:
                 user_records[record.child_id] = []
             user_records[record.child_id].append(record)
 
+        child_ids = list(user_records.keys())
+        children_map = {
+            c.id: c
+            for c in self.db.query(Child)
+            .filter(Child.id.in_(child_ids), Child.is_deleted == 0)
+            .all()
+        }
+        all_book_ids = list({r.book_id for records in user_records.values() for r in records})
+        books_map = {
+            b.id: b
+            for b in self.db.query(Book)
+            .filter(Book.id.in_(all_book_ids), Book.is_deleted == 0)
+            .all()
+        }
+
         sent_count = 0
         for child_id, records in user_records.items():
-            child = (
-                self.db.query(Child)
-                .filter(Child.id == child_id, Child.is_deleted == 0)
-                .first()
-            )
+            child = children_map.get(child_id)
             if not child or not child.user_id:
                 continue
 
             book_titles = []
             for r in records:
-                book = self.db.query(Book).filter(Book.id == r.book_id).first()
+                book = books_map.get(r.book_id)
                 if book:
                     book_titles.append(book.title)
 

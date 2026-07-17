@@ -76,8 +76,8 @@ async def get_current_user(
     token = credentials.credentials
 
     # 仅在 DEBUG 模式下允许测试 token（生产环境绝不生效）
-    if settings.DEBUG and token == "test-token-mock":
-        logger.warning("Using test-token-mock in DEBUG mode")
+    if settings.DEBUG and settings.ENABLE_TEST_TOKEN and token == "test-token-mock":
+        logger.warning("Using test-token-mock — DEBUG+ENABLE_TEST_TOKEN both active")
         user_repo = UserRepository(db)
         user = user_repo.get_by_id(1)
         if user:

@@ -6,6 +6,8 @@
 <link rel="stylesheet" href="/static/admin/css/pages/library.css" />
 {% endblock %}
 
+{% import "admin/macros.html" as m %}
+
 {% block content %}
 <!-- stats -->
 <div class="lib-stats" id="libStats">
@@ -50,14 +52,14 @@
       <option value="damaged">损坏/遗失</option>
     </select>
   </div>
-  <div style="display:flex;gap:8px;">
+  <div class="flex gap-8">
     <button class="btn btn-primary" onclick="toggleModal()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:middle;"><path d="M12 5v14M5 12h14"/></svg>
-      新增图书
+      <svg class="icon-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+       新增图书
     </button>
-    <button class="btn btn-outline" onclick="alert('批量导入 Excel/CSV')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:middle;"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-      批量导入图书
+    <button class="btn btn-outline" onclick="showToast('批量导入 Excel/CSV', 'error')">
+      <svg class="icon-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+       批量导入图书
     </button>
   </div>
 </div>
@@ -82,59 +84,55 @@
       </tr>
     </thead>
     <tbody id="bookBody">
-      <tr><td colspan="12" style="text-align:center;color:var(--muted);padding:32px;">加载中...</td></tr>
+      <tr><td colspan="12" class="text-center text-muted p-32">加载中...</td></tr>
     </tbody>
   </table>
-  <div class="pagination">
-    <span class="info" id="paginationInfo">-</span>
-    <div class="pages" id="paginationBtns"></div>
-  </div>
+</div>
+<div class="pagination">
+  <span class="info" id="paginationInfo">-</span>
+  <div class="pages" id="paginationBtns"></div>
 </div>
 
 <!-- add book modal -->
-<div class="modal-overlay" id="bookModal" onclick="if(event.target===this)toggleModal()">
-  <div class="modal">
-    <h2>新增图书</h2>
+{{ m.modal_overlay("bookModal", "新增图书", "md") }}
+  <div class="form-group">
+    <label>书名（英文）</label>
+    <input type="text" id="titleInput" placeholder="Book title in English" />
+  </div>
+  <div class="form-row">
     <div class="form-group">
-      <label>书名（英文）</label>
-      <input type="text" id="titleInput" placeholder="Book title in English" />
+      <label>作者</label>
+      <input type="text" id="authorInput" placeholder="Author name" />
     </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>作者</label>
-        <input type="text" id="authorInput" placeholder="Author name" />
-      </div>
-      <div class="form-group">
-        <label>ISBN</label>
-        <input type="text" id="isbnInput" placeholder="978-X-XXX-XXXXX-X" />
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>AR 级别</label>
-        <input type="number" id="arInput" step="0.1" placeholder="例如 3.5" />
-      </div>
-      <div class="form-group">
-        <label>入库数量</label>
-        <input type="number" id="stockInput" placeholder="5" />
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>最低年龄</label>
-        <input type="number" id="ageMinInput" min="3" max="15" placeholder="3" />
-      </div>
-      <div class="form-group">
-        <label>最高年龄</label>
-        <input type="number" id="ageMaxInput" min="3" max="15" placeholder="15" />
-      </div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="toggleModal()">取消</button>
-      <button class="btn btn-primary" onclick="addBook()">确认入库</button>
+    <div class="form-group">
+      <label>ISBN</label>
+      <input type="text" id="isbnInput" placeholder="978-X-XXX-XXXXX-X" />
     </div>
   </div>
-</div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>AR 级别</label>
+      <input type="number" id="arInput" step="0.1" placeholder="例如 3.5" />
+    </div>
+    <div class="form-group">
+      <label>入库数量</label>
+      <input type="number" id="stockInput" placeholder="5" />
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>最低年龄</label>
+      <input type="number" id="ageMinInput" min="3" max="15" placeholder="3" />
+    </div>
+    <div class="form-group">
+      <label>最高年龄</label>
+      <input type="number" id="ageMaxInput" min="3" max="15" placeholder="15" />
+    </div>
+  </div>
+{{ m.modal_actions() }}
+  <button class="btn btn-secondary" onclick="closeModal('bookModal')">取消</button>
+  <button class="btn btn-primary" onclick="addBook()">确认入库</button>
+{{ m.modal_end() }}
 {% endblock %}
 
 {% block scripts %}
@@ -189,7 +187,7 @@ async function loadBooks() {
     document.getElementById('paginationInfo').textContent = '共 ' + total + ' 册 · 显示 ' + Math.min((currentPage - 1) * pageSize + 1, total) + '-' + Math.min(currentPage * pageSize, total);
 
     if (items.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;color:var(--muted);padding:32px;">暂无图书</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="12" class="text-center text-muted p-32">暂无图书</td></tr>';
       return;
     }
 
@@ -198,8 +196,8 @@ async function loadBooks() {
       var hasAudio = b.audio_url ? '✓' : '—';
       var contentStatus = (b.total_stock > 0 || b.has_audio) ? 'configured' : 'unconfigured';
       return '<tr>' +
-        '<td><div class="book-cell"><div class="book-cover ' + colorCls + '">' + getInitials(b.title) + '</div><div><div class="book-title-text">' + (b.title || '') + '</div><div class="book-author">' + (b.author || '') + '</div></div></div></td>' +
-        '<td style="font-family:var(--font-mono);font-size:12px;">' + (b.isbn || '-') + '</td>' +
+        '<td><div class="book-cell"><div class="book-cover ' + colorCls + '">' + escapeHtml(getInitials(b.title)) + '</div><div><div class="book-title-text">' + escapeHtml(b.title || '') + '</div><div class="book-author">' + escapeHtml(b.author || '') + '</div></div></div></td>' +
+        '<td class="font-mono text-sm">' + (b.isbn || '-') + '</td>' +
         '<td><span class="ar-badge">' + (b.ar_value || '-') + '</span></td>' +
         '<td>' + (b.word_count ? b.word_count.toLocaleString() : '-') + '</td>' +
         '<td>' + (b.total_pages ? Math.round(b.total_pages * 2) + '分钟' : '-') + '</td>' +
@@ -222,13 +220,13 @@ async function loadBooks() {
     if (totalPages > 5) btnHtml += '<button class="page-btn">...</button><button class="page-btn" onclick="goPage(' + totalPages + ')">' + totalPages + '</button>';
     document.getElementById('paginationBtns').innerHTML = btnHtml;
   } catch (e) {
-    tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;color:var(--error);padding:32px;">加载失败: ' + e.message + '</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="12" class="text-center text-error p-32">加载失败: ' + escapeHtml(e.message) + '</td></tr>';
   }
 }
 
 function goPage(p) { currentPage = p; loadBooks(); }
-function editBook(id) { alert('编辑图书 #' + id); }
-function viewBook(id) { alert('图书详情 #' + id); }
+function editBook(id) { showToast('编辑图书 #' + id, 'error'); }
+function viewBook(id) { showToast('图书详情 #' + id, 'error'); }
 
 async function addBook() {
   var title = document.getElementById('titleInput').value.trim();
@@ -258,5 +256,5 @@ async function addBook() {
 
 loadBooks();
 </script>
-<div style="display:none" class="upload-pdf upload-audio"></div>
+<div class="upload-pdf upload-audio hidden"></div>
 {% endblock %}

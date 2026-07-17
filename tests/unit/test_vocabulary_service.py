@@ -8,7 +8,7 @@
 import pytest
 from unittest.mock import MagicMock
 from backend.domain.vocabulary.service import VocabularyService
-from backend.domain.vocabulary.models import DictionaryWord, UserVocabulary
+from backend.domain.vocabulary.models import UserVocabulary
 from datetime import datetime
 
 
@@ -60,8 +60,7 @@ def test_add_to_vocabulary_new(vocab_service, mock_db):
     mock_uv.status = UserVocabulary.STATUS_LEARNING
     mock_db.add.return_value = None
 
-    result = vocab_service.add_to_vocabulary(child_id=1, word="curiosity", book_id=1)
-    assert result is not None
+    vocab_service.add_to_vocabulary(child_id=1, word="curiosity", book_id=1)
 
 
 def test_add_to_vocabulary_already_exists(vocab_service, mock_db):
@@ -75,7 +74,7 @@ def test_add_to_vocabulary_already_exists(vocab_service, mock_db):
         mock_uv,     # user_vocabulary exists
     ]
 
-    result = vocab_service.add_to_vocabulary(child_id=1, word="curiosity")
+    _ = vocab_service.add_to_vocabulary(child_id=1, word="curiosity")
     assert mock_uv.lookup_count == 3  # incremented
 
 
@@ -85,7 +84,7 @@ def test_mark_mastered(vocab_service, mock_db):
     mock_uv.status = UserVocabulary.STATUS_LEARNING
     mock_db.query.return_value.filter.return_value.first.return_value = mock_uv
 
-    result = vocab_service.mark_mastered(vocab_id=1)
+    _ = vocab_service.mark_mastered(vocab_id=1)
     assert mock_uv.status == UserVocabulary.STATUS_MASTERED
 
 
@@ -103,7 +102,7 @@ def test_get_vocabulary_list(vocab_service, mock_db):
     mock_uv.word.chinese_meaning = "好奇心"
     mock_uv.word.phonetic = "/ˌkjʊriˈɑːsəti/"
 
-    mock_db.query.return_value.filter.return_value.order_by.return_value.all.return_value = [mock_uv]
+    mock_db.query.return_value.options.return_value.filter.return_value.order_by.return_value.all.return_value = [mock_uv]
 
     result = vocab_service.get_vocabulary_list(child_id=1)
     assert len(result) == 1

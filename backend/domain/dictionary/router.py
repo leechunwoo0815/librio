@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from backend.common.dependencies import get_db
-from backend.middleware.admin_auth import get_current_admin, require_role, ROLE_ADMIN, ROLE_STAFF
+from backend.middleware.admin_rbac import require_perm
 from backend.domain.dictionary.schemas import (
     WordCreateRequest,
     WordUpdateRequest,
@@ -23,7 +23,7 @@ def search_words(
     level: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    admin=Depends(get_current_admin),
+    admin=Depends(require_perm("dictionary.list")),
     db: Session = Depends(get_db),
 ):
     """搜索单词"""
@@ -34,7 +34,7 @@ def search_words(
 @router.get("/{word_id}", response_model=WordResponse)
 def get_word(
     word_id: int,
-    admin=Depends(get_current_admin),
+    admin=Depends(require_perm("dictionary.list")),
     db: Session = Depends(get_db),
 ):
     """获取单词详情"""
@@ -45,7 +45,7 @@ def get_word(
 @router.post("/", response_model=WordResponse, status_code=201)
 def create_word(
     data: WordCreateRequest,
-    admin=Depends(require_role(ROLE_ADMIN, ROLE_STAFF)),
+    admin=Depends(require_perm("dictionary.create")),
     db: Session = Depends(get_db),
 ):
     """创建单词"""
@@ -57,7 +57,7 @@ def create_word(
 def update_word(
     word_id: int,
     data: WordUpdateRequest,
-    admin=Depends(require_role(ROLE_ADMIN, ROLE_STAFF)),
+    admin=Depends(require_perm("dictionary.edit")),
     db: Session = Depends(get_db),
 ):
     """更新单词"""
@@ -68,7 +68,7 @@ def update_word(
 @router.delete("/{word_id}")
 def delete_word(
     word_id: int,
-    admin=Depends(require_role(ROLE_ADMIN)),
+    admin=Depends(require_perm("dictionary.delete")),
     db: Session = Depends(get_db),
 ):
     """删除单词"""

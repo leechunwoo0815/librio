@@ -1,0 +1,338 @@
+{% extends "admin/base.html" %}
+
+{# ============================================================
+   页面模板 — 新建管理端页面时复制此文件，按注释填空即可。
+   本模板使用全部全局样式（base.css），无需额外 CSS 文件。
+   ============================================================ #}
+
+{# ── 页面标题（浏览器标签 + 顶栏） ── #}
+{% block title %}页面名称{% endblock %}
+{% block page_title %}页面名称{% endblock %}
+
+{# ── 仅在需要额外 CSS 时引入（大部分情况无需） ── #}
+{% block head %}{% endblock %}
+
+{% block content %}
+
+{#
+   ┌─────────────────────────────────────────────────────────┐
+   │  1. 统计卡片（可选）                                     │
+   │  使用 .stats-grid > .stat-card                          │
+   └─────────────────────────────────────────────────────────┘ #}
+{% comment %}
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-label">总数</div>
+    <div class="stat-value" id="totalCount">0</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">活跃</div>
+    <div class="stat-value" id="activeCount">0</div>
+  </div>
+</div>
+{% endcomment %}
+
+{#
+   ┌─────────────────────────────────────────────────────────┐
+   │  2. 筛选 / 操作工具栏                                   │
+   │  全部 class 来自 base.css，无需额外样式                  │
+   └─────────────────────────────────────────────────────────┘ #}
+<div class="toolbar">
+  <input type="text" class="search-input" id="searchInput"
+    placeholder="搜索关键字" />
+  <select class="filter-select" id="statusFilter" onchange="loadData(1)">
+    <option value="">全部状态</option>
+    <option value="1">选项一</option>
+    <option value="2">选项二</option>
+  </select>
+  <div class="toolbar-spacer"></div>
+  <button class="btn btn-primary" onclick="loadData(1)">搜索</button>
+  <button class="btn btn-primary" onclick="openCreateModal()">新增</button>
+</div>
+
+{#
+   ┌─────────────────────────────────────────────────────────┐
+   │  3. 数据表格                                           │
+   │  .table-wrap: 圆角白底容器                             │
+   │  table: 标准表格，th 吸顶                               │
+   │  #skeleton: 加载中骨架屏，加载完成后自动隐藏             │
+   │  #dataBody: 数据行，由 JS 渲染                           │
+   │  #emptyState: 无数据时显示                              │
+   └─────────────────────────────────────────────────────────┘ #}
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>列名1</th>
+        <th>列名2</th>
+        <th>列名3</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody id="skeleton"></tbody>
+    <tbody id="dataBody"></tbody>
+  </table>
+  <div id="emptyState" class="empty-state hidden">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+    <p>暂无数据</p>
+  </div>
+</div>
+
+{#
+   ┌─────────────────────────────────────────────────────────┐
+   │  4. 分页                                               │
+   │  .pagination: flex 容器                                │
+   │  #pageInfo: "共 N 条 · 第 X/Y 页"                       │
+   │  #pageBtns: 页码按钮，由 renderPagination() 渲染        │
+   └─────────────────────────────────────────────────────────┘ #}
+<div class="pagination">
+  <span id="pageInfo">共 0 条记录 · 第 1/1 页</span>
+  <div class="page-btns" id="pageBtns"></div>
+</div>
+
+{#
+   ┌─────────────────────────────────────────────────────────┐
+   │  5. 弹窗 — 使用 macros.html 减少重复                    │
+   │  5a. 新增/编辑弹窗                                      │
+   │  5b. 详情弹窗                                           │
+   │  5c. 确认弹窗                                           │
+   │                                                         │
+   │  用法：                                                 │
+   │  {{ modal_overlay("id", "标题") }}                      │
+   │    ... 表单内容 ...                                     │
+   │  {{ modal_actions() }}                                  │
+   │    <button onclick="closeModal('id')">取消</button>     │
+   │    <button onclick="save()">保存</button>               │
+   │  {{ modal_end() }}                                     │
+   └─────────────────────────────────────────────────────────┘ #}
+{% import "admin/macros.html" as m %}
+
+{# --- 5a. 新增弹窗 --- #}
+{{ m.modal_overlay("createModal", "新增", "md") }}
+  <form id="createForm">
+    <div class="form-group">
+      <label>名称 <span class="required">*</span></label>
+      <input type="text" id="createName" class="form-input" required />
+    </div>
+    <div class="form-group">
+      <label>描述</label>
+      <textarea id="createDesc" class="form-textarea"></textarea>
+    </div>
+  </form>
+{{ m.modal_actions() }}
+  <button class="btn btn-secondary" onclick="closeModal('createModal')">取消</button>
+  <button class="btn btn-primary" onclick="submitCreate()">保存</button>
+{{ m.modal_end() }}
+
+{# --- 5b. 详情弹窗 --- #}
+{{ m.modal_overlay("detailModal", "详情", "lg") }}
+  <div id="detailContent">
+    <p class="text-muted">加载中...</p>
+  </div>
+{{ m.modal_actions() }}
+  <button class="btn btn-secondary" onclick="closeModal('detailModal')">关闭</button>
+{{ m.modal_end() }}
+
+{# --- 5c. 确认弹窗 --- #}
+{{ m.modal_overlay("confirmModal", "确认操作", "sm") }}
+  <p id="confirmMsg" class="m-0">确定要执行此操作吗？</p>
+{{ m.modal_actions() }}
+  <button class="btn btn-secondary" onclick="closeModal('confirmModal')">取消</button>
+  <button class="btn btn-primary" id="confirmBtn" onclick="confirmAction()">确定</button>
+{{ m.modal_end() }}
+
+{% endblock %}
+
+{# ── 页面脚本 ────────────────────────────────────────────── #}
+{% block scripts %}
+{# <script src="/static/admin/js/pages/xxx.js"></script> #}
+<script>
+var currentPage = 1, pageSize = 20, total = 0;
+
+// ── 初始化 ────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  loadData(1);
+  document.getElementById('searchInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') loadData(1);
+  });
+  // ESC 关闭所有弹窗
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      ['createModal','detailModal','confirmModal'].forEach(closeModal);
+    }
+  });
+});
+
+// ── 加载列表数据 ──────────────────────────────────────────
+function loadData(page) {
+  currentPage = page || 1;
+  var q = document.getElementById('searchInput').value;
+  var s = document.getElementById('statusFilter').value;
+
+  // 显示骨架屏
+  showSkeleton('skeleton', 4);
+  document.getElementById('dataBody').classList.add('hidden');
+  document.getElementById('emptyState').classList.add('hidden');
+
+  // TEMPLATE SCAFFOLD: 将 '/admin/api/xxx/...' 替换为实际 API 端点路径
+  fetch('/admin/api/xxx/list?page=' + currentPage + '&page_size=' + pageSize
+    + '&search=' + encodeURIComponent(q) + '&status=' + encodeURIComponent(s), {
+    headers: { 'Authorization': 'Bearer ' + auth.getToken() }
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    hideSkeleton('skeleton');
+    total = data.total || 0;
+    renderTable(data.items || []);
+    renderPagination('pageBtns', total, currentPage, pageSize, 'loadData');
+    document.getElementById('pageInfo').textContent =
+      '共 ' + total + ' 条记录 · 第 ' + currentPage + '/' + Math.ceil(total / pageSize) + ' 页';
+  })
+  .catch(function(err) {
+    hideSkeleton('skeleton');
+    console.error('加载失败', err);
+  });
+}
+
+// ── 渲染表格行 ────────────────────────────────────────────
+function renderTable(items) {
+  var tbody = document.getElementById('dataBody');
+  var empty = document.getElementById('emptyState');
+  tbody.innerHTML = '';
+  if (!items || items.length === 0) {
+    tbody.classList.add('hidden');
+    empty.classList.remove('hidden');
+    return;
+  }
+  tbody.classList.remove('hidden');
+  empty.classList.add('hidden');
+  items.forEach(function(item) {
+    var tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td>' + escapeHtml(item.field1) + '</td>' +
+      '<td>' + escapeHtml(item.field2) + '</td>' +
+      '<td>' + escapeHtml(item.field3) + '</td>' +
+      '<td><div class="table-actions">' +
+        '<button class="action-link" onclick="showDetail(' + item.id + ')">详情</button>' +
+        '<button class="action-link" onclick="editItem(' + item.id + ')">编辑</button>' +
+        '<button class="action-link text-error" onclick="deleteItem(' + item.id + ')">删除</button>' +
+      '</div></td>';
+    tbody.appendChild(tr);
+  });
+}
+
+// ── CRUD 操作 ────────────────────────────────────────────
+function openCreateModal() {
+  document.getElementById('createForm').reset();
+  showModal('createModal');
+}
+
+function submitCreate() {
+  var name = document.getElementById('createName').value;
+  if (!name) { showToast('请填写名称', 'error'); return; }
+
+  // TEMPLATE SCAFFOLD: 将 '/admin/api/xxx' 替换为实际 API 端点路径
+  fetch('/admin/api/xxx', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + auth.getToken()
+    },
+    body: JSON.stringify({ name: name, desc: document.getElementById('createDesc').value })
+  })
+  .then(function(r) {
+    if (!r.ok) throw new Error('创建失败');
+    return r.json();
+  })
+  .then(function() {
+    closeModal('createModal');
+    loadData(1);
+  })
+  .catch(function(err) { showToast(err.message, 'error'); });
+}
+
+function showDetail(id) {
+  document.getElementById('detailContent').innerHTML = '<p class="text-muted">加载中...</p>';
+  showModal('detailModal');
+
+  // TEMPLATE SCAFFOLD: 将 '/admin/api/xxx/...' 替换为实际 API 端点路径
+  fetch('/admin/api/xxx/' + id, {
+    headers: { 'Authorization': 'Bearer ' + auth.getToken() }
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(item) {
+    document.getElementById('detailContent').innerHTML =
+      '<div class="form-group"><label>名称</label><p>' + escapeHtml(item.name) + '</p></div>' +
+      '<div class="form-group"><label>描述</label><p>' + escapeHtml(item.desc || '无') + '</p></div>';
+  })
+  .catch(function(err) {
+    document.getElementById('detailContent').innerHTML = '<p class="text-error">加载失败</p>';
+  });
+}
+
+function editItem(id) {
+  // TEMPLATE SCAFFOLD: 将 '/admin/api/xxx/...' 替换为实际 API 端点路径
+  fetch('/admin/api/xxx/' + id, {
+    headers: { 'Authorization': 'Bearer ' + auth.getToken() }
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(item) {
+    document.getElementById('createName').value = item.name;
+    document.getElementById('createDesc').value = item.desc || '';
+    showModal('createModal');
+    // 保存时改为更新
+    document.querySelector('#createModal .btn-primary').onclick = function() { submitEdit(id); };
+  });
+}
+
+function submitEdit(id) {
+  var name = document.getElementById('createName').value;
+  // TEMPLATE SCAFFOLD: 将 '/admin/api/xxx/...' 替换为实际 API 端点路径
+  fetch('/admin/api/xxx/' + id, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + auth.getToken()
+    },
+    body: JSON.stringify({ name: name, desc: document.getElementById('createDesc').value })
+  })
+  .then(function(r) {
+    if (!r.ok) throw new Error('更新失败');
+    return r.json();
+  })
+  .then(function() {
+    closeModal('createModal');
+    loadData(currentPage);
+  })
+  .catch(function(err) { showToast(err.message, 'error'); });
+}
+
+var deleteTargetId = null;
+
+function deleteItem(id) {
+  deleteTargetId = id;
+  document.getElementById('confirmMsg').textContent = '确定要删除此项吗？此操作不可撤销。';
+  document.getElementById('confirmBtn').onclick = confirmDelete;
+  showModal('confirmModal');
+}
+
+function confirmDelete() {
+  // TEMPLATE SCAFFOLD: 将 '/admin/api/xxx/...' 替换为实际 API 端点路径
+  fetch('/admin/api/xxx/' + deleteTargetId, {
+    method: 'DELETE',
+    headers: { 'Authorization': 'Bearer ' + auth.getToken() }
+  })
+  .then(function(r) {
+    if (!r.ok) throw new Error('删除失败');
+    closeModal('confirmModal');
+    loadData(currentPage);
+  })
+  .catch(function(err) { showToast(err.message, 'error'); });
+}
+
+function confirmAction() {
+  // 由调用方设置 confirmBtn.onclick
+  closeModal('confirmModal');
+}
+</script>
+{% endblock %}

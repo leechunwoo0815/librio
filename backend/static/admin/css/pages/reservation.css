@@ -71,11 +71,6 @@ tr:hover td { background: var(--accent-soft); }
 .status-picked { background: var(--accent-soft); color: var(--accent); }
 .status-cancelled { background: var(--error-soft); color: var(--error); }
 
-/* Action link */
-.action-link { color: var(--accent); font-size: 12px; cursor: pointer; }
-.action-link:hover { text-decoration: underline; }
-.action-link.danger { color: var(--error); }
-
 /* Pagination */
 .pagination {
   display: flex;

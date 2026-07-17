@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from backend.common.dependencies import get_db
-from backend.middleware.admin_auth import get_current_admin, require_role, ROLE_ADMIN, ROLE_STAFF
+from backend.middleware.admin_rbac import require_perm
 from backend.domain.assessment.schemas import (
     AssessmentCreateRequest,
     AssessmentUpdateRequest,
@@ -24,7 +24,7 @@ def list_assessments(
     venue_id: int | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    admin=Depends(get_current_admin),
+    admin=Depends(require_perm("assessment.list")),
     db: Session = Depends(get_db),
 ):
     """获取评估列表"""
@@ -35,7 +35,7 @@ def list_assessments(
 @router.get("/{assessment_id}", response_model=AssessmentResponse)
 def get_assessment(
     assessment_id: int,
-    admin=Depends(get_current_admin),
+    admin=Depends(require_perm("assessment.view")),
     db: Session = Depends(get_db),
 ):
     """获取评估详情"""
@@ -46,7 +46,7 @@ def get_assessment(
 @router.post("/", response_model=AssessmentResponse, status_code=201)
 def create_assessment(
     data: AssessmentCreateRequest,
-    admin=Depends(require_role(ROLE_ADMIN, ROLE_STAFF)),
+    admin=Depends(require_perm("assessment.create")),
     db: Session = Depends(get_db),
 ):
     """创建评估"""
@@ -58,7 +58,7 @@ def create_assessment(
 def update_assessment(
     assessment_id: int,
     data: AssessmentUpdateRequest,
-    admin=Depends(require_role(ROLE_ADMIN, ROLE_STAFF)),
+    admin=Depends(require_perm("assessment.edit")),
     db: Session = Depends(get_db),
 ):
     """更新评估"""
@@ -69,7 +69,7 @@ def update_assessment(
 @router.delete("/{assessment_id}")
 def delete_assessment(
     assessment_id: int,
-    admin=Depends(require_role(ROLE_ADMIN)),
+    admin=Depends(require_perm("assessment.delete")),
     db: Session = Depends(get_db),
 ):
     """删除评估"""

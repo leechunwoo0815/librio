@@ -97,6 +97,7 @@ def get_favorites(
     service: BookshelfService = Depends(get_bookshelf_service),
 ):
     """获取收藏夹"""
+    # low-volume: per child, typically <=50 favorite books
     return service.get_favorites(child.id)
 
 

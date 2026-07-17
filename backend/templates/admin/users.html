@@ -5,6 +5,7 @@
 <link rel="stylesheet" href="/static/admin/css/pages/users.css" />
 {% endblock %}
 
+{% import "admin/macros.html" as m %}
 {% block content %}
 <!-- 筛选区 -->
 <div class="toolbar">
@@ -17,8 +18,9 @@
     <option value="0">体验课</option>
   </select>
   <div class="toolbar-spacer"></div>
-  <button class="btn-action btn-primary" onclick="loadUsers(1)">搜索</button>
-  <button class="btn-action btn-outline" onclick="exportUsers()">导出 Excel</button>
+  <button class="btn btn-primary" onclick="usersPage.loadUsers(1)">搜索</button>
+  <button class="btn btn-outline" onclick="usersPage.exportUsers()">导出 Excel</button>
+  <button class="btn btn-primary" onclick="usersPage.openCreateUserModal()">添加用户</button>
 </div>
 
 <!-- 列表 -->
@@ -28,195 +30,173 @@
       <tr>
         <th>家长名</th>
         <th>手机号</th>
-        <th>孩子名</th>
+        <th>主孩子</th>
         <th>年龄</th>
-        <th>身份<span class="role-badge role-member" style="display:none"></span><span class="role-badge role-obs" style="display:none"></span><span class="role-badge role-trial" style="display:none"></span></th>
+        <th>年级</th>
+        <th>身份<span class="role-badge role-member hidden"></span><span class="role-badge role-obs hidden"></span><span class="role-badge role-trial hidden"></span></th>
         <th>场馆</th>
         <th>操作</th>
       </tr>
     </thead>
     <tbody id="usersTable">
-      <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--muted);">加载中...</td></tr>
+      <tr><td colspan="8" class="text-center p-24 text-muted">加载中...</td></tr>
     </tbody>
   </table>
 </div>
 
 <div class="pagination">
   <span id="userCount">共 0 条记录 · 第 1/1 页</span>
-  <div class="page-btns" id="pageBtns">
-    <button class="page-btn active">1</button>
-    <button class="page-btn">2</button>
-    <button class="page-btn">3</button>
-  </div>
+  <div class="page-btns" id="pageBtns"></div>
 </div>
 
 <!-- 详情弹窗 -->
-<div id="detailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
-  <div style="background:#fff;border-radius:12px;width:720px;max-height:85vh;overflow-y:auto;padding:28px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-      <h2 style="margin:0;font-size:20px;">用户详情</h2>
-      <button onclick="closeModal()" style="border:none;background:none;font-size:24px;cursor:pointer;color:var(--muted);">&times;</button>
-    </div>
-    <div id="detailContent"></div>
+{{ m.modal_overlay('detailModal', '用户详情', 'xl') }}
+  <div id="detailContent"></div>
+  {{ m.modal_actions() }}
+    <button class="btn btn-secondary" onclick="closeModal('detailModal')">关闭</button>
+  {{ m.modal_end() }}
+
+<!-- 孩子详情弹窗 -->
+{{ m.modal_overlay('childModal', '孩子详情', 'lg') }}
+  <div id="childContent"></div>
+  {{ m.modal_actions() }}
+    <button class="btn btn-secondary" onclick="closeModal('childModal')">关闭</button>
+  {{ m.modal_end() }}
+
+<!-- 编辑用户弹窗 -->
+{{ m.modal_overlay('editModal', '编辑用户', 'md') }}
+<form id="editForm" onsubmit="submitUserEdit(event)">
+  <input type="hidden" id="editUserId" value="" />
+  <div class="form-group">
+    <label>家长姓名</label>
+    <input type="text" id="editParentName" class="form-input" required />
   </div>
-</div>
+  <div class="form-group">
+    <label>手机号</label>
+    <input type="tel" id="editPhone" class="form-input" required />
+  </div>
+  <div class="form-group">
+    <label>主孩子状态</label>
+    <select id="editChildStatus" class="form-input">
+      <option value="0">体验课</option>
+      <option value="1">观察期</option>
+      <option value="2">正式会员</option>
+      <option value="3">已过期</option>
+      <option value="4">已退出</option>
+    </select>
+  </div>
+{{ m.modal_actions() }}
+  <button type="button" class="btn btn-secondary" onclick="closeModal('editModal')">取消</button>
+  <button type="submit" class="btn btn-primary">保存</button>
+{{ m.modal_end() }}
+</form>
+
+<!-- 添加孩子弹窗 -->
+{{ m.modal_overlay('addChildModal', '添加孩子', 'md') }}
+<form id="addChildForm" onsubmit="submitAddChild(event)">
+  <input type="hidden" id="addChildUserId" value="" />
+  <div class="form-group">
+    <label>孩子姓名 <span class="required">*</span></label>
+    <input type="text" id="addChildName" class="form-input" required />
+  </div>
+  <div class="form-group">
+    <label>英文名</label>
+    <input type="text" id="addChildEnglishName" class="form-input" />
+  </div>
+  <div class="form-group">
+    <label>年龄 <span class="required">*</span></label>
+    <select id="addChildAge" class="form-input" required>
+      <option value="">请选择</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label>年级 <span class="required">*</span></label>
+    <select id="addChildGrade" class="form-input" required>
+      <option value="">请选择</option>
+    </select>
+  </div>
+{{ m.modal_actions() }}
+  <button type="button" class="btn btn-secondary" onclick="closeModal('addChildModal')">取消</button>
+  <button type="submit" class="btn btn-primary">保存</button>
+{{ m.modal_end() }}
+</form>
+
+<!-- 编辑孩子弹窗 -->
+{{ m.modal_overlay('editChildModal', '编辑孩子', 'md') }}
+<form id="editChildForm" onsubmit="submitEditChild(event)">
+  <input type="hidden" id="editChildId" value="" />
+  <div class="form-group">
+    <label>孩子姓名</label>
+    <input type="text" id="editChildName" class="form-input" />
+  </div>
+  <div class="form-group">
+    <label>英文名</label>
+    <input type="text" id="editChildEnglishName" class="form-input" />
+  </div>
+  <div class="form-group">
+    <label>年龄</label>
+    <select id="editChildAge" class="form-input">
+      <option value="">请选择</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label>年级</label>
+    <select id="editChildGrade" class="form-input">
+      <option value="">请选择</option>
+    </select>
+  </div>
+{{ m.modal_actions() }}
+  <button type="button" class="btn btn-secondary" onclick="closeModal('editChildModal')">取消</button>
+  <button type="submit" class="btn btn-primary">保存</button>
+{{ m.modal_end() }}
+</form>
+
+<!-- 添加用户弹窗 -->
+{{ m.modal_overlay('createUserModal', '添加用户', 'lg') }}
+<form id="createUserForm" onsubmit="submitCreateUser(event)">
+  <div class="form-group">
+    <label>家长姓名 <span class="required">*</span></label>
+    <input type="text" id="createParentName" class="form-input" required />
+  </div>
+  <div class="form-group">
+    <label>手机号 <span class="required">*</span></label>
+    <input type="tel" id="createPhone" class="form-input" pattern="1\d{10}" title="11位手机号" required />
+  </div>
+  <div class="form-group">
+    <label>初始密码</label>
+    <input type="text" id="createPassword" class="form-input" placeholder="留空则默认为手机号后6位" />
+  </div>
+  <hr class="hr" />
+  <p class="mb-8 text-sm text-muted">可选：同时添加孩子</p>
+  <div class="form-group">
+    <label>孩子姓名</label>
+    <input type="text" id="createChildName" class="form-input" />
+  </div>
+  <div class="form-group">
+    <label>年龄</label>
+    <select id="createChildAge" class="form-input">
+      <option value="">请选择</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label>年级</label>
+    <select id="createChildGrade" class="form-input">
+      <option value="">请选择</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label>所属场馆</label>
+    <select id="createChildVenue" class="form-input">
+      <option value="">请选择</option>
+    </select>
+  </div>
+{{ m.modal_actions() }}
+  <button type="button" class="btn btn-secondary" onclick="closeModal('createUserModal')">取消</button>
+  <button type="submit" class="btn btn-primary">创建</button>
+{{ m.modal_end() }}
+</form>
 {% endblock %}
 
 {% block scripts %}
-<script>
-let currentPage = 1, totalPages = 1;
-const roleBadgeClasses = {0:'role-trial',1:'role-obs',2:'role-member',3:'role-obs',4:'role-obs'};
-const roleNames = {0:'体验课',1:'观察期',2:'正式会员',3:'已过期',4:'已退出'};
-
-document.addEventListener('DOMContentLoaded', () => {
-  loadUsers(1);
-  document.getElementById('searchInput').addEventListener('keydown', e => {
-    if (e.key === 'Enter') loadUsers(1);
-  });
-});
-
-async function loadUsers(page) {
-  currentPage = page;
-  const keyword = document.getElementById('searchInput').value.trim();
-  const statusVal = document.getElementById('statusFilter').value;
-  let url = `/admin/api/users?page=${page}&page_size=20`;
-  if (keyword) url += '&search=' + encodeURIComponent(keyword);
-  if (statusVal !== '') url += '&child_status=' + statusVal;
-  try {
-    const data = await api.get(url);
-    const users = data.items || [];
-    renderUsers(users);
-    renderPagination(data.total, data.page, data.page_size);
-    var pages = Math.ceil(data.total / data.page_size);
-    document.getElementById('userCount').textContent = '共 ' + data.total + ' 条记录 · 第 ' + data.page + '/' + pages + ' 页';
-  } catch (err) {
-    document.getElementById('usersTable').innerHTML =
-      '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--muted);">加载失败: ' + escapeHtml(err.message) + '</td></tr>';
-  }
-}
-
-function renderUsers(users) {
-  const tbody = document.getElementById('usersTable');
-  if (!users.length) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--muted);">暂无用户数据</td></tr>';
-    return;
-  }
-  tbody.innerHTML = users.map(u => {
-    var children = u.children || [];
-    var childName = children.length > 0 ? escapeHtml(children[0].name || '-') : '-';
-    var age = children.length > 0 ? (children[0].age ? children[0].age + ' 岁' : '-') : '-';
-    var status = children.length > 0 ? children[0].status : 0;
-    var roleName = roleNames[status] || '未知';
-    var roleClass = roleBadgeClasses[status] || 'role-trial';
-    return '<tr>' +
-      '<td>' + escapeHtml(u.parent_name || '-') + '</td>' +
-      '<td style="font-family: var(--font-mono);">' + escapeHtml(u.phone || '-') + '</td>' +
-      '<td>' + childName + '</td>' +
-      '<td>' + age + '</td>' +
-      '<td><span class="role-badge ' + roleClass + '">' + roleName + '</span></td>' +
-      '<td>-</td>' +
-      '<td><span class="action-link" onclick="showDetail(' + u.id + ')">查看</span></td>' +
-      '</tr>';
-  }).join('');
-}
-
-function renderPagination(total, page, pageSize) {
-  totalPages = Math.ceil(total / pageSize);
-  const el = document.getElementById('pageBtns');
-  if (totalPages <= 1) { el.innerHTML = ''; return; }
-  let html = '';
-  var start = Math.max(1, page - 2);
-  var end = Math.min(totalPages, page + 2);
-  for (var i = start; i <= end; i++) {
-    html += '<button class="page-btn' + (i===page?' active':'') + '" onclick="loadUsers(' + i + ')">' + i + '</button>';
-  }
-  el.innerHTML = html;
-}
-
-async function showDetail(userId) {
-  const modal = document.getElementById('detailModal');
-  const content = document.getElementById('detailContent');
-  modal.style.display = 'flex';
-  content.innerHTML = '<div style="text-align:center;padding:40px;">加载中...</div>';
-  try {
-    const d = await api.get('/admin/api/users/' + userId);
-    const statusMap = {0:'体验用户',1:'观察期',2:'正式会员',3:'已过期',4:'已退出'};
-    const orderTypeMap = {1:'亲子课',2:'观察期',3:'正式会员'};
-    const payStatusMap = {0:'待支付',1:'已支付',3:'退款中',4:'已退款',5:'已关闭'};
-
-    let html = '';
-    // 基本信息
-    html += '<div style="margin-bottom:20px;"><h3 style="font-size:16px;margin-bottom:10px;border-left:3px solid var(--accent);padding-left:10px;">基本信息</h3>';
-    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;font-size:14px;">';
-    html += '<div><span style="color:var(--muted);">家长姓名：</span><strong>' + escapeHtml(d.user.parent_name) + '</strong></div>';
-    html += '<div><span style="color:var(--muted);">手机号：</span>' + escapeHtml(d.user.phone || '-') + '</div>';
-    html += '<div><span style="color:var(--muted);">注册时间：</span>' + formatDateTime(d.user.create_time) + '</div>';
-    html += '<div><span style="color:var(--muted);">总消费：</span><strong style="color:var(--success);">' + formatMoney(d.summary.total_spent) + '</strong></div>';
-    html += '</div></div>';
-
-    // 孩子列表
-    html += '<div style="margin-bottom:20px;"><h3 style="font-size:16px;margin-bottom:10px;border-left:3px solid var(--accent);padding-left:10px;">孩子列表（' + d.children.length + '）</h3>';
-    if (d.children.length === 0) {
-      html += '<div style="color:var(--muted);padding:12px;">暂无孩子信息</div>';
-    } else {
-      html += '<table style="width:100%;font-size:13px;"><thead><tr style="text-align:left;color:var(--muted);"><th>姓名</th><th>年龄</th><th>状态</th><th>AR等级</th><th>阅读分钟</th><th>读完本数</th><th>连续打卡</th><th>会员到期</th></tr></thead><tbody>';
-      d.children.forEach(c => {
-        html += '<tr><td><strong>' + escapeHtml(c.name) + '</strong>' + (c.english_name ? ' ('+escapeHtml(c.english_name)+')' : '') + '</td><td>' + c.age + '</td><td>' + (statusMap[c.status]||c.status) + '</td><td>' + (c.ar_level||'-') + '</td><td>' + (c.total_reading_minutes||0) + '</td><td>' + (c.total_books_finished||0) + '</td><td>' + (c.current_streak_days||0) + '天</td><td>' + (c.member_expire_time?formatDate(c.member_expire_time):'-') + '</td></tr>';
-      });
-      html += '</tbody></table>';
-    }
-    html += '</div>';
-
-    // 借阅统计
-    html += '<div style="margin-bottom:20px;"><h3 style="font-size:16px;margin-bottom:10px;border-left:3px solid var(--accent);padding-left:10px;">借阅统计</h3>';
-    html += '<div style="display:flex;gap:20px;font-size:14px;">';
-    html += '<div>总借阅：<strong>' + d.borrow_stats.total + '</strong></div>';
-    html += '<div>当前借阅：<strong style="color:var(--accent);">' + d.borrow_stats.current + '</strong></div>';
-    html += '<div>逾期：<strong style="color:var(--error);">' + d.borrow_stats.overdue + '</strong></div>';
-    html += '</div></div>';
-
-    // 订单记录
-    html += '<div style="margin-bottom:20px;"><h3 style="font-size:16px;margin-bottom:10px;border-left:3px solid var(--accent);padding-left:10px;">订单记录（' + d.orders.length + '）</h3>';
-    if (d.orders.length === 0) {
-      html += '<div style="color:var(--muted);padding:12px;">暂无订单</div>';
-    } else {
-      html += '<table style="width:100%;font-size:13px;"><thead><tr style="text-align:left;color:var(--muted);"><th>订单号</th><th>类型</th><th>金额</th><th>状态</th><th>创建时间</th></tr></thead><tbody>';
-      d.orders.forEach(o => {
-        html += '<tr><td style="font-family:ui-monospace;font-size:12px;">' + o.order_no + '</td><td>' + (orderTypeMap[o.type]||o.type) + '</td><td>' + formatMoney(o.amount) + '</td><td>' + (payStatusMap[o.pay_status]||o.pay_status) + '</td><td>' + formatDateTime(o.create_time) + '</td></tr>';
-      });
-      html += '</tbody></table>';
-    }
-    html += '</div>';
-
-    // 退款记录
-    if (d.refunds && d.refunds.length > 0) {
-      html += '<div style="margin-bottom:20px;"><h3 style="font-size:16px;margin-bottom:10px;border-left:3px solid var(--accent);padding-left:10px;">退款记录（' + d.refunds.length + '）</h3>';
-      html += '<table style="width:100%;font-size:13px;"><thead><tr style="text-align:left;color:var(--muted);"><th>ID</th><th>金额</th><th>状态</th><th>时间</th></tr></thead><tbody>';
-      d.refunds.forEach(r => {
-        html += '<tr><td>' + r.id + '</td><td>' + formatMoney(r.amount) + '</td><td>' + r.status + '</td><td>' + formatDateTime(r.create_time) + '</td></tr>';
-      });
-      html += '</tbody></table></div>';
-    }
-
-    content.innerHTML = html;
-  } catch (e) {
-    content.innerHTML = '<div style="text-align:center;padding:40px;color:var(--error);">加载失败：' + escapeHtml(e.message) + '</div>';
-  }
-}
-
-function closeModal() {
-  document.getElementById('detailModal').style.display = 'none';
-}
-
-function exportUsers() {
-  const keyword = document.getElementById('searchInput').value.trim();
-  window.location.href = '/admin/export/users' + (keyword ? '?search=' + encodeURIComponent(keyword) : '');
-}
-
-function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str || '';
-  return div.innerHTML;
-}
-</script>
+<script src="/static/admin/js/pages/users.js"></script>
 {% endblock %}

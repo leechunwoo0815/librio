@@ -112,9 +112,10 @@
 .status-checked { background: var(--success-soft); color: var(--success); }
 .status-unchecked { background: var(--warning-soft); color: var(--warning); }
 
+/* Scan hint */
+.scan-hint { margin: -8px 0 12px; }
+
 /* Action links */
-.action-link { color: var(--accent); font-size: 12px; cursor: pointer; }
-.action-link:hover { text-decoration: underline; }
 
 /* Table specific overrides */
 .checkin-table th {

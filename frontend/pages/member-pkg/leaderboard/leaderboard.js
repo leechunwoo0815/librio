@@ -27,11 +27,6 @@ Page({
   },
 
   onLoad() {
-    const app = getApp()
-    if (app.globalData.isTestMode) {
-      this._loadDemoData()
-      return
-    }
     if (!auth.requireAuth()) return
     this._loadLevels()
     this._loadLeaderboard()
@@ -60,6 +55,10 @@ Page({
     this._loadLeaderboard()
   },
 
+  goBack: function () {
+    wx.navigateBack({ delta: 1 });
+  },
+
   onItemTap: function (e) {
     // Could navigate to profile card in the future
   },
@@ -74,7 +73,12 @@ Page({
   _loadLevels: function () {
     var that = this
     require('../../utils/api').getLevels().then(function (levels) {
-      that.setData({ levels: levels || [] })
+      var levelList = levels || []
+      var names = ['全部级别']
+      for (var i = 0; i < levelList.length; i++) {
+        names.push(levelList[i].name || '级别' + (i + 1))
+      }
+      that.setData({ levels: levelList, levelNames: names })
     }).catch(function () { /* silent */ })
   },
 
@@ -112,22 +116,4 @@ Page({
       })
   },
 
-  _loadDemoData() {
-    this.setData({
-      list: [
-        { rank: 1, child_id: 10, display_name: 'Lucy', total_words: 128000, medal: '🥇', streak_days: 45 },
-        { rank: 2, child_id: 20, display_name: 'Tom', total_words: 96000, medal: '🥈', streak_days: 30 },
-        { rank: 3, child_id: 30, display_name: 'Mia', total_words: 72000, medal: '🥉', streak_days: 22 },
-        { rank: 4, child_id: 40, display_name: 'Leo', total_words: 58000, medal: null, streak_days: 15 },
-        { rank: 5, child_id: 50, display_name: 'Emma', total_words: 45000, medal: null, streak_days: 10 },
-        { rank: 6, child_id: 60, display_name: 'Noah', total_words: 38000, medal: null, streak_days: 8 },
-        { rank: 7, child_id: 70, display_name: 'Lily', total_words: 31000, medal: null, streak_days: 5 },
-      ],
-      myChildId: 1,
-      myRank: 5,
-      myTotalWords: 42000,
-      myName: '小明',
-      loading: false,
-    })
-  },
 })

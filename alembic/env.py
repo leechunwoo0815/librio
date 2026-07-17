@@ -15,6 +15,7 @@ from backend.database import Base
 # Import all domain models to register them with Base.metadata
 from backend.domain.user.models import User  # noqa: F401
 from backend.domain.child.models import Child  # noqa: F401
+from backend.domain.child.benefit_transfer_model import BenefitTransferApplication  # noqa: F401
 from backend.domain.book.models import Book, BookCopy  # noqa: F401
 from backend.domain.bookshelf.models import Bookshelf, Favorites  # noqa: F401
 from backend.domain.reading.models import BookPage, ReadingProgress, ReadingSession, CheckIn  # noqa: F401
@@ -29,11 +30,16 @@ from backend.domain.report.models import ObservationReport, LearningReport  # no
 from backend.domain.certificate.models import LevelCertificate  # noqa: F401
 from backend.domain.activity.models import Activity, ActivityEnrollment  # noqa: F401
 from backend.domain.admin.models import Admin, OperationLog, SystemConfig, Teacher, TeacherSchedule, Venue  # noqa: F401
+from backend.domain.admin.rbac_models import Role, Permission, RolePermission  # noqa: F401
 from backend.domain.evaluation.models import AREvaluation, GuidanceRecord, ObservationEvaluation  # noqa: F401
 from backend.domain.message.models import SystemMessage  # noqa: F401
 from backend.domain.parent_course_time.models import ParentCourseTime  # noqa: F401
 from backend.domain.quiz_question.models import QuizQuestion  # noqa: F401
 from backend.domain.voice.models import VoiceRecording  # noqa: F401
+from backend.domain.assessment.models import Assessment  # noqa: F401
+from backend.domain.audio.models import AudioFile  # noqa: F401
+from backend.common.dead_letter_model import DeadLetterEvent  # noqa: F401
+from backend.common.config_audit_model import ConfigAuditLog  # noqa: F401
 
 # this is the Alembic Config object
 config = context.config

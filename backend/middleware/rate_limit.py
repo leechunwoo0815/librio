@@ -5,10 +5,13 @@
 生产环境建议替换为 Redis 限流方案。
 """
 
+import logging
 import time
 from collections import defaultdict
 from fastapi import Request
 from backend.common.exceptions import RateLimitError
+
+logger = logging.getLogger(__name__)
 
 
 class RateLimiter:
@@ -27,6 +30,7 @@ class RateLimiter:
         self._requests[key] = [t for t in self._requests[key] if t > cutoff]
 
         if len(self._requests[key]) >= max_requests:
+            logger.warning("Rate limit hit: key=%s, max=%d, window=%ds", key, max_requests, window_seconds)
             raise RateLimitError(f"请求过于频繁，请 {window_seconds} 秒后再试")
 
         self._requests[key].append(now)

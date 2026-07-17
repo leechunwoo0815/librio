@@ -19,11 +19,11 @@ class SubscribeTemplate:
 # 支付描述模板
 class PayDescription:
     ORDER_TEMPLATES = {
-        1: "MegaWords亲子课程",
-        2: "MegaWords观察期会员",
-        3: "MegaWords正式会员",
+        1: "DmkWords亲子课程",
+        2: "DmkWords观察期会员",
+        3: "DmkWords正式会员",
     }
 
-    DEPOSIT = "MegaWords图书押金"
+    DEPOSIT = "DmkWords图书押金"
 
-    ACTIVITY = "MegaWords活动报名"
+    ACTIVITY = "DmkWords活动报名"

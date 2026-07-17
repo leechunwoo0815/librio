@@ -1,0 +1,144 @@
+<view class="page">
+  <view class="top-bar">
+    <navigator class="back-btn" open-type="navigateBack" delta="1">
+      <text>←</text>
+    </navigator>
+    <text class="title">活动详情</text>
+    <button class="share-btn" open-type="share">
+      <text>⤴</text>
+    </button>
+  </view>
+
+  <view class="loading-wrap" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+
+  <block wx:if="{{!loading && activityDetail}}">
+    <view class="hero">
+      <text class="hero-tag"><text class="icon icon-fire">🔥</text> 本周热门</text>
+      <text class="hero-emoji"><text class="icon icon-book">书</text></text>
+      <text class="hero-status">{{isRegistered ? '已报名' : '报名中'}}</text>
+    </view>
+
+    <view class="info-card">
+      <view class="activity-title">{{activityDetail.title}}</view>
+
+      <view class="info-rows">
+        <view class="info-row">
+          <text class="info-icon"><text class="icon icon-calendar">📅</text></text>
+          <view class="info-content">
+            <view class="info-label">活动时间</view>
+            <view class="info-value">{{activityDetail.start_date}} - {{activityDetail.end_date}}</view>
+          </view>
+        </view>
+        <view class="info-row">
+          <text class="info-icon"><text class="icon icon-location">📍</text></text>
+          <view class="info-content">
+            <view class="info-label">活动地点</view>
+            <view class="info-value">{{activityDetail.location}}<text class="highlight" wx:if="{{activityDetail.address}}"> {{activityDetail.address}}</text></view>
+          </view>
+        </view>
+        <view class="info-row" wx:if="{{activityDetail.teacher_name}}">
+          <text class="info-icon"><text class="icon icon-woman">👩</text><text class="icon icon-school">🏫</text></text>
+          <view class="info-content">
+            <view class="info-label">主讲老师</view>
+            <view class="teacher-card">
+              <view class="teacher-avatar"><text class="icon icon-woman">👩</text><text class="icon icon-school">🏫</text></view>
+              <view class="teacher-info">
+                <view class="teacher-name">{{activityDetail.teacher_name}}</view>
+                <view class="teacher-desc">{{activityDetail.teacher_desc}}</view>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view class="capacity-wrap">
+        <view class="capacity-header">
+          <text class="cap-label">名额情况</text>
+          <text class="cap-count">已报名 {{activityDetail.enrollment_count || 0}}/{{activityDetail.capacity || 0}}人</text>
+        </view>
+        <view class="capacity-bar">
+          <view class="cap-fill" style="width: {{capacityPercent}}%"></view>
+        </view>
+        <view class="capacity-hint">剩余 {{remaining}} 个名额，建议尽快报名</view>
+      </view>
+
+      <view class="price-row">
+        <text class="price-label">活动费用</text>
+        <view class="price-value">
+          <text class="original" wx:if="{{activityDetail.original_price}}">¥{{activityDetail.original_price}}</text>
+          <text>{{activityDetail.price_text || '免费（会员专享）'}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="section">
+      <view class="section-title"><text class="icon icon-clipboard">📋</text> 活动介绍</view>
+      <view class="section-body">
+        <text>{{activityDetail.description}}</text>
+        <view class="highlight-list" wx:if="{{activityDetail.highlights && activityDetail.highlights.length > 0}}">
+          <view wx:for="{{activityDetail.highlights}}" wx:key="index">
+            <text><text class="icon icon-sparkle">✦</text> {{item}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="section">
+      <view class="section-title"><text class="icon icon-backpack">🎒</text> 参与须知</view>
+      <view class="section-body">
+        <view class="bring-box" wx:if="{{activityDetail.bring_items}}">
+          <view class="bring-title">请携带：</view>
+          <view class="bring-items">{{activityDetail.bring_items}}</view>
+        </view>
+        <view class="notice-list">
+          <view class="notice-item"><text class="icon icon-alarm">⏰</text> 请提前 10 分钟到场签到</view>
+          <view class="notice-item"><text class="icon icon-ticket">🎫</text> 活动面向 DmkWords 正式会员开放</view>
+          <view class="notice-item"><text class="icon icon-phone-receiver">📞</text> 取消请提前 24 小时通知</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="qr-section" wx:if="{{isRegistered}}">
+      <view class="qr-title"><text class="icon icon-phone">📱</text> 签到二维码</view>
+      <image wx:if="{{qrCodeUrl}}" class="qr-image" src="{{qrCodeUrl}}" mode="widthFix"></image>
+      <view wx:else class="qr-placeholder">
+        <text class="qr-icon"><text class="icon icon-clipboard">📋</text></text>
+        <text>活动当天生成</text>
+      </view>
+      <view class="qr-hint">到达现场后请出示此二维码给工作人员签到</view>
+      <view wx:if="{{isCheckinTime && enrollmentId}}" class="self-checkin-btn" bindtap="onSelfCheckin">
+        <text>点击签到</text>
+      </view>
+    </view>
+
+    <view class="section" wx:if="{{activityDetail.faqs && activityDetail.faqs.length > 0}}">
+      <view class="section-title"><text class="icon icon-question">?</text> 常见问题</view>
+      <view class="faq-list">
+        <view class="faq-item {{item.open ? 'open' : ''}}" wx:for="{{activityDetail.faqs}}" wx:key="question" bindtap="toggleFaq" data-index="{{index}}">
+          <view class="faq-question">
+            <text>{{item.question}}</text>
+            <text class="faq-arrow">›</text>
+          </view>
+          <view class="faq-answer">{{item.answer}}</view>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <view class="action-bar" wx:if="{{activityDetail}}">
+    <view class="action-info">
+      <view class="action-price-label">会员专享</view>
+      <view class="action-price">{{activityDetail.price_text || '免费'}}</view>
+    </view>
+    <view class="action-btn {{isRegistered ? 'registered' : 'register'}}" bindtap="onRegister">
+      <text>{{isRegistered ? '已报名 <text class="icon icon-checkmark">✓</text>' : '立即报名'}}</text>
+    </view>
+    <text class="cancel-link" wx:if="{{isRegistered}}" bindtap="onCancel">取消报名</text>
+  </view>
+
+  <view class="toast {{toastVisible ? 'show' : ''}}">
+    <text>{{toastMsg}}</text>
+  </view>
+</view>

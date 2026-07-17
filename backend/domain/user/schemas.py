@@ -43,6 +43,21 @@ class UserLogin(BaseSchema):
     """微信登录请求"""
 
     code: str = Field(..., description="微信登录code")
+    phone_code: str | None = Field(None, description="微信手机号临时code（getPhoneNumber 返回）")
+
+
+class PhoneLoginRequest(BaseSchema):
+    """手机号+验证码登录请求"""
+
+    code: str = Field(..., description="微信登录code（用于获取openid）")
+    phone: str = Field(..., min_length=11, max_length=11, description="手机号")
+    sms_code: str = Field(..., min_length=4, max_length=6, description="短信验证码")
+
+
+class SendSmsRequest(BaseSchema):
+    """发送短信验证码请求"""
+
+    phone: str = Field(..., min_length=11, max_length=11, description="手机号")
 
 
 class WxLoginResponse(BaseSchema):

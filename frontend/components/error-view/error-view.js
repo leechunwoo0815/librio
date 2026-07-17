@@ -21,6 +21,17 @@ Component({
   },
   methods: {
     onRetry() { this.triggerEvent('retry'); },
-    onBack() { wx.navigateBack(); },
+    onBack() {
+      try {
+        var pages = getCurrentPages()
+        if (pages.length > 1) {
+          wx.navigateBack()
+        } else {
+          wx.switchTab({ url: '/pages/index/index' })
+        }
+      } catch (e) {
+        wx.switchTab({ url: '/pages/index/index' })
+      }
+    },
   }
 });

@@ -2,6 +2,9 @@
 """证书域业务逻辑 — 晋级证书生成"""
 
 import logging
+import os
+
+from jinja2 import Template
 from sqlalchemy.orm import Session
 from backend.common.base_repo import BaseRepository
 from backend.common.exceptions import NotFoundError
@@ -28,7 +31,7 @@ class CertificateService:
                 "child_english_name": c.child_english_name,
                 "badge_emoji": c.badge_emoji,
                 "certificate_no": c.certificate_no,
-                "created_at": c.create_time.isoformat() if c.create_time else None,
+                "create_time": c.create_time.isoformat() if c.create_time else None,
             }
             for c in certs
         ]
@@ -96,7 +99,7 @@ class CertificateService:
             "child_english_name": cert.child_english_name,
             "badge_emoji": cert.badge_emoji,
             "certificate_no": cert.certificate_no,
-            "created_at": cert.create_time.isoformat() if cert.create_time else None,
+            "create_time": cert.create_time.isoformat() if cert.create_time else None,
         }
 
     def create_level_certificate(self, child_id: int, level_name: str) -> dict | None:
@@ -115,7 +118,26 @@ class CertificateService:
         return None
 
     def render_certificate_html(self, cert_id: int) -> str | None:
+        """渲染证书为HTML（Jinja2模板）"""
         cert = self.cert_repo.get_by_id(cert_id)
         if not cert:
             return None
-        return f"<html><body><h1>晋级证书</h1><p>{cert.child_name} - {cert.level_name}</p></body></html>"
+
+        template_path = os.path.join(
+            os.path.dirname(__file__), "..", "..", "templates", "level_certificate.html"
+        )
+        try:
+            with open(template_path, encoding="utf-8") as f:
+                template = Template(f.read())
+        except FileNotFoundError:
+            logger.warning(f"Template not found: {template_path}")
+            return None
+
+        return template.render(
+            child_name=cert.child_name or "",
+            child_english_name=cert.child_english_name or "",
+            level_name=cert.level_name or "",
+            badge_emoji=cert.badge_emoji or "",
+            certificate_no=cert.certificate_no or "",
+            create_time=cert.create_time.strftime("%Y-%m-%d") if cert.create_time else "",
+        )

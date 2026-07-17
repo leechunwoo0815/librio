@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>个人名片管理 · MegaWords</title>
+  <title>个人名片管理 · DmkWords</title>
   <style>
     :root {
       --bg: oklch(98% 0.003 250); --surface: oklch(100% 0 0);
@@ -288,7 +288,7 @@
       html += '</div>';
       html += '<div class="profile-card-body">';
       html += '<div class="profile-card-name">' + s.name + '</div>';
-      html += '<div class="profile-card-level">Level ' + s.level + ' &#183; MegaWords Reader</div>';
+      html += '<div class="profile-card-level">Level ' + s.level + ' &#183; DmkWords Reader</div>';
       html += '<div class="profile-card-stats">';
       html += '<div class="stat"><div class="stat-num">' + s.books + '</div><div class="stat-lbl">读完本数</div></div>';
       html += '<div class="stat"><div class="stat-num">' + (s.words >= 1000 ? (s.words / 1000).toFixed(1) + 'K' : s.words) + '</div><div class="stat-lbl">总词数</div></div>';
@@ -299,7 +299,7 @@
         html += '<span class="badge"><span class="emoji">' + b.icon + '</span>' + b.label + '</span>';
       });
       html += '</div>';
-      html += '<div style="font-size:11px;color:var(--muted);margin-top:8px">MegaWords &#183; 让阅读成为习惯</div>';
+      html += '<div style="font-size:11px;color:var(--muted);margin-top:8px">DmkWords &#183; 让阅读成为习惯</div>';
       html += '</div>';
       document.getElementById('cardContent').innerHTML = html;
       document.getElementById('cardModal').classList.add('show');

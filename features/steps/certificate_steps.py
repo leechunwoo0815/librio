@@ -93,7 +93,7 @@ def step_cert_has_english_name(context):
 
 @then(u'证书包含晋级日期')
 def step_cert_has_date(context):
-    assert context.certificate["created_at"] is not None
+    assert context.certificate["create_time"] is not None
 
 
 @then(u'证书包含徽章')

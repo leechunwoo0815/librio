@@ -2,8 +2,13 @@
 {% block title %}观察期报告管理{% endblock %}
 {% block head %}
 <link rel="stylesheet" href="/static/admin/css/pages/reports.css" />
+<style>
+.comment-info { padding: 12px; background: var(--bg); border-radius: var(--radius-sm); }
+</style>
 {% endblock %}
 {% block page_title %}观察期报告管理{% endblock %}
+{% import "admin/macros.html" as m %}
+
 {% block content %}
 <!-- Stats -->
 <div class="stats-grid">
@@ -34,7 +39,7 @@
       <tr><th>孩子姓名</th><th>观察期</th><th>阅读本数</th><th>阅读词数</th><th>阅读时长</th><th>老师评语</th><th>生成时间</th><th>状态</th><th>操作</th></tr>
     </thead>
     <tbody id="reportBody">
-      <tr><td colspan="9" style="text-align:center;padding:40px;color:var(--muted);">点击查询加载报告</td></tr>
+      <tr><td colspan="9" class="text-center p-40 text-muted">点击查询加载报告</td></tr>
     </tbody>
   </table>
 </div>
@@ -50,23 +55,19 @@
 </div>
 
 <!-- Add Comment Modal -->
-<div class="modal-overlay" id="commentModal">
-  <div class="modal">
-    <h3>添加老师评语</h3>
-    <div style="padding:12px;background:var(--bg);border-radius:var(--radius-sm);margin-bottom:16px">
-      <div style="font-size:12px;color:var(--muted)">孩子</div>
-      <div style="font-weight:600" id="commentStudent">--</div>
-    </div>
-    <div class="form-group">
-      <label>综合评语</label>
-      <textarea class="form-textarea" id="commentText" placeholder="请输入老师对该学生观察期的综合评语…"></textarea>
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-outline" onclick="window.reportsPage.hideCommentModal()">取消</button>
-      <button class="btn btn-primary" onclick="window.reportsPage.saveComment()">保存评语</button>
-    </div>
+{{ m.modal_overlay("commentModal", "添加老师评语", "md") }}
+  <div class="comment-info mb-16">
+    <div class="text-sm text-muted">孩子</div>
+    <div class="fw-600" id="commentStudent">--</div>
   </div>
-</div>
+  <div class="form-group">
+    <label>综合评语</label>
+    <textarea class="form-textarea" id="commentText" placeholder="请输入老师对该学生观察期的综合评语…"></textarea>
+  </div>
+{{ m.modal_actions() }}
+  <button class="btn btn-secondary" onclick="closeModal('commentModal')">取消</button>
+  <button class="btn btn-primary" onclick="window.reportsPage.saveComment()">保存评语</button>
+{{ m.modal_end() }}
 {% endblock %}
 
 {% block scripts %}

@@ -22,10 +22,15 @@ from fastapi.responses import JSONResponse
 from backend.common.exceptions import BusinessException, business_exception_handler
 from backend.config import get_settings
 from backend.middleware.trace import trace_middleware
+from backend.middleware.request_log import RequestLogMiddleware
 
 from starlette.staticfiles import StaticFiles
 
 settings = get_settings()
+
+log_level = logging.DEBUG if settings.DEBUG else logging.INFO
+logging.basicConfig(level=log_level)
+
 logger = logging.getLogger(__name__)
 
 
@@ -60,6 +65,11 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             logger.warning(f"Platform cert refresh failed on startup: {e}")
 
+    # MOCK_SMS 警告（避免生产环境长期遗忘切换真实短信）
+    if not settings.DEBUG and settings.MOCK_SMS:
+        logger.warning("MOCK_SMS=true — 短信验证码使用 mock 网关，不会实际发送短信")
+        logger.warning("请及时接入真实短信 SDK（tencent/aliyun）并设置 MOCK_SMS=false")
+
     yield
     stop_scheduler()
 
@@ -86,7 +96,7 @@ app.add_exception_handler(BusinessException, business_exception_handler)
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     """全局未捕获异常处理器 — 防止返回原始 500 HTML 页面"""
-    logger.error(f"Unhandled exception: {exc}", exc_info=True)
+    logger.error("Unhandled exception: %s %s - %s", request.method, request.url.path, exc, exc_info=True)
     return JSONResponse(
         status_code=500,
         content={"detail": "服务器内部错误，请稍后重试"},
@@ -115,9 +125,13 @@ async def add_no_cache_headers(request, call_next):
 # 微信小程序请求来源是 servicewechat.com
 CORS_ORIGINS = ["https://servicewechat.com"]
 if settings.DEBUG:
-    CORS_ORIGINS.extend(["http://localhost:3000", "http://localhost:3002", "http://localhost:5173", "http://localhost:8002"])
-# 开发环境允许 localhost
-CORS_ORIGINS.extend(["http://localhost:8002", "http://127.0.0.1:8002"])
+    CORS_ORIGINS.extend([
+        "http://localhost:3000",
+        "http://localhost:3002",
+        "http://localhost:5173",
+        "http://localhost:8002",
+        "http://127.0.0.1:8002",
+    ])
 
 app.add_middleware(
     CORSMiddleware,
@@ -126,6 +140,9 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["Authorization", "Content-Type", "X-Trace-ID"],
 )
+
+# 请求日志中间件 — 记录所有请求与异常，便于排查浏览器端问题
+app.add_middleware(RequestLogMiddleware)
 
 
 # ============================================================
@@ -168,6 +185,8 @@ from backend.domain.evaluation.router import router as evaluation_router  # noqa
 from backend.domain.assessment.router import router as assessment_router  # noqa: E402
 from backend.domain.dictionary.router import router as dictionary_router  # noqa: E402
 from backend.domain.audio.router import router as audio_router  # noqa: E402
+from backend.domain.security.router import router as security_router  # noqa: E402
+from backend.domain.wechat.router import router as wechat_router  # noqa: E402
 
 app.include_router(user_router)
 app.include_router(child_router)
@@ -191,6 +210,8 @@ app.include_router(evaluation_router)
 app.include_router(assessment_router)
 app.include_router(dictionary_router)
 app.include_router(audio_router)
+app.include_router(security_router)
+app.include_router(wechat_router)
 
 # 消息域
 from backend.domain.message.router import router as message_router  # noqa: E402
@@ -208,6 +229,8 @@ from backend.domain.admin.routers.admin_activities_router import router as admin
 from backend.domain.admin.routers.admin_borrow_router import router as admin_borrow_router  # noqa: E402
 from backend.domain.admin.routers.admin_reports_router import router as admin_reports_router  # noqa: E402
 from backend.domain.admin.routers.admin_system_router import router as admin_system_router  # noqa: E402
+from backend.domain.admin.routers.admin_role_router import router as admin_role_router  # noqa: E402
+from backend.domain.admin.routers.admin_benefit_transfer_router import router as admin_benefit_transfer_router  # noqa: E402
 
 app.include_router(admin_page_router)  # HTML 页面路由（优先匹配）
 app.include_router(admin_auth_router)  # 认证 API 路由
@@ -221,6 +244,23 @@ app.include_router(admin_activities_router)
 app.include_router(admin_borrow_router)
 app.include_router(admin_reports_router)
 app.include_router(admin_system_router)
+app.include_router(admin_role_router)
+app.include_router(admin_benefit_transfer_router)
+
+# ============================================================
+# Mock 辅助路由（仅本地开发环境注册）
+# ============================================================
+if settings.MOCK_PAYMENT and settings.DEBUG:
+    from backend.common.gateways.payment.mock_routes import mock_payment_router
+
+    app.include_router(mock_payment_router)
+    logger.warning("MOCK_PAYMENT 已启用 — 仅限本地开发，生产环境必须关闭")
+
+if settings.MOCK_SMS and settings.DEBUG:
+    from backend.common.gateways.sms.mock_routes import mock_sms_router
+
+    app.include_router(mock_sms_router)
+    logger.warning("MOCK_SMS 已启用 — 仅限本地开发，生产环境必须关闭")
 
 
 # ============================================================
@@ -252,7 +292,7 @@ app.mount("/uploads", StaticFiles(directory=_uploads_dir), name="uploads")
 @app.get("/")
 async def root():
     """根路径"""
-    return {"message": "MegaWords API is running", "version": settings.APP_VERSION}
+    return {"message": "DmkWords API is running", "version": settings.APP_VERSION}
 
 
 if __name__ == "__main__":

@@ -15,6 +15,7 @@ from backend.common.base_schema import BaseSchema
 class LevelResponse(BaseSchema):
     id: int
     name: str
+    code: str | None = None
     badge_icon: str | None = None
     badge_emoji: str | None = None
     sort_order: int = 0
@@ -61,7 +62,9 @@ class SubmitAnswerRequest(BaseSchema):
 
 
 class QuizResultResponse(BaseSchema):
-    quiz: QuizResponse
+    correct: int
+    total: int
+    score: float
     passed: bool
     word_count: int = 0
 
@@ -89,6 +92,8 @@ class QuestionResponse(BaseSchema):
     option_c: str | None = None
     option_d: str | None = None
     difficulty: int = 1
+    correct_answer: str = Field(default="", description="正确答案 A/B/C/D")
+    explanation: str | None = None
 
 
 # ==================== 成就 ====================

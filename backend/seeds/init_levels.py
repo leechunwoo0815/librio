@@ -1,3 +1,4 @@
+import logging
 import os
 import sys
 
@@ -7,6 +8,8 @@ from decimal import Decimal
 
 from backend.database import get_session
 from backend.domain.advancement.models import Level
+
+logger = logging.getLogger(__name__)
 
 LEVELS = [
     ("A", 1, 10, 20, "🌱", "阅读入门"),
@@ -43,7 +46,7 @@ def seed_levels():
     try:
         existing = db.query(Level).count()
         if existing > 0:
-            print(f"已存在 {existing} 个级别，跳过")
+            logger.info(f"已存在 {existing} 个级别，跳过")
             return
         for name, sort, books, borrow, emoji, _desc in LEVELS:
             level = Level(
@@ -56,13 +59,14 @@ def seed_levels():
             )
             db.add(level)
         db.commit()
-        print(f"成功创建 {len(LEVELS)} 个 A-Z 级别")
+        logger.info(f"成功创建 {len(LEVELS)} 个 A-Z 级别")
     except Exception as e:
-        print(f"错误: {e}")
+        logger.info(f"错误: {e}")
         db.rollback()
     finally:
         db.close()
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     seed_levels()

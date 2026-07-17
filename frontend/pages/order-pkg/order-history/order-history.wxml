@@ -59,7 +59,7 @@
 
   <!-- empty state -->
   <view class="empty-state" wx:if="{{isEmpty}}">
-    <view class="empty-icon">📋</view>
+    <view class="empty-icon"><text class="icon icon-clipboard">📋</text></view>
     <text class="empty-text">暂无订单记录</text>
     <text class="empty-sub">购买套餐后订单将显示在这里</text>
   </view>

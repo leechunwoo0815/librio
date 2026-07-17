@@ -10,7 +10,9 @@
   width: 80rpx;
   height: 80rpx;
   border-radius: 50%;
-  background: var(--bg);
+  background: linear-gradient(90deg, var(--bg) 25%, #e8eaed 50%, var(--bg) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
   margin-right: 20rpx;
   flex-shrink: 0;
 }
@@ -19,7 +21,13 @@
 }
 .skeleton-line {
   height: 24rpx;
-  background: var(--bg);
+  background: linear-gradient(90deg, var(--bg) 25%, #e8eaed 50%, var(--bg) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
   border-radius: 8rpx;
   margin-bottom: 12rpx;
+}
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }

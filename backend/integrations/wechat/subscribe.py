@@ -1,54 +1,15 @@
 # backend/integrations/wechat/subscribe.py
-"""微信订阅消息集成 — 带 Redis/内存双层缓存 + 错误码处理"""
+"""微信订阅消息集成 — access_token 委托 WeChatService 统一管理"""
 
-import time
+import asyncio
 import logging
 
 import httpx
 
-from backend.config import get_settings
 from backend.common.exceptions import PaymentError, ValidationError
+from backend.domain.wechat.service import WeChatService
 
 logger = logging.getLogger(__name__)
-
-
-# ============================================================
-# Redis 客户端（带连接容错）
-# ============================================================
-
-_redis_client = None
-_redis_checked = False
-
-
-def _get_redis():
-    """获取 Redis 客户端，不可用时返回 None"""
-    global _redis_client, _redis_checked
-    if _redis_checked:
-        return _redis_client
-    _redis_checked = True
-    try:
-        import redis as redis_lib
-
-        _redis_client = redis_lib.from_url(
-            get_settings().REDIS_URL,
-            socket_connect_timeout=2,
-            socket_timeout=2,
-            retry_on_timeout=False,
-        )
-        _redis_client.ping()
-        logger.info("Redis connected for access_token cache")
-        return _redis_client
-    except Exception as e:
-        logger.warning(f"Redis unavailable, falling back to memory cache: {e}")
-        _redis_client = None
-        return None
-
-
-# 内存缓存（Redis 不可用时的降级）
-_token_cache: dict = {
-    "access_token": "",
-    "expires_at": 0,
-}
 
 
 class WeChatSubscribe:
@@ -101,6 +62,7 @@ class WeChatSubscribe:
             if errcode in (40003, 41028, 41029, 41030):
                 raise ValidationError(f"订阅消息发送失败: {errmsg}")
             elif errcode == 43101:
+                # NOTE: openid 是公开标识，开发日志可记录全量；生产环境可按需脱敏。
                 logger.info(f"User {openid} refused subscribe message")
                 return result
             else:
@@ -113,55 +75,15 @@ class WeChatSubscribe:
 
 
 async def _get_access_token() -> dict:
-    """获取微信 access_token（Redis 优先，内存降级）
+    """获取微信 access_token — 委托 WeChatService 统一管理
 
-    access_token 有效期 2 小时，提前 5 分钟刷新。
+    与 /wechat/qr-code 共享同一份带双重检查锁定的缓存，
+    避免多套 token 管理机制并发刷新导致相互失效。
     """
-    now = time.time()
-
-    # 优先从 Redis 读取
-    redis_client = _get_redis()
-    if redis_client:
-        try:
-            cached = redis_client.get("wechat:access_token")
-            if cached:
-                return {"access_token": cached.decode()}
-        except Exception as e:
-            logger.warning(f"Redis read failed, falling back to memory: {e}")
-
-    # 内存缓存检查
-    if _token_cache["access_token"] and _token_cache["expires_at"] > now:
-        return _token_cache
-
-    # 请求微信 API
-    settings = get_settings()
-    url = "https://api.weixin.qq.com/cgi-bin/token"
-    params = {
-        "grant_type": "client_credential",
-        "appid": settings.WECHAT_APP_ID,
-        "secret": settings.WECHAT_APP_SECRET,
-    }
-    async with httpx.AsyncClient(timeout=10) as client:
-        resp = await client.get(url, params=params)
-        data = resp.json()
-
-    if "access_token" in data:
-        token = data["access_token"]
-        expires_in = data.get("expires_in", 7200)
-        ttl = expires_in - 300  # 提前 5 分钟过期
-
-        # 写入 Redis
-        if redis_client:
-            try:
-                redis_client.setex("wechat:access_token", ttl, token)
-            except Exception as e:
-                logger.warning(f"Redis write failed: {e}")
-
-        # 写入内存缓存
-        _token_cache["access_token"] = token
-        _token_cache["expires_at"] = now + ttl
-        logger.info("WeChat access_token refreshed")
-    else:
-        logger.error(f"Failed to get access_token: {data}")
-
-    return data
+    service = WeChatService()
+    try:
+        token = await asyncio.to_thread(service.get_access_token)
+        return {"access_token": token}
+    except Exception as e:
+        logger.error(f"获取微信 access_token 失败: {e}")
+        return {}

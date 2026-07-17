@@ -20,6 +20,11 @@ class VocabularyService:
         self.dict_repo = DictionaryWordRepository(db)
         self.vocab_repo = UserVocabularyRepository(db)
 
+    def _audio_url(self, word: str, db_audio: str | None) -> str:
+        if db_audio:
+            return db_audio
+        return f"https://dict.youdao.com/dictvoice?audio={word.lower()}&type=1"
+
     def lookup_word(self, word: str) -> dict | None:
         w = self.dict_repo.get_by_word(word.lower())
         if not w:
@@ -28,7 +33,7 @@ class VocabularyService:
             "id": w.id,
             "word": w.word,
             "phonetic": w.phonetic,
-            "audio_url": w.audio_url,
+            "audio_url": self._audio_url(w.word, w.audio_url),
             "part_of_speech": w.part_of_speech,
             "chinese_meaning": w.chinese_meaning,
             "example_sentence": w.example_sentence,
@@ -55,6 +60,7 @@ class VocabularyService:
                 "id": existing.id,
                 "word": dw.word,
                 "phonetic": dw.phonetic,
+                "audio_url": self._audio_url(dw.word, dw.audio_url),
                 "chinese_meaning": dw.chinese_meaning,
                 "status": existing.status,
                 "lookup_count": existing.lookup_count,
@@ -75,6 +81,7 @@ class VocabularyService:
             "id": created.id,
             "word": dw.word,
             "phonetic": dw.phonetic,
+            "audio_url": self._audio_url(dw.word, dw.audio_url),
             "chinese_meaning": dw.chinese_meaning,
             "status": created.status,
             "lookup_count": 1,
@@ -105,6 +112,7 @@ class VocabularyService:
                 "id": uv.id,
                 "word": uv.word.word if uv.word else "",
                 "phonetic": uv.word.phonetic if uv.word else "",
+                "audio_url": self._audio_url(uv.word.word, uv.word.audio_url) if uv.word else "",
                 "chinese_meaning": uv.word.chinese_meaning if uv.word else "",
                 "status": uv.status,
                 "lookup_count": uv.lookup_count,
@@ -114,6 +122,11 @@ class VocabularyService:
             }
             for uv in results
         ]
+
+    def get_learning_words(self, child_id: int) -> list[str]:
+        """返回学习中（status=0）的生词列表，用于阅读页高亮"""
+        results = self.vocab_repo.get_by_child(child_id, status=UserVocabulary.STATUS_LEARNING)
+        return [uv.word.word.lower() for uv in results if uv.word]
 
     def get_vocab_stats(self, child_id: int) -> dict:
         learning = self.vocab_repo.count_by_status(

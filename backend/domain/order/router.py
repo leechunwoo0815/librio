@@ -3,25 +3,102 @@
 
 import logging
 from decimal import Decimal
+from typing import Any
 
 from fastapi import APIRouter, Depends, Query, Request
+from sqlalchemy.orm import Session
 
 from backend.common.dependencies import get_order_service
-from backend.common.exceptions import ConflictError, PaymentError
+from backend.common.exceptions import ConflictError, PaymentError, ValidationError
+from backend.database import get_db
+from backend.domain.user.repository import UserRepository
 from backend.middleware.auth import get_current_user
 from backend.middleware.ownership import GetOwnedOrder
+from backend.common.types import OrderType
 from backend.domain.order.schemas import (
     OrderCreate,
     OrderResponse,
     OrderPayCallback,
     OrderListResponse,
+    ProductTiersResponse,
     RefundPreviewResponse,
+    TierInfo,
+    TierFeature,
 )
 from backend.domain.order.service import OrderService
+from backend.config import get_settings
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/order", tags=["订单"])
+
+
+@router.get("/tiers", response_model=ProductTiersResponse)
+def get_product_tiers(
+    order_service: OrderService = Depends(get_order_service),
+):
+    tiers = [
+        TierInfo(
+            type=1, name="亲子课", price=order_service.get_price_for_type(OrderType.PARENT_COURSE), unit="次",
+            original_price=order_service.get_original_price(OrderType.PARENT_COURSE), discount_tag="限时特惠", sort_order=1,
+            features=[
+                TierFeature(icon="👩‍👧", title="亲子共读", desc="专业老师指导亲子共读"),
+                TierFeature(icon="📚", title="精选绘本", desc="适龄英文原版绘本"),
+                TierFeature(icon="🎯", title="阅读指导", desc="个性化阅读建议"),
+                TierFeature(icon="📊", title="成长记录", desc="记录每次阅读成长"),
+            ],
+            cta="立即报名",
+        ),
+        TierInfo(
+            type=2, name="观察期", price=order_service.get_price_for_type(OrderType.OBSERVATION), unit="30天",
+            original_price=None, discount_tag=None, sort_order=2,
+            features=[
+                TierFeature(icon="📚", title="在线阅读全量图书", desc="A-Z 全级别 3,500+ 英文原版图书"),
+                TierFeature(icon="✅", title="每日阅读打卡", desc="培养孩子坚持阅读的好习惯"),
+                TierFeature(icon="📊", title="阅读数据统计", desc="实时追踪阅读时长、词汇量、进度"),
+                TierFeature(icon="👩‍🏫", title="老师定期评估", desc="专业老师每周阅读能力评估与反馈"),
+                TierFeature(icon="📋", title="观察期结束报告", desc="30天后生成个性化阅读能力分析报告"),
+            ],
+            cta="立即报名",
+        ),
+        TierInfo(
+            type=3, name="正式会员", price=order_service.get_price_for_type(OrderType.OFFICIAL_MEMBER), unit="年",
+            original_price=order_service.get_original_price(OrderType.OFFICIAL_MEMBER), discount_tag="限时特惠", sort_order=3,
+            features=[
+                TierFeature(icon="📚", title="全量图书无限阅读", desc="平台所有图书随时在线阅读"),
+                TierFeature(icon="🎯", title="A-Z 26级晋级体系", desc="科学分级，循序渐进提升阅读能力"),
+                TierFeature(icon="🏆", title="排行榜竞技", desc="与同龄小伙伴比拼阅读量"),
+                TierFeature(icon="📜", title="晋级证书", desc="每通过一级获得专属晋级证书"),
+                TierFeature(icon="⭐", title="成就系统", desc="丰富的成就徽章记录每个里程碑"),
+            ],
+            cta="立即开通",
+        ),
+        TierInfo(
+            type=5, name="半年会员", price=order_service.get_price_for_type(OrderType.SEMI_ANNUAL), unit="半年",
+            original_price=None, discount_tag=None, sort_order=4,
+            features=[
+                TierFeature(icon="📚", title="全量图书无限阅读", desc="平台所有图书随时在线阅读"),
+                TierFeature(icon="🎯", title="A-Z 26级晋级体系", desc="科学分级，循序渐进提升阅读能力"),
+                TierFeature(icon="🏆", title="排行榜竞技", desc="与同龄小伙伴比拼阅读量"),
+                TierFeature(icon="📜", title="晋级证书", desc="每通过一级获得专属晋级证书"),
+                TierFeature(icon="⭐", title="成就系统", desc="丰富的成就徽章记录每个里程碑"),
+            ],
+            cta="立即开通",
+        ),
+        TierInfo(
+            type=4, name="季度会员", price=order_service.get_price_for_type(OrderType.QUARTERLY), unit="季度",
+            original_price=None, discount_tag=None, sort_order=5,
+            features=[
+                TierFeature(icon="📚", title="全量图书无限阅读", desc="平台所有图书随时在线阅读"),
+                TierFeature(icon="🎯", title="A-Z 26级晋级体系", desc="科学分级，循序渐进提升阅读能力"),
+                TierFeature(icon="🏆", title="排行榜竞技", desc="与同龄小伙伴比拼阅读量"),
+                TierFeature(icon="📜", title="晋级证书", desc="每通过一级获得专属晋级证书"),
+                TierFeature(icon="⭐", title="成就系统", desc="丰富的成就徽章记录每个里程碑"),
+            ],
+            cta="立即开通",
+        ),
+    ]
+    return ProductTiersResponse(tiers=tiers)
 
 
 @router.post("/", response_model=OrderResponse, status_code=201)
@@ -61,47 +138,51 @@ async def payment_callback(
     request: Request,
     order_service: OrderService = Depends(get_order_service),
 ):
-    """支付回调 — 微信支付V3通知（验签 + 解密）"""
+    """支付回调 — 通过支付网关验签 + 解密"""
+    import json
+
+    from backend.common.dependencies import get_payment_gateway
+
     body = await request.body()
     headers = dict(request.headers)
+    gateway = get_payment_gateway()
 
-    from backend.integrations.wechat.pay_v3 import WeChatPayV3
-    from backend.config import get_settings
+    signature = headers.get("wechatpay-signature", "")
+    timestamp = headers.get("wechatpay-timestamp", "")
+    nonce = headers.get("wechatpay-nonce", "")
+    if not await gateway.verify_callback_signature(body.decode(), signature, timestamp, nonce):
+        raise PaymentError("回调验签失败")
 
-    settings = get_settings()
-
-    if not settings.DEBUG:
-        # 生产环境：验签
-        pay = WeChatPayV3()
-        decrypted = pay.verify_callback(headers, body.decode())
-        if not decrypted:
-            raise PaymentError("回调验签失败")
+    parsed = json.loads(body)
+    if "resource" in parsed:
+        encrypted = parsed["resource"]
+        decrypted = await gateway.decrypt_callback_data(
+            encrypted.get("ciphertext", ""),
+            encrypted.get("nonce", ""),
+            encrypted.get("associated_data", ""),
+        )
         callback = OrderPayCallback(
-            order_no=decrypted["out_trade_no"],
-            trade_no=decrypted["transaction_id"],
+            order_no=decrypted.out_trade_no,
+            trade_no=decrypted.transaction_id,
             pay_type=1,
-            amount=Decimal(str(decrypted["amount"]["total"])) / 100,
+            amount=Decimal(str(decrypted.amount)) / Decimal("100")
+            if decrypted.amount is not None else Decimal("0"),
         )
     else:
-        # 开发环境：跳过验签
-        import json
-
-        logger.warning("DEBUG mode: payment callback signature verification skipped")
-        data = json.loads(body)
-        callback = OrderPayCallback(**data)
+        callback = OrderPayCallback(**parsed)
 
     if not callback.order_no:
-        from backend.common.exceptions import ValidationError
-
         raise ValidationError("回调缺少订单号")
     return order_service.handle_payment_callback(callback)
 
 
 @router.get("/{order_id}/pay-params")
-def get_pay_params(
+async def get_pay_params(
     order_id: int,
     request: Request,
+    db: Session = Depends(get_db),
     order_service: OrderService = Depends(get_order_service),
+    current_user=Depends(get_current_user),
     _ctx: tuple = Depends(GetOwnedOrder()),
 ):
     """获取微信支付参数（前端调用 wx.requestPayment 使用）
@@ -112,8 +193,6 @@ def get_pay_params(
     _, order = _ctx
     if order.pay_status != 0:
         raise ConflictError("订单状态不允许支付")
-
-    from backend.config import get_settings
 
     settings = get_settings()
 
@@ -136,10 +215,30 @@ def get_pay_params(
         )
         return order_service.handle_payment_callback(callback)
 
-    # 生产环境：调用微信支付V3获取真实prepay_id
-    from backend.common.exceptions import ValidationError
+    # 生产环境：通过支付网关获取真实 prepay_id
+    from backend.common.dependencies import get_payment_gateway
+    from decimal import ROUND_HALF_UP
 
-    raise ValidationError("微信支付未配置，请联系管理员")
+    user_repo = UserRepository(db)
+    user_orm = user_repo.get_by_id(current_user.id)
+    if not user_orm or not user_orm.openid:
+        raise PaymentError("用户微信身份异常，无法发起支付")
+    openid = user_orm.openid
+
+    gateway = get_payment_gateway()
+    amount_cent = int(
+        (order.amount * Decimal("100")).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
+    )
+    _TYPE_LABELS = {1: "亲子课", 2: "观察期", 3: "正式会员"}
+    description = _TYPE_LABELS.get(order.type, "DmkWords 订单")
+
+    pay_params = await gateway.create_jsapi_order(
+        openid=openid,
+        order_no=order.order_no,
+        amount_cent=amount_cent,
+        description=description,
+    )
+    return pay_params
 
 
 @router.get("/{order_id}/refund-preview", response_model=RefundPreviewResponse)
@@ -151,11 +250,14 @@ def preview_refund(
 ):
     """预览退款金额"""
     _, order = _ctx
-    refund_amount = order_service.calculate_refund(order_id, used_days)
+    result: dict[str, Any] = order_service.calculate_refund(order_id, used_days)
     return RefundPreviewResponse(
         order_id=order_id,
         used_days=used_days,
-        refund_amount=Decimal(str(refund_amount)),
+        refund_amount=Decimal(str(result["refund_amount"])),
+        daily_rate=Decimal(str(result["daily_rate"])),
+        used_amount=Decimal(str(result["used_amount"])),
+        total_days=result["total_days"],
     )
 
 
@@ -164,8 +266,11 @@ def get_upgrade_options(
     child_id: int,
     order_service: OrderService = Depends(get_order_service),
     current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     """查询可升级选项及差价"""
+    from backend.middleware.ownership import verify_child_ownership
+    verify_child_ownership(child_id, current_user, db)
     return order_service.get_upgrade_options(child_id)
 
 
@@ -180,3 +285,13 @@ def create_upgrade_order(
     return order_service.create_upgrade_order(
         current_user.id, child_id, target_type
     )
+
+
+@router.post("/{order_id}/cancel", response_model=OrderResponse)
+def cancel_order(
+    order_id: int,
+    order_service: OrderService = Depends(get_order_service),
+    current_user=Depends(get_current_user),
+):
+    """取消订单 — 仅可取消未支付的订单"""
+    return order_service.cancel_order(order_id, current_user.id)

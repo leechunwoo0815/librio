@@ -1,14 +1,12 @@
 <!-- frontend/pages/member-pkg/achievement/achievement.wxml -->
 <view class="page-bg">
-  <view style="display:none" class="active back badge-lock locked nav-bar title top1 top2 top3"></view>
-
-  <error-view wx:if="{{loadError}}" visible="{{loadError}}" icon="😵" title="加载失败" desc="数据加载出错了，请稍后重试" showRetry="{{true}}" retryText="重试" bind:onRetry="onRetry" />
+  <error-view wx:if="{{loadError}}" visible="{{loadError}}" icon="<text class="icon icon-dizzy-face">😵</text>" title="加载失败" desc="数据加载出错了，请稍后重试" showRetry="{{true}}" retryText="重试" bind:onRetry="onRetry" />
   <loading-skeleton wx:elif="{{loading}}" />
   <block wx:if="{{!loadError && !loading}}">
 
   <!-- 顶部：当前级别卡片 -->
   <view class="level-card" wx:if="{{currentLevel}}">
-    <view class="level-emoji">{{currentLevel.badge_emoji || '⭐'}}</view>
+    <view class="level-emoji">{{currentLevel.badge_emoji || '<text class="icon icon-star">★</text>'}}</view>
     <view class="level-name">{{currentLevel.level_name || 'Level 3 · 故事探索者'}}</view>
     <view class="level-desc">已读 {{currentLevel.books_read || 0}} 本 · 通过 {{currentLevel.quizzes_passed || 0}} 次测验</view>
     <view class="level-stats">
@@ -31,7 +29,7 @@
       </view>
       <view class="level-progress-text">再读 {{advancement.books_required - advancement.books_read}} 本即可晋级 Level {{currentLevel.level_number + 1 || 4}}</view>
     </view>
-    <view class="promote-btn" wx:if="{{advancement && advancement.can_advance}}" bindtap="onPromote">🎯 去晋级</view>
+    <view class="promote-btn" wx:if="{{advancement && advancement.can_advance}}" bindtap="onPromote"><text class="icon icon-target">◎</text> 去晋级</view>
   </view>
 
   <!-- 标签页 -->
@@ -48,11 +46,11 @@
       data-id="{{item.id}}"
       bindtap="onBadgeTap"
     >
-      <view class="badge-icon" wx:if="{{item.earned}}">{{item.badge_emoji || '🏅'}}</view>
+      <view class="badge-icon" wx:if="{{item.earned}}">{{item.badge_emoji || '<text class="icon icon-medal">🏅</text>'}}</view>
       <view class="badge-icon badge-colored-locked" wx:else>
-        <text class="badge-locked-emoji">{{item.badge_emoji || '🏅'}}</text>
+        <text class="badge-locked-emoji">{{item.badge_emoji || '<text class="icon icon-medal">🏅</text>'}}</text>
         <view class="badge-lock-overlay">
-          <text class="lock-icon">🔒</text>
+          <text class="lock-icon"><text class="icon icon-lock">🔒</text></text>
         </view>
       </view>
       <view class="badge-name">{{item.name}}</view>
@@ -76,21 +74,21 @@
       <view class="lb-rank {{index === 0 ? 'top1' : (index === 1 ? 'top2' : (index === 2 ? 'top3' : 'normal'))}}">
         {{index + 1}}
       </view>
-      <view class="lb-avatar">{{item.avatar_emoji || '👤'}}</view>
+      <view class="lb-avatar">{{item.avatar_emoji || '<text class="icon icon-user">👤</text>'}}</view>
       <view class="lb-info">
         <text class="lb-name">{{item.name}}</text>
         <text class="lb-books">{{item.level_name || 'Level ' + item.level || ''}}</text>
       </view>
       <view class="lb-count">
         <text class="lb-count-num">{{item.books_read || item.total_words || 0}}</text>
-        <text class="lb-count-unit"> 本</text>
+        <text class="lb-count-unit">{{item.total_words ? '词' : '本'}}</text>
       </view>
     </view>
 
     <!-- 当前用户排名 -->
     <view class="lb-item lb-item-me" wx:if="{{myRank > 0}}">
       <view class="lb-rank normal">{{myRank}}</view>
-      <view class="lb-avatar">👦</view>
+      <view class="lb-avatar"><text class="icon icon-boy">👦</text></view>
       <view class="lb-info">
         <text class="lb-name">{{myName}}（我）</text>
         <text class="lb-books">Level {{currentLevel.level_number || 3}}</text>
@@ -106,7 +104,7 @@
   <view class="timeline" wx:if="{{recentEarned.length > 0}}">
     <view class="timeline-title">最近获得</view>
     <view class="tl-item" wx:for="{{recentEarned}}" wx:key="id">
-      <view class="tl-dot">{{item.badge_emoji || '🏅'}}</view>
+      <view class="tl-dot">{{item.badge_emoji || '<text class="icon icon-medal">🏅</text>'}}</view>
       <view class="tl-content">
         <text class="tl-name">{{item.name}}</text>
         <text class="tl-desc">{{item.description}}</text>
@@ -118,7 +116,7 @@
   <!-- 成就详情弹窗 -->
   <view class="modal-overlay {{showDetail ? 'show' : ''}}" bindtap="onCloseDetail">
     <view class="modal-card" catchtap>
-      <view class="m-icon">{{selectedAchievement.badge_emoji || '🏅'}}</view>
+      <view class="m-icon">{{selectedAchievement.badge_emoji || '<text class="icon icon-medal">🏅</text>'}}</view>
       <view class="m-name">{{selectedAchievement.name}}</view>
       <view class="m-desc" wx:if="{{selectedAchievement.description}}">{{selectedAchievement.description}}</view>
       <view class="m-detail" wx:if="{{selectedAchievement.earned}}">

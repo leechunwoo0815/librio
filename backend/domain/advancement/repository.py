@@ -1,7 +1,7 @@
 # backend/domain/advancement/repository.py
 """晋级域数据访问层"""
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from backend.common.base_repo import BaseRepository
 from backend.domain.advancement.models import (
@@ -49,12 +49,15 @@ class QuestionBankRepository(BaseRepository[QuestionBank]):
         super().__init__(db, QuestionBank)
 
     def get_by_book(self, book_id: int, limit: int = 5) -> list[QuestionBank]:
+        from sqlalchemy import func
+
         return (
             self.db.query(QuestionBank)
             .filter(
                 QuestionBank.book_id == book_id,
                 QuestionBank.is_deleted == 0,
             )
+            .order_by(func.random())
             .limit(limit)
             .all()
         )
@@ -83,7 +86,13 @@ class ChildAchievementRepository(BaseRepository[ChildAchievement]):
         super().__init__(db, ChildAchievement)
 
     def get_by_child(self, child_id: int) -> list[ChildAchievement]:
-        return self.list_all(limit=100, child_id=child_id)
+        return (
+            self.db.query(ChildAchievement)
+            .options(joinedload(ChildAchievement.achievement))
+            .filter(ChildAchievement.child_id == child_id, ChildAchievement.is_deleted == 0)
+            .limit(100)
+            .all()
+        )
 
     def has_achievement(self, child_id: int, achievement_id: int) -> bool:
         return self.exists(child_id=child_id, achievement_id=achievement_id)

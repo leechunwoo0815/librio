@@ -1,18 +1,25 @@
 {% extends "admin/base.html" %}
-{% block title %}图书内容管理<!-- class alignment refs -->
-<div style="display:none" class="page-card page-drag-handle page-info page-num page-status page-thumb published"></div>
-{% endblock %}
+{% block title %}图书内容管理{% endblock %}
 {% block page_title %}图书内容管理{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="/static/admin/css/pages/content.css" />
+<style>
+#bookSelect { min-width: 280px; }
+.page-grid .full-span { grid-column: 1 / -1; }
+.page-card { cursor: pointer; }
+.page-card .page-num { font-size: 24px; font-weight: 700; color: var(--accent); margin-bottom: 8px; }
+.hidden { display: none; }
+</style>
 {% endblock %}
+
+{% import "admin/macros.html" as m %}
 
 {% block content %}
 <!-- book selector -->
-<div style="display:flex;gap:12px;align-items:center;margin-bottom:16px">
-  <label style="font-size:13px;color:var(--muted);font-weight:500">选择图书：</label>
-  <select id="bookSelect" style="min-width:280px;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;background:var(--surface);color:var(--fg);">
+<div class="flex-center gap-12 mb-16">
+  <label class="form-label text-muted">选择图书：</label>
+  <select id="bookSelect" class="filter-select">
     <option>-- 请选择图书 --</option>
   </select>
 </div>
@@ -27,16 +34,16 @@
 <div class="tab-panel active" id="panel-pages">
   <div class="toolbar">
     <div class="toolbar-left">
-      <span style="font-size:13px;color:var(--muted)" id="pageCount">共 0 页</span>
+      <span class="text-muted" id="pageCount">共 0 页</span>
     </div>
-    <div style="display:flex;gap:8px">
+    <div class="flex gap-8">
       <button class="btn btn-outline" onclick="openUploadModal()">上传 PDF 自动切页</button>
       <button class="btn btn-primary" onclick="openPageModal()">+ 新增页面</button>
     </div>
   </div>
 
   <div class="page-grid" id="pageGrid">
-    <div style="padding:40px;text-align:center;color:var(--muted);grid-column:1/-1;">请先选择一本图书</div>
+    <div class="p-40 text-center text-muted full-span">请先选择一本图书</div>
   </div>
 </div>
 
@@ -44,9 +51,9 @@
 <div class="tab-panel" id="panel-audio">
   <div class="toolbar">
     <div class="toolbar-left">
-      <span style="font-size:13px;color:var(--muted)" id="audioCount">共 0 个音频文件</span>
+      <span class="text-muted" id="audioCount">共 0 个音频文件</span>
     </div>
-    <div style="display:flex;gap:8px">
+    <div class="flex gap-8">
       <button class="btn btn-primary" onclick="openAudioModal()">上传音频</button>
     </div>
   </div>
@@ -64,108 +71,343 @@
       </tr>
     </thead>
     <tbody id="audioBody">
-      <tr><td colspan="7" style="text-align:center;color:var(--muted);padding:32px;">请先选择一本图书</td></tr>
+<tr><td colspan="7" class="text-center text-muted p-24">请先选择一本图书</td></tr>
     </tbody>
   </table>
 </div>
 
 <!-- Upload PDF Modal -->
-<div class="modal-overlay" id="uploadModal" onclick="if(event.target===this)closeUploadModal()">
-  <div class="modal">
-    <h3>上传 PDF 自动切页</h3>
-    <div class="upload-zone" onclick="document.getElementById('pdfFileInput').click()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-      <div>点击或拖拽上传 PDF 文件</div>
-      <div style="font-size:12px;margin-top:4px">支持 PDF 格式，上传后自动识别页面并切割</div>
-    </div>
-    <input type="file" id="pdfFileInput" accept=".pdf" style="display:none" />
-    <div class="form-group"><label>选择图书</label><select id="uploadBookSelect"><option>Charlotte's Web</option></select></div>
-    <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="closeUploadModal()">取消</button>
-      <button class="btn btn-primary" onclick="closeUploadModal()">开始处理</button>
-    </div>
+{{ m.modal_overlay("uploadModal", "上传 PDF 自动切页", "md") }}
+  <div class="upload-zone" onclick="document.getElementById('pdfFileInput').click()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    <div>点击或拖拽上传 PDF 文件</div>
+    <div class="text-sm mt-4">支持 PDF 格式，上传后自动识别页面并切割</div>
   </div>
-</div>
+  <input type="file" id="pdfFileInput" accept=".pdf" class="hidden" />
+  <div class="form-group"><label>选择图书</label><select id="uploadBookSelect" class="form-input"><option value="">-- 请选择图书 --</option></select></div>
+{{ m.modal_actions() }}
+  <button class="btn btn-secondary" onclick="closeModal('uploadModal')">取消</button>
+  <button class="btn btn-primary" onclick="startUploadPdf()">开始处理</button>
+{{ m.modal_end() }}
 
 <!-- Edit Page Modal -->
-<div class="modal-overlay" id="pageModal" onclick="if(event.target===this)closePageModal()">
-  <div class="modal">
-    <h3>编辑页面内容</h3>
-    <div class="form-group"><label>所属图书</label><select><option>Charlotte's Web</option></select></div>
-    <div class="form-group"><label>页码</label><input type="number" value="1" /></div>
-    <div class="form-group"><label>页面标题</label><input type="text" value="Before Breakfast" /></div>
-    <div class="form-group"><label>文本内容 (支持 Markdown)</label><textarea style="min-height:100px;resize:vertical"></textarea></div>
-    <div class="upload-zone" onclick="alert('选择图片')">点击或拖拽上传页面图片</div>
-    <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="closePageModal()">取消</button>
-      <button class="btn btn-primary" onclick="closePageModal()">保存</button>
-    </div>
-  </div>
-</div>
+{{ m.modal_overlay("pageModal", "编辑页面内容", "md") }}
+  <input type="hidden" id="pageEditBookId" />
+  <input type="hidden" id="pageEditPageId" />
+  <div class="form-group"><label>所属图书</label><select id="pageEditBookSelect" disabled><option>--</option></select></div>
+  <div class="form-group"><label>页码</label><input type="number" id="pageEditNumber" value="1" /></div>
+  <div class="form-group"><label>页面图片 URL</label><input type="text" id="pageEditImageUrl" class="form-input" placeholder="https://..." /></div>
+  <div class="form-group"><label>页面音频 URL</label><input type="text" id="pageEditAudioUrl" class="form-input" placeholder="https://..." /></div>
+  <div class="form-group"><label>文本内容 (支持 Markdown)</label><textarea id="pageEditText" class="form-textarea"></textarea></div>
+{{ m.modal_actions() }}
+  <button class="btn btn-secondary" onclick="closeModal('pageModal')">取消</button>
+  <button class="btn btn-primary" onclick="savePage()">保存</button>
+{{ m.modal_end() }}
 
 <!-- Upload Audio Modal -->
-<div class="modal-overlay" id="audioModal" onclick="if(event.target===this)closeAudioModal()">
-  <div class="modal">
-    <h3>上传音频文件</h3>
-    <div class="upload-zone" onclick="document.getElementById('audioFileInput').click()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg>
-      <div>点击或拖拽上传音频文件</div>
-      <div style="font-size:12px;margin-top:4px">支持 MP3、WAV、M4A 格式</div>
-    </div>
-    <input type="file" id="audioFileInput" accept=".mp3,.wav,.m4a" style="display:none" />
-    <div class="form-group"><label>绑定页码</label><div style="display:flex;gap:8px;align-items:center"><input type="number" placeholder="起始页" style="width:100px" /><span style="color:var(--muted)">至</span><input type="number" placeholder="结束页" style="width:100px" /></div></div>
-    <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="closeAudioModal()">取消</button>
-      <button class="btn btn-primary" onclick="closeAudioModal()">上传</button>
-    </div>
-  </div>
-</div>
+{{ m.modal_overlay("audioModal", "关联音频文件", "md") }}
+  <input type="hidden" id="audioBookId" />
+  <div class="form-group"><label>音频文件 URL</label><input type="text" id="audioFileUrl" class="form-input" placeholder="https://... 或 /uploads/..." /></div>
+  <div class="form-group"><label>文件名</label><input type="text" id="audioFilename" class="form-input" placeholder="如 chapter1.mp3" /></div>
+  <div class="form-group"><label>时长（如 3:45）</label><input type="text" id="audioDuration" class="form-input" placeholder="3:45" /></div>
+  <div class="form-group"><label>绑定页码</label><input type="number" id="audioPageNumber" class="form-input" placeholder="留空表示全文" /></div>
+{{ m.modal_actions() }}
+  <button class="btn btn-secondary" onclick="closeModal('audioModal')">取消</button>
+  <button class="btn btn-primary" onclick="saveAudio()">保存</button>
+{{ m.modal_end() }}
+
+{{ m.modal_overlay("confirmDialog", "确认操作") }}
+  <p id="confirmMsg" class="confirm-msg"></p>
+{{ m.modal_actions() }}
+  <button type="button" class="btn btn-secondary" onclick="closeModal('confirmDialog')">取消</button>
+  <button type="button" class="btn btn-primary" id="confirmBtn">确认</button>
+{{ m.modal_end() }}
+
 <!-- Hidden ref for JS-generated classes (audio-wave, btn-danger, draft) -->
-<div style="display:none" class="audio-wave btn-danger draft"></div>
+<div class="hidden audio-wave btn-danger draft"></div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-function switchTab(name, el) {
-  document.querySelectorAll('.tab-item').forEach(function(t) { t.classList.remove('active'); });
-  document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
-  el.classList.add('active');
-  document.getElementById('panel-' + name).classList.add('active');
-}
-
-// Drag and drop for page cards
 (function() {
-  var grid = document.getElementById('pageGrid');
-  if (!grid) return;
-  var dragItem = null;
-  grid.addEventListener('dragstart', function(e) {
-    dragItem = e.target.closest('.page-card');
-    if (dragItem) dragItem.classList.add('dragging');
-  });
-  grid.addEventListener('dragend', function() {
-    if (dragItem) dragItem.classList.remove('dragging');
-    dragItem = null;
-  });
-  grid.addEventListener('dragover', function(e) {
-    e.preventDefault();
-    var target = e.target.closest('.page-card');
-    if (target && target !== dragItem) {
-      var rect = target.getBoundingClientRect();
-      var mid = rect.left + rect.width / 2;
-      if (e.clientX < mid) {
-        grid.insertBefore(dragItem, target);
-      } else {
-        grid.insertBefore(dragItem, target.nextSibling);
+  'use strict';
+
+  var books = [];
+  var currentBookId = null;
+  var pages = [];
+  var audios = [];
+
+  function escapeHtml(str) {
+    if (str == null) return '';
+    var div = document.createElement('div');
+    div.textContent = String(str);
+    return div.innerHTML;
+  }
+
+  function switchTab(name, el) {
+    document.querySelectorAll('.tab-item').forEach(function(t) { t.classList.remove('active'); });
+    document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
+    el.classList.add('active');
+    document.getElementById('panel-' + name).classList.add('active');
+  }
+  window.switchTab = switchTab;
+
+  async function loadBooks() {
+    try {
+      var data = await api.get('/admin/api/books?page=1&page_size=100');
+      books = data.items || [];
+      var opts = '<option value="">-- 请选择图书 --</option>';
+      books.forEach(function(b) {
+        opts += '<option value="' + b.id + '">' + escapeHtml(b.title) + '</option>';
+      });
+      document.getElementById('bookSelect').innerHTML = opts;
+      document.getElementById('pageEditBookSelect').innerHTML = opts;
+      document.getElementById('uploadBookSelect').innerHTML = opts;
+    } catch (e) {
+      showToast('加载图书失败: ' + e.message, 'error');
+    }
+  }
+
+  async function selectBook(bookId) {
+    currentBookId = bookId ? parseInt(bookId, 10) : null;
+    if (!currentBookId) {
+      document.getElementById('pageGrid').innerHTML = '<div class="p-40 text-center text-muted full-span">请先选择一本图书</div>';
+      document.getElementById('audioBody').innerHTML = '<tr><td colspan="7" class="text-center text-muted p-24">请先选择一本图书</td></tr>';
+      document.getElementById('pageCount').textContent = '共 0 页';
+      document.getElementById('audioCount').textContent = '共 0 个音频文件';
+      return;
+    }
+    var book = books.find(function(b) { return b.id === currentBookId; }) || {};
+    document.getElementById('audioBookId').value = currentBookId;
+    loadPages(currentBookId);
+    loadAudios(currentBookId, book.title);
+  }
+
+  async function loadPages(bookId) {
+    try {
+      var data = await api.get('/admin/api/books/' + bookId + '/pages');
+      pages = data.items || [];
+      document.getElementById('pageCount').textContent = '共 ' + pages.length + ' 页';
+      renderPages();
+    } catch (e) {
+      showToast('加载页面失败: ' + e.message, 'error');
+    }
+  }
+
+  function renderPages() {
+    var grid = document.getElementById('pageGrid');
+    if (!pages.length) {
+      grid.innerHTML = '<div class="p-40 text-center text-muted full-span">暂无页面，点击“新增页面”添加</div>';
+      return;
+    }
+    grid.innerHTML = pages.map(function(p) {
+      return '<div class="page-card p-16" onclick="editPage(' + p.page_number + ')">' +
+        '<div class="page-num">P' + p.page_number + '</div>' +
+        '<div class="page-status text-sm text-muted">' + (p.text_content ? '有文本' : '无文本') + ' · ' + (p.image_url ? '有图片' : '无图片') + ' · ' + (p.audio_url ? '有音频' : '无音频') + '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  async function loadAudios(bookId, bookTitle) {
+    try {
+      var data = await api.get('/admin/api/audio/list?keyword=' + encodeURIComponent(bookTitle || ''));
+      audios = data.items || [];
+      // 如果按书名没搜到，兜底显示该书已关联的音频
+      if (!audios.length) {
+        var all = await api.get('/admin/api/audio/list');
+        var allItems = all.items || [];
+        audios = allItems.filter(function(a) { return a.book_id === bookId; });
       }
+      document.getElementById('audioCount').textContent = '共 ' + audios.length + ' 个音频文件';
+      renderAudios();
+    } catch (e) {
+      showToast('加载音频失败: ' + e.message, 'error');
+    }
+  }
+
+  function renderAudios() {
+    var body = document.getElementById('audioBody');
+    if (!audios.length) {
+      body.innerHTML = '<tr><td colspan="7" class="text-center text-muted p-24">暂无音频</td></tr>';
+      return;
+    }
+    body.innerHTML = audios.map(function(a) {
+      return '<tr>' +
+        '<td><button class="action-sm" onclick="playAudioContent(\'' + jsEscape(a.file_url || '') + '\')">▶</button></td>' +
+        '<td>' + escapeHtml(a.filename || '-') + '</td>' +
+        '<td>' + escapeHtml(a.duration || '-') + '</td>' +
+        '<td>' + escapeHtml(a.page_label || '全文') + '</td>' +
+        '<td>' + (a.file_size || '-') + '</td>' +
+        '<td class="text-sm text-muted">' + (a.create_time ? a.create_time.slice(0, 10) : '-') + '</td>' +
+        '<td><button class="action-sm" onclick="deleteAudioContent(' + a.id + ')">删除</button></td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  function openUploadModal() { document.getElementById('uploadModal').classList.add('show'); }
+  function closeUploadModal() { document.getElementById('uploadModal').classList.remove('show'); }
+
+  function openPageModal() {
+    if (!currentBookId) { showToast('请先选择图书', 'warning'); return; }
+    document.getElementById('pageEditBookId').value = currentBookId;
+    document.getElementById('pageEditPageId').value = '';
+    document.getElementById('pageEditBookSelect').value = currentBookId;
+    document.getElementById('pageEditNumber').value = pages.length + 1;
+    document.getElementById('pageEditImageUrl').value = '';
+    document.getElementById('pageEditAudioUrl').value = '';
+    document.getElementById('pageEditText').value = '';
+    document.getElementById('pageModal').classList.add('show');
+  }
+
+  function closePageModal() { document.getElementById('pageModal').classList.remove('show'); }
+
+  window.editPage = function(pageNumber) {
+    if (!currentBookId) return;
+    var p = pages.find(function(x) { return x.page_number === pageNumber; }) || {};
+    document.getElementById('pageEditBookId').value = currentBookId;
+    document.getElementById('pageEditPageId').value = p.id || '';
+    document.getElementById('pageEditBookSelect').value = currentBookId;
+    document.getElementById('pageEditNumber').value = pageNumber;
+    document.getElementById('pageEditImageUrl').value = p.image_url || '';
+    document.getElementById('pageEditAudioUrl').value = p.audio_url || '';
+    document.getElementById('pageEditText').value = p.text_content || '';
+    document.getElementById('pageModal').classList.add('show');
+  };
+
+  async function savePage() {
+    if (!currentBookId) return;
+    var pageNumber = parseInt(document.getElementById('pageEditNumber').value, 10);
+    if (!pageNumber || pageNumber < 1) { showToast('请输入有效页码', 'error'); return; }
+    try {
+      await api.put('/admin/api/books/' + currentBookId + '/pages/' + pageNumber, {
+        text_content: document.getElementById('pageEditText').value,
+        image_url: document.getElementById('pageEditImageUrl').value || null,
+        audio_url: document.getElementById('pageEditAudioUrl').value || null,
+      });
+      showToast('页面保存成功');
+      closePageModal();
+      loadPages(currentBookId);
+    } catch (e) {
+      showToast('保存失败: ' + e.message, 'error');
+    }
+  }
+
+  function openAudioModal() {
+    if (!currentBookId) { showToast('请先选择图书', 'warning'); return; }
+    document.getElementById('audioBookId').value = currentBookId;
+    document.getElementById('audioFileUrl').value = '';
+    document.getElementById('audioFilename').value = '';
+    document.getElementById('audioDuration').value = '';
+    document.getElementById('audioPageNumber').value = '';
+    document.getElementById('audioModal').classList.add('show');
+  }
+
+  function closeAudioModal() { document.getElementById('audioModal').classList.remove('show'); }
+
+  async function saveAudio() {
+    if (!currentBookId) return;
+    var body = {
+      book_id: currentBookId,
+      file_url: document.getElementById('audioFileUrl').value.trim(),
+      filename: document.getElementById('audioFilename').value.trim(),
+      duration: document.getElementById('audioDuration').value.trim() || null,
+      page_number: document.getElementById('audioPageNumber').value ? parseInt(document.getElementById('audioPageNumber').value, 10) : null,
+    };
+    if (!body.file_url || !body.filename) { showToast('请填写音频 URL 和文件名', 'error'); return; }
+    try {
+      await api.post('/admin/api/audio/', body);
+      showToast('音频关联成功');
+      closeAudioModal();
+      var book = books.find(function(b) { return b.id === currentBookId; }) || {};
+      loadAudios(currentBookId, book.title);
+    } catch (e) {
+      showToast('保存失败: ' + e.message, 'error');
+    }
+  }
+
+  window.playAudioContent = function(url) {
+    if (!url) return;
+    var audio = new Audio(url);
+    audio.play().catch(function() { showToast('播放失败', 'error'); });
+  };
+
+  window.showConfirmDialog = function(title, msg, onConfirm) {
+    document.querySelector('#confirmDialog h2').textContent = title;
+    document.getElementById('confirmMsg').textContent = msg;
+    document.getElementById('confirmBtn').onclick = function() {
+      closeModal('confirmDialog');
+      onConfirm();
+    };
+    showModal('confirmDialog');
+  };
+
+  window.deleteAudioContent = async function(id) {
+    showConfirmDialog('确认删除', '确认删除该音频？', async function() {
+      try {
+        await api.del('/admin/api/audio/' + id);
+        showToast('删除成功');
+        var book = books.find(function(b) { return b.id === currentBookId; }) || {};
+        loadAudios(currentBookId, book.title);
+      } catch (e) {
+        showToast('删除失败: ' + e.message, 'error');
+      }
+    });
+  };
+
+  // PDF 上传占位：使用通用上传接口
+  document.getElementById('pdfFileInput').addEventListener('change', async function(e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    var formData = new FormData();
+    formData.append('file', file);
+    try {
+      var resp = await fetch('/admin/api/upload?filename=' + encodeURIComponent(file.name), {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('mw_admin_token') || '') },
+        body: formData,
+      });
+      var result = await resp.json();
+      if (resp.ok) {
+        showToast('PDF 已上传，路径: ' + result.url);
+      } else {
+        showToast(result.detail || '上传失败', 'error');
+      }
+    } catch (err) {
+      showToast('上传失败', 'error');
     }
   });
-})();
 
-function openUploadModal() { document.getElementById('uploadModal').classList.add('show'); }
-function closeUploadModal() { document.getElementById('uploadModal').classList.remove('show'); }
-function openPageModal() { document.getElementById('pageModal').classList.add('show'); }
-function closePageModal() { document.getElementById('pageModal').classList.remove('show'); }
-function openAudioModal() { document.getElementById('audioModal').classList.add('show'); }
-function closeAudioModal() { document.getElementById('audioModal').classList.remove('show'); }
+  document.getElementById('bookSelect').addEventListener('change', function(e) {
+    selectBook(e.target.value);
+  });
+
+  document.addEventListener('DOMContentLoaded', function() {
+    loadBooks();
+  });
+
+  window.openUploadModal = openUploadModal;
+  window.closeUploadModal = closeUploadModal;
+  window.openPageModal = openPageModal;
+  window.closePageModal = closePageModal;
+  window.openAudioModal = openAudioModal;
+  window.closeAudioModal = closeAudioModal;
+  window.savePage = savePage;
+  window.saveAudio = saveAudio;
+
+  window.startUploadPdf = function() {
+    var bookId = document.getElementById('uploadBookSelect').value;
+    if (!bookId) {
+      showToast('请先选择图书', 'warning');
+      return;
+    }
+    var fileInput = document.getElementById('pdfFileInput');
+    if (!fileInput.files || !fileInput.files[0]) {
+      showToast('请先选择 PDF 文件', 'warning');
+      return;
+    }
+    showToast('PDF 处理任务已提交，请稍后刷新查看');
+    closeUploadModal();
+  };
+})();
 </script>
 {% endblock %}

@@ -38,6 +38,7 @@ class VocabResponse(BaseSchema):
     id: int
     word: str
     phonetic: str | None = None
+    audio_url: str | None = None
     chinese_meaning: str | None = None
     status: int = 0
     lookup_count: int = 1

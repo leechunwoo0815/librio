@@ -4,31 +4,32 @@
 
 {% block head %}
 <link rel="stylesheet" href="/static/admin/css/pages/borrow.css" />
+<style>
+.child-search-input { width: 200px; }
+</style>
 {% endblock %}
+
+{% import "admin/macros.html" as m %}
 
 {% block content %}
 <!-- Confirm Modal -->
-<div id="confirmModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
-  <div style="background:#fff;border-radius:var(--radius);width:420px;padding:24px;">
-    <h3 id="confirmTitle" style="margin:0 0 12px;font-size:18px;">确认操作</h3>
-    <p id="confirmMsg" style="margin:0 0 20px;font-size:14px;color:var(--fg);white-space:pre-line;"></p>
-    <div style="display:flex;justify-content:flex-end;gap:8px;">
-      <button class="btn btn-secondary" onclick="window.borrowPage.closeConfirmModal()">取消</button>
-      <button class="btn btn-primary" id="confirmModalBtn">确认</button>
-    </div>
-  </div>
-</div>
+{{ m.modal_overlay("confirmModal", "确认操作", "sm", "confirmTitle") }}
+  <p id="confirmMsg" class="pre-line"></p>
+{{ m.modal_actions() }}
+  <button class="btn btn-secondary" onclick="closeModal('confirmModal')">取消</button>
+  <button class="btn btn-primary" id="confirmModalBtn">确认</button>
+{{ m.modal_end() }}
 
 <!-- Status Badge Samples (CSS class reference) -->
-<span class="status-badge status-borrow" style="display:none"></span>
-<span class="status-badge status-return" style="display:none"></span>
-<span class="status-badge status-available" style="display:none"></span>
+<span class="status-badge status-borrow hidden"></span>
+<span class="status-badge status-return hidden"></span>
+<span class="status-badge status-available hidden"></span>
 
 <!-- Scan Area -->
 <div class="scan-area">
   <input class="scan-input" id="barcodeInput" type="text" placeholder="扫描或输入图书条码..." autofocus />
-  <button class="btn-scan" onclick="window.borrowPage.lookupBarcode()">&#x1F4F7; 查找</button>
-  <button class="btn-scan" style="background:var(--error);" onclick="window.borrowPage.sendOverdueReminders()">&#x1F4E2; 发送逾期提醒</button>
+  <button class="btn btn-primary" onclick="window.borrowPage.lookupBarcode()">&#x1F4F7; 查找</button>
+  <button class="btn btn-danger" onclick="window.borrowPage.sendOverdueReminders()">&#x1F4E2; 发送逾期提醒</button>
 </div>
 
 <!-- Scan Result Card -->
@@ -37,8 +38,8 @@
   <div class="book-info">
     <h3 id="bookTitle">-</h3>
     <div class="info-grid">
-      <div><span class="label">ISBN：</span><span class="value" id="bookIsbn" style="font-family:var(--font-mono);font-size:12px;">-</span></div>
-      <div><span class="label">条码：</span><span class="value" id="bookBarcode" style="font-family:var(--font-mono);font-size:12px;">-</span></div>
+      <div><span class="label">ISBN：</span><span class="value text-sm font-mono" id="bookIsbn">-</span></div>
+      <div><span class="label">条码：</span><span class="value text-sm font-mono" id="bookBarcode">-</span></div>
       <div><span class="label">AR 值：</span><span class="value" id="bookAr">-</span></div>
       <div><span class="label">库存：</span><span class="value" id="bookStock">-</span></div>
     </div>
@@ -47,15 +48,15 @@
       <select class="filter-select" id="childSelect">
         <option>-- 请选择 --</option>
       </select>
-      <input class="form-input" id="childSearchInput" type="text" placeholder="输入孩子姓名搜索..." style="width:200px;margin-left:8px;" oninput="window.borrowPage.searchChildrenDebounced()" />
+      <input class="form-input child-search-input" id="childSearchInput" type="text" placeholder="输入孩子姓名搜索..." oninput="window.borrowPage.searchChildrenDebounced()" />
       <input id="childIdInput" type="hidden" />
-      <div id="childDropdown" style="display:none;position:absolute;background:#fff;border:1px solid var(--border);border-radius:var(--radius-sm);box-shadow:0 4px 12px rgba(0,0,0,0.1);max-height:200px;overflow-y:auto;z-index:100;"></div>
-      <span id="selectedChild" style="font-weight:500;color:var(--accent);"></span>
+      <div id="childDropdown" class="hidden dropdown-popup"></div>
+      <span id="selectedChild" class="fw-500 text-accent"></span>
     </div>
     <div class="action-btns">
-      <button class="btn-action btn-success" onclick="window.borrowPage.doBorrow()">&#x2705; 确认借出</button>
-      <button class="btn-action btn-primary" onclick="window.borrowPage.doReturn()">&#x1F504; 确认归还</button>
-      <button class="btn-action btn-danger">&#x274C; 标记丢失</button>
+      <button class="btn btn-success" onclick="window.borrowPage.doBorrow()">&#x2705; 确认借出</button>
+      <button class="btn btn-primary" onclick="window.borrowPage.doReturn()">&#x1F504; 确认归还</button>
+      <button class="btn btn-danger">&#x274C; 标记丢失</button>
     </div>
   </div>
 </div>
@@ -67,6 +68,10 @@
     <thead><tr><th>时间</th><th>孩子姓名</th><th>操作</th><th>书名</th><th>条码</th></tr></thead>
     <tbody id="recordsBody"></tbody>
   </table>
+</div>
+<div class="pagination">
+  <span class="info">共 0 条记录</span>
+  <div class="pages" id="recordsPagination"></div>
 </div>
 {% endblock %}
 

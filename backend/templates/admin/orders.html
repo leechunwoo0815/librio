@@ -3,8 +3,12 @@
 {% block page_title %}订单管理{% endblock %}
 {% block head %}
 <link rel="stylesheet" href="/static/admin/css/pages/orders.css" />
+<style>
+.pos-relative { position: relative; }
+</style>
 {% endblock %}
 
+{% import "admin/macros.html" as m %}
 {% block content %}
 <!-- 筛选区 -->
 <div class="toolbar">
@@ -26,31 +30,31 @@
     <option value="5">已关闭</option>
   </select>
   <input type="date" id="dateFrom" class="date-input" />
-  <span style="color:var(--muted)">至</span>
+  <span class="text-muted">至</span>
   <input type="date" id="dateTo" class="date-input" />
   <div class="toolbar-spacer"></div>
-  <button class="btn-action btn-outline" onclick="window.ordersPage.loadOrders(1)">查询</button>
-  <button class="btn-action btn-outline" onclick="window.ordersPage.exportOrders()">导出 Excel</button>
-  <button class="btn-action btn-primary" onclick="window.ordersPage.showCreateModal()">+ 新建订单</button>
+  <button class="btn btn-outline" onclick="window.ordersPage.loadOrders(1)">查询</button>
+  <button class="btn btn-outline" onclick="window.ordersPage.exportOrders()">导出 Excel</button>
+  <button class="btn btn-primary" onclick="window.ordersPage.showCreateModal()">+ 新建订单</button>
 </div>
 
 <!-- 统计卡片 -->
-<div style="display:flex;gap:12px;margin-bottom:16px;">
-  <div class="stat-card" style="flex:1;padding:12px 16px;">
-    <div style="font-size:12px;color:var(--muted)">总订单</div>
-    <div style="font-size:20px;font-weight:600;" id="statTotal">-</div>
+<div class="flex gap-12 mb-16">
+  <div class="stat-card flex-1 p-16">
+    <div class="text-sm text-muted">总订单</div>
+    <div class="text-xl fw-600" id="statTotal">-</div>
   </div>
-  <div class="stat-card" style="flex:1;padding:12px 16px;">
-    <div style="font-size:12px;color:var(--muted)">待支付</div>
-    <div style="font-size:20px;font-weight:600;color:var(--warning)" id="statPending">-</div>
+  <div class="stat-card flex-1 p-16">
+    <div class="text-sm text-muted">待支付</div>
+    <div class="text-xl fw-600 text-warning" id="statPending">-</div>
   </div>
-  <div class="stat-card" style="flex:1;padding:12px 16px;">
-    <div style="font-size:12px;color:var(--muted)">已支付</div>
-    <div style="font-size:20px;font-weight:600;color:var(--success)" id="statPaid">-</div>
+  <div class="stat-card flex-1 p-16">
+    <div class="text-sm text-muted">已支付</div>
+    <div class="text-success text-xl fw-600" id="statPaid">-</div>
   </div>
-  <div class="stat-card" style="flex:1;padding:12px 16px;">
-    <div style="font-size:12px;color:var(--muted)">退款中</div>
-    <div style="font-size:20px;font-weight:600;color:var(--error)" id="statRefund">-</div>
+  <div class="stat-card flex-1 p-16">
+    <div class="text-sm text-muted">退款中</div>
+    <div class="text-error text-xl fw-600" id="statRefund">-</div>
   </div>
 </div>
 
@@ -69,77 +73,169 @@
       </tr>
     </thead>
     <tbody id="orderBody">
-      <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--muted);">加载中...</td></tr>
+      <tr><td colspan="7" class="text-center p-24 text-muted">加载中...</td></tr>
     </tbody>
   </table>
 </div>
 
 <div class="pagination">
-  <span id="orderCount">共 0 条记录 · 第 1/1 页</span>
+  <div class="flex-center gap-12">
+    <span id="orderCount">共 0 条记录 · 第 1/1 页</span>
+    <span class="text-sm text-muted">每页</span>
+    <select class="filter-select page-size-select" id="pageSizeSelect" onchange="window.ordersPage.changePageSize(this.value)">
+      <option value="15">15</option>
+      <option value="30">30</option>
+      <option value="50">50</option>
+      <option value="100">100</option>
+    </select>
+    <span class="text-sm text-muted">条</span>
+  </div>
   <div class="page-btns" id="pageBtns"></div>
 </div>
 
 <!-- 新建订单弹窗 -->
-<div id="createModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
-  <div style="background:#fff;border-radius:12px;width:500px;padding:28px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-      <h2 style="margin:0;font-size:20px;">新建订单</h2>
-      <button onclick="window.ordersPage.hideCreateModal()" style="border:none;background:none;font-size:24px;cursor:pointer;color:var(--muted);">&times;</button>
-    </div>
-    <div class="form-group" style="margin-bottom:16px;">
-      <label style="display:block;font-size:13px;margin-bottom:6px;">选择孩子 <span style="color:var(--error)">*</span></label>
-      <div style="position:relative;">
-        <input type="text" class="form-input" id="childSearchInput" placeholder="输入孩子姓名或手机号搜索..." style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;" oninput="window.ordersPage.searchChildrenForOrder()" onfocus="window.ordersPage.searchChildrenForOrder()" />
+{{ m.modal_overlay('createModal', '新建订单', 'md') }}
+
+  <!-- 线下新用户开关 -->
+  <div class="mb-16">
+    <label class="flex-center gap-8 cursor-pointer">
+      <input type="checkbox" id="offlineToggle" onchange="window.ordersPage.toggleOffline()" />
+      线下新用户（兜底）
+    </label>
+  </div>
+
+  <!-- 已有用户：搜索孩子 -->
+  <div id="existingUserFields">
+    <div class="form-group">
+      <label>选择孩子 <span class="required">*</span></label>
+      <div class="pos-relative">
+        <input type="text" class="form-input" id="childSearchInput" placeholder="输入孩子姓名或手机号搜索..." oninput="window.ordersPage.searchChildrenForOrder()" onfocus="window.ordersPage.searchChildrenForOrder()" />
         <input type="hidden" id="createChildId" />
-        <div id="childDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--border);border-radius:0 0 8px 8px;max-height:200px;overflow-y:auto;z-index:10;box-shadow:0 4px 12px rgba(0,0,0,0.1);"></div>
+        <div id="childDropdown" class="hidden dropdown-popup dropdown-below"></div>
       </div>
-      <div id="selectedChildInfo" style="margin-top:6px;font-size:12px;color:var(--muted);"></div>
+      <div id="selectedChildInfo" class="text-sm text-muted"></div>
     </div>
-    <div class="form-group" style="margin-bottom:16px;">
-      <label style="display:block;font-size:13px;margin-bottom:6px;">订单类型 <span style="color:var(--error)">*</span></label>
-      <select class="form-input" id="createType" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;">
-        <option value="1">亲子课 (99元)</option>
-        <option value="2">观察期 (500元)</option>
-        <option value="3">正式会员 (5400元/年)</option>
-        <option value="4">季度 (1350元)</option>
-        <option value="5">半年 (2700元)</option>
+  </div>
+
+  <!-- 线下新用户：家长+孩子信息 -->
+  <div id="offlineUserFields" class="hidden">
+    <div class="form-group mb-12">
+      <label>家长姓名 <span class="required">*</span></label>
+      <input type="text" class="form-input" id="offlineParentName" />
+    </div>
+    <div class="form-group mb-12">
+      <label>手机号 <span class="required">*</span></label>
+      <input type="tel" class="form-input" id="offlinePhone" pattern="1\d{10}" title="11位手机号" />
+    </div>
+    <div class="form-group mb-12">
+      <label>孩子姓名 <span class="required">*</span></label>
+      <input type="text" class="form-input" id="offlineChildName" />
+    </div>
+    <div class="flex gap-12 mb-12">
+      <div class="form-group flex-1">
+        <label>年龄 <span class="required">*</span></label>
+        <select class="form-input" id="offlineChildAge">
+          <option value="">请选择</option>
+        </select>
+      </div>
+      <div class="form-group flex-1">
+        <label>年级 <span class="required">*</span></label>
+        <select class="form-input" id="offlineChildGrade">
+          <option value="">请选择</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>所属场馆</label>
+      <select class="form-input" id="offlineVenueId">
+        <option value="">请选择</option>
       </select>
     </div>
-    <div class="form-group" style="margin-bottom:20px;">
-      <label style="display:block;font-size:13px;margin-bottom:6px;">备注</label>
-      <textarea class="form-input" id="createRemark" rows="2" placeholder="订单备注" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;"></textarea>
-    </div>
-    <div style="display:flex;justify-content:flex-end;gap:8px;">
-      <button class="btn-outline" onclick="window.ordersPage.hideCreateModal()">取消</button>
-      <button class="btn-primary" onclick="window.ordersPage.createOrder()">创建订单</button>
+  </div>
+
+  <!-- 订单信息 -->
+  <div class="form-group">
+    <label>订单类型 <span class="required">*</span></label>
+    <select class="form-input" id="createType" onchange="window.ordersPage.updateDefaultAmount()">
+      <option value="1">亲子课 (99元)</option>
+      <option value="2">观察期 (500元)</option>
+      <option value="3">正式会员 (5400元/年)</option>
+      <option value="4">季度 (1350元)</option>
+      <option value="5">半年 (2700元)</option>
+    </select>
+  </div>
+
+  <!-- 实收金额（始终可见，可编辑） -->
+  <div class="form-group">
+    <label>实收金额（元） <span class="required">*</span></label>
+    <input type="number" class="form-input" id="offlineAmount" step="0.01" min="0" placeholder="自动代入默认价格" />
+  </div>
+
+  <!-- 支付状态 + 付款方式 -->
+  <div class="mb-16">
+    <label>支付状态</label>
+    <div class="flex gap-16">
+      <label class="flex-center gap-4 cursor-pointer">
+        <input type="radio" name="payStatus" value="pending" checked onchange="window.ordersPage.togglePayStatus()" />
+        待支付
+      </label>
+      <label class="flex-center gap-4 cursor-pointer">
+        <input type="radio" name="payStatus" value="paid" onchange="window.ordersPage.togglePayStatus()" />
+        已支付
+      </label>
     </div>
   </div>
-</div>
+
+  <div id="paymentFields" class="hidden">
+    <div class="form-group">
+      <label>付款方式 <span class="required">*</span></label>
+      <select class="form-input" id="offlinePayType">
+        <option value="">请选择</option>
+        <option value="1">微信</option>
+        <option value="2">支付宝</option>
+        <option value="3">银行卡</option>
+        <option value="4">现金</option>
+        <option value="5">转账</option>
+        <option value="6">其他</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label>备注</label>
+    <textarea class="form-input" id="createRemark" rows="2" placeholder="订单备注"></textarea>
+  </div>
+
+{{ m.modal_actions() }}
+  <button class="btn btn-secondary" onclick="window.ordersPage.hideCreateModal()">取消</button>
+  <button class="btn btn-primary" onclick="window.ordersPage.createOrder()">创建订单</button>
+{{ m.modal_end() }}
 
 <!-- 订单详情弹窗 -->
-<div id="detailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
-  <div style="background:#fff;border-radius:12px;width:600px;max-height:80vh;overflow-y:auto;padding:28px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-      <h2 style="margin:0;font-size:20px;">订单详情</h2>
-      <button onclick="window.ordersPage.hideDetailModal()" style="border:none;background:none;font-size:24px;cursor:pointer;color:var(--muted);">&times;</button>
-    </div>
-    <div id="detailContent"></div>
-    <div id="detailActions" style="margin-top:20px;display:flex;gap:8px;flex-wrap:wrap;"></div>
-  </div>
-</div>
+{{ m.modal_overlay('detailModal', '订单详情', 'lg') }}
+  <div id="detailContent"></div>
+  <div id="detailActions"></div>
+  {{ m.modal_actions() }}
+    <button class="btn btn-secondary" onclick="window.ordersPage.hideDetailModal()">关闭</button>
+  {{ m.modal_end() }}
 
 <!-- 确认弹窗 -->
-<div id="confirmModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
-  <div style="background:#fff;border-radius:12px;width:420px;padding:24px;">
-    <h3 id="confirmTitle" style="margin:0 0 12px;font-size:18px;">确认操作</h3>
-    <p id="confirmMsg" style="margin:0 0 20px;font-size:14px;color:var(--fg);"></p>
-    <div id="confirmInputWrap" style="display:none;margin-bottom:16px;">
-      <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:4px;" id="confirmInputLabel">请输入：</label>
-      <input type="text" id="confirmTextInput" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;" />
+<div id="confirmModal" class="modal-overlay" onclick="if(event.target===this)window.ordersPage.hideConfirm()">
+  <div class="modal modal-sticky modal-sm">
+    <div class="modal-header">
+      <h2 id="confirmTitle">确认操作</h2>
+      <button class="modal-close" onclick="window.ordersPage.hideConfirm()">&times;</button>
     </div>
-    <div style="display:flex;justify-content:flex-end;gap:8px;">
-      <button class="btn-outline" onclick="window.ordersPage.hideConfirm()">取消</button>
-      <button class="btn-primary" id="confirmBtn">确认</button>
+    <div class="modal-body">
+      <p id="confirmMsg"></p>
+      <div id="confirmInputWrap" class="hidden mb-16">
+        <label class="text-sm text-muted" id="confirmInputLabel">请输入：</label>
+        <input type="text" id="confirmTextInput" class="form-input" />
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="window.ordersPage.hideConfirm()">取消</button>
+      <button class="btn btn-primary" id="confirmBtn">确认</button>
     </div>
   </div>
 </div>

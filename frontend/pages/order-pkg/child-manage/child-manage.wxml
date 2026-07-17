@@ -18,12 +18,12 @@
   <block wx:if="{{!loading}}">
 
     <!-- Current Child Section -->
-    <view class="section-title" wx:if="{{children.length > 0}}">
+    <view class="section-title" wx:if="{{children && children.length > 0}}">
       <text>当前孩子</text>
     </view>
 
     <view class="child-card {{item.id === currentChildId ? 'current' : ''}}"
-      wx:for="{{children}}" wx:key="id"
+      wx:for="{{children || []}}" wx:key="id"
       wx:if="{{item.id === currentChildId}}"
       bindtap="onTapChild" data-child="{{item}}">
       <view class="child-avatar {{item.avatarClass || 'g1'}}">
@@ -42,11 +42,11 @@
         </view>
         <view class="child-stats">
           <view class="child-stat">
-            <text class="stat-icon">📖</text>
+            <text class="stat-icon"><text class="icon icon-book-open">读</text></text>
             <text>已读 {{item.total_books_finished || 0}} 本</text>
           </view>
           <view class="child-stat">
-            <text class="stat-icon">✔</text>
+            <text class="stat-icon"><text class="icon icon-heavy-checkmark">✔</text></text>
             <text>连续 {{item.current_streak_days || 0}} 天</text>
           </view>
         </view>
@@ -61,16 +61,22 @@
         <view class="child-action-btn" data-childid="{{item.id}}" catchtap="onNavigateToAchievement">
           <text>成就</text>
         </view>
+        <view class="child-action-btn" data-child="{{item}}" catchtap="onEditChild">
+          <text>编辑</text>
+        </view>
+        <view class="child-action-btn danger" data-childid="{{item.id}}" catchtap="onDeleteChild">
+          <text>删除</text>
+        </view>
       </view>
     </view>
 
     <!-- Other Children Section -->
-    <view class="section-title" wx:if="{{children.length > 1}}">
+    <view class="section-title" wx:if="{{children && children.length > 1}}">
       <text>其他孩子</text>
     </view>
 
     <view class="child-card"
-      wx:for="{{children}}" wx:key="id"
+      wx:for="{{children || []}}" wx:key="id"
       wx:if="{{item.id !== currentChildId}}"
       bindtap="onTapChild" data-child="{{item}}">
       <view class="child-avatar {{item.avatarClass || 'g1'}}">
@@ -89,11 +95,11 @@
         </view>
         <view class="child-stats">
           <view class="child-stat">
-            <text class="stat-icon">📖</text>
+            <text class="stat-icon"><text class="icon icon-book-open">读</text></text>
             <text>已读 {{item.total_books_finished || 0}} 本</text>
           </view>
           <view class="child-stat">
-            <text class="stat-icon">✔</text>
+            <text class="stat-icon"><text class="icon icon-heavy-checkmark">✔</text></text>
             <text>连续 {{item.current_streak_days || 0}} 天</text>
           </view>
         </view>
@@ -105,12 +111,18 @@
         <view class="child-action-btn" data-childid="{{item.id}}" catchtap="onNavigateToAchievement">
           <text>成就</text>
         </view>
+        <view class="child-action-btn" data-child="{{item}}" catchtap="onEditChild">
+          <text>编辑</text>
+        </view>
+        <view class="child-action-btn danger" data-childid="{{item.id}}" catchtap="onDeleteChild">
+          <text>删除</text>
+        </view>
       </view>
     </view>
 
     <!-- Empty State -->
-    <view class="empty-state" wx:if="{{children.length === 0}}">
-      <text class="empty-icon">👶</text>
+    <view class="empty-state" wx:if="{{!children || children.length === 0}}">
+      <text class="empty-icon"><text class="icon icon-baby">👶</text></text>
       <text class="empty-text">还没有添加孩子</text>
     </view>
 
@@ -127,10 +139,15 @@
   <view class="modal-mask" wx:if="{{showAddForm}}" bindtap="onCloseAddForm">
     <view class="modal-body" catchtap="onPreventBubble">
       <view class="modal-header">
-        <text class="modal-title">添加孩子</text>
+        <text class="modal-title">{{editingChild ? '编辑孩子' : '添加孩子'}}</text>
         <view class="modal-close" bindtap="onCloseAddForm">
-          <text>✕</text>
+          <text><text class="icon icon-multiply">✕</text></text>
         </view>
+      </view>
+
+      <view class="data-notice">
+        <text class="notice-icon"><text class="icon icon-info">ℹ</text></text>
+        <text class="notice-text">我们将使用孩子的年龄和年级信息为您推荐合适的阅读级别和图书</text>
       </view>
 
       <view class="form-group">

@@ -4,7 +4,7 @@
 from fastapi import APIRouter, Depends
 
 from backend.common.dependencies import get_db
-from backend.middleware.admin_auth import get_current_admin
+from backend.middleware.admin_rbac import require_perm
 from backend.domain.evaluation.schemas import (
     AREvaluationCreate,
     AREvaluationResponse,
@@ -25,7 +25,7 @@ router = APIRouter(prefix="/ar-evaluation", tags=["AR测评"])
 def create_ar_evaluation(
     data: AREvaluationCreate,
     db=Depends(get_db),
-    admin=Depends(get_current_admin),
+    admin=Depends(require_perm("evaluation.create")),
 ):
     """管理员创建 AR 测评记录（亲子课结束后）"""
     service = EvaluationService(db)
@@ -38,7 +38,7 @@ def create_ar_evaluation(
 def get_ar_evaluations(
     child_id: int,
     db=Depends(get_db),
-    admin=Depends(get_current_admin),
+    admin=Depends(require_perm("evaluation.list")),
 ):
     """管理员查看孩子的 AR 测评历史"""
     service = EvaluationService(db)
@@ -51,7 +51,7 @@ def get_ar_evaluations(
 def get_latest_ar_evaluation(
     child_id: int,
     db=Depends(get_db),
-    admin=Depends(get_current_admin),
+    admin=Depends(require_perm("evaluation.view")),
 ):
     """管理员查看最新 AR 测评"""
     service = EvaluationService(db)

@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 from backend.common.base_repo import BaseRepository
-from backend.common.events import CheckInEvent, event_bus
+from backend.common.events import CheckInEvent, ReadingBookFinishedEvent, ReadingSessionCompletedEvent, event_bus
 from backend.common.config_service import ConfigService
 from backend.domain.child.models import Child
 from backend.domain.reading.models import (
@@ -83,7 +83,16 @@ class ReadingService:
         self, child_id: int, data: SaveProgressRequest
     ) -> ProgressResponse:
         """保存或更新阅读进度"""
-        progress = self.progress_repo.get_by_child_and_book(child_id, data.book_id)
+        progress = (
+            self.db.query(ReadingProgress)
+            .filter(
+                ReadingProgress.child_id == child_id,
+                ReadingProgress.book_id == data.book_id,
+                ReadingProgress.is_deleted == 0,
+            )
+            .with_for_update()
+            .first()
+        )
         if not progress:
             progress = ReadingProgress(
                 child_id=child_id,
@@ -105,7 +114,8 @@ class ReadingService:
             progress.is_finished = 1
             progress.finish_time = datetime.now()
 
-            # P0-1: 读完自动创建 ReadingSubmission（待审核）
+            # 读完自动创建 ReadingSubmission（自动通过，无需审核）
+            # 晋级检测在 check_and_advance 中处理（需审核时会阻断）
             from backend.domain.advancement.models import ReadingSubmission
             from backend.domain.book.models import Book
 
@@ -127,9 +137,21 @@ class ReadingService:
                     child_id=progress.child_id,
                     book_id=progress.book_id,
                     word_count=book.word_count if book else 0,
-                    status=ReadingSubmission.STATUS_PENDING,
+                    status=ReadingSubmission.STATUS_APPROVED,
+                    reviewed_at=datetime.now(),
                 )
                 self.db.add(sub)
+                self.db.flush()
+
+                # 自动增加已读书数 + 触发晋级检测（通过事件总线解耦）
+                event_bus.publish(
+                    ReadingBookFinishedEvent(
+                        child_id=sub.child_id,
+                        book_id=sub.book_id,
+                        word_count=sub.word_count,
+                    ),
+                    db=self.db,
+                )
 
         self.progress_repo.update(progress)
         self.db.commit()
@@ -186,7 +208,16 @@ class ReadingService:
         return SessionResponse.model_validate(created)
 
     def end_session(self, session_id: int, data: EndSessionRequest) -> SessionResponse:
-        session = self.session_repo.get_by_id_or_raise(session_id)
+        from backend.domain.reading.models import ReadingSession
+        session = (
+            self.db.query(ReadingSession)
+            .filter(ReadingSession.id == session_id, ReadingSession.is_deleted == 0)
+            .with_for_update()
+            .first()
+        )
+        if not session:
+            from backend.common.exceptions import NotFoundError
+            raise NotFoundError("阅读会话不存在")
         session.end_time = datetime.now()
         session.duration_seconds = int(
             (session.end_time - session.start_time).total_seconds()
@@ -200,12 +231,13 @@ class ReadingService:
             session.child_id, session.duration_seconds, data.words_read
         )
 
-        # 更新孩子阅读统计（累计阅读时长）
-        from backend.domain.child.service import ChildService
-
-        child_service = ChildService(self.db)
-        child_service.update_reading_stats(
-            session.child_id, minutes=session.duration_seconds // 60
+        # 更新孩子阅读统计（累计阅读时长，通过事件总线解耦）
+        event_bus.publish(
+            ReadingSessionCompletedEvent(
+                child_id=session.child_id,
+                duration_minutes=session.duration_seconds // 60,
+            ),
+            db=self.db,
         )
 
         self.db.commit()
@@ -302,10 +334,11 @@ class ReadingService:
         )
 
     def get_recordings(
-        self, child_id: int, book_id: int | None = None
+        self, child_id: int, book_id: int | None = None,
+        page: int = 1, page_size: int = 20
     ) -> list[VoiceRecordingDetailResponse]:
         """获取语音录音列表"""
-        recordings = self.voice_repo.get_by_child_and_book(child_id, book_id)
+        recordings = self.voice_repo.get_by_child_and_book(child_id, book_id, page=page, page_size=page_size)
         result = []
         for r in recordings:
             result.append(

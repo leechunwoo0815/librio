@@ -15,5 +15,4 @@ class CertificateResponse(BaseSchema):
     child_english_name: str | None = None
     badge_emoji: str | None = None
     certificate_no: str | None = None
-    # FIX: 原字段名 create_time 与 service 返回的 created_at 不一致，导致 ResponseValidationError 500
-    created_at: str | None = None
+    create_time: str | None = None

@@ -1,8 +1,8 @@
 <!-- frontend/pages/index/index.wxml -->
 <view class="page-root">
 
-  <error-view wx:if="{{loadError}}" visible="{{loadError}}" icon="😵" title="加载失败" desc="数据加载出错了，请稍后重试" showRetry="{{true}}" retryText="重试" bind:onRetry="onRetry" />
-  <loading-skeleton wx:elif="{{!child && !isTestMode}}" />
+  <error-view wx:if="{{loadError}}" visible="{{loadError}}" icon="<text class="icon icon-dizzy-face">😵</text>" title="加载失败" desc="数据加载出错了，请稍后重试" showRetry="{{true}}" retryText="重试" bind:onRetry="onRetry" />
+  <loading-skeleton wx:elif="{{!child}}" />
 
   <block wx:if="{{!loadError}}">
 
@@ -12,7 +12,7 @@
     <view class="top-bar">
       <view class="logo">
         <view class="logo-icon">M</view>
-        <text class="logo-text">MegaWords</text>
+        <text class="logo-text">DmkWords</text>
       </view>
       <view class="right-actions">
         <view class="venue-btn" bindtap="toggleVenue">
@@ -20,7 +20,7 @@
           <text class="arrow-down">▾</text>
         </view>
         <view class="msg-btn" bindtap="goMessages">
-          <text class="msg-icon">🔔</text>
+          <text class="msg-icon"><text class="icon icon-bell">🔔</text></text>
           <view class="msg-dot" wx:if="{{hasUnread}}"></view>
         </view>
       </view>
@@ -70,7 +70,7 @@
       <swiper class="carousel" indicator-dots indicator-color="rgba(255,255,255,0.4)" indicator-active-color="#fff" autoplay interval="4000" circular current="{{currentSlide}}" bindchange="onSlideChange">
         <swiper-item>
           <view class="carousel-slide slide-1">
-            <text class="slide-tag">MEGAWORDS</text>
+            <text class="slide-tag">DMKWORDS</text>
             <view class="slide-title">海量原版英文书库</view>
             <view class="slide-sub">3000+ 原版分级读物，AR 值精准匹配</view>
           </view>
@@ -95,18 +95,18 @@
     <!-- Child Profile Badge -->
     <view class="child-badge" wx:if="{{child}}" bindtap="goAchievement">
       <view class="child-avatar">
-        <text class="child-avatar-emoji">👦</text>
+        <text class="child-avatar-emoji"><text class="icon icon-boy">👦</text></text>
       </view>
       <view class="child-info">
         <view class="child-name-row">
-          <text class="child-name">{{child.name}}</text>
+          <text class="child-name" wx:if="{{child}}">{{child.name}}</text>
           <view class="level-tag" wx:if="{{currentLevel}}">
             <text>{{currentLevel.badge_emoji}}</text>
-            <text>{{currentLevel.level_name}}级</text>
+            <text wx:if="{{currentLevel}}">{{currentLevel.level_name}}级</text>
           </view>
         </view>
         <view class="child-streak" wx:if="{{streak > 0}}">
-          <text>🔥 连续打卡 {{streak}} 天</text>
+          <text><text class="icon icon-fire">🔥</text> 连续打卡 {{streak}} 天</text>
         </view>
       </view>
       <view class="achievement-btn">成就</view>
@@ -115,7 +115,7 @@
     <!-- Login Prompt (when not logged in) -->
     <view class="child-badge login-prompt" wx:if="{{!child}}" bindtap="goLogin">
       <view class="child-avatar">
-        <text class="child-avatar-emoji">👤</text>
+        <text class="child-avatar-emoji"><text class="icon icon-user">👤</text></text>
       </view>
       <view class="child-info">
         <text class="child-name">点击登录，开启阅读之旅</text>
@@ -141,7 +141,7 @@
     <!-- Promotion Progress -->
     <view class="promo-card" wx:if="{{currentLevel && advancement}}">
       <view class="promo-icon-wrap">
-        <text class="promo-icon">🌱</text>
+        <text class="promo-icon"><text class="icon icon-seedling">🌱</text></text>
       </view>
       <view class="promo-body">
         <view class="promo-header">
@@ -152,7 +152,7 @@
           当前级别：{{currentLevel.level_name}}级 · 再读{{advancement.books_required - advancement.books_read}}本晋级至下一级
         </view>
         <view class="promo-hint promo-hint-success" wx:if="{{advancement.can_advance}}">
-          已满足晋级条件 🎉
+          已满足晋级条件 <text class="icon icon-party">🎉</text>
         </view>
         <view class="promo-progress-bar">
           <view class="promo-progress-fill" style="width: {{advancement.progress || 0}}%"></view>
@@ -180,7 +180,7 @@
 
     <!-- Leaderboard Entry -->
     <view class="leaderboard-card" bindtap="goLeaderboard">
-      <text class="leaderboard-medals">🥇🥈🥉</text>
+      <text class="leaderboard-medals"><text class="icon icon-gold-medal">🥇</text><text class="icon icon-silver-medal">🥈</text><text class="icon icon-bronze-medal">🥉</text></text>
       <view class="leaderboard-info">
         <view class="leaderboard-title">排行榜</view>
         <view class="leaderboard-desc">看看你排第几名！</view>
@@ -195,7 +195,7 @@
         <view class="card entry-item" bindtap="goBooks">
           <view class="num">01</view>
           <view class="title entry-icon-wrap icon-purple">
-            <text class="entry-icon">📚</text>
+            <text class="entry-icon"><text class="icon icon-book">书</text></text>
             海量原版书
           </view>
           <view class="desc">3000+ 英文原版读物</view>
@@ -204,7 +204,7 @@
         <view class="card entry-item" bindtap="goLeaderboard">
           <view class="num">02</view>
           <view class="title entry-icon-wrap icon-green">
-            <text class="entry-icon">📈</text>
+            <text class="entry-icon"><text class="icon icon-trend-up">📈</text></text>
             效果可量化
           </view>
           <view class="desc">月度阅读报告</view>
@@ -213,16 +213,16 @@
         <view class="card entry-item" bindtap="goVocab">
           <view class="num">03</view>
           <view class="title entry-icon-wrap icon-orange">
-            <text class="entry-icon">👩‍🏫</text>
+            <text class="entry-icon"><text class="icon icon-woman">👩</text><text class="icon icon-school">🏫</text></text>
             一对一指导
           </view>
           <view class="desc">定制阅读计划</view>
-          <text class="badge badge-new">🆕 新增</text>
+          <text class="badge badge-new"><text class="icon icon-new">🆕</text> 新增</text>
         </view>
         <view class="card entry-item" bindtap="goShelf">
           <view class="num">04</view>
           <view class="title entry-icon-wrap icon-pink">
-            <text class="entry-icon">💛</text>
+            <text class="entry-icon"><text class="icon icon-heart-yellow">💛</text></text>
             家长轻松
           </view>
           <view class="desc">专业服务省心</view>
@@ -241,7 +241,7 @@
     </view>
     <view class="venue-card">
       <view class="venue-icon-wrap">
-        <text class="venue-pin">📍</text>
+        <text class="venue-pin"><text class="icon icon-location">📍</text></text>
       </view>
       <view class="venue-info">
         <text class="venue-name">{{currentVenue.name || '人广馆'}}</text>
@@ -262,7 +262,7 @@
     <scroll-view scroll-x class="book-scroll" wx:if="{{featuredBooks.length > 0}}">
       <view class="book-card" wx:for="{{featuredBooks}}" wx:key="id" bindtap="goDetail" data-id="{{item.id}}">
         <view class="book-cover">
-          <text class="book-cover-emoji">📖</text>
+          <text class="book-cover-emoji"><text class="icon icon-book-open">读</text></text>
         </view>
         <text class="book-title">{{item.title}}</text>
         <text class="book-meta">AR {{item.ar_value}} · {{item.word_count}}词</text>
@@ -280,7 +280,7 @@
     <scroll-view scroll-x class="student-scroll">
       <view class="student-card" wx:for="{{students}}" wx:key="name">
         <view class="student-avatar avatar-purple">
-          <text class="student-avatar-emoji">👧</text>
+          <text class="student-avatar-emoji"><text class="icon icon-girl">👧</text></text>
         </view>
         <text class="student-name">{{item.name}} · {{item.age}}岁</text>
         <view class="student-stat-tag">
@@ -312,14 +312,9 @@
 
   </scroll-view>
 
-  <!-- Debug Nav (测试模式) -->
-  <view wx:if="{{isTestMode}}" style="position:fixed;bottom:200rpx;left:50%;transform:translateX(-50%);z-index:100;width:600rpx;max-width:calc(100% - 64rpx);padding:24rpx;background:rgba(107,92,231,0.15);border-radius:16rpx;text-align:center;box-sizing:border-box;" bindtap="goDebugNav">
-    <text style="font-size:28rpx;color:var(--accent);font-weight:600;">📋 查看全部 27 个页面</text>
-  </view>
-
   <!-- FAB Button -->
   <view class="fab" bindtap="goCourse">
-    <text>立即报名 99 元亲子课</text>
+    <text>{{fabButtonText}}</text>
   </view>
 
   </block><!-- end !loadError -->

@@ -6,6 +6,8 @@ Page({
   data: {
     child: null,
     loading: false,
+    price: '',
+    isIOS: false,
     faqList: [
       {
         q: '观察期和正式会员有什么区别？',
@@ -24,7 +26,7 @@ Page({
       },
       {
         q: '第二个孩子报名有优惠吗？',
-        a: '正式会员第2个孩子起享受9折优惠（4860元/年）。观察期暂无折扣。',
+        a: '正式会员第2个孩子起享受9折优惠。观察期暂无折扣。',
         open: false,
       },
     ],
@@ -33,6 +35,8 @@ Page({
   onLoad() {
     const app = getApp()
     if (!auth.requireAuth()) return
+    const deviceInfo = wx.getDeviceInfo()
+    this.setData({ isIOS: deviceInfo.platform === 'ios' })
     this.loadChild()
   },
 
@@ -41,7 +45,17 @@ Page({
       const children = await api.getChildren()
       if (children && children.length > 0) {
         const child = auth.selectChild(children)
-        this.setData({ child })
+
+        let price = this.data.price
+        try {
+          const tierData = await api.getTiers()
+          const obs = (tierData.tiers || []).find(t => t.type === 2)
+          if (obs) price = obs.price
+        } catch (e) {
+          console.error('Load tier price failed:', e)
+        }
+
+        this.setData({ child, price })
       }
     } catch (e) {
       console.error(e)
@@ -55,17 +69,14 @@ Page({
   },
 
   async handleOrder() {
-    // iOS 虚拟支付拦截（Apple 审核红线）
-    const sysInfo = wx.getSystemInfoSync()
-    if (sysInfo.platform === 'ios') {
+    if (this.data.isIOS) {
       wx.showModal({
-        title: '提示',
-        content: '因苹果规则限制，请前往线下门店或使用安卓设备办理',
+        title: '暂不支持 iOS 开通',
+        content: '当前暂不支持 iOS 端开通，请使用安卓设备或联系客服办理',
         showCancel: false,
       })
       return
     }
-
     const child = this.data.child
     if (!child) {
       wx.showToast({ title: '请先添加孩子信息', icon: 'none' })
@@ -74,8 +85,11 @@ Page({
 
     this.setData({ loading: true })
     try {
-      const order = await api.createOrder(child.id, 2, 500)
+      const order = await api.createOrder(child.id, 2)
       const payParams = await api.getPayParams(order.id)
+      if (!payParams || !payParams.timeStamp || !payParams.nonceStr || !payParams.package || !payParams.signType || !payParams.paySign) {
+        throw new Error('支付参数异常，请稍后重试')
+      }
       await new Promise((resolve, reject) => {
         wx.requestPayment({
           ...payParams,
@@ -84,7 +98,7 @@ Page({
         })
       })
       wx.showToast({ title: '支付成功', icon: 'success' })
-      setTimeout(() => {
+      this._navTimer = setTimeout(() => {
         wx.navigateBack()
       }, 1500)
     } catch (e) {
@@ -98,11 +112,7 @@ Page({
     }
   },
 
-  showIOSNotice() {
-    wx.showModal({
-      title: '提示',
-      content: '因苹果规则限制，请前往线下门店或使用安卓设备办理',
-      showCancel: false,
-    });
+  onUnload() {
+    if (this._navTimer) { clearTimeout(this._navTimer); this._navTimer = null }
   },
 })

@@ -34,12 +34,14 @@ Page({
     const correct = parseInt(options.correct) || 0
     const score = parseInt(options.score) || 0
     const passed = options.passed === '1' || options.passed === 'true'
+    const wordsRead = parseInt(options.wordsRead) || 0
 
-    this.setData({ quizId, bookId, total, correct, score, passed })
+    this.setData({ quizId, bookId, total, correct, score, passed, wordsRead })
 
     // 加载错题数据
     try {
-      var wrong = wx.getStorageSync('quiz_wrong_' + quizId) || []
+      var cached = wx.getStorageSync('quiz_wrong_' + quizId) || {}
+      var wrong = cached.questions || []
       if (wrong.length > 0) {
         this.setData({ wrongQuestions: wrong })
       }
@@ -82,7 +84,7 @@ Page({
       const level = await api.getCurrentLevel(childId)
       if (level) {
         const update = {
-          canAdvance: false,
+          canAdvance: !!(level.level_up || level.just_advanced || level.can_advance),
           advanceInfo: level
         }
         // 检测是否有晋级信息，展示庆祝动画
@@ -119,6 +121,11 @@ Page({
     } else {
       wx.switchTab({ url: '/pages/shelf/shelf' })
     }
+  },
+
+  onUnload() {
+    const { quizId } = this.data
+    if (quizId) wx.removeStorageSync('quiz_wrong_' + quizId)
   },
 
   retakeQuiz() {

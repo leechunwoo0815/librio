@@ -109,6 +109,10 @@ Page({
     this._audio.play();
   },
 
+  onUnload() {
+    if (this._audio) { this._audio.stop(); this._audio.destroy(); this._audio = null; }
+  },
+
   async addToVocab() {
     const { word, child, wordData } = this.data;
     if (!child) {
@@ -117,7 +121,9 @@ Page({
     }
 
     try {
-      await api.addToVocab(child.id, word, wordData && wordData.book_id || '');
+      const extraData = this.data.extraData || {}
+      const bookId = wordData && wordData.book_id ? wordData.book_id : (extraData.bookId || '')
+      await api.addToVocab(child.id, word, bookId);
       this.setData({ inVocab: true, vocabStatus: 'learning' });
       wx.showToast({ title: '已加入生词本', icon: 'success' });
     } catch (e) {

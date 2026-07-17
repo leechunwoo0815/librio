@@ -4,7 +4,7 @@
 from fastapi import APIRouter, Depends, Query
 
 from backend.common.dependencies import get_admin_venue_service
-from backend.middleware.admin_auth import get_current_admin, require_role, ROLE_ADMIN
+from backend.middleware.admin_rbac import require_perm
 from backend.domain.admin.admin_schemas import (
     SuccessResponse,
     AdminActionResponse,
@@ -22,7 +22,7 @@ def list_venues(
     page: int = Query(1, ge=1),
     page_size: int = Query(100, ge=1, le=100),
     service: AdminVenueService = Depends(get_admin_venue_service),
-    admin=Depends(get_current_admin),
+    admin=Depends(require_perm("venue.list")),
 ):
     """获取场馆列表"""
     return service.list_venues(page, page_size)
@@ -32,10 +32,19 @@ def list_venues(
 def create_venue(
     data: CreateVenueRequest,
     service: AdminVenueService = Depends(get_admin_venue_service),
-    admin=Depends(require_role(ROLE_ADMIN)),
+    admin=Depends(require_perm("venue.create")),
 ):
     """创建场馆"""
-    return service.create_venue(data)
+    result = service.create_venue(data)
+    from backend.domain.admin.services.system_service import AdminSystemService
+    system_service = AdminSystemService(service.db)
+    system_service.write_operation_log(
+        admin_id=admin.id,
+        module="venue",
+        operation="create",
+        content=f"创建场馆: {data.name}",
+    )
+    return result
 
 
 @router.put("/{venue_id}", response_model=SuccessResponse)
@@ -43,17 +52,35 @@ def update_venue(
     venue_id: int,
     data: UpdateVenueRequest,
     service: AdminVenueService = Depends(get_admin_venue_service),
-    admin=Depends(require_role(ROLE_ADMIN)),
+    admin=Depends(require_perm("venue.edit")),
 ):
     """更新场馆"""
-    return service.update_venue(venue_id, data)
+    result = service.update_venue(venue_id, data)
+    from backend.domain.admin.services.system_service import AdminSystemService
+    system_service = AdminSystemService(service.db)
+    system_service.write_operation_log(
+        admin_id=admin.id,
+        module="venue",
+        operation="update",
+        content=f"更新场馆 #{venue_id}",
+    )
+    return result
 
 
 @router.delete("/{venue_id}", response_model=SuccessResponse)
 def delete_venue(
     venue_id: int,
     service: AdminVenueService = Depends(get_admin_venue_service),
-    admin=Depends(require_role(ROLE_ADMIN)),
+    admin=Depends(require_perm("venue.delete")),
 ):
     """删除场馆"""
-    return service.delete_venue(venue_id)
+    result = service.delete_venue(venue_id)
+    from backend.domain.admin.services.system_service import AdminSystemService
+    system_service = AdminSystemService(service.db)
+    system_service.write_operation_log(
+        admin_id=admin.id,
+        module="venue",
+        operation="delete",
+        content=f"删除场馆 #{venue_id}",
+    )
+    return result

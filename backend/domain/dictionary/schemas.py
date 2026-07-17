@@ -8,11 +8,12 @@ from backend.common.base_schema import BaseSchema
 
 class WordResponse(BaseSchema):
     """词条响应"""
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, extra="forbid")
 
     id: int
     word: str
     phonetic: str | None = None
+    audio_url: str | None = None
     pos: str | None = None  # 映射自 part_of_speech
     cn_definition: str | None = None  # 映射自 chinese_meaning
     example_sentence: str | None = None

@@ -12,21 +12,34 @@
 
   function onFreeChange() {
     const isFree = document.getElementById('actFree').value;
-    document.getElementById('priceGroup').style.display = isFree === '0' ? 'block' : 'none';
+    document.getElementById('priceGroup').classList.toggle('hidden', isFree !== '0');
   }
 
   function onTypeChange() {
     // 预留：不同类型可能有不同的表单字段
   }
 
-  async function loadActivities() {
+  let currentPage = 1;
+  const pageSize = 20;
+
+  async function loadActivities(page) {
+    currentPage = page || currentPage;
     try {
-      const result = await api.get('/admin/api/activities');
-      const activities = result.items || result || [];
+      const result = await api.get('/admin/api/activities?page=' + currentPage + '&page_size=' + pageSize);
+      const activities = result.items || [];
+      const total = result.total || 0;
       if (!activities.length) {
+        if (currentPage > 1 && total > 0) {
+          currentPage = 1;
+          return loadActivities(1);
+        }
         document.getElementById('actBody').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted);">暂无活动，点击上方按钮创建</td></tr>';
+        document.getElementById('pageInfo').textContent = '共 ' + total + ' 条记录';
+        document.getElementById('pageBtns').innerHTML = '';
         return;
       }
+      document.getElementById('pageInfo').textContent = '共 ' + total + ' 条记录';
+      AdminPagination.render('#pageBtns', total, currentPage, pageSize, function(p) { loadActivities(p); });
       document.getElementById('actBody').innerHTML = activities.map(function(a) {
         const badgeClass = statusBadgeClasses[a.status] || 'status-draft';
         const statusName = actStatuses[a.status] || a.status;
@@ -35,7 +48,6 @@
         const typeName = actTypes[a.type] || a.type;
         const priceStr = a.is_free ? '免费' : ('¥' + (a.price || 0));
 
-        // 操作按钮：根据状态显示不同操作
         let actions = '';
         if (a.status === 0) { // 草稿
           actions += '<span class="action-link" onclick="window.activitiesPage.publishActivity(' + a.id + ')">发布</span> ';
@@ -68,7 +80,7 @@
   }
 
   function showCreateModal() {
-    document.getElementById('modalTitle').textContent = '创建活动';
+    document.querySelector('#createModal h2').textContent = '创建活动';
     document.getElementById('editActivityId').value = '';
     document.getElementById('submitBtn').textContent = '创建';
     document.getElementById('actTitle').value = '';
@@ -91,7 +103,7 @@
   async function editActivity(id) {
     try {
       const a = await api.get('/admin/api/activities/' + id);
-      document.getElementById('modalTitle').textContent = '编辑活动';
+      document.querySelector('#createModal h2').textContent = '编辑活动';
       document.getElementById('editActivityId').value = id;
       document.getElementById('submitBtn').textContent = '保存';
       document.getElementById('actTitle').value = a.title || '';
@@ -103,7 +115,7 @@
       document.getElementById('actFree').value = a.is_free ? '1' : '0';
       document.getElementById('actPrice').value = a.price || '';
       document.getElementById('actDesc').value = a.description || '';
-      document.getElementById('priceGroup').style.display = a.is_free ? 'none' : 'block';
+      document.getElementById('priceGroup').classList.toggle('hidden', a.is_free);
       document.getElementById('createModal').classList.add('show');
     } catch (e) { showToast('加载活动详情失败', 'error'); }
   }
@@ -186,7 +198,7 @@
     listEl.innerHTML = '<div style="text-align:center;color:var(--muted);padding:20px;">加载中...</div>';
     try {
       const data = await api.get('/admin/api/activities/' + activityId + '/enrollments');
-      const enrollments = data || [];
+      const enrollments = (data && data.items) ? data.items : (data || []);
       if (!enrollments.length) {
         listEl.innerHTML = '<div style="text-align:center;color:var(--muted);padding:20px;">暂无报名记录</div>';
         return;
@@ -201,7 +213,7 @@
           '</label>';
       }).join('');
     } catch (err) {
-      listEl.innerHTML = '<div style="text-align:center;color:var(--error);padding:20px;">加载失败: ' + err.message + '</div>';
+      listEl.innerHTML = '<div style="text-align:center;color:var(--error);padding:20px;">加载失败: ' + escapeHtml(err.message) + '</div>';
     }
   }
 

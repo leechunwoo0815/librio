@@ -1,16 +1,30 @@
 // frontend/app.js
+// 生产环境通过 project.config.json 的编译环境注入 baseURL
+const PROD_BASE_URL = 'https://api.dmkwords.cn'
+
 App({
   globalData: {
-    // 本地开发环境使用 localhost，生产环境替换为 HTTPS 域名
-    // 可通过 wx.setStorageSync('baseURL', 'https://your-domain.com') 动态配置
-    baseURL: wx.getStorageSync('baseURL') || 'http://localhost:8002',
+    baseURL: PROD_BASE_URL,
     token: '',
     userInfo: null,
     currentChild: null,
-    isTestMode: false,
   },
 
   onLaunch() {
+    wx.onError((err) => {
+      console.error('[Global Error]', err)
+    })
+    wx.onUnhandledRejection((res) => {
+      console.error('[Unhandled Rejection]', res.reason)
+    })
+
+    const savedToken = wx.getStorageSync('token')
+    const savedUser = wx.getStorageSync('userInfo')
+    if (savedToken) {
+      this.globalData.token = savedToken
+      this.globalData.userInfo = savedUser || null
+    }
+
     // 版本更新检测
     if (wx.getUpdateManager) {
       const updateManager = wx.getUpdateManager()
@@ -23,6 +37,29 @@ App({
       })
     }
 
+    // 清理过期 quiz 缓存（>7天）
+    try {
+      const now = Date.now()
+      const keys = wx.getStorageInfoSync().keys || []
+      keys.forEach(key => {
+        if (key.startsWith('quiz_wrong_')) {
+          const data = wx.getStorageSync(key)
+          if (data && data._ts && (now - data._ts > 7 * 24 * 60 * 60 * 1000)) {
+            wx.removeStorageSync(key)
+          }
+        }
+        if (key.startsWith('mw_quiz_progress_')) {
+          try {
+            const data = wx.getStorageSync(key)
+            const parsed = typeof data === 'string' ? JSON.parse(data) : data
+            if (parsed && parsed.ts && (now - parsed.ts > 7 * 24 * 60 * 60 * 1000)) {
+              wx.removeStorageSync(key)
+            }
+          } catch (e) { /* silent */ }
+        }
+      })
+    } catch (e) { /* 静默 */ }
+
     // 网络状态检测
     wx.onNetworkStatusChange(function (res) {
       if (!res.isConnected) {
@@ -30,35 +67,28 @@ App({
       }
     })
 
-    const token = wx.getStorageSync('token')
-    if (token) {
-      this.globalData.token = token
+    // 微信官方隐私授权回调
+    if (wx.onNeedPrivacyAuthorization) {
+      wx.onNeedPrivacyAuthorization((resolve) => {
+        const privacyPopup = () => {
+          wx.showModal({
+            title: '隐私保护指引',
+            content: '在您使用 DmkWords 之前，请仔细阅读并同意《隐私保护指引》。我们将收集您的昵称、头像信息用于账号识别，并收集孩子的年龄、年级信息用于推荐合适的阅读内容。',
+            confirmText: '同意',
+            cancelText: '拒绝',
+            success: (res) => {
+              if (res.confirm) {
+                wx.setStorageSync('privacy_agreed', true)
+                resolve({ event: 'agree' })
+              } else {
+                resolve({ event: 'disagree' })
+              }
+            }
+          })
+        }
+        privacyPopup()
+      })
     }
 
-    // 检测测试模式（多重判断）
-    let isTest = false
-    try {
-      const accountInfo = wx.getAccountInfoSync()
-      const appId = accountInfo.miniProgram.appId || ''
-      console.log('[MegaWords] appId:', appId)
-      isTest = appId === 'touristappid' || appId === 'wxdevappid' || appId === '' || appId.startsWith('wx0000')
-    } catch (e) {
-      console.log('[MegaWords] getAccountInfoSync failed, assume test mode')
-      isTest = true
-    }
-
-    if (isTest) {
-      console.log('[MegaWords] 测试模式已启用')
-      this.globalData.isTestMode = true
-      if (!this.globalData.token) {
-        this.globalData.token = 'test-token-mock'
-        wx.setStorageSync('token', 'test-token-mock')
-      }
-      this.globalData.currentChild = {
-        id: 1, name: '小明', english_name: 'Tom', age: 7, grade: '二年级',
-        status: 2, total_words_read: 42000, total_books_finished: 15, current_streak_days: 7,
-      }
-      this.globalData.userInfo = { nickname: '家长' }
-    }
   },
 })

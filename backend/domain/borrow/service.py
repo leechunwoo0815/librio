@@ -9,6 +9,7 @@ import logging
 from datetime import datetime, timedelta
 from decimal import Decimal
 
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from backend.common.base_repo import BaseRepository
@@ -55,14 +56,24 @@ class BorrowService:
                 raise ValidationError("孩子不存在")
             if child.status not in (MemberStatus.OBSERVATION, MemberStatus.OFFICIAL):
                 raise ForbiddenError("该孩子无借书权限（非观察期/正式会员）")
-            if child.deposit_status not in (DepositStatus.PAID, DepositStatus.REFUNDING):
+            if child.deposit_status not in (DepositStatus.PAID, DepositStatus.REFUNDING, DepositStatus.REFUND_PENDING):
                 raise ForbiddenError("请先缴纳押金")
 
             # 校验上限 — 从配置读取
             from backend.common.config_service import ConfigService
 
             max_borrow = ConfigService.get_int(self.db, "borrow_limit", MAX_BORROW)
-            active_count = self.borrow_repo.count_active(data.child_id)
+            active_records = (
+                self.db.query(BorrowRecord)
+                .filter(
+                    BorrowRecord.child_id == data.child_id,
+                    BorrowRecord.status.in_([BorrowStatus.BORROWING, BorrowStatus.OVERDUE]),
+                    BorrowRecord.is_deleted == 0,
+                )
+                .with_for_update()
+                .all()
+            )
+            active_count = len(active_records)
             if active_count >= max_borrow:
                 raise ValidationError(f"借阅上限 {max_borrow} 本，请先归还")
 
@@ -117,7 +128,7 @@ class BorrowService:
             self.db.commit()
             logger.info(f"Book borrowed: child={data.child_id}, book={data.book_id}")
             return BorrowRecordResponse.model_validate(created)
-        except Exception:
+        except SQLAlchemyError:
             self.db.rollback()
             raise
 
@@ -126,6 +137,7 @@ class BorrowService:
         copy = (
             self.db.query(BookCopy)
             .filter(BookCopy.barcode == barcode, BookCopy.is_deleted == 0)
+            .with_for_update()
             .first()
         )
         if not copy:
@@ -138,6 +150,7 @@ class BorrowService:
                 BorrowRecord.status.in_([BorrowStatus.BORROWING, BorrowStatus.OVERDUE]),
                 BorrowRecord.is_deleted == 0,
             )
+            .with_for_update()
             .first()
         )
         if not record:
@@ -147,7 +160,14 @@ class BorrowService:
 
     def return_book(self, data: ReturnBookRequest) -> BorrowRecordResponse:
         """还书 — 更新记录 + 发布事件"""
-        record = self.borrow_repo.get_by_id_or_raise(data.borrow_record_id)
+        record = (
+            self.db.query(BorrowRecord)
+            .filter(BorrowRecord.id == data.borrow_record_id, BorrowRecord.is_deleted == 0)
+            .with_for_update()
+            .first()
+        )
+        if not record:
+            raise NotFoundError("借阅记录不存在")
         if record.status not in (BorrowStatus.BORROWING, BorrowStatus.OVERDUE):
             raise ConflictError("该记录不在借阅中")
 
@@ -238,9 +258,11 @@ class BorrowService:
             self.db.add(copy)
             self.db.flush()
 
-            # 递增库存
-            book.total_stock = (book.total_stock or 0) + 1
-            book.available_stock = (book.available_stock or 0) + 1
+            # 递增库存（SQL 原子更新，与 decrease_available_stock 风格一致）
+            self.db.query(Book).filter(Book.id == book.id).update(
+                {Book.total_stock: Book.total_stock + 1, Book.available_stock: Book.available_stock + 1},
+                synchronize_session='fetch',
+            )
 
             book_id = book.id
             book_copy_id = copy.id
@@ -273,7 +295,7 @@ class BorrowService:
                 raise NotFoundError("预约记录不存在")
             if reservation.child_id != child_id:
                 raise ForbiddenError("预约不属于该孩子")
-            if reservation.status != ReservationStatus.PENDING:
+            if reservation.status not in (ReservationStatus.PENDING, ReservationStatus.FULFILLED):
                 raise ConflictError(f"预约状态({reservation.status})不允许取书")
 
         # 校验无重复借阅
@@ -300,14 +322,19 @@ class BorrowService:
             raise ValidationError("孩子不存在")
         if child.status not in (MemberStatus.OBSERVATION, MemberStatus.OFFICIAL):
             raise ForbiddenError("该孩子无借书权限（非观察期/正式会员）")
-        if child.deposit_status != DepositStatus.PAID:
+        if child.deposit_status not in (DepositStatus.PAID, DepositStatus.REFUNDING, DepositStatus.REFUND_PENDING):
             raise ForbiddenError("请先缴纳押金")
 
         # 校验借阅上限
         from backend.common.config_service import ConfigService
 
         max_borrow = ConfigService.get_int(self.db, "borrow_limit", MAX_BORROW)
-        active_count = self.borrow_repo.count_active(child_id)
+        active_records = self.db.query(BorrowRecord).filter(
+            BorrowRecord.child_id == child_id,
+            BorrowRecord.status.in_([BorrowStatus.BORROWING, BorrowStatus.OVERDUE]),
+            BorrowRecord.is_deleted == 0,
+        ).with_for_update().all()
+        active_count = len(active_records)
         if active_count >= max_borrow:
             raise ValidationError(f"借阅上限 {max_borrow} 本，请先归还")
 
@@ -328,7 +355,7 @@ class BorrowService:
         )
         created = self.borrow_repo.create(record)
 
-        # 标记预约为已取书
+        # 标记预约为已取书 + 链接借阅记录
         if reservation_id:
             from backend.domain.reservation.models import Reservation
             from backend.common.types import ReservationStatus
@@ -340,6 +367,7 @@ class BorrowService:
             )
             if reservation:
                 reservation.status = ReservationStatus.FULFILLED
+                reservation.borrow_record_id = created.id
 
         # 发布借书事件
         event_bus.publish(
@@ -351,12 +379,18 @@ class BorrowService:
             db=self.db,
         )
 
+        self.db.commit()
+
     def get_child_borrows(
-        self, child_id: int, status: int | None = None
-    ) -> list[BorrowRecordResponse]:
-        """获取孩子借阅列表"""
+        self, child_id: int, status: int | None = None,
+        page: int = 1, page_size: int = 20
+    ) -> tuple[list[BorrowRecordResponse], int]:
+        """获取孩子借阅列表 — 返回 (records, total)"""
         if status == BorrowStatus.BORROWING:
             records = self.borrow_repo.get_active_by_child(child_id)
+            total = len(records)
         else:
-            records = self.borrow_repo.list_all(limit=100, child_id=child_id)
-        return [BorrowRecordResponse.model_validate(r) for r in records]
+            total = self.borrow_repo.count(child_id=child_id)
+            offset = (page - 1) * page_size
+            records = self.borrow_repo.list_all(limit=page_size, offset=offset, child_id=child_id)
+        return [BorrowRecordResponse.model_validate(r) for r in records], total

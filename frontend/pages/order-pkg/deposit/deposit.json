@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "押金管理",
+  "usingComponents": {
+    "empty-state": "/components/empty-state/empty-state"
+  }
+}

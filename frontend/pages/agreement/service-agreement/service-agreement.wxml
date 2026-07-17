@@ -1,0 +1,11 @@
+<view class="page-bg">
+  <view class="top-bar">
+    <view class="back-btn" bindtap="goBack">
+      <text>←</text>
+    </view>
+    <text class="top-bar-title">服务协议</text>
+  </view>
+  <view class="content">
+    <text class="agreement-text">服务协议内容</text>
+  </view>
+</view>

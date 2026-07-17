@@ -9,13 +9,13 @@
 <!-- Filter bar -->
 <div class="filter-bar">
   <select id="moduleFilter"><option value="">全部模块</option><option value="config">系统配置</option><option value="book">图书</option><option value="user">用户</option><option value="deposit">押金</option><option value="activity">活动</option></select>
-  <input type="text" id="operatorSearch" placeholder="搜索操作人..." />
-  <input type="date" id="dateFrom" />
+  <input type="text" id="operatorSearch" class="search-input" placeholder="搜索操作人..." />
+  <input type="date" id="dateFrom" class="search-input" />
   <span class="date-sep">至</span>
-  <input type="date" id="dateTo" />
+  <input type="date" id="dateTo" class="search-input" />
   <button class="btn btn-primary" onclick="loadLogs(1)">查询</button>
-  <div style="flex:1"></div>
-  <button class="btn btn-secondary" style="background:var(--secondary-soft);border:1px solid var(--border)" onclick="exportLogs()">导出日志</button>
+  <div class="flex-1"></div>
+  <button class="btn btn-secondary" onclick="exportLogs()">导出日志</button>
 </div>
 
 <!-- Table -->
@@ -25,7 +25,7 @@
       <tr><th>操作人ID</th><th>时间</th><th>模块</th><th>操作类型</th><th>内容摘要</th><th>IP地址</th></tr>
     </thead>
     <tbody id="logTable">
-      <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted);">加载中...</td></tr>
+      <tr><td colspan="6" class="text-center p-40 text-muted">加载中...</td></tr>
     </tbody>
   </table>
 </div>
@@ -37,7 +37,7 @@
 {% block scripts %}
 <script>
   var currentPage = 1;
-  var pageSize = 20;
+  var pageSize = 15;
 
   document.addEventListener('DOMContentLoaded', function() {
     // Set default date range (last 30 days)
@@ -51,7 +51,7 @@
   async function loadLogs(page) {
     currentPage = page;
     var module = document.getElementById('moduleFilter').value;
-    var url = '/admin/operation-logs?page=' + page + '&page_size=' + pageSize;
+    var url = '/admin/api/operation-logs?page=' + page + '&page_size=' + pageSize;
     if (module) url += '&module=' + module;
 
     try {
@@ -59,17 +59,17 @@
       var items = data.items || [];
       var total = data.total || 0;
       renderTable(items);
-      renderPagination(total, page);
+      pageUi(total, page, pageSize);
     } catch (err) {
       document.getElementById('logTable').innerHTML =
-        '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted);">加载失败：' + (err.message || '未知错误') + '</td></tr>';
+        '<tr><td colspan="6" class="text-center p-40 text-muted">加载失败：' + (err.message || '未知错误') + '</td></tr>';
     }
   }
 
   function renderTable(items) {
     var tbody = document.getElementById('logTable');
     if (!items.length) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted);">暂无操作日志</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center p-40 text-muted">暂无操作日志</td></tr>';
       return;
     }
     var moduleBadges = {
@@ -84,7 +84,7 @@
       var badge = moduleBadges[mod] || 'badge-muted';
       return '<tr>' +
         '<td><strong>' + escapeHtml(String(log.admin_id || '--')) + '</strong></td>' +
-        '<td style="font-size:12px;color:var(--muted)">' + formatDateTime(log.create_time) + '</td>' +
+        '<td class="text-sm text-muted">' + formatDateTime(log.create_time) + '</td>' +
         '<td><span class="badge ' + badge + '">' + escapeHtml(moduleLabels[mod] || mod || '-') + '</span></td>' +
         '<td>' + escapeHtml(log.operation || '-') + '</td>' +
         '<td>' + escapeHtml(log.content || '-') + '</td>' +
@@ -104,11 +104,12 @@
     return 'config';
   }
 
-  function renderPagination(total, page) {
+  function pageUi(total, page, pageSize) {
     var el = document.getElementById('pagination');
     var totalPages = Math.ceil(total / pageSize);
     if (totalPages <= 1) { el.innerHTML = ''; return; }
-    var html = '<div class="pagination-info">共 ' + total + ' 条，第 ' + page + '/' + totalPages + ' 页</div>';
+    var html = '<div class="flex-center gap-8"><span class="text-muted">共 ' + total + ' 条</span><span class="text-xs text-muted">每页</span><select class="page-size-select" onchange="changePageSize(this.value)"><option value="15"'+(pageSize===15?' selected':'')+'>15</option><option value="30"'+(pageSize===30?' selected':'')+'>30</option><option value="50"'+(pageSize===50?' selected':'')+'>50</option><option value="100"'+(pageSize===100?' selected':'')+'>100</option></select><span class="text-xs text-muted">条</span></div>';
+    html += '<div class="pagination-info">第 ' + page + '/' + totalPages + ' 页</div>';
     html += '<div class="pagination-pages">';
     if (page > 1) html += '<a href="javascript:void(0)" onclick="loadLogs(' + (page-1) + ')">&lt;</a>';
     var start = Math.max(1, page - 2);
@@ -119,6 +120,11 @@
     if (page < totalPages) html += '<a href="javascript:void(0)" onclick="loadLogs(' + (page+1) + ')">&gt;</a>';
     html += '</div>';
     el.innerHTML = html;
+  }
+
+  function changePageSize(newSize) {
+    pageSize = parseInt(newSize);
+    loadLogs(1);
   }
 
   function exportLogs() {

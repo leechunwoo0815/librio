@@ -12,7 +12,7 @@ from backend.common.base_schema import BaseSchema
 from backend.database import get_db
 from backend.domain.admin.models import Admin
 from backend.domain.admin.services.account_service import AdminAccountService
-from backend.middleware.admin_auth import create_admin_token
+from backend.middleware.admin_auth import create_admin_token, get_current_admin
 from backend.middleware.rate_limit import rate_limit
 
 logger = logging.getLogger(__name__)
@@ -35,6 +35,9 @@ class AdminLoginResponse(BaseSchema):
     admin_id: int
     name: str
     role: int
+    role_code: str | None = None
+    permissions: list[str] = []
+    data_scope: str = "none"
 
 
 @router.post(
@@ -69,11 +72,13 @@ def admin_login(
             _login_failures[key] = (count + 1, first_time)
         else:
             _login_failures[key] = (1, time.time())
+        logger.warning("Login failed: username=%s, ip=%s", data.username, client_ip)
         from backend.common.exceptions import UnauthorizedError
 
         raise UnauthorizedError("用户名或密码错误")
 
     if admin.status != Admin.STATUS_ACTIVE:
+        logger.warning("Login blocked: username=%s, ip=%s, status=%s", data.username, client_ip, admin.status)
         from backend.common.exceptions import ForbiddenError
 
         raise ForbiddenError("账号已禁用")
@@ -84,12 +89,31 @@ def admin_login(
     token = create_admin_token(admin.id, admin.role)
     logger.info(f"Admin login: {admin.username} (id={admin.id})")
 
+    permissions = list(admin_service.get_permission_codes(admin))
+
     return AdminLoginResponse(
         token=token,
         admin_id=admin.id,
         name=admin.name or admin.username,
         role=admin.role,
+        role_code=admin_service.get_role_code(admin),
+        permissions=permissions,
+        data_scope=admin_service.get_data_scope(admin),
     )
+
+
+@router.get("/api/me/permissions")
+def get_my_permissions(
+    admin: Admin = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    """获取当前管理员的权限列表"""
+    return {
+        "permissions": list(AdminAccountService(db).get_permission_codes(admin)),
+        "role_code": AdminAccountService(db).get_role_code(admin),
+        "name": admin.name or admin.username,
+        "data_scope": AdminAccountService(db).get_data_scope(admin),
+    }
 
 
 @router.post("/logout")

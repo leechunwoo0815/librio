@@ -48,28 +48,72 @@ class AdminBookService:
         }
 
     def list_bookcopies(self) -> list[dict]:
-        """获取所有副本列表"""
-        from backend.domain.book.models import BookCopy
+        """获取所有副本列表（含图书信息、当前借阅人）"""
+        from backend.domain.book.models import Book, BookCopy
+        from backend.domain.borrow.models import BorrowRecord
+        from backend.domain.child.models import Child
 
         copies = (
             self.db.query(BookCopy).filter(BookCopy.is_deleted == 0).limit(500).all()
         )
-        return [
-            {
-                "id": c.id,
-                "barcode": c.barcode,
-                "book_id": c.book_id,
-                "status": c.status,
-                "location": c.location,
-                "create_time": c.create_time.isoformat() if c.create_time else None,
-            }
-            for c in copies
-        ]
+        if not copies:
+            return []
+
+        book_ids = list({c.book_id for c in copies if c.book_id})
+        books = {
+            b.id: b
+            for b in self.db.query(Book).filter(Book.id.in_(book_ids), Book.is_deleted == 0).all()
+        }
+
+        # 批量查询未归还的借阅记录
+        copy_ids = [c.id for c in copies]
+        active_borrows = {
+            br.book_copy_id: br
+            for br in self.db.query(BorrowRecord).filter(
+                BorrowRecord.book_copy_id.in_(copy_ids),
+                BorrowRecord.status == 0,
+                BorrowRecord.is_deleted == 0,
+            ).all()
+        }
+        child_ids = list({br.child_id for br in active_borrows.values() if br.child_id})
+        children = {
+            c.id: c.name
+            for c in self.db.query(Child).filter(Child.id.in_(child_ids), Child.is_deleted == 0).all()
+        }
+
+        result = []
+        for c in copies:
+            book = books.get(c.book_id)
+            borrow = active_borrows.get(c.id)
+            result.append(
+                {
+                    "id": c.id,
+                    "barcode": c.barcode,
+                    "book_id": c.book_id,
+                    "book_title": book.title if book else None,
+                    "isbn": book.isbn if book else None,
+                    "ar_value": float(book.ar_value) if book and book.ar_value is not None else None,
+                    "status": c.status,
+                    "location": c.location,
+                    "condition_note": c.condition_note,
+                    "borrow_record_id": borrow.id if borrow else None,
+                    "borrower_name": children.get(borrow.child_id) if borrow else None,
+                    "create_time": c.create_time.isoformat() if c.create_time else None,
+                }
+            )
+        return result
 
     def bulk_import_books(self, books: list[BulkImportBookItem]) -> dict:
         """批量导入图书（PC-008）"""
         from backend.domain.book.models import Book
 
+        isbns = [item.isbn.strip() for item in books if item.isbn.strip()]
+        existing_isbns = {
+            b.isbn
+            for b in self.db.query(Book.isbn)
+            .filter(Book.isbn.in_(isbns), Book.is_deleted == 0)
+            .all()
+        }
         results = []
         for item in books:
             try:
@@ -79,12 +123,7 @@ class AdminBookService:
                         {"isbn": isbn, "status": "error", "reason": "ISBN 为空"}
                     )
                     continue
-                existing = (
-                    self.db.query(Book)
-                    .filter(Book.isbn == isbn, Book.is_deleted == 0)
-                    .first()
-                )
-                if existing:
+                if isbn in existing_isbns:
                     results.append(
                         {"isbn": isbn, "status": "skip", "reason": "ISBN 已存在"}
                     )
@@ -100,6 +139,7 @@ class AdminBookService:
                 )
                 self.db.add(book)
                 self.db.flush()
+                existing_isbns.add(isbn)
                 results.append({"isbn": isbn, "status": "ok", "id": book.id})
             except Exception as e:
                 results.append({"isbn": item.isbn, "status": "error", "reason": str(e)})
@@ -111,15 +151,18 @@ class AdminBookService:
         """批量导入题目（PC-016）"""
         from backend.domain.book.models import Book
 
+        isbns = list({item.isbn.strip() for item in questions if item.isbn.strip()})
+        book_map = {
+            b.isbn: b
+            for b in self.db.query(Book)
+            .filter(Book.isbn.in_(isbns), Book.is_deleted == 0)
+            .all()
+        }
         results = []
         for item in questions:
             try:
                 book_isbn = item.isbn.strip()
-                book = (
-                    self.db.query(Book)
-                    .filter(Book.isbn == book_isbn, Book.is_deleted == 0)
-                    .first()
-                )
+                book = book_map.get(book_isbn)
                 if not book:
                     results.append(
                         {"isbn": book_isbn, "status": "error", "reason": "ISBN 不存在"}
@@ -160,17 +203,23 @@ class AdminBookService:
             .all()
         )
 
-        results = []
-        for book in books:
-            questions = (
+        book_ids = [b.id for b in books]
+        question_groups: dict[int, list] = {}
+        if book_ids:
+            for q in (
                 self.db.query(QuestionBank)
                 .filter(
-                    QuestionBank.book_id == book.id,
+                    QuestionBank.book_id.in_(book_ids),
                     QuestionBank.is_deleted == 0,
                 )
                 .order_by(QuestionBank.difficulty)
                 .all()
-            )
+            ):
+                question_groups.setdefault(q.book_id, []).append(q)
+
+        results = []
+        for book in books:
+            questions = question_groups.get(book.id, [])
             for q in questions:
                 results.append(
                     {
@@ -217,13 +266,17 @@ class AdminBookService:
         if not book:
             raise NotFoundError(f"ISBN {isbn} 不存在")
 
+        barcodes = [f"{isbn}-{i + 1:04d}" for i in range(count)]
+        existing_barcodes = {
+            r[0]
+            for r in self.db.query(BookCopy.barcode)
+            .filter(BookCopy.barcode.in_(barcodes))
+            .all()
+        }
         results = []
         for i in range(count):
-            barcode = f"{isbn}-{i + 1:04d}"
-            existing = (
-                self.db.query(BookCopy).filter(BookCopy.barcode == barcode).first()
-            )
-            if existing:
+            barcode = barcodes[i]
+            if barcode in existing_barcodes:
                 results.append(
                     {"barcode": barcode, "status": "skip", "reason": "条码已存在"}
                 )

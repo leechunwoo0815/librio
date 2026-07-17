@@ -16,16 +16,11 @@ Page({
     showRemoveDialog: false,
     removeTarget: null,
     removeBookId: null,
+    toastVisible: false,
+    toastMsg: '',
   },
 
   onShow() {
-    const app = getApp();
-    // 测试模式或mock token都直接加载示例数据
-    if (app.globalData.isTestMode || app.globalData.token === 'test-token-mock') {
-      this.setData({ child: app.globalData.currentChild });
-      this._loadDemoData();
-      return;
-    }
     if (!auth.requireAuth()) return;
     const child = auth.getCurrentChild();
     if (!child) return;
@@ -36,7 +31,8 @@ Page({
   onPullDownRefresh() {
     this.loadTabData(this.data.activeTab).then(() => {
       wx.stopPullDownRefresh();
-    }).catch(() => {
+    }).catch((err) => {
+      console.error('[shelf loadTabData failed]', err);
       wx.stopPullDownRefresh();
     });
   },
@@ -95,7 +91,8 @@ Page({
     });
   },
 
-  async removeFromShelf(bookId) {
+  async removeFromShelf(e) {
+    const bookId = typeof e === 'object' ? e.currentTarget.dataset.bookid : e;
     const childId = this.data.child.id;
     try {
       await api.removeFromShelf(bookId, childId);
@@ -171,23 +168,12 @@ Page({
     this.loadTabData(this.data.activeTab);
   },
 
-  _loadDemoData() {
-    this.setData({
-      loading: false,
-      books: [
-        { id: 1, title: "Charlotte's Web", author: 'E.B. White', ar_value: 4.4, word_count: 31836, _progress: 65 },
-        { id: 7, title: 'Diary of a Wimpy Kid', author: 'Jeff Kinney', ar_value: 5.2, word_count: 19784, _progress: 30 },
-        { id: 9, title: 'Matilda', author: 'Roald Dahl', ar_value: 5.0, word_count: 30833, _progress: 10 },
-      ],
-      favorites: [
-        { id: 8, title: "Harry Potter and the Sorcerer's Stone", author: 'J.K. Rowling', ar_value: 5.5 },
-        { id: 10, title: 'The BFG', author: 'Roald Dahl', ar_value: 4.8 },
-      ],
-      finished: [
-        { id: 2, title: 'The Cat in the Hat', author: 'Dr. Seuss', word_count: 1624, finish_date: '2026-05-20' },
-        { id: 3, title: 'Green Eggs and Ham', author: 'Dr. Seuss', word_count: 820, finish_date: '2026-05-15' },
-        { id: 5, title: 'Where the Wild Things Are', author: 'Maurice Sendak', word_count: 1018, finish_date: '2026-05-10' },
-      ],
-    });
+  goBack() {
+    wx.navigateBack();
   },
+
+  goAddBook() {
+    wx.switchTab({ url: '/pages/books/books' });
+  },
+
 });

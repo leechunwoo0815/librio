@@ -18,12 +18,19 @@ const AGE_RANGES = [
   { label: '12-15岁', value: '12-15' },
 ]
 
+const CATEGORIES = [
+  { label: '故事', value: 'story' },
+  { label: '科普', value: 'science' },
+  { label: '有声书', value: 'audio' },
+]
+
 Page({
   data: {
     books: [],
     keyword: '',
     arLevelIndex: 0,
     ageRangeIndex: 0,
+    categoryIndex: -1,
     arLevels: AR_LEVELS,
     ageRanges: AGE_RANGES,
     hasActiveFilter: false,
@@ -32,15 +39,12 @@ Page({
     hasMore: true,
     loading: false,
     loadError: false,
+    showNavBar: true,
+    categories: CATEGORIES,
   },
 
   onLoad() {
-    const app = getApp()
-    if (app.globalData.isTestMode || app.globalData.token === 'test-token-mock') {
-      this._loadDemoBooks()
-    } else {
-      this.search()
-    }
+    this.search()
   },
 
   onShow() {
@@ -50,24 +54,27 @@ Page({
   onPullDownRefresh() {
     this.search().then(() => {
       wx.stopPullDownRefresh()
-    }).catch(() => {
+    }).catch((err) => {
+      console.error('[books search failed]', err)
       wx.stopPullDownRefresh()
     })
   },
 
   onReachBottom() {
-    if (this.data.hasMore && !this.data.loading) {
+    if (this.data.loading) return
+    if (this.data.hasMore) {
       this.setData({ page: this.data.page + 1 })
       this.search(false)
     }
   },
 
   buildParams() {
-    const { keyword, arLevelIndex, ageRangeIndex, arLevels, ageRanges, page, pageSize } = this.data
+    const { keyword, arLevelIndex, ageRangeIndex, categoryIndex, arLevels, ageRanges, categories, page, pageSize } = this.data
     const params = { page, page_size: pageSize }
     if (keyword) params.keyword = keyword
     if (arLevelIndex > 0) params.ar_level = arLevels[arLevelIndex].value
     if (ageRangeIndex > 0) params.age_range = ageRanges[ageRangeIndex].value
+    if (categoryIndex >= 0) params.category = categories[categoryIndex].value
     return params
   },
 
@@ -147,7 +154,19 @@ Page({
     this.setData({
       ageRangeIndex: index,
       arLevelIndex: 0,
+      categoryIndex: -1,
       hasActiveFilter: index > 0,
+    })
+    this.search()
+  },
+
+  onTapCategory(e) {
+    const index = Number(e.currentTarget.dataset.index)
+    this.setData({
+      categoryIndex: index,
+      arLevelIndex: 0,
+      ageRangeIndex: 0,
+      hasActiveFilter: index >= 0,
     })
     this.search()
   },
@@ -156,6 +175,7 @@ Page({
     this.setData({
       arLevelIndex: 0,
       ageRangeIndex: 0,
+      categoryIndex: -1,
       hasActiveFilter: false,
     })
     this.search()
@@ -193,25 +213,30 @@ Page({
     }
   },
 
+  goBack() {
+    wx.navigateBack()
+  },
+
+  async onReserve(e) {
+    const bookId = e.currentTarget.dataset.id
+    const child = auth.getCurrentChild()
+
+    if (!child) {
+      wx.showToast({ title: '请先选择孩子', icon: 'none' })
+      return
+    }
+
+    try {
+      await api.createReservation(child.id, bookId)
+      wx.showToast({ title: '预约成功', icon: 'success' })
+    } catch (e) {
+      wx.showToast({ title: e.message || '预约失败', icon: 'none' })
+    }
+  },
+
   onRetry() {
     this.setData({ loadError: false })
     this.search()
-  },
-
-  _loadDemoBooks() {
-    const demoBooks = [
-      { id: 1, title: "Charlotte's Web", author: 'E.B. White', ar_value: 4.4, word_count: 31836, age_min: 7, age_max: 11 },
-      { id: 2, title: 'The Cat in the Hat', author: 'Dr. Seuss', ar_value: 2.1, word_count: 1624, age_min: 4, age_max: 8 },
-      { id: 3, title: 'Green Eggs and Ham', author: 'Dr. Seuss', ar_value: 1.5, word_count: 820, age_min: 3, age_max: 7 },
-      { id: 4, title: 'Goodnight Moon', author: 'Margaret Wise Brown', ar_value: 1.8, word_count: 131, age_min: 2, age_max: 5 },
-      { id: 5, title: 'Where the Wild Things Are', author: 'Maurice Sendak', ar_value: 3.2, word_count: 1018, age_min: 4, age_max: 8 },
-      { id: 6, title: 'The Very Hungry Caterpillar', author: 'Eric Carle', ar_value: 2.9, word_count: 224, age_min: 2, age_max: 6 },
-      { id: 7, title: 'Diary of a Wimpy Kid', author: 'Jeff Kinney', ar_value: 5.2, word_count: 19784, age_min: 8, age_max: 12 },
-      { id: 8, title: 'Harry Potter and the Sorcerer\'s Stone', author: 'J.K. Rowling', ar_value: 5.5, word_count: 77508, age_min: 9, age_max: 15 },
-      { id: 9, title: 'Matilda', author: 'Roald Dahl', ar_value: 5.0, word_count: 30833, age_min: 8, age_max: 12 },
-      { id: 10, title: 'The BFG', author: 'Roald Dahl', ar_value: 4.8, word_count: 25837, age_min: 8, age_max: 12 },
-    ]
-    this.setData({ books: demoBooks, loading: false, hasMore: false })
   },
 
   onUnload() {

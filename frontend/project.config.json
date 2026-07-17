@@ -1,7 +1,7 @@
 {
   "compileType": "miniprogram",
-  "projectname": "megawords",
-  "appid": "",
+  "projectname": "dmkwords",
+  "appid": "wx0000000000000000",
   "libVersion": "3.6.2",
   "packOptions": {
     "ignore": [
@@ -10,7 +10,7 @@
     ]
   },
   "setting": {
-    "urlCheck": false,
+    "urlCheck": true,
     "es6": true,
     "enhance": true,
     "postcss": true,
@@ -22,6 +22,7 @@
     "checkInvalidKey": true,
     "checkSiteMap": true,
     "compileHotReLoad": true,
+    "__usePrivacyCheck__": true,
     "babelSetting": {
       "ignore": [],
       "disablePlugins": [],

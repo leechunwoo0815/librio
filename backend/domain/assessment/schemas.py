@@ -2,7 +2,7 @@
 """评估域 Pydantic 模型"""
 
 from datetime import datetime
-from backend.common.base_schema import BaseSchema
+from backend.common.base_schema import BaseSchema, PaginatedResponse
 
 
 class AssessmentResponse(BaseSchema):
@@ -52,8 +52,6 @@ class AssessmentUpdateRequest(BaseSchema):
     recommendation: str | None = None
 
 
-class AssessmentListResponse(BaseSchema):
+class AssessmentListResponse(PaginatedResponse[AssessmentResponse]):
     """评估列表响应"""
-    items: list[AssessmentResponse]
-    stats: dict
-    total: int
+    stats: dict = {}

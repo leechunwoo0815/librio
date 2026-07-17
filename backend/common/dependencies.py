@@ -18,11 +18,14 @@
   - 使用函数内延迟导入避免循环依赖
 """
 
+import logging
+
 from fastapi import Depends
 from sqlalchemy.orm import Session
 
 from backend.database import get_db
 
+logger = logging.getLogger(__name__)
 
 # ============================================================
 # 核心域 Service 工厂
@@ -237,7 +240,70 @@ def get_admin_dashboard_service(db: Session = Depends(get_db)):
     return AdminDashboardService(db)
 
 
+# ============================================================
+# 外部网关工厂（依赖倒置：业务层依赖抽象接口）
+# ============================================================
+
+
+def get_payment_gateway():
+    """支付网关工厂 — 根据 MOCK_PAYMENT 配置切换 Mock/真实实现"""
+    from backend.config import get_settings
+
+    settings = get_settings()
+    if settings.MOCK_PAYMENT:
+        from backend.common.gateways.payment.mock import MockPaymentGateway
+        return MockPaymentGateway()
+    else:
+        from backend.integrations.wechat.pay_v3 import WeChatPayV3
+        return WeChatPayV3()
+
+
+def get_sms_gateway():
+    """短信网关工厂 — 根据 MOCK_SMS 和 SMS_PROVIDER 切换"""
+    from backend.config import get_settings
+
+    settings = get_settings()
+    if settings.MOCK_SMS:
+        logger.warning(
+            "MOCK_SMS=True: 使用 Mock 短信网关，不会真实发送短信。"
+            "如需生产短信，请设置 MOCK_SMS=false 并配置 SMS_PROVIDER=tencent/aliyun"
+        )
+        from backend.common.gateways.sms.mock import MockSmsGateway
+        return MockSmsGateway()
+
+    provider = settings.SMS_PROVIDER
+    if not provider or provider == "mock":
+        raise ValueError(
+            f"生产环境 SMS_PROVIDER 不能为 '{provider}'。请设置为 'tencent' 或 'aliyun'，"
+            "或启用 MOCK_SMS=true（仅限本地开发）"
+        )
+    if provider == "tencent":
+        from backend.integrations.sms.tencent import TencentSmsGateway
+        return TencentSmsGateway(
+            app_id=settings.SMS_APP_ID,
+            app_key=settings.SMS_APP_KEY,
+            sign_name=settings.SMS_SIGN_NAME,
+            template_code=settings.SMS_TEMPLATE_CODE,
+        )
+    elif provider == "aliyun":
+        from backend.integrations.sms.aliyun import AliyunSmsGateway
+        return AliyunSmsGateway(
+            app_id=settings.SMS_APP_ID,
+            app_key=settings.SMS_APP_KEY,
+            sign_name=settings.SMS_SIGN_NAME,
+            template_code=settings.SMS_TEMPLATE_CODE,
+        )
+    raise NotImplementedError(f"未支持的短信服务商: {provider}")
+
+
+
 def get_message_service(db: Session = Depends(get_db)):
     from backend.domain.message.service import MessageService
 
     return MessageService(db)
+
+
+def get_wechat_service():
+    from backend.domain.wechat.service import WeChatService
+
+    return WeChatService()

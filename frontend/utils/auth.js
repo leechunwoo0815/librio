@@ -15,7 +15,6 @@ function wxLogin() {
             const app = getApp()
             app.globalData.token = data.token
             app.globalData.userInfo = data.user
-            wx.setStorageSync('token', data.token)
             resolve(data)
           })
           .catch(reject)
@@ -37,22 +36,31 @@ function checkSession() {
 async function ensureLogin() {
   const app = getApp()
   if (app.globalData.token) {
-    const valid = await checkSession()
-    if (valid) return true
+    try {
+      const valid = await checkSession()
+      if (valid) return true
+    } catch (e) {
+      console.warn('checkSession failed:', e)
+    }
   }
-  await wxLogin()
-  return true
+  try {
+    await wxLogin()
+    return true
+  } catch (e) {
+    console.error('ensureLogin failed:', e)
+    wx.showToast({ title: '登录失败，请稍后重试', icon: 'none' })
+    return false
+  }
 }
 
 function selectChild(children) {
   if (!children || children.length === 0) return null
   const app = getApp()
   // 优先用上次选中的孩子
-  const lastId = wx.getStorageSync('currentChildId')
+  const lastId = app.globalData.currentChild ? app.globalData.currentChild.id : null
   const found = children.find(c => c.id === lastId)
   const child = found || children[0]
   app.globalData.currentChild = child
-  wx.setStorageSync('currentChildId', child.id)
   return child
 }
 
@@ -63,10 +71,8 @@ function getCurrentChild() {
 
 function requireAuth(redirectUrl) {
   const app = getApp()
-  // 测试模式直接放行
-  if (app.globalData.isTestMode) return true
   if (!app.globalData.token) {
-    wx.redirectTo({ url: `/pages/login/login?redirect=${encodeURIComponent(redirectUrl || '/pages/index/index')}` })
+    wx.reLaunch({ url: `/pages/login/login?redirect=${encodeURIComponent(redirectUrl || '/pages/index/index')}` })
     return false
   }
   return true

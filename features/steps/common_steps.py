@@ -61,19 +61,47 @@ def step_admin_fill_reason(context):
     context.admin_reason = "需要重新阅读"
 
 
+def _ensure_test_admin(context, perm_codes=None):
+    """创建带 RBAC 权限的测试管理员"""
+    from backend.domain.admin.models import Admin
+    from backend.domain.admin.rbac_models import Role, RolePermission
+
+    role = Role(code="test_role", name="测试角色", is_system=False)
+    context.db.add(role)
+    context.db.flush()
+
+    if perm_codes:
+        for code in perm_codes:
+            context.db.add(RolePermission(role_id=role.id, permission_code=code))
+    context.db.flush()
+
+    admin = Admin(username="test_admin", password_hash="x", name="测试管理员", role=0, status=1, admin_role_id=role.id)
+    context.db.add(admin)
+    context.db.commit()
+    return admin
+
+
 @when(u'管理员审核并选择"通过"')
 @when('管理员审核通过')
 def step_admin_approve(context):
     context.admin_decision = "approved"
-    # 调用退款审核 API（需要 admin token）
+    from backend.middleware.admin_auth import create_admin_token
+
+    # 权益转让审核
+    if hasattr(context, 'application_id') and context.application_id:
+        admin = _ensure_test_admin(context, ["benefit_transfer.review"])
+        admin_token = create_admin_token(admin_id=admin.id, role=0)
+        admin_headers = {"Authorization": f"Bearer {admin_token}"}
+        context.response = context.client.post(
+            f"/admin/api/benefit-transfers/{context.application_id}/approve",
+            json={"review_remark": "审核通过"},
+            headers=admin_headers,
+        )
+        return
+
+    # 退款审核
     if hasattr(context, 'refund_id') and context.refund_id:
-        # 创建 admin 记录
-        from backend.domain.admin.models import Admin
-        admin = Admin(username="test_admin", password_hash="x", name="测试管理员", role=0, status=1)
-        context.db.add(admin)
-        context.db.commit()
-        # 创建 admin token
-        from backend.middleware.admin_auth import create_admin_token
+        admin = _ensure_test_admin(context, ["refund.audit"])
         admin_token = create_admin_token(admin_id=admin.id, role=0)
         admin_headers = {"Authorization": f"Bearer {admin_token}"}
         context.response = context.client.put(
@@ -86,15 +114,23 @@ def step_admin_approve(context):
 @when(u'管理员审核并选择"拒绝"')
 def step_admin_reject(context):
     context.admin_decision = "rejected"
-    # 调用退款审核 API（需要 admin token）
+    from backend.middleware.admin_auth import create_admin_token
+
+    # 权益转让审核
+    if hasattr(context, 'application_id') and context.application_id:
+        admin = _ensure_test_admin(context, ["benefit_transfer.review"])
+        admin_token = create_admin_token(admin_id=admin.id, role=0)
+        admin_headers = {"Authorization": f"Bearer {admin_token}"}
+        context.response = context.client.post(
+            f"/admin/api/benefit-transfers/{context.application_id}/reject",
+            json={"review_remark": "审核拒绝"},
+            headers=admin_headers,
+        )
+        return
+
+    # 退款审核
     if hasattr(context, 'refund_id') and context.refund_id:
-        # 创建 admin 记录
-        from backend.domain.admin.models import Admin
-        admin = Admin(username="test_admin", password_hash="x", name="测试管理员", role=0, status=1)
-        context.db.add(admin)
-        context.db.commit()
-        # 创建 admin token
-        from backend.middleware.admin_auth import create_admin_token
+        admin = _ensure_test_admin(context, ["refund.audit"])
         admin_token = create_admin_token(admin_id=admin.id, role=0)
         admin_headers = {"Authorization": f"Bearer {admin_token}"}
         context.response = context.client.put(
@@ -242,4 +278,5 @@ def step_refund_blocked(context):
     if hasattr(context, 'response') and context.response is not None:
         assert context.response.status_code in (400, 422)
     # 如果没有 response，说明提交时就抛了异常（BDD 场景中用 @then 捕获）
-    assert True
+    # BDD上下文：异常在response写入前抛出属于正常拦截行为
+    assert True  # noqa: B011 — 无response时视为异常已正确抛出

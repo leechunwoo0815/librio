@@ -29,7 +29,7 @@
   <!-- Level Info Card -->
   <view class="level-card" wx:if="{{summary}}">
     <view class="level-badge">
-      <text class="level-badge-emoji">📗</text>
+      <text class="level-badge-emoji"><text class="icon icon-book-green">书</text></text>
     </view>
     <view class="level-info">
       <text class="level-label">当前级别</text>
@@ -55,17 +55,17 @@
   <!-- Achievement Row -->
   <view class="achievement-row">
     <view class="ach-item">
-      <text class="ach-icon">🏅</text>
+      <text class="ach-icon"><text class="icon icon-medal">🏅</text></text>
       <text class="ach-val">{{summary.badge_count || 0}}</text>
       <text class="ach-label">获得徽章</text>
     </view>
     <view class="ach-item">
-      <text class="ach-icon">🔥</text>
+      <text class="ach-icon"><text class="icon icon-fire">🔥</text></text>
       <text class="ach-val">{{summary.streak_days || 0}}</text>
       <text class="ach-label">连续打卡</text>
     </view>
     <view class="ach-item">
-      <text class="ach-icon">⭐</text>
+      <text class="ach-icon"><text class="icon icon-star">★</text></text>
       <text class="ach-val">{{summary.perfect_quizzes || 0}}</text>
       <text class="ach-label">满分测验</text>
     </view>
@@ -74,7 +74,7 @@
   <!-- Leaderboard Card -->
   <view class="leaderboard-card" bindtap="goLeaderboard">
     <view class="lb-header">
-      <text class="lb-header-icon">⭐</text>
+      <text class="lb-header-icon"><text class="icon icon-star">★</text></text>
       <text class="lb-title">阅读排行榜</text>
       <text class="lb-subtitle">按阅读词数排行</text>
     </view>
@@ -88,30 +88,30 @@
       <!-- 2nd Place -->
       <view class="lb-podium-item" wx:if="{{leaderboard.length >= 2}}">
         <view class="lb-avatar rank-2">
-          <text class="lb-avatar-emoji">{{leaderboard[1].avatar || '👩'}}</text>
+          <text class="lb-avatar-emoji">{{leaderboard[1].avatar || '<text class="icon icon-woman">👩</text>'}}</text>
         </view>
-        <text class="lb-name">{{leaderboard[1].child_name || 'Lily'}}</text>
+        <text class="lb-name">{{leaderboard[1].child_name || '未知用户'}}</text>
         <text class="lb-score">{{leaderboard[1].score || 0}} 词</text>
-        <text class="lb-medal">🥈</text>
+        <text class="lb-medal"><text class="icon icon-silver-medal">🥈</text></text>
       </view>
       <!-- 1st Place -->
       <view class="lb-podium-item" wx:if="{{leaderboard.length >= 1}}">
         <view class="lb-avatar rank-1">
-          <text class="lb-crown">👑</text>
-          <text class="lb-avatar-emoji">{{leaderboard[0].avatar || '🧑'}}</text>
+          <text class="lb-crown"><text class="icon icon-crown">👑</text></text>
+          <text class="lb-avatar-emoji">{{leaderboard[0].avatar || '<text class="icon icon-adult">🧑</text>'}}</text>
         </view>
-        <text class="lb-name">{{leaderboard[0].child_name || 'Tom'}}</text>
+        <text class="lb-name">{{leaderboard[0].child_name || '未知用户'}}</text>
         <text class="lb-score">{{leaderboard[0].score || 0}} 词</text>
-        <text class="lb-medal">🥇</text>
+        <text class="lb-medal"><text class="icon icon-gold-medal">🥇</text></text>
       </view>
       <!-- 3rd Place -->
       <view class="lb-podium-item" wx:if="{{leaderboard.length >= 3}}">
         <view class="lb-avatar rank-3">
-          <text class="lb-avatar-emoji">{{leaderboard[2].avatar || '👦'}}</text>
+          <text class="lb-avatar-emoji">{{leaderboard[2].avatar || '<text class="icon icon-boy">👦</text>'}}</text>
         </view>
-        <text class="lb-name">{{leaderboard[2].child_name || '小明'}}</text>
+        <text class="lb-name">{{leaderboard[2].child_name || '未知用户'}}</text>
         <text class="lb-score">{{leaderboard[2].score || 0}} 词</text>
-        <text class="lb-medal">🥉</text>
+        <text class="lb-medal"><text class="icon icon-bronze-medal">🥉</text></text>
       </view>
     </view>
     <!-- Rest of leaderboard -->
@@ -119,7 +119,7 @@
       <view class="lb-list-item {{item.isMe ? 'lb-me' : ''}}" wx:for="{{restLeaderboard}}" wx:key="rank">
         <text class="lb-rank">{{item.rank}}</text>
         <view class="lb-av">
-          <text class="lb-av-emoji">{{item.avatar || '🐶'}}</text>
+          <text class="lb-av-emoji">{{item.avatar || '<text class="icon icon-dog">🐶</text>'}}</text>
         </view>
         <text class="lb-user-name">{{item.isMe ? '我 (' + item.child_name + ')' : item.child_name}}</text>
         <text class="lb-user-score">{{item.score || 0}}</text>
@@ -155,17 +155,18 @@
     <text class="chart-title">阅读时长趋势（近7天）</text>
     <view class="bar-chart-wrap">
       <view class="bar-col" wx:for="{{trend}}" wx:key="date">
-        <view class="bar-fill" style="height: {{item.barHeight * 2}}rpx; background: {{item.isToday ? '#39c34b' : '#5560cf'}}"></view>
+        <text class="bar-value {{item.isToday ? 'show' : ''}}">{{item.reading_minutes || 0}}分</text>
+        <view class="bar-fill {{item.isToday ? 'today' : ''}}" style="height: {{item.barHeight * 2}}rpx;"></view>
         <text class="bar-label">{{item.label}}</text>
       </view>
     </view>
     <view class="legend">
       <view class="legend-item">
-        <view class="dot" style="background: #5560cf"></view>
+        <view class="dot" style="background: var(--accent)"></view>
         <text>已完成</text>
       </view>
       <view class="legend-item">
-        <view class="dot" style="background: #39c34b"></view>
+        <view class="dot" style="background: var(--success)"></view>
         <text>今日</text>
       </view>
     </view>
@@ -176,7 +177,8 @@
     <text class="chart-title">阅读词数趋势（近7天）</text>
     <view class="bar-chart-wrap">
       <view class="bar-col" wx:for="{{wordTrend}}" wx:key="date">
-        <view class="bar-fill word-bar" style="height: {{item.barHeight * 2}}rpx; background: {{item.isToday ? '#39c34b' : '#5560cf'}}"></view>
+        <text class="bar-value {{item.isToday ? 'show' : ''}}">{{item.words_read || 0}}词</text>
+        <view class="bar-fill word-bar {{item.isToday ? 'today' : ''}}" style="height: {{item.barHeight * 2}}rpx;"></view>
         <text class="bar-label">{{item.label}}</text>
       </view>
     </view>

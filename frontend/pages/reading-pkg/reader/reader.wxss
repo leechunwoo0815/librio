@@ -12,6 +12,7 @@
 /* 逾期锁定 — centered card with error color title + glow button */
 .overdue-mask {
   position: fixed;
+    box-sizing: border-box;
   top: 0; left: 0; right: 0; bottom: 0;
   background: rgba(0, 0, 0, 0.55);
   z-index: 999;
@@ -52,15 +53,17 @@
   color: var(--surface);
   font-size: 30rpx;
   font-weight: 600;
-  box-shadow: 0 8rpx 32rpx rgba(85, 96, 207, 0.3);
+  box-shadow: 0 8rpx 32rpx rgba(var(--accent-rgb), 0.3);
 }
 
 /* 图书信息 — capsule AR/value tags */
 .book-header {
   display: flex;
-  padding: 56rpx 32rpx 48rpx;
-  gap: 32rpx;
+  flex-direction: column;
   align-items: center;
+  text-align: center;
+  padding: 56rpx 32rpx 48rpx;
+  gap: 24rpx;
   background: var(--surface);
   border-bottom: 2rpx solid var(--border);
   margin-bottom: 0;
@@ -73,7 +76,7 @@
   flex-shrink: 0;
   position: relative;
   overflow: hidden;
-  background: linear-gradient(145deg, rgba(85,96,207,0.2), rgba(85,96,207,0.5), rgba(85,96,207,0.7));
+  background: linear-gradient(145deg, rgba(var(--accent-rgb), 0.2), rgba(var(--accent-rgb), 0.5), rgba(var(--accent-rgb), 0.7));
   box-shadow: 0 8rpx 32rpx rgba(122, 107, 192, 0.25);
 }
 .book-cover::before {
@@ -85,6 +88,7 @@
 .book-meta {
   display: flex;
   flex-direction: column;
+  align-items: center;
   justify-content: center;
   flex: 1;
   min-width: 0;
@@ -104,28 +108,6 @@
   color: var(--muted);
   margin-bottom: 20rpx;
 }
-.book-info {
-  display: flex;
-  gap: 16rpx;
-  flex-wrap: wrap;
-}
-.book-info .btag-ar {
-  padding: 8rpx 20rpx;
-  border-radius: 999rpx;
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-size: 22rpx;
-  font-weight: 600;
-}
-.book-info .btag-words {
-  padding: 8rpx 20rpx;
-  border-radius: 999rpx;
-  background: var(--secondary-soft);
-  color: var(--success);
-  font-size: 22rpx;
-  font-weight: 600;
-}
-
 /* 音频播放器 */
 .audio-section {
   background: var(--surface);
@@ -186,14 +168,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 12rpx 48rpx rgba(85, 96, 207, 0.35);
+  box-shadow: 0 12rpx 48rpx rgba(var(--accent-rgb), 0.35);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 .audio-btn-main:active {
   transform: scale(0.93);
 }
 .audio-btn-main.playing {
-  box-shadow: 0 12rpx 64rpx rgba(85, 96, 207, 0.5);
+  box-shadow: 0 12rpx 64rpx rgba(var(--accent-rgb), 0.5);
 }
 .audio-icon { font-size: 52rpx; color: var(--surface); }
 .audio-btn-secondary {
@@ -369,6 +351,7 @@
 /* 底部工具栏 — active feedback */
 .toolbar {
   position: fixed;
+    box-sizing: border-box;
   bottom: 0;
   left: 0;
   right: 0;
@@ -418,6 +401,7 @@
   display: flex; align-items: center; justify-content: center;
   background: rgba(0,0,0,0.5);
   animation: fadeIn 0.3s ease;
+  box-sizing: border-box;
 }
 .checkin-card {
   background: var(--surface); border-radius: var(--radius-lg); padding: 60rpx 48rpx;
@@ -439,6 +423,7 @@
   display: flex; align-items: center; justify-content: center;
   background: rgba(0,0,0,0.5);
   animation: fadeIn 0.3s ease;
+  box-sizing: border-box;
 }
 .completion-card {
   background: var(--surface); border-radius: var(--radius-lg);
@@ -478,7 +463,7 @@
 .cc-btn:active { transform: scale(0.97); }
 .cc-btn-primary {
   background: var(--accent); color: var(--surface);
-  box-shadow: 0 8rpx 32rpx rgba(85, 96, 207, 0.3);
+  box-shadow: 0 8rpx 32rpx rgba(var(--accent-rgb), 0.3);
 }
 .cc-btn-secondary { background: var(--border); color: var(--muted); }
 
@@ -527,7 +512,7 @@
   width: 240rpx;
   height: 320rpx;
   border-radius: var(--radius);
-  background: linear-gradient(145deg, rgba(85,96,207,0.2), rgba(85,96,207,0.5), rgba(85,96,207,0.7));
+  background: linear-gradient(145deg, rgba(var(--accent-rgb), 0.2), rgba(var(--accent-rgb), 0.5), rgba(var(--accent-rgb), 0.7));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -571,7 +556,7 @@
   font-weight: 600;
 }
 .meta-tag.ar { background: var(--accent-soft); color: var(--accent); }
-.meta-tag.words { background: rgba(57, 195, 75, 0.1); color: var(--success); }
+.meta-tag.words { background: rgba(var(--success-rgb), 0.1); color: var(--success); }
 
 /* ===== AUDIO PLAYER SECTION (design prototype) ===== */
 .player-section {
@@ -608,23 +593,22 @@
   background: var(--accent);
   border-radius: 6rpx;
   width: 0%;
-  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
   transition: width 0.1s linear;
 }
 .progress-handle {
-  position: absolute;
-  right: -14rpx;
-  top: 50%;
-  transform: translateY(-50%);
+  margin-right: -14rpx;
   width: 32rpx;
   height: 32rpx;
   border-radius: 50%;
   background: var(--accent);
   border: 5rpx solid var(--surface);
-  box-shadow: 0 2rpx 12rpx rgba(85, 96, 207, 0.35);
+  box-shadow: 0 2rpx 12rpx rgba(var(--accent-rgb), 0.35);
   transition: transform 0.1s ease;
 }
-.progress-track:active .progress-handle { transform: translateY(-50%) scale(1.2); }
+.progress-track:active .progress-handle { transform: scale(1.2); }
 
 /* Playback controls */
 .playback-controls {
@@ -658,12 +642,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8rpx 40rpx rgba(85, 96, 207, 0.35);
+  box-shadow: 0 8rpx 40rpx rgba(var(--accent-rgb), 0.35);
   transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 .ctrl-play:active { transform: scale(0.92); }
 .ctrl-play.playing {
-  box-shadow: 0 8rpx 56rpx rgba(85, 96, 207, 0.5);
+  box-shadow: 0 8rpx 56rpx rgba(var(--accent-rgb), 0.5);
 }
 .ctrl-play svg { width: 52rpx; height: 52rpx; color: white; }
 
@@ -851,6 +835,7 @@
   display: none;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
 }
 .overdue-overlay.show { display: flex; }
 .overdue-card {
@@ -884,7 +869,7 @@
   color: white;
   font-size: 30rpx;
   font-weight: 600;
-  box-shadow: 0 8rpx 32rpx rgba(85, 96, 207, 0.3);
+  box-shadow: 0 8rpx 32rpx rgba(var(--accent-rgb), 0.3);
   transition: transform 0.12s;
 }
 .overdue-card .od-btn:active { transform: scale(0.96); }
@@ -898,6 +883,7 @@
   display: none;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
 }
 .completion-overlay.show { display: flex; }
 .completion-popup {
@@ -974,28 +960,47 @@
 .popup-btn.primary {
   background: var(--accent);
   color: white;
-  box-shadow: 0 8rpx 32rpx rgba(85, 96, 207, 0.3);
+  box-shadow: 0 8rpx 32rpx rgba(var(--accent-rgb), 0.3);
 }
 .popup-btn.secondary { background: var(--border); color: var(--muted); }
 
-/* ===== 原型缺失选择器补全 ===== */
+/* 文本面板 */
+.text-panel {
+  background: var(--surface);
+  padding: 24rpx 32rpx;
+  margin: 0;
+  border-bottom: 2rpx solid var(--border);
+}
+.text-panel-scroll {
+  max-height: 400rpx;
+  overflow-y: auto;
+}
+.page-label {
+  font-size: 24rpx;
+  color: var(--muted);
+  margin-bottom: 16rpx;
+  display: block;
+}
+.text-content {
+  font-size: 30rpx;
+  color: var(--fg);
+  line-height: 1.8;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.vocab-highlight {
+  background: #fff3cd;
+  color: var(--fg);
+  padding: 0 4rpx;
+  border-radius: 4rpx;
+  display: inline;
+}
+.text-content-empty {
+  padding: 32rpx 0;
+  text-align: center;
+}
+.empty-hint {
+  font-size: 26rpx;
+  color: var(--muted);
+}
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; }
-input { font: inherit; }
-.book-cover .cover-emoji { font-size: 52px; position: relative; z-index: 1;
-      filter: drop-shadow(0 2px 6px var(--muted)); }
-.book-meta-tags { display: flex; gap: 8px; align-items: center; }
-.progress-fill { height: 100%; background: var(--accent); border-radius: 3px;
-      width: 0%; position: relative;
-      transition: width 0.1s linear; }
-@keyframes slideUp { from 
-      to }
-.completion-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
-      background: linear-gradient(90deg, var(--accent), var(--success)); }
-.cc-stat .val { font-family: var(--font-display); font-size: 22px; font-weight: 700;
-      color: var(--accent); }
-.cc-stat .lbl { font-size: 10px; color: var(--muted); margin-top: 2px; }
-.cc-btn.primary { background: var(--accent); color: white;
-      box-shadow: 0 4px 16px rgba(85, 96, 207, 0.3); }
-.cc-btn.secondary { background: var(--border); color: var(--muted); }

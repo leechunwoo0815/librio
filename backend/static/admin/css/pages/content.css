@@ -52,9 +52,9 @@
 .audio-wave span { width: 3px; background: var(--accent); border-radius: 2px; display: inline-block; }
 
 /* modal */
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 50; display: none; align-items: center; justify-content: center; }
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 50; display: none; align-items: center; justify-content: center; box-sizing: border-box; }
 .modal-overlay.show { display: flex; }
-.modal { background: var(--surface); border-radius: var(--radius-lg); padding: 28px; width: 520px; max-height: 80vh; overflow-y: auto; box-shadow: 0 16px 48px rgba(0,0,0,0.12); }
+.modal { background: var(--surface); border-radius: var(--radius-lg); width: 520px; box-shadow: 0 16px 48px rgba(0,0,0,0.12); }
 .modal h3 { font-family: var(--font-display); font-size: 17px; font-weight: 600; margin-bottom: 16px; }
 .form-group { margin-bottom: 14px; }
 .form-group label { display: block; font-size: 12px; font-weight: 500; color: var(--muted); margin-bottom: 4px; }

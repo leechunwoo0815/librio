@@ -11,7 +11,7 @@ from backend.domain.child.models import Child
 from backend.domain.book.models import Book
 from backend.domain.advancement.models import Level, ChildLevel, ReadingSubmission, Quiz
 from backend.domain.report.models import ObservationReport
-from backend.domain.report.service import ReportService, OBSERVATION_DAYS
+from backend.domain.report.service import ReportService
 
 
 @pytest.fixture
@@ -27,7 +27,8 @@ def db():
 def _setup(db, observation_days=31):
     """创建测试数据"""
     user = User(openid="obs_user", phone="13800138003")
-    db.add(user); db.commit()
+    db.add(user)
+    db.commit()
 
     child = Child(
         user_id=user.id, name="观察期小明", age=6, grade="一年级",
@@ -35,13 +36,16 @@ def _setup(db, observation_days=31):
         create_time=datetime.now() - timedelta(days=observation_days),
         member_start_time=datetime.now() - timedelta(days=observation_days),
     )
-    db.add(child); db.commit()
+    db.add(child)
+    db.commit()
 
     level = Level(name="A", sort_order=1, required_books=10, max_borrow_count=20)
-    db.add(level); db.commit()
+    db.add(level)
+    db.commit()
 
     cl = ChildLevel(child_id=child.id, level_id=level.id, is_current=True)
-    db.add(cl); db.commit()
+    db.add(cl)
+    db.commit()
 
     return user, child, level
 
@@ -82,7 +86,8 @@ def test_report_contains_reading_stats(db):
     # 添加阅读提交记录
     book = Book(isbn="978OBS1", title="ObsBook", author="A", ar_value=2.0,
                 age_min=5, age_max=9, word_count=3000)
-    db.add(book); db.commit()
+    db.add(book)
+    db.commit()
 
     for i in range(5):
         sub = ReadingSubmission(
@@ -109,7 +114,8 @@ def test_report_contains_quiz_stats(db):
 
     book = Book(isbn="978OBS2", title="QuizBook", author="B", ar_value=2.0,
                 age_min=5, age_max=9, word_count=2000)
-    db.add(book); db.commit()
+    db.add(book)
+    db.commit()
 
     # 3次测验，2次通过
     for i, (score, status) in enumerate([(90, Quiz.STATUS_COMPLETED), (60, Quiz.STATUS_COMPLETED), (85, Quiz.STATUS_COMPLETED)]):

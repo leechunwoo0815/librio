@@ -256,10 +256,3 @@
   opacity: 0.5;
 }
 
-/* ===== 原型缺失选择器补全 ===== */
-
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-.nav-bar .back svg { width: 20px; height: 20px; }
-.play-btn svg { width: 22px; height: 22px; }
-.def-card h3 { font-family: var(--font-display); font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--muted); }
-.source-card h3 { font-family: var(--font-display); font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--muted); }

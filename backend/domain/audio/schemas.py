@@ -3,7 +3,7 @@
 
 from datetime import datetime
 from pydantic import Field
-from backend.common.base_schema import BaseSchema
+from backend.common.base_schema import BaseSchema, PaginatedResponse
 
 
 class AudioResponse(BaseSchema):
@@ -44,8 +44,6 @@ class AudioUpdateRequest(BaseSchema):
     status: str | None = None
 
 
-class AudioListResponse(BaseSchema):
+class AudioListResponse(PaginatedResponse[AudioResponse]):
     """音频列表响应"""
-    items: list[AudioResponse]
-    stats: dict
-    total: int
+    stats: dict = {}

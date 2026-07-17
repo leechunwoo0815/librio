@@ -1,0 +1,109 @@
+<view class="page">
+  <view class="top-bar">
+    <navigator class="back-btn" open-type="navigateBack" delta="1">
+      <text>←</text>
+    </navigator>
+    <text class="title">活动中心</text>
+    <view class="share-btn"></view>
+  </view>
+
+  <view class="tabs">
+    <view class="tab {{filterTab === 'upcoming' ? 'active' : ''}}" data-tab="upcoming" bindtap="onFilterChange">
+      <text>即将举办</text>
+    </view>
+    <view class="tab {{filterTab === 'past' ? 'active' : ''}}" data-tab="past" bindtap="onFilterChange">
+      <text>往期回顾</text>
+    </view>
+  </view>
+
+  <view class="loading-wrap" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+
+  <view class="activity-list" wx:if="{{!loading && filterTab === 'upcoming'}}">
+    <view class="activity-card" wx:for="{{filteredActivities}}" wx:key="id"
+      data-id="{{item.id}}" bindtap="onTapActivity">
+      <view class="activity-banner banner-{{index % 3}}">
+        <text class="activity-banner-text">{{item.bannerText || item.title}}</text>
+      </view>
+      <view class="activity-body">
+        <text class="activity-title">{{item.title}}</text>
+        <view class="activity-meta">
+          <view class="meta-item" wx:if="{{item.start_date}}">
+            <text class="meta-icon"><text class="icon icon-calendar">📅</text></text>
+            <text>{{item.start_date}} {{item.end_date}}</text>
+          </view>
+          <view class="meta-item" wx:if="{{item.location}}">
+            <text class="meta-icon"><text class="icon icon-location">📍</text></text>
+            <text>{{item.location}}</text>
+          </view>
+          <view class="meta-item">
+            <text class="meta-icon"><text class="icon icon-user">👤</text></text>
+            <text>已报名 {{item.enrollment_count || 0}}/{{item.capacity || '?'}}</text>
+          </view>
+        </view>
+        <view class="activity-footer">
+          <view class="activity-status {{item.statusClass}}">{{item.statusText}}</view>
+          <view class="enroll-btn {{item.status !== 'registering' ? 'disabled' : ''}}"
+                data-id="{{item.id}}" catchtap="onEnrollActivity" wx:if="{{!item.enrolled && !item.checked_in}}">
+            <text>{{item.status === 'registering' ? '立即报名' : item.statusText}}</text>
+          </view>
+          <view class="enroll-btn checked-in" wx:elif="{{item.checked_in}}">
+            <text><text class="icon icon-check"><text class="icon icon-checkmark">✓</text></text> 已签到</text>
+          </view>
+          <view class="enroll-btn pending" wx:elif="{{item.enrolled && item.activity_started}}">
+            <text><text class="icon icon-hourglass-flow">⏳</text> 待签到</text>
+          </view>
+          <view class="enroll-btn enrolled" wx:elif="{{item.enrolled}}">
+            <text><text class="icon icon-check"><text class="icon icon-checkmark">✓</text></text> 已报名</text>
+          </view>
+        </view>
+        <view class="status-actions" wx:if="{{item.enrolled && !item.checked_in}}">
+          <view class="cancel-btn" data-enrollmentid="{{item.enrollment_id}}" catchtap="onCancelEnroll">取消报名</view>
+        </view>
+        <view class="qr-placeholder" wx:if="{{item.checked_in}}">
+          <text class="qr-icon"><text class="icon icon-clipboard">📋</text></text>
+          <text class="qr-text">签到二维码</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="empty-state" wx:if="{{filteredActivities.length === 0}}">
+      <text class="empty-icon"><text class="icon icon-party">🎉</text></text>
+      <text class="empty-text">暂无即将举办的活动</text>
+    </view>
+  </view>
+
+  <view class="activity-list" wx:if="{{!loading && filterTab === 'past'}}">
+    <view class="activity-card" wx:for="{{filteredActivities}}" wx:key="id"
+      data-id="{{item.id}}" bindtap="onTapActivity">
+      <view class="activity-banner banner-2">
+        <text class="activity-banner-text">{{item.bannerText || item.title}}</text>
+      </view>
+      <view class="activity-body">
+        <text class="activity-title">{{item.title}}</text>
+        <view class="activity-meta">
+          <view class="meta-item" wx:if="{{item.start_date}}">
+            <text class="meta-icon"><text class="icon icon-calendar">📅</text></text>
+            <text>{{item.start_date}} {{item.end_date}}</text>
+          </view>
+          <view class="meta-item" wx:if="{{item.location}}">
+            <text class="meta-icon"><text class="icon icon-location">📍</text></text>
+            <text>{{item.location}}</text>
+          </view>
+        </view>
+        <view class="activity-footer">
+          <view class="activity-status status-past">已结束</view>
+          <view class="enroll-btn disabled">
+            <text>已结束</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="empty-state" wx:if="{{filteredActivities.length === 0}}">
+      <text class="empty-icon"><text class="icon icon-calendar">📅</text></text>
+      <text class="empty-text">暂无往期活动</text>
+    </view>
+  </view>
+</view>

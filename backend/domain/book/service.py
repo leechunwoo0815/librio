@@ -80,7 +80,54 @@ class BookService:
     def get_book_detail(self, book_id: int) -> BookResponse:
         """获取图书详情"""
         book = self.book_repo.get_by_id_or_raise(book_id)
-        return BookResponse.model_validate(book)
+        resp = BookResponse.model_validate(book)
+        resp.series_name = book.series_name
+        resp.description = book.summary
+
+        from sqlalchemy import func
+        from backend.domain.book.models import BookCopy
+        from backend.common.types import BookCopyStatus
+
+        total_copies = (
+            self.db.query(func.count(BookCopy.id))
+            .filter(BookCopy.book_id == book.id)
+            .scalar()
+        )
+        available_copies = (
+            self.db.query(func.count(BookCopy.id))
+            .filter(
+                BookCopy.book_id == book.id,
+                BookCopy.status == BookCopyStatus.AVAILABLE,
+            )
+            .scalar()
+        )
+        resp.total_copies = total_copies or 0
+        resp.available_copies = available_copies or 0
+
+        from backend.domain.audio.models import AudioFile
+        audio = (
+            self.db.query(AudioFile)
+            .filter(AudioFile.book_id == book.id)
+            .first()
+        )
+        if audio:
+            resp.audio_narrator = audio.reader
+            resp.audio_duration = audio.duration_seconds
+            if audio.file_url and audio.page_number is None:
+                resp.audio_url = audio.file_url
+
+        from backend.domain.advancement.models import QuestionBank
+        qcount = (
+            self.db.query(func.count(QuestionBank.id))
+            .filter(
+                QuestionBank.book_id == book.id,
+                QuestionBank.is_deleted == 0,
+            )
+            .scalar()
+        )
+        resp.quiz_count = qcount or 0
+        resp.question_count = qcount or 0
+        return resp
 
     def create_book(self, book_data: BookCreate) -> BookResponse:
         """创建图书 — 校验 ISBN 唯一性"""
@@ -117,8 +164,13 @@ class BookService:
     def update_book(self, book_id: int, data) -> dict:
         """更新图书"""
         from backend.common.exceptions import NotFoundError
-        book = self.book_repo.get_by_id(book_id)
-        if not book or book.is_deleted == 1:
+        book = (
+            self.db.query(Book)
+            .filter(Book.id == book_id, Book.is_deleted == 0)
+            .with_for_update()
+            .first()
+        )
+        if not book:
             raise NotFoundError("图书不存在")
         update_data = data.model_dump(exclude_unset=True)
         for key, value in update_data.items():
@@ -131,8 +183,13 @@ class BookService:
     def delete_book(self, book_id: int) -> dict:
         """软删除图书"""
         from backend.common.exceptions import NotFoundError
-        book = self.book_repo.get_by_id(book_id)
-        if not book or book.is_deleted == 1:
+        book = (
+            self.db.query(Book)
+            .filter(Book.id == book_id, Book.is_deleted == 0)
+            .with_for_update()
+            .first()
+        )
+        if not book:
             raise NotFoundError("图书不存在")
         self.book_repo.soft_delete(book_id)
         self.db.commit()
@@ -154,18 +211,95 @@ class BookService:
 
     def increase_available_stock(self, book_id: int) -> None:
         """恢复可借库存（事件处理器调用，不自行 commit）"""
-        book = self.book_repo.get_by_id(book_id)
-        if not book:
-            return
-        book.available_stock = (book.available_stock or 0) + 1
-        self.book_repo.update(book)
+        self.db.query(Book).filter(Book.id == book_id, Book.is_deleted == 0).update(
+            {Book.available_stock: Book.available_stock + 1},
+            synchronize_session='fetch',
+        )
 
     def update_copy_status(self, copy_id: int, status: int) -> None:
         """更新副本状态（事件处理器调用，不自行 commit）"""
-        copy = self.copy_repo.get_by_id(copy_id)
+        copy = (
+            self.db.query(BookCopy)
+            .filter(BookCopy.id == copy_id, BookCopy.is_deleted == 0)
+            .with_for_update()
+            .first()
+        )
         if copy:
             copy.status = status
             self.copy_repo.update(copy)
+
+    def get_book_pages_admin(self, book_id: int) -> list[dict]:
+        """管理端获取图书页面列表"""
+        from backend.common.exceptions import NotFoundError
+        from backend.domain.reading.models import BookPage
+
+        book = self.book_repo.get_by_id(book_id)
+        if not book or book.is_deleted == 1:
+            raise NotFoundError("图书不存在")
+        pages = (
+            self.db.query(BookPage)
+            .filter(BookPage.book_id == book_id, BookPage.is_deleted == 0)
+            .order_by(BookPage.page_number)
+            .all()
+        )
+        return [
+            {
+                "id": p.id,
+                "book_id": p.book_id,
+                "page_number": p.page_number,
+                "content_type": p.content_type,
+                "text_content": p.text_content,
+                "image_url": p.image_url,
+                "audio_url": p.audio_url,
+                "audio_duration": p.audio_duration,
+            }
+            for p in pages
+        ]
+
+    def save_book_page_admin(
+        self,
+        book_id: int,
+        page_number: int,
+        text_content: str | None = None,
+        image_url: str | None = None,
+        audio_url: str | None = None,
+    ) -> dict:
+        """管理端保存或更新图书页面内容"""
+        from backend.common.exceptions import NotFoundError
+        from backend.domain.reading.models import BookPage
+
+        book = self.book_repo.get_by_id(book_id)
+        if not book or book.is_deleted == 1:
+            raise NotFoundError("图书不存在")
+
+        page = (
+            self.db.query(BookPage)
+            .filter(BookPage.book_id == book_id, BookPage.page_number == page_number)
+            .first()
+        )
+        if not page:
+            page = BookPage(
+                book_id=book_id,
+                page_number=page_number,
+                content_type=0,
+            )
+            self.db.add(page)
+
+        if text_content is not None:
+            page.text_content = text_content
+        if image_url is not None:
+            page.image_url = image_url
+        if audio_url is not None:
+            page.audio_url = audio_url
+
+        self.db.commit()
+        self.db.refresh(page)
+        return {
+            "id": page.id,
+            "book_id": page.book_id,
+            "page_number": page.page_number,
+            "success": True,
+        }
 
     def toggle_publish(self, book_id: int) -> dict:
         """切换图书发布状态"""
@@ -183,18 +317,44 @@ class BookService:
         self.db.commit()
         return {"success": True, "is_published": new_status, "message": "发布状态已切换"}
 
-    def create_book_copy_admin(self, book_id: int) -> dict:
-        """管理端创建图书副本"""
+    def create_book_copy_admin(
+        self,
+        book_id: int,
+        barcode: str | None = None,
+        location: str | None = None,
+        condition_note: str | None = None,
+    ) -> dict:
+        """管理端创建图书副本（支持手动输入条码）"""
         import uuid
-        from backend.common.exceptions import NotFoundError
+        from backend.common.exceptions import NotFoundError, ConflictError
+
         book = self.book_repo.get_by_id(book_id)
         if not book or book.is_deleted == 1:
             raise NotFoundError("图书不存在")
+
+        if barcode:
+            existing = self.copy_repo.get_by_barcode(barcode)
+            if existing:
+                raise ConflictError(f"条码 {barcode} 已存在")
+        else:
+            barcode = f"MW-{uuid.uuid4().hex[:8].upper()}"
+
         copy = BookCopy(
             book_id=book_id,
-            barcode=f"MW-{uuid.uuid4().hex[:8].upper()}",
-            status=1,  # 在架
+            barcode=barcode,
+            status=0,  # 可借
+            location=location,
+            condition_note=condition_note,
         )
         created = self.copy_repo.create(copy)
+        book.total_stock = (book.total_stock or 0) + 1
+        book.available_stock = (book.available_stock or 0) + 1
         self.db.commit()
-        return {"id": created.id, "barcode": created.barcode, "status": created.status}
+        return {
+            "id": created.id,
+            "barcode": created.barcode,
+            "status": created.status,
+            "location": created.location,
+            "book_id": book.id,
+            "book_title": book.title,
+        }

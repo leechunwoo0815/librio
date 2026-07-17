@@ -294,8 +294,3 @@
   color: var(--muted);
 }
 
-/* ===== 原型缺失选择器补全 ===== */
-
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-.nav-bar .back svg { width: 20px; height: 20px; }
-.nav-bar .title { font-family: var(--font-display); font-size: 17px; font-weight: 600; }

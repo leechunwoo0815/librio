@@ -5,6 +5,7 @@
 {% endblock %}
 {% block page_title %}场馆管理{% endblock %}
 {% block content %}
+{% import "admin/macros.html" as m %}
 <!-- stats -->
 <div class="venue-stats" id="venueStats">
   <div class="vstat-card">
@@ -39,7 +40,7 @@
       <option value="inactive">已关闭</option>
     </select>
   </div>
-  <button class="btn-primary" onclick="openAddModal()">
+  <button class="btn btn-primary" onclick="openAddModal()">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
     新建场馆
   </button>
@@ -60,39 +61,52 @@
       </tr>
     </thead>
     <tbody id="dataBody">
-      <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--muted);">加载中...</td></tr>
+      <tr><td colspan="7" class="text-center text-muted p-40">加载中...</td></tr>
     </tbody>
   </table>
-  <div class="pagination" id="venuePagination"></div>
 </div>
+<div class="pagination" id="venuePagination"></div>
 
-<!-- create venue modal -->
-<div class="modal-overlay" id="venueModal" onclick="if(event.target===this)closeAddModal()">
-  <div class="modal">
-    <h2 id="modalTitle">新建场馆</h2>
-    <form id="addForm" onsubmit="submitVenue(event)">
-      <input type="hidden" id="editId" value="" />
+{{ m.modal_overlay("venueModal", "新建场馆", "md") }}
+  <form id="addForm" onsubmit="submitVenue(event)">
+    <input type="hidden" id="editId" value="" />
+    <div class="form-group">
+      <label>场馆名称</label>
+      <input type="text" class="form-input" name="name" placeholder="例如：静安馆" required />
+    </div>
+    <div class="form-group">
+      <label>场馆地址</label>
+      <input type="text" class="form-input" name="address" placeholder="详细地址" required />
+    </div>
+    <div class="form-row">
       <div class="form-group">
-        <label>场馆名称</label>
-        <input type="text" class="form-input" name="name" placeholder="例如：静安馆" required />
+        <label>联系电话</label>
+        <input type="text" class="form-input" name="phone" placeholder="021-XXXX-XXXX" />
       </div>
       <div class="form-group">
-        <label>场馆地址</label>
-        <input type="text" class="form-input" name="address" placeholder="详细地址" required />
+        <label>运营状态</label>
+        <select class="form-input" name="status">
+          <option value="active">运营中</option>
+          <option value="maintenance">维护中</option>
+          <option value="inactive">已关闭</option>
+        </select>
       </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>联系电话</label>
-          <input type="text" class="form-input" name="phone" placeholder="021-XXXX-XXXX" />
-        </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>容量/工位数</label>
+        <input type="number" class="form-input" name="capacity" placeholder="0" min="0" />
       </div>
-      <div class="modal-actions">
-        <button type="button" class="btn-cancel" onclick="closeAddModal()">取消</button>
-        <button type="submit" class="btn-primary" id="submitBtn">确认创建</button>
+      <div class="form-group">
+        <label>营业时间</label>
+        <input type="text" class="form-input" name="business_hours" placeholder="例如：09:00-21:00" />
       </div>
-    </form>
-  </div>
-</div>
+    </div>
+  </form>
+{{ m.modal_actions() }}
+  <button type="button" class="btn btn-secondary" onclick="closeModal('venueModal')">取消</button>
+  <button type="submit" class="btn btn-primary" id="submitBtn" form="addForm">确认创建</button>
+{{ m.modal_end() }}
 {% endblock %}
 
 {% block scripts %}
@@ -117,7 +131,7 @@
       updateStats(list);
     } catch (err) {
       showToast(err.message || '加载场馆列表失败', 'error');
-      dataBody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--error);">加载失败</td></tr>';
+      dataBody.innerHTML = '<tr><td colspan="7" class="text-center text-error p-40">加载失败</td></tr>';
     }
   }
 
@@ -158,7 +172,7 @@
       filtered = filtered.filter(v => (v.status || 'active') === st);
     }
     if (!filtered.length) {
-      dataBody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--muted);">暂无场馆数据</td></tr>';
+      dataBody.innerHTML = '<tr><td colspan="7" class="text-center text-muted p-40">暂无场馆数据</td></tr>';
       document.getElementById('venuePagination').innerHTML = '';
       return;
     }
@@ -174,14 +188,14 @@
           </div>
         </td>
         <td>${escapeHtml(v.phone || '-')}</td>
-        <td>${v.station_count || '-'}</td>
+        <td>${v.capacity != null ? v.capacity.toLocaleString() : '-'}</td>
         <td>${v.book_count != null ? v.book_count.toLocaleString() : '-'}</td>
         <td>${v.borrowed_count != null ? v.borrowed_count.toLocaleString() : '-'}</td>
         <td>${getStatusBadge(v.status)}</td>
         <td>
           <div class="action-btns">
-            <button class="action-btn" onclick="editVenue(${v.id}, '${escapeHtml(v.name || '')}', '${escapeHtml(v.address || '')}', '${escapeHtml(v.phone || '')}')">编辑</button>
-            <button class="action-btn action-btn-danger" onclick="deleteVenue(${v.id}, '${escapeHtml(v.name || '')}')">删除</button>
+            <button class="action-btn" onclick="editVenue(${v.id}, '${jsEscape(v.name || '')}', '${jsEscape(v.address || '')}', '${jsEscape(v.phone || '')}', '${jsEscape(v.status || 'active')}', ${v.capacity || 0}, '${jsEscape(v.business_hours || '')}')">编辑</button>
+            <button class="action-btn action-btn-danger" onclick="deleteVenue(${v.id}, '${jsEscape(v.name || '')}')">删除</button>
           </div>
         </td>
       </tr>
@@ -192,25 +206,33 @@
 
   function openAddModal() {
     document.getElementById('editId').value = '';
-    document.getElementById('modalTitle').textContent = '新建场馆';
+    document.querySelector('#venueModal h2').textContent = '新建场馆';
     document.getElementById('submitBtn').textContent = '确认创建';
     document.getElementById('addForm').reset();
-    document.getElementById('venueModal').classList.add('show');
+    showModal('venueModal');
   }
 
-  function editVenue(id, name, address, phone) {
+  function editVenue(id, name, address, phone, status, capacity, businessHours) {
     document.getElementById('editId').value = id;
-    document.getElementById('modalTitle').textContent = '编辑场馆';
+    document.querySelector('#venueModal h2').textContent = '编辑场馆';
     document.getElementById('submitBtn').textContent = '保存修改';
     const form = document.getElementById('addForm');
     form.elements['name'].value = name;
     form.elements['address'].value = address;
     form.elements['phone'].value = phone;
-    document.getElementById('venueModal').classList.add('show');
+    // 后端 status 是 int (1=active, 0=inactive)，前端 select 用字符串
+    var statusStr = status === 1 || status === '1' || status === 'active' ? 'active'
+      : status === 0 || status === '0' || status === 'inactive' ? 'inactive'
+      : status === 'maintenance' ? 'maintenance'
+      : 'active';
+    form.elements['status'].value = statusStr;
+    form.elements['capacity'].value = capacity != null ? capacity : '';
+    form.elements['business_hours'].value = businessHours || '';
+    showModal('venueModal');
   }
 
   function closeAddModal() {
-    document.getElementById('venueModal').classList.remove('show');
+    closeModal('venueModal');
   }
 
   async function submitVenue(e) {
@@ -221,7 +243,11 @@
     for (const [k, v] of fd.entries()) {
       if (k === 'editId') continue;
       if (v === '') continue;
-      body[k] = v;
+      if (k === 'capacity') {
+        body[k] = Number(v);
+      } else {
+        body[k] = v;
+      }
     }
     const editId = document.getElementById('editId').value;
     try {

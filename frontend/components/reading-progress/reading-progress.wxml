@@ -1,6 +1,6 @@
 <view class="reading-progress">
   <view class="progress-bar">
-    <view class="progress-fill" style="width: {{percent}}%; background: {{color}};"></view>
+    <view class="progress-fill" style="width: {{_clampedPercent}}%; background: {{color}};"></view>
   </view>
-  <text wx:if="{{showLabel}}" class="progress-label">{{percent}}%</text>
+  <text wx:if="{{showLabel}}" class="progress-label">{{_clampedPercent}}%</text>
 </view>

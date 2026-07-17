@@ -1,225 +1,113 @@
-/* login.css — 管理员登录页面专属样式（不继承 base.html） */
-
-:root {
-  --bg: #f7f9fa;
-  --surface: #ffffff;
-  --fg: #14161d;
-  --muted: #555f69;
-  --border: #dadee3;
-  --accent: #5560cf;
-  --accent-soft: rgba(85, 96, 207, 0.1);
-  --accent-hover: #464dbb;
-  --error: #ee343b;
-  --radius: 12px;
-  --radius-sm: 8px;
-  --radius-lg: 16px;
-  --font-display: 'PingFang SC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', system-ui, sans-serif;
-}
-
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
+/* login.css — 登录页专属样式，依赖 base.css 的 :root 变量 */
 body {
   font-family: var(--font-body);
-  background: linear-gradient(135deg, #e8ecf9 0%, #eae6f5 50%, #e5edf9 100%);
-  color: var(--fg);
+  background: var(--bg);
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
 }
-
-.login-wrapper {
-  width: 100%;
-  max-width: 420px;
-  padding: 20px;
-}
-
 .login-card {
   background: var(--surface);
   border-radius: var(--radius-lg);
-  box-shadow:
-    0 8px 32px rgba(20, 22, 29, 0.08),
-    0 2px 8px rgba(20, 22, 29, 0.04);
-  padding: 48px 40px 40px;
+  padding: 40px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border);
 }
-
 .login-header {
   text-align: center;
-  margin-bottom: 36px;
+  margin-bottom: 30px;
 }
-
 .login-logo {
-  font-size: 48px;
-  margin-bottom: 12px;
-}
-
-.login-title {
-  font-size: 22px;
-  font-weight: 700;
-  font-family: var(--font-display);
-  color: var(--accent);
-  margin-bottom: 4px;
-}
-
-.login-subtitle {
-  font-size: 13px;
-  color: var(--muted);
-}
-
-.login-form .form-group {
-  margin-bottom: 20px;
-}
-
-.login-form .form-label {
-  display: block;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--fg);
-  margin-bottom: 6px;
-}
-
-.login-form .form-input {
-  width: 100%;
-  height: 44px;
-  padding: 0 14px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  font-size: 14px;
-  background: var(--bg);
-  color: var(--fg);
-  font-family: var(--font-body);
-  outline: none;
-  transition: all 0.15s;
-}
-
-.login-form .form-input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-soft);
-  background: var(--surface);
-}
-
-/* Password wrapper */
-.password-wrapper {
-  position: relative;
-}
-.password-wrapper .form-input {
-  padding-right: 44px;
-}
-.password-toggle {
-  position: absolute;
-  right: 2px;
-  top: 2px;
-  width: 40px;
-  height: 40px;
-  display: flex;
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+  color: white;
+  border-radius: var(--radius);
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: none;
-  background: none;
-  cursor: pointer;
-  color: var(--muted);
-  font-size: 18px;
-  border-radius: 6px;
+  font-size: 28px;
+  font-weight: bold;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
 }
-.password-toggle:hover {
-  color: var(--fg);
-  background: var(--accent-soft);
-}
-
-/* Login button */
-.login-btn {
-  width: 100%;
-  height: 46px;
-  border: none;
-  border-radius: var(--radius-sm);
-  background: var(--accent);
-  color: #fff;
-  font-size: 15px;
+.login-title {
+  font-size: 24px;
   font-weight: 600;
-  font-family: var(--font-display);
-  cursor: pointer;
-  transition: all 0.15s;
-  margin-top: 8px;
+  color: var(--fg);
+  margin-bottom: 8px;
 }
-.login-btn:hover {
-  background: var(--accent-hover);
-  box-shadow: 0 4px 12px rgba(85, 96, 207, 0.3);
-}
-.login-btn:active {
-  transform: scale(0.98);
-}
-.login-btn:disabled {
-  background: var(--accent);
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* Error message */
-.error-msg {
-  color: var(--error);
-  font-size: 13px;
-  margin-top: 12px;
-  text-align: center;
-  display: none;
-}
-
-/* Login hint */
-.login-hint {
-  text-align: center;
-  font-size: 12px;
+.login-subtitle {
   color: var(--muted);
-  margin-top: 16px;
-  padding: 10px;
-  background: var(--bg);
-  border-radius: var(--radius-sm);
+  font-size: 14px;
 }
-.login-hint span {
-  color: var(--error);
-}
-
-/* Footer */
-.login-footer {
-  text-align: center;
-  font-size: 12px;
-  color: var(--muted);
-  margin-top: 24px;
-}
-
-/* ===== 原型裸选择器（login 不继承 base.html，需独立定义） ===== */
-
-.form-group {
-  margin-bottom: 20px;
-}
-
+.form-group { margin-bottom: 20px; }
 .form-label {
   display: block;
-  font-size: 13px;
-  font-weight: 600;
+  margin-bottom: 8px;
+  font-weight: 500;
   color: var(--fg);
-  margin-bottom: 6px;
 }
-
 .form-input {
   width: 100%;
-  height: 44px;
-  padding: 0 14px;
+  padding: 12px 16px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   font-size: 14px;
-  background: var(--bg);
-  color: var(--fg);
-  font-family: var(--font-body);
-  outline: none;
-  transition: all 0.15s;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
-
 .form-input:focus {
+  outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-soft);
-  background: var(--surface);
 }
-
-.form-input::placeholder {
+.login-btn {
+  width: 100%;
+  padding: 14px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: var(--shadow-sm);
+}
+.login-btn:hover { background: var(--accent-hover); box-shadow: var(--shadow); }
+.login-btn:disabled {
+  background: var(--muted);
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.error-msg {
+  display: none;
+  margin-top: 16px;
+  padding: 12px;
+  background: var(--error-soft);
+  color: var(--error);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  text-align: center;
+}
+.password-wrapper { position: relative; }
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 0;
+  bottom: 0;
+  margin: auto 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
   color: var(--muted);
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  transition: color 0.15s ease;
 }
+.password-toggle:hover { color: var(--accent); }

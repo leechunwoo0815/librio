@@ -8,7 +8,16 @@ Page({
     children: [],
     loading: false,
     isSecondChild: false,
-    actualPrice: 5400,
+    actualPrice: 0,
+    origPrice: 0,
+    savings: 0,
+    secondChildPrice: 0,
+    periodType: 3,
+    priceMap: {},
+    currentPeriodName: '年卡',
+    currentPeriodUnit: '年',
+    currentPeriodDays: 365,
+    isIOS: false,
     features: [
       { icon: '📚', title: '全量图书无限阅读', desc: '平台所有图书随时在线阅读' },
       { icon: '🎯', title: 'A-Z 26级晋级体系', desc: '科学分级，循序渐进提升阅读能力' },
@@ -33,6 +42,8 @@ Page({
   onLoad() {
     const app = getApp()
     if (!auth.requireAuth()) return
+    const systemInfo = wx.getSystemInfoSync()
+    this.setData({ isIOS: systemInfo.platform === 'ios' })
     this.loadChild()
   },
 
@@ -45,27 +56,65 @@ Page({
       if (!child) return
 
       const detail = await api.getChild(child.id).catch(() => child)
-      // 二孩优惠：已有其他孩子是观察期/正式会员
-      const activeSiblings = children.filter(c =>
-        c.id !== child.id && (c.status === 1 || c.status === 2)
-      )
-      const isSecondChild = activeSiblings.length >= 1
-      const actualPrice = isSecondChild ? 4860 : 5400
 
-      this.setData({ child: detail, children, isSecondChild, actualPrice })
+      let priceMap = {}
+      try {
+        const tierData = await api.getTiers()
+        const tiers = tierData.tiers || []
+        tiers.forEach(t => { priceMap[t.type] = t.price })
+      } catch (e) {
+        console.error('Load tier price failed:', e)
+        wx.showToast({ title: '加载价格信息失败', icon: 'none' })
+        this.setData({ loading: false })
+        return
+      }
+
+      const isSecondChild = children.some(c => c.id !== child.id && (c.status === 1 || c.status === 2))
+
+      const periodType = this.data.periodType
+      const rawPrice = priceMap[periodType]
+      const actualPrice = (rawPrice != null && !isNaN(rawPrice)) ? Number(rawPrice) : 0
+      const origPrice = actualPrice > 0 ? Math.round(actualPrice / 0.9) : 0
+      const savings = origPrice - actualPrice
+      const secondChildPrice = actualPrice > 0 ? Math.round(actualPrice * 0.9) : 0
+      const periodInfo = this._periodInfo(periodType)
+      this.setData({ child: detail, children, isSecondChild, priceMap, actualPrice, origPrice, savings, secondChildPrice, ...periodInfo })
     } catch (e) {
       console.error(e)
     }
   },
 
+  _periodInfo(periodType) {
+    const map = {
+      3: { currentPeriodName: '年卡', currentPeriodUnit: '年', currentPeriodDays: 365 },
+      4: { currentPeriodName: '季度', currentPeriodUnit: '季度', currentPeriodDays: 90 },
+      5: { currentPeriodName: '半年', currentPeriodUnit: '半年', currentPeriodDays: 180 },
+    }
+    return map[periodType] || map[3]
+  },
+
+  switchPeriod(e) {
+    const periodType = parseInt(e.currentTarget.dataset.period)
+    if (periodType === this.data.periodType) return
+    const priceMap = this.data.priceMap
+    const rawPrice = priceMap[periodType]
+    const actualPrice = (rawPrice != null && !isNaN(rawPrice)) ? Number(rawPrice) : 0
+    const origPrice = actualPrice > 0 ? Math.round(actualPrice / 0.9) : 0
+    const savings = origPrice - actualPrice
+    const secondChildPrice = actualPrice > 0 ? Math.round(actualPrice * 0.9) : 0
+    const periodInfo = this._periodInfo(periodType)
+    this.setData({ periodType, actualPrice, origPrice, savings, secondChildPrice, ...periodInfo })
+  },
+
   async handleOrder() {
-    // iOS 虚拟支付拦截（Apple 审核红线）
-    const sysInfo = wx.getSystemInfoSync()
-    if (sysInfo.platform === 'ios') {
-      this.showIOSNotice()
+    if (this.data.isIOS) {
+      wx.showModal({
+        title: '暂不支持 iOS 开通',
+        content: '当前暂不支持 iOS 端开通，请使用安卓设备或联系客服办理',
+        showCancel: false,
+      })
       return
     }
-
     const child = this.data.child
     if (!child) {
       wx.showToast({ title: '请先添加孩子信息', icon: 'none' })
@@ -74,8 +123,11 @@ Page({
 
     this.setData({ loading: true })
     try {
-      const order = await api.createOrder(child.id, 3)
+      const order = await api.createOrder(child.id, this.data.periodType)
       const payParams = await api.getPayParams(order.id)
+      if (!payParams || !payParams.timeStamp || !payParams.nonceStr || !payParams.package || !payParams.signType || !payParams.paySign) {
+        throw new Error('支付参数异常，请稍后重试')
+      }
       await new Promise((resolve, reject) => {
         wx.requestPayment({
           ...payParams,
@@ -84,7 +136,7 @@ Page({
         })
       })
       wx.showToast({ title: '开通成功', icon: 'success' })
-      setTimeout(() => {
+      this._navTimer = setTimeout(() => {
         wx.navigateBack()
       }, 1500)
     } catch (e) {
@@ -98,11 +150,7 @@ Page({
     }
   },
 
-  showIOSNotice() {
-    wx.showModal({
-      title: '提示',
-      content: '因苹果规则限制，请前往线下门店或使用安卓设备办理',
-      showCancel: false,
-    });
+  onUnload() {
+    if (this._navTimer) { clearTimeout(this._navTimer); this._navTimer = null }
   },
 })

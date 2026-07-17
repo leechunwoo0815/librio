@@ -6,7 +6,7 @@
 """
 
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 
 from sqlalchemy.orm import Session
@@ -22,6 +22,7 @@ from backend.common.exceptions import ConflictError, NotFoundError
 from backend.domain.advancement.models import (
     Level,
     ChildLevel,
+    QuestionBank,
     Quiz,
     QuizAnswer,
     ChildAchievement,
@@ -85,7 +86,7 @@ class AdvancementService:
 
     def start_quiz(self, child_id: int, data: QuizStartRequest) -> QuizResponse:
         """开始测验 — 含重考间隔限制（1小时）"""
-        from datetime import timedelta
+        from datetime import timedelta, timezone
 
         questions = self.question_repo.get_by_book(data.book_id)
         if not questions:
@@ -99,20 +100,21 @@ class AdvancementService:
             questions = questions[:max_questions]
 
         # 重考间隔检查：同一本书 1 小时内不可重考
+        now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
         recent_quiz = (
             self.db.query(Quiz)
             .filter(
                 Quiz.child_id == child_id,
                 Quiz.book_id == data.book_id,
                 Quiz.status == Quiz.STATUS_COMPLETED,
-                Quiz.create_time > datetime.now() - timedelta(hours=1),
+                Quiz.create_time > now_utc - timedelta(hours=1),
                 Quiz.is_deleted == 0,
             )
             .order_by(Quiz.create_time.desc())
             .first()
         )
         if recent_quiz:
-            remaining = timedelta(hours=1) - (datetime.now() - recent_quiz.create_time)
+            remaining = timedelta(hours=1) - (now_utc - recent_quiz.create_time)
             minutes = int(remaining.total_seconds() / 60)
             raise ConflictError(f"测验冷却中，请 {minutes} 分钟后重试")
 
@@ -146,18 +148,35 @@ class AdvancementService:
                 "option_c": q.option_c,
                 "option_d": q.option_d,
                 "difficulty": q.difficulty,
+                "correct_answer": q.correct_answer,
+                "explanation": q.explanation,
             }
             for q in questions
         ]
 
     def submit_answers(self, quiz_id: int, answers: list) -> dict:
         """提交测验答案 — 评分 + 发布事件"""
-        quiz = self.quiz_repo.get_by_id_or_raise(quiz_id)
+        quiz = (
+            self.db.query(Quiz)
+            .filter(Quiz.id == quiz_id, Quiz.is_deleted == 0)
+            .with_for_update()
+            .first()
+        )
+        if not quiz:
+            raise NotFoundError("测验不存在")
 
         if quiz.status != Quiz.STATUS_IN_PROGRESS:
             raise ConflictError("测验已结束")
 
         correct = 0
+        qids = [
+            (ans["question_id"] if isinstance(ans, dict) else ans.question_id)
+            for ans in answers
+        ]
+        questions = {
+            q.id: q for q in
+            self.db.query(QuestionBank).filter(QuestionBank.id.in_(qids)).all()
+        }
         for ans in answers:
             if isinstance(ans, dict):
                 qid = ans["question_id"]
@@ -166,7 +185,7 @@ class AdvancementService:
                 qid = ans.question_id
                 selected = ans.selected_answer
 
-            question = self.question_repo.get_by_id(qid)
+            question = questions.get(qid)
             is_correct = question and question.correct_answer == selected
             if is_correct:
                 correct += 1
@@ -250,7 +269,12 @@ class AdvancementService:
 
     def check_and_advance(self, child_id: int) -> ChildLevelResponse | None:
         """晋级检测"""
-        current = self.child_level_repo.get_current(child_id)
+        current = (
+            self.db.query(ChildLevel)
+            .filter(ChildLevel.child_id == child_id, ChildLevel.is_current, ChildLevel.is_deleted == 0)
+            .with_for_update()
+            .first()
+        )
         if not current:
             return None
 
@@ -373,6 +397,71 @@ class AdvancementService:
         """获取测验详情"""
         quiz = self.quiz_repo.get_by_id_or_raise(quiz_id)
         return quiz
+
+    def list_quizzes(self, page: int = 1, page_size: int = 20, child_ids: list[int] | None = None) -> dict:
+        """获取测验记录列表（含孩子、图书、答题结果）"""
+        from backend.domain.advancement.models import Quiz
+        from backend.domain.child.models import Child
+        from backend.domain.book.models import Book
+
+        query = self.db.query(Quiz).filter(Quiz.is_deleted == 0)
+        if child_ids is not None:
+            if not child_ids:
+                return {"items": [], "total": 0, "page": page, "page_size": page_size, "has_next": False}
+            query = query.filter(Quiz.child_id.in_(child_ids))
+        total = query.count()
+        quizzes = (
+            query.order_by(Quiz.create_time.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+            .all()
+        )
+
+        child_ids = list({q.child_id for q in quizzes if q.child_id})
+        book_ids = list({q.book_id for q in quizzes if q.book_id})
+        children = {}
+        books = {}
+        if child_ids:
+            for c in self.db.query(Child).filter(Child.id.in_(child_ids), Child.is_deleted == 0).all():
+                children[c.id] = c.name
+        if book_ids:
+            for b in self.db.query(Book).filter(Book.id.in_(book_ids), Book.is_deleted == 0).all():
+                books[b.id] = {"title": b.title, "ar_value": float(b.ar_value) if b.ar_value is not None else None}
+
+        items = []
+        for q in quizzes:
+            book_info = books.get(q.book_id, {})
+            score = float(q.score) if q.score is not None else None
+            status_text = "已完成" if q.status == Quiz.STATUS_COMPLETED else ("已过期" if q.status == Quiz.STATUS_EXPIRED else "进行中")
+            passed = None
+            if score is not None:
+                from backend.common.config_service import ConfigService
+                from backend.common.types import PASS_THRESHOLD
+                pass_rate = ConfigService.get_decimal(self.db, "quiz_pass_rate", PASS_THRESHOLD)
+                passed = score >= pass_rate * 100
+            items.append({
+                "id": q.id,
+                "child_id": q.child_id,
+                "child_name": children.get(q.child_id),
+                "book_id": q.book_id,
+                "book_title": book_info.get("title"),
+                "ar_value": book_info.get("ar_value"),
+                "status": q.status,
+                "status_text": status_text,
+                "total_questions": q.total_questions,
+                "correct_count": q.correct_count,
+                "score": score,
+                "passed": passed,
+                "create_time": q.create_time.isoformat() if q.create_time else None,
+            })
+
+        return {
+            "items": items,
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "has_next": page * page_size < total,
+        }
 
     # ==================== 级别 CRUD ====================
 
@@ -497,7 +586,7 @@ class AdvancementService:
             raise NotFoundError("提交不存在")
         sub.status = data.status
         if data.comment:
-            sub.comment = data.comment
+            sub.teacher_comment = data.comment
 
         # P0-9: 审核通过 → 增加已读书数 + 触发晋级检测
         if data.status == ReadingSubmission.STATUS_APPROVED:
@@ -571,6 +660,7 @@ class AdvancementService:
         """获取证书列表 — 关联孩子累计阅读数据"""
         from backend.domain.certificate.models import LevelCertificate
         from backend.domain.child.models import Child
+        from datetime import datetime
 
         query = (
             self.db.query(LevelCertificate, Child)
@@ -585,21 +675,51 @@ class AdvancementService:
             .all()
         )
 
+        items = [
+            {
+                "id": c.id,
+                "child_id": c.child_id,
+                "child_name": c.child_name,
+                "level_name": c.level_name,
+                "certificate_no": c.certificate_no,
+                "issued_at": c.issued_at.isoformat() if c.issued_at else None,
+                "create_time": c.create_time.isoformat() if c.create_time else None,
+                "book_count": child.total_books_finished or 0 if child else 0,
+                "word_count": child.total_words_read or 0 if child else 0,
+            }
+            for c, child in rows
+        ]
+
+        # 统计信息
+        current_month = datetime.now().strftime("%Y-%m")
+        last_month = (datetime.now().replace(day=1) - timedelta(days=1)).strftime("%Y-%m")
+        month_new = sum(
+            1 for c, _ in rows
+            if (c.issued_at and c.issued_at.strftime("%Y-%m") == current_month)
+            or (not c.issued_at and c.create_time and c.create_time.strftime("%Y-%m") == current_month)
+        )
+        last_month_new = sum(
+            1
+            for c, _ in rows
+            if (c.issued_at and c.issued_at.strftime("%Y-%m") == last_month)
+            or (not c.issued_at and c.create_time and c.create_time.strftime("%Y-%m") == last_month)
+        )
+        levels = sorted(
+            {c.level_name for c, _ in rows if c.level_name},
+            key=lambda x: (len(x), x),
+        )
+
         return {
-            "items": [
-                {
-                    "id": c.id,
-                    "child_id": c.child_id,
-                    "child_name": c.child_name,
-                    "level_name": c.level_name,
-                    "certificate_no": c.certificate_no,
-                    "issued_at": c.issued_at.isoformat() if c.issued_at else None,
-                    "create_time": c.create_time.isoformat() if c.create_time else None,
-                    "book_count": child.total_books_finished or 0 if child else 0,
-                    "word_count": child.total_words_read or 0 if child else 0,
-                }
-                for c, child in rows
-            ],
+            "items": items,
+            "stats": {
+                "total": total,
+                "month_new": month_new,
+                "month_change": month_new - last_month_new,
+                "level_count": len(levels),
+                "level_min": levels[0] if levels else None,
+                "level_max": levels[-1] if levels else None,
+                "pending_regen": 0,
+            },
             "total": total,
             "page": page,
             "page_size": page_size,
@@ -656,15 +776,21 @@ class AdvancementService:
         self.db.commit()
         return {"success": True, "message": "证书更新成功"}
 
-    def list_submissions(self, page: int = 1, page_size: int = 20, status: str = None) -> dict:
-        """获取提交记录列表"""
+    def list_submissions(self, page: int = 1, page_size: int = 20, status: str = None, child_ids: list[int] | None = None) -> dict:
+        """获取提交记录列表 — 支持逗号分隔多状态"""
         from backend.domain.advancement.models import ReadingSubmission
         from backend.domain.child.models import Child
         from backend.domain.book.models import Book
 
         query = self.db.query(ReadingSubmission).filter(ReadingSubmission.is_deleted == 0)
+        if child_ids is not None:
+            if not child_ids:
+                return {"items": [], "total": 0, "page": page, "page_size": page_size, "has_next": False}
+            query = query.filter(ReadingSubmission.child_id.in_(child_ids))
         if status:
-            query = query.filter(ReadingSubmission.status == status)
+            status_list = [int(s.strip()) for s in status.split(',') if s.strip().isdigit()]
+            if status_list:
+                query = query.filter(ReadingSubmission.status.in_(status_list))
 
         total = query.count()
         subs = query.order_by(

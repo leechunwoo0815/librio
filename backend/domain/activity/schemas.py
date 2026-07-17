@@ -2,6 +2,7 @@
 """活动域 Pydantic 模型"""
 
 from datetime import datetime
+from decimal import Decimal
 from pydantic import Field
 from backend.common.base_schema import BaseSchema
 
@@ -12,7 +13,7 @@ class ActivityResponse(BaseSchema):
     description: str | None = None
     type: int | None = None
     is_free: int | None = 1
-    price: float | None = None
+    price: Decimal | None = None
     cover: str | None = None
     start_time: datetime | None = None
     end_time: datetime | None = None

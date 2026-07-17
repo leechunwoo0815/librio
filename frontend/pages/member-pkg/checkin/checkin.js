@@ -22,11 +22,6 @@ Page({
   },
 
   async onShow() {
-    const app = getApp()
-    if (app.globalData.isTestMode) {
-      this._loadTestModeData()
-      return
-    }
     if (!auth.requireAuth()) return
 
     const now = new Date()
@@ -52,36 +47,6 @@ Page({
     }
   },
 
-  _loadTestModeData() {
-    const streak = { current_streak: 21, longest_streak: 35 }
-    const checkinDays = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]
-    const today = 10
-    const checkinSet = new Set(checkinDays.map(d => '2026-06-' + String(d).padStart(2, '0')))
-    const gridCells = this.buildGrid(2026, 6, checkinSet)
-
-    this.setData({
-      streak,
-      year: 2026,
-      month: 6,
-      todayStr: '2026-06-10',
-      yearMonth: '2026年6月',
-      checkedToday: true,
-      todayStats: {
-        book_name: "Charlotte's Web",
-        reading_minutes: 25,
-        checkin_time: '08:32',
-      },
-      gridCells,
-      calendar: checkinDays,
-      streakBadges: this._buildBadges(streak.current_streak),
-      records: [
-        { date: '6月4日 星期三', book_name: "Charlotte's Web", pages: '第10-12页', duration: 25 },
-        { date: '6月3日 星期二', book_name: 'Fantastic Mr. Fox', pages: '第8-13页', duration: 32 },
-        { date: '6月2日 星期一', book_name: "Charlotte's Web", pages: '第6-9页', duration: 20 },
-      ],
-    })
-  },
-
   _buildBadges(currentStreak) {
     const badges = [
       { target: 7, icon: '🏅', name: '7天徽章' },
@@ -101,23 +66,25 @@ Page({
 
     this.setData({ loading: true, loadError: false })
     try {
-      const [streak, calendar, todayStats] = await Promise.all([
+      const [streak, calendar, todayStats, records] = await Promise.all([
         api.getStreak(child.id).catch(() => ({ current_streak: 0, longest_streak: 0 })),
         api.getCheckinCalendar(child.id, year, month).catch(() => []),
         api.getTodayStats(child.id).catch(() => null),
+        api.getCheckinRecords(child.id).catch(() => []),
       ])
 
-      const checkinSet = new Set((calendar || []).map(d => String(d)))
-      const checkedToday = checkinSet.has(this.data.todayStr)
-      const gridCells = this.buildGrid(year, month, checkinSet)
+      const checkinArr = (calendar || []).map(d => String(d))
+      const checkedToday = checkinArr.indexOf(this.data.todayStr) >= 0
+      const gridCells = this.buildGrid(year, month, checkinArr)
 
       this.setData({
         streak,
         calendar: calendar || [],
-        checkinSet,
+        checkinArr,
         gridCells,
         checkedToday,
         todayStats,
+        records,
         streakBadges: this._buildBadges(streak.current_streak),
         loading: false,
         loadError: false,
@@ -132,12 +99,12 @@ Page({
     this.loadAllData()
   },
 
-  buildGrid(year, month, checkinSet) {
-    const firstDay = new Date(year, month - 1, 1).getDay()
+  buildGrid(year, month, checkinArr) {
+    const checkinSet = new Set(checkinArr)
     const daysInMonth = new Date(year, month, 0).getDate()
     const cells = []
 
-    // Adjust so Monday = first column
+    const firstDay = new Date(year, month - 1, 1).getDay()
     const adjustedFirstDay = firstDay === 0 ? 6 : firstDay - 1
     for (let i = 0; i < adjustedFirstDay; i++) {
       cells.push({ key: 'empty-' + i, empty: true })
@@ -194,9 +161,9 @@ Page({
 
     try {
       const calendar = await api.getCheckinCalendar(child.id, year, month)
-      const checkinSet = new Set((calendar || []).map(d => String(d)))
-      const gridCells = this.buildGrid(year, month, checkinSet)
-      this.setData({ calendar: calendar || [], checkinSet, gridCells })
+      const checkinArr = (calendar || []).map(d => String(d))
+      const gridCells = this.buildGrid(year, month, checkinArr)
+      this.setData({ calendar: calendar || [], checkinArr, gridCells })
     } catch (e) {
       console.error('loadMonth failed:', e)
     }

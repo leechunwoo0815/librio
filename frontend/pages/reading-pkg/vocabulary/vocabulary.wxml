@@ -1,7 +1,7 @@
 <!-- frontend/pages/reading-pkg/vocabulary/vocabulary.wxml -->
 <view class="page-bg">
 
-  <error-view wx:if="{{loadError}}" visible="{{loadError}}" icon="😵" title="加载失败" desc="数据加载出错了，请稍后重试" showRetry="{{true}}" retryText="重试" bind:onRetry="onRetry" />
+  <error-view wx:if="{{loadError}}" visible="{{loadError}}" icon="<text class="icon icon-dizzy-face">😵</text>" title="加载失败" desc="数据加载出错了，请稍后重试" showRetry="{{true}}" retryText="重试" bind:onRetry="onRetry" />
   <loading-skeleton wx:elif="{{loading}}" />
 
   <block wx:if="{{!loadError && !loading}}">
@@ -64,14 +64,17 @@
         <text class="w-def">{{item.part_of_speech || ''}} {{item.chinese_meaning}}</text>
       </view>
       <text class="word-tag {{item.status === 'mastered' ? 'mastered' : 'learning'}}">{{item.status === 'mastered' ? '已掌握' : '学习中'}}</text>
-      <view class="word-actions" wx:if="{{item.status === 'learning'}}" data-id="{{item.id}}" data-index="{{index}}" catchtap="onMarkMastered">
-        <view class="action-btn">
-          <text class="action-icon">🔊</text>
+      <view class="word-actions" wx:if="{{item.status === 'learning'}}">
+        <view class="action-btn" bindtap="onPlayAudio" data-word="{{item.word}}" data-audio="{{item.audio_url}}">
+          <text class="action-icon"><text class="icon icon-volume-up">🔊</text></text>
+        </view>
+        <view class="action-btn" data-id="{{item.id}}" data-index="{{index}}" catchtap="onMarkMastered">
+          <text class="action-icon"><text class="icon icon-heavy-checkmark">✔</text></text>
         </view>
       </view>
       <view class="word-actions" wx:else>
-        <view class="action-btn">
-          <text class="action-icon">🔊</text>
+        <view class="action-btn" bindtap="onPlayAudio" data-word="{{item.word}}" data-audio="{{item.audio_url}}">
+          <text class="action-icon"><text class="icon icon-volume-up">🔊</text></text>
         </view>
       </view>
     </view>
@@ -79,7 +82,7 @@
 
   <!-- Empty State -->
   <view class="empty-state" wx:if="{{currentList.length === 0}}">
-    <text class="emoji">{{activeTab === 2 ? '🏆' : '📖'}}</text>
+    <text class="emoji">{{activeTab === 2 ? '<text class="icon icon-trophy">🏆</text>' : '<text class="icon icon-book-open">读</text>'}}</text>
     <text class="text">{{activeTab === 2 ? '还没有已掌握的单词' : '暂无学习中的单词'}}</text>
     <text class="text-sub" wx:if="{{activeTab !== 2}}">阅读时查词会自动加入生词本</text>
   </view>
@@ -94,6 +97,9 @@
       <text class="review-progress-text">{{reviewProgress}} / {{reviewTotal}}</text>
     </view>
     <view class="flashcard" catchtap="flipCard">
+      <view class="fc-close" catchtap="closeReview">
+        <text class="fc-close-icon"><text class="icon icon-multiply">✕</text></text>
+      </view>
       <text class="fc-word">{{flashcard.word}}</text>
       <text class="fc-phonetic">{{flashcard.phonetic}}</text>
       <text class="fc-def" wx:if="{{flashcard.flipped}}">{{flashcard.def}}</text>
@@ -107,15 +113,12 @@
         </view>
       </view>
     </view>
-    <view class="fc-close" catchtap="closeReview">
-      <text class="fc-close-icon">✕</text>
-    </view>
   </view>
 
   <!-- Review Complete Overlay -->
   <view class="review-complete-overlay {{showReviewComplete ? 'show' : ''}}">
     <view class="review-complete-card">
-      <text class="review-complete-emoji">🎉</text>
+      <text class="review-complete-emoji"><text class="icon icon-party">🎉</text></text>
       <text class="review-complete-title">复习完成！</text>
       <text class="review-complete-desc">你已复习完全部 {{reviewTotal}} 个单词</text>
       <button class="review-complete-btn" bindtap="closeReviewComplete">太棒了！</button>

@@ -30,7 +30,7 @@
           <text class="meta">{{sourceChild.age}} 岁 · Level {{sourceChild.level || ''}}</text>
         </view>
         <view class="check-circle check checked">
-          <text class="check-icon">✓</text>
+          <text class="check-icon"><text class="icon icon-checkmark">✓</text></text>
         </view>
       </view>
     </view>
@@ -44,7 +44,7 @@
     <view class="transfer-card">
       <text class="transfer-heading">接收方（选择孩子）</text>
       <view class="child-select {{targetChild && targetChild.id === item.id ? 'selected' : ''}}"
-        wx:for="{{targetOptions}}" wx:key="id"
+        wx:for="{{targetOptions || []}}" wx:key="id"
         data-idx="{{index}}" bindtap="onTargetChange">
         <view class="avatar {{item.avatarClass || 'b'}}">
           <text wx:if="{{item.avatar}}">{{item.avatar}}</text>
@@ -55,7 +55,7 @@
           <text class="meta">{{item.age}} 岁 · Level {{item.level || ''}}</text>
         </view>
         <view class="check-circle check {{targetChild && targetChild.id === item.id ? 'checked' : ''}}">
-          <text class="check-icon">✓</text>
+          <text class="check-icon"><text class="icon icon-checkmark">✓</text></text>
         </view>
       </view>
     </view>
@@ -82,7 +82,7 @@
       <text class="check-heading">前置条件检查</text>
       <view class="check-item" wx:for="{{checks}}" wx:key="index">
         <view class="check-icon-wrap {{item.pass ? 'pass' : 'fail'}}">
-          <text class="check-result-icon">{{item.pass ? '✓' : '✗'}}</text>
+          <text class="check-result-icon">{{item.pass ? '<text class="icon icon-checkmark">✓</text>' : '<text class="icon icon-ballot-x">✗</text>'}}</text>
         </view>
         <text class="check-text">{{item.text}}</text>
       </view>
@@ -90,9 +90,28 @@
 
     <!-- Tip Card -->
     <view class="tip-card">
-      <text class="tip-icon">ℹ</text>
+      <text class="tip-icon"><text class="icon icon-info">ℹ</text></text>
       <text class="tip-text">转让申请提交后将由管理员审核，审核通过后权益即刻转移。转让后原孩子的阅读记录将保留。</text>
     </view>
+
+    <!-- Records Section -->
+    <view class="records-section" wx:if="{{records.length > 0}}">
+      <text class="records-heading">转让记录</text>
+      <view class="record-item" wx:for="{{records}}" wx:key="id">
+        <view class="record-header">
+          <text class="record-source">{{item.source_child_name}}</text>
+          <text class="record-arrow">→</text>
+          <text class="record-target">{{item.target_child_name}}</text>
+        </view>
+        <view class="record-meta">
+          <text class="record-date">{{item.created_at}}</text>
+          <text class="record-status {{item.status}}">
+            {{item.status === 'approved' ? '已审核' : item.status === 'pending' ? '审核中' : '已拒绝'}}
+          </text>
+        </view>
+      </view>
+    </view>
+    <view class="empty-records" wx:elif="{{!recordsLoading && records.length === 0}}"><text>暂无转让记录</text></view>
 
     <!-- Submit Button -->
     <view class="fixed-bottom-bar submit-wrap">

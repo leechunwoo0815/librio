@@ -35,7 +35,7 @@ def parse_backend_routes(backend_dir: str) -> dict[str, list[str]]:
     routes: dict[str, list[str]] = {"get": [], "post": [], "put": [], "del": []}
     method_map = {"get": "get", "post": "post", "put": "put", "delete": "del"}
 
-    for router_file in pathlib.Path(backend_dir).rglob("*/router.py"):
+    for router_file in pathlib.Path(backend_dir).rglob("*router.py"):
         content = router_file.read_text(encoding="utf-8")
 
         # 提取所有 router prefix（包括 fav_router 等别名）

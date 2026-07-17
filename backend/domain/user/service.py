@@ -4,6 +4,7 @@
 import logging
 from typing import Optional
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from backend.common.exceptions import ConflictError
@@ -29,6 +30,8 @@ class UserService:
 
     def create_user(self, user_data: UserCreate) -> UserResponse:
         """创建用户 — 支持微信登录（无需手机号）和手机号注册"""
+        # NOTE: openid 是公开的微信用户标识（非密钥），开发日志记录全量 openid 可接受。
+        # 生产环境如需脱敏，可改为 ...{user_data.openid[-4:]}
         logger.info(f"Creating user with openid: {user_data.openid}")
 
         # 手机号唯一性检查
@@ -90,6 +93,28 @@ class UserService:
         if update_data.avatar is not None:
             user.avatar = update_data.avatar
 
+        self.user_repo.update(user)
+        self.db.commit()
+        return UserResponse.model_validate(user)
+
+    def update_user_phone(self, user_id: int, phone: str) -> UserResponse:
+        try:
+            existing = self.user_repo.get_by_phone(phone)
+            if existing and existing.id != user_id:
+                return UserResponse.model_validate(existing)
+            user = self.user_repo.get_by_id_or_raise(user_id)
+            user.phone = phone
+            self.user_repo.update(user)
+            self.db.commit()
+        except IntegrityError:
+            self.db.rollback()
+            logger.warning(f"Failed to update phone for user {user_id}: duplicate phone {phone}")
+            user = self.user_repo.get_by_id_or_raise(user_id)
+        return UserResponse.model_validate(user)
+
+    def link_openid(self, user_id: int, openid: str) -> UserResponse:
+        user = self.user_repo.get_by_id_or_raise(user_id)
+        user.openid = openid
         self.user_repo.update(user)
         self.db.commit()
         return UserResponse.model_validate(user)

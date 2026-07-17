@@ -8,12 +8,16 @@
 """
 
 import json
+import logging
+import os
 import shutil
 from pathlib import Path
 
 from sqlalchemy.orm import Session
 
 from backend.common.exceptions import NotFoundError, ValidationError
+
+logger = logging.getLogger(__name__)
 
 
 # 上传目录（与原 AdminService 保持一致）
@@ -38,6 +42,23 @@ class UploadService:
         ".wav",
     }
     ALLOWED_EXTENSIONS = ALLOWED_IMAGE_EXTENSIONS | ALLOWED_AUDIO_EXTENSIONS | {".pdf"}
+
+    _MIME_MAGIC: dict[bytes, str] = {
+        b"\x89PNG\r\n\x1a\n": "image/png",
+        b"\xff\xd8\xff": "image/jpeg",
+        b"GIF8": "image/gif",
+        b"BM": "image/bmp",
+        b"RIFF": "image/webp",
+        b"%PDF": "application/pdf",
+        b"ID3": "audio/mpeg",
+    }
+
+    @staticmethod
+    def _detect_mime(data: bytes) -> str:
+        for magic, mime in UploadService._MIME_MAGIC.items():
+            if data[:len(magic)] == magic:
+                return mime
+        return "application/octet-stream"
 
     def validate_file_extension(
         self, filename: str, file_type: str | None = None
@@ -64,21 +85,41 @@ class UploadService:
             )
         return ext
 
+    @staticmethod
+    def validate_file_content(data: bytes, filename: str) -> None:
+        mime = UploadService._detect_mime(data)
+        ext = Path(filename).suffix.lower()
+        ext_to_mime = {
+            ".png": "image/png",
+            ".jpg": "image/jpeg",
+            ".jpeg": "image/jpeg",
+            ".gif": "image/gif",
+            ".bmp": "image/bmp",
+            ".webp": "image/webp",
+            ".pdf": "application/pdf",
+            ".mp3": "audio/mpeg",
+        }
+        expected = ext_to_mime.get(ext)
+        if expected and mime != expected:
+            raise ValidationError(f"文件内容与扩展名不匹配，疑似伪造文件: {filename}")
+
     def save_upload(self, filename: str, content: bytes) -> dict:
         """保存上传文件并返回文件信息"""
         if len(content) > 10 * 1024 * 1024:
             raise ValidationError("单文件上传限制 10MB，请使用分片上传")
 
+        self.validate_file_content(content, filename)
+
         import uuid as _uuid
 
-        safe_name = f"{_uuid.uuid4().hex[:12]}_{filename}"
+        safe_name = f"{_uuid.uuid4().hex[:12]}_{os.path.basename(filename)}"
         save_path = UPLOAD_DIR / safe_name
         save_path.write_bytes(content)
 
         return {
             "success": True,
             "filename": safe_name,
-            "original_name": filename,
+            "original_name": os.path.basename(filename),
             "size": len(content),
             "url": f"/uploads/{safe_name}",
         }
@@ -92,6 +133,12 @@ class UploadService:
         content: bytes,
     ) -> dict:
         """保存分片"""
+        # 校验扩展名（仅校验，内容交给 complete_upload 做魔数检测）
+        ext = Path(filename).suffix.lower()
+        if ext not in self.ALLOWED_EXTENSIONS:
+            raise ValidationError(
+                f"不支持的格式: {ext}，允许: {', '.join(sorted(self.ALLOWED_EXTENSIONS))}"
+            )
         session_dir = CHUNK_DIR / upload_id
         session_dir.mkdir(exist_ok=True)
 
@@ -103,7 +150,7 @@ class UploadService:
         meta = {}
         if meta_path.exists():
             meta = json.loads(meta_path.read_text())
-        meta["filename"] = filename
+        meta["filename"] = os.path.basename(filename)
         meta["total_chunks"] = total_chunks
         meta["uploaded_chunks"] = list(
             set(meta.get("uploaded_chunks", []) + [chunk_index])
@@ -139,13 +186,21 @@ class UploadService:
             raise ValidationError(f"缺少分片: {missing}，请重新上传缺失分片")
 
         # 合并分片
-        safe_name = f"{_uuid.uuid4().hex[:12]}_{filename}"
+        safe_name = f"{_uuid.uuid4().hex[:12]}_{os.path.basename(filename)}"
         save_path = UPLOAD_DIR / safe_name
 
         with open(save_path, "wb") as f:
             for i in range(total_chunks):
                 chunk_path = session_dir / f"chunk_{i:06d}"
                 f.write(chunk_path.read_bytes())
+
+        # 魔数校验合并后的文件
+        head = save_path.read_bytes()[:32]
+        try:
+            self.validate_file_content(head, filename)
+        except ValidationError:
+            save_path.unlink(missing_ok=True)
+            raise
 
         # 清理分片临时文件
         shutil.rmtree(session_dir, ignore_errors=True)
@@ -155,7 +210,7 @@ class UploadService:
         return {
             "success": True,
             "filename": safe_name,
-            "original_name": filename,
+            "original_name": os.path.basename(filename),
             "size": file_size,
             "url": f"/uploads/{safe_name}",
             "chunks_merged": total_chunks,

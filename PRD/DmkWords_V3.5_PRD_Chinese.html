@@ -1,0 +1,1611 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DmkWords V3.5 — 产品需求文档</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --accent: #5560cf;
+            --accent-light: #e8eafc;
+            --accent-dark: #3d47a8;
+            --surface: #ffffff;
+            --surface-alt: #f8f9fc;
+            --bg: #f0f2f7;
+            --text: #1e1e2e;
+            --text-secondary: #5c5f77;
+            --text-muted: #8b8fa3;
+            --border: #e2e4ef;
+            --border-light: #eceef5;
+            --success: #40b764;
+            --success-bg: #eafbef;
+            --warning: #e6a817;
+            --warning-bg: #fef8e8;
+            --danger: #e5484d;
+            --danger-bg: #ffeef0;
+            --radius: 12px;
+            --radius-sm: 8px;
+            --shadow-sm: 0 1px 3px rgba(30,30,46,0.06);
+            --shadow-md: 0 4px 16px rgba(30,30,46,0.08);
+            --shadow-lg: 0 8px 32px rgba(30,30,46,0.12);
+            --font-sans: 'Noto Sans SC', 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; scroll-padding-top: 24px; }
+        body {
+            font-family: var(--font-sans);
+            font-size: 15px;
+            line-height: 1.8;
+            color: var(--text);
+            background: var(--bg);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .page-wrapper {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            padding: 32px 0;
+            z-index: 10;
+        }
+        .sidebar::-webkit-scrollbar { width: 4px; }
+        .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        .sidebar-brand {
+            padding: 0 24px 24px;
+            border-bottom: 1px solid var(--border-light);
+            margin-bottom: 16px;
+        }
+        .sidebar-brand h1 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--accent);
+            letter-spacing: -0.3px;
+        }
+        .sidebar-brand .version {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 4px;
+            font-weight: 500;
+        }
+        .sidebar-nav { padding: 0 12px; }
+        .sidebar-nav ul { list-style: none; }
+        .sidebar-nav li { margin-bottom: 1px; }
+        .sidebar-nav a {
+            display: block;
+            padding: 8px 12px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: var(--radius-sm);
+            transition: all 0.15s ease;
+            line-height: 1.5;
+        }
+        .sidebar-nav a:hover {
+            background: var(--accent-light);
+            color: var(--accent);
+        }
+        .sidebar-nav a.active {
+            background: var(--accent-light);
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .main-content {
+            padding: 48px 64px 96px;
+            max-width: 880px;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+            border-radius: var(--radius);
+            padding: 48px;
+            color: white;
+            margin-bottom: 48px;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 400px;
+            height: 400px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 50%;
+        }
+        .hero h1 {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin-bottom: 16px;
+            position: relative;
+        }
+        .hero-meta {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            font-size: 14px;
+            opacity: 0.9;
+            position: relative;
+        }
+        .hero-meta .item {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        .hero-meta .label {
+            font-weight: 600;
+            white-space: nowrap;
+            min-width: 56px;
+        }
+
+        h2 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text);
+            margin-top: 56px;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--border);
+            letter-spacing: -0.3px;
+        }
+        h2:first-of-type { margin-top: 0; }
+        h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text);
+            margin-top: 36px;
+            margin-bottom: 12px;
+        }
+        h4 {
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-top: 24px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 13px;
+        }
+
+        p { margin-bottom: 14px; color: var(--text); }
+        strong { font-weight: 600; color: var(--text); }
+        hr {
+            border: none;
+            height: 1px;
+            background: var(--border-light);
+            margin: 40px 0;
+        }
+
+        blockquote {
+            border-left: 3px solid var(--accent);
+            padding: 16px 20px;
+            margin: 20px 0;
+            background: var(--accent-light);
+            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        blockquote strong { color: var(--accent-dark); }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin: 20px 0;
+            font-size: 14px;
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
+        }
+        thead th {
+            background: var(--surface-alt);
+            font-weight: 600;
+            color: var(--text);
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 2px solid var(--border);
+            font-size: 13px;
+        }
+        tbody td {
+            padding: 11px 16px;
+            border-bottom: 1px solid var(--border-light);
+            vertical-align: top;
+        }
+        tbody tr:last-child td { border-bottom: none; }
+        tbody tr:hover { background: var(--accent-light); }
+
+        ul, ol {
+            margin: 14px 0;
+            padding-left: 24px;
+        }
+        li { margin-bottom: 8px; color: var(--text); }
+        li::marker { color: var(--accent); }
+
+        code {
+            font-family: var(--font-mono);
+            font-size: 13px;
+            background: var(--accent-light);
+            color: var(--accent-dark);
+            padding: 2px 7px;
+            border-radius: 5px;
+            font-weight: 500;
+        }
+        pre {
+            background: #1e1e2e;
+            color: #cdd6f4;
+            padding: 20px 24px;
+            border-radius: var(--radius);
+            overflow-x: auto;
+            margin: 20px 0;
+            font-size: 13px;
+            line-height: 1.6;
+            box-shadow: var(--shadow-md);
+        }
+        pre code {
+            background: none;
+            color: inherit;
+            padding: 0;
+            font-weight: 400;
+        }
+
+        @media print {
+            .page-wrapper { grid-template-columns: 1fr; }
+            .sidebar { display: none; }
+            .main-content { padding: 20px; max-width: 100%; }
+            .hero { background: var(--accent) !important; -webkit-print-color-adjust: exact; }
+            h2 { page-break-before: always; }
+            h2:first-of-type { page-break-before: avoid; }
+            table { page-break-inside: avoid; }
+        }
+        @media (max-width: 900px) {
+            .page-wrapper { grid-template-columns: 1fr; }
+            .sidebar { display: none; }
+            .main-content { padding: 24px 20px 64px; }
+            .hero { padding: 32px 24px; }
+            .hero h1 { font-size: 24px; }
+            .hero-meta { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="page-wrapper">
+
+<nav class="sidebar">
+    <div class="sidebar-brand">
+        <h1>DmkWords</h1>
+        <div class="version">产品需求文档 V3.5 · OMO 模式</div>
+    </div>
+    <div class="sidebar-nav">
+        <ul>
+<li><a href="#section-0">一、用户报名流程（user_enrollment.feature）</a></li>
+<li><a href="#section-1">二、活动报名流程（activity_enrollment.feature）</a></li>
+<li><a href="#section-2">三、会员权益转让（benefit_transfer.feature）</a></li>
+<li><a href="#section-3">四、在线听读与阅读记录（online_reading.feature）</a></li>
+<li><a href="#section-4">五、书架/想读清单（bookshelf.feature）</a></li>
+<li><a href="#section-5">六、实体书借阅（borrow_record.feature）</a></li>
+<li><a href="#section-6">七、押金管理（deposit.feature）</a></li>
+<li><a href="#section-7">八、在线预约借书（reservation.feature）</a></li>
+<li><a href="#section-8">九、查词与生词本（vocabulary.feature）</a></li>
+<li><a href="#section-9">十、阅读打卡、统计与学习报告（reading_stats.feature）</a></li>
+<li><a href="#section-10">十一、晋级体系（advancement.feature）</a></li>
+<li><a href="#section-11">十二、晋级证书（level_certificate.feature）</a></li>
+<li><a href="#section-12">十三、观察期报告（observation_report.feature）</a></li>
+<li><a href="#section-13">十四、个人名片（personal_profile.feature）</a></li>
+<li><a href="#section-14">十五、退款申请流程（refund_application.feature）</a></li>
+<li><a href="#section-15">十六、语音朗读与练习（voice_reading.feature）</a></li>
+<li><a href="#section-16">附录 A：会员状态机</a></li>
+<li><a href="#section-17">附录 B：价格体系</a></li>
+<li><a href="#section-18">附录 C：API 端点索引</a></li>
+        </ul>
+    </div>
+</nav>
+
+<main class="main-content">
+
+<div class="hero">
+    <h1>DmkWords<br>完整产品需求文档</h1>
+    <div class="hero-meta">
+        <div class="item"><span class="label">版本</span> V3.5</div>
+        <div class="item"><span class="label">日期</span> 2026-06-22</div>
+        <div class="item"><span class="label">目标</span> 3-15 岁儿童</div>
+        <div class="item"><span class="label">模式</span> OMO 线上线下融合</div>
+        <div class="item"><span class="label">核心闭环</span> 选书→借书→听读→查词→测评→晋级</div>
+        <div class="item"><span class="label">定价</span> 亲子课99元→观察期500元/30天→正式会员5400元/年</div>
+    </div>
+</div>
+
+
+<blockquote><p><strong>版本</strong>: V3.5 | <strong>日期</strong>: 2026-06-22</p></blockquote>
+<blockquote><p><strong>产品定位</strong>: 3-15 岁儿童英文原版阅读成长平台（OMO 模式）</p></blockquote>
+<blockquote><p><strong>核心闭环</strong>: 线上选书 → 线下扫码借书 → 线上音频伴读 → 手动查词 → 异步测评 → 自动晋级</p></blockquote>
+<blockquote><p><strong>商业模式</strong>: 亲子课 99 元 → 观察期 500 元/30 天 → 正式会员 5400 元/年</p></blockquote>
+
+<hr>
+
+<h2 id="section-0">一、用户报名流程（user_enrollment.feature）</h2>
+
+<h3>1.1 亲子课程报名（99 元）</h3>
+
+<p><strong>业务背景</strong>：亲子课是 DmkWords 的获客入口。家长支付 99 元，带孩子到线下门店参加一次 75 分钟的英文阅读体验课。体验课结束后，老师会出具一份孩子的英文阅读能力评估报告，作为后续报名观察期的前置条件。</p>
+
+<p><strong>报名流程</strong>：</p>
+
+<ul>
+<li>家长在小程序首页选择场馆（人广馆/徐汇馆等）</li>
+<li>选择上课时间（周六/周日固定时段，每场限 30 人）</li>
+<li>填写信息：家长姓名、手机号（微信授权自动获取）、孩子中文名、英文名、年龄（3-15 岁）、年级</li>
+<li>点击"立即支付 99 元"→ 调用微信支付 V3</li>
+<li>支付成功 → 生成订单（type=1, pay_status=1）→ 生成电子凭证</li>
+</ul>
+
+<p><strong>校验规则</strong>：</p>
+<ul>
+<li>所有字段必填，否则支付按钮置灰</li>
+<li>所选时间段名额已满 → 提示"该时间段名额已满，请选择其他时间"</li>
+<li>手机号微信授权自动获取，不需要手动填写</li>
+</ul>
+
+<p><strong>数据流转</strong>：支付成功 → 创建 Order（type=PARENT_COURSE）→ 发布 order.paid 事件</p>
+
+<h3>1.2 观察期报名（500 元/30 天）</h3>
+
+<p><strong>业务背景</strong>：亲子课结束后，如果家长认可教学质量，可以为孩子报名观察期。观察期是一个 30 天的完整体验期，孩子享受与正式会员<strong>完全相同</strong>的服务（无任何功能限制），包括：无限量阅读所有图书、音频伴读、查词、测评、打卡、排行榜。观察期结束时系统自动生成一份详细的阅读报告，引导家长转为正式会员。</p>
+
+<p><strong>报名流程</strong>：</p>
+
+<ul>
+<li>前置条件：孩子已完成亲子课程并获得测评报告</li>
+<li>家长选择观察期开始日期（默认当天）</li>
+<li>点击"立即支付 500 元"→ 调用微信支付</li>
+<li>支付成功 → 生成订单（type=OBSERVATION）→ 发布 order.paid 事件</li>
+<li>事件处理器自动：孩子状态变为观察期（status=1）、分配一对一指导老师（teacher_id）</li>
+</ul>
+
+<p><strong>关键规则</strong>：</p>
+<ul>
+<li>观察期用户享受与正式会员<strong>完全相同</strong>的服务，无任何功能限制</li>
+<li>观察期固定 30 天，从支付当天开始计算</li>
+<li>到期前 7/5/3/2/1/当天 系统自动发送续费提醒</li>
+<li>到期后自动生成观察期报告（阅读本数、词数、测验通过数、老师评语）</li>
+<li>到期后进入 15 天缓冲期，续费可享 9 折</li>
+</ul>
+
+<p><strong>前置条件校验</strong>：</p>
+<ul>
+<li>孩子未完成亲子课程 → 提示"请先完成亲子课程并获得测评报告"，无法进入报名页</li>
+</ul>
+
+<h3>1.3 正式会员报名（5400 元/年）</h3>
+
+<p><strong>业务背景</strong>：观察期结束后，家长可以选择为孩子报名正式会员。正式会员有效期 365 天，享受全部服务。同一用户第 2 个孩子起享 9 折优惠（4860 元）。</p>
+
+<p><strong>报名流程</strong>：</p>
+
+<ul>
+<li>前置条件：孩子观察期评估结果为"通过"</li>
+<li>系统自动判断是否享受多孩优惠（同一用户已有 1 个正式会员孩子 → 价格自动变为 4860 元）</li>
+<li>点击"立即支付 5400 元"（或 4860 元）→ 调用微信支付</li>
+<li>支付成功 → 孩子状态变为正式会员（status=2）→ 会员有效期 365 天</li>
+</ul>
+
+<p><strong>多孩优惠规则</strong>：</p>
+<ul>
+<li>同一 user 下已有 1 个孩子是观察期或正式会员 → 第 2 个孩子起享 9 折</li>
+<li>优惠金额 = 原价 × 0.9，四舍五入到分</li>
+<li>前端自动显示优惠价格，并提示"多孩优惠已应用"</li>
+</ul>
+
+<p><strong>前置条件校验</strong>：</p>
+<ul>
+<li>观察期评估未通过 → 提示"观察期评估未通过，暂不能报名正式会员"，无法进入报名页</li>
+</ul>
+
+<h3>1.3a 季度/半年会员</h3>
+
+<table><thead><tr>
+<th>类型</th>
+<th>价格</th>
+<th>有效期</th>
+<th>说明</th>
+</tr></thead><tbody>
+<tr>
+<td>季度会员</td>
+<td>1350 元</td>
+<td>90 天</td>
+<td>同正式会员权益</td>
+</tr>
+<tr>
+<td>半年会员</td>
+<td>2700 元</td>
+<td>180 天</td>
+<td>同正式会员权益</td>
+</tr>
+<tr>
+<td>年费会员</td>
+<td>5400 元</td>
+<td>365 天</td>
+<td>同正式会员权益</td>
+</tr>
+</tbody></table>
+
+<ul>
+<li>价格通过动态配置（price_quarterly / price_semi_annual）管理</li>
+<li>三种会员类型均映射到 status=2（OFFICIAL），通过 Order.type 区分</li>
+<li>到期后均自动转为 EXPIRED(3)</li>
+<li>续费折扣同样适用（缓冲期内 9 折）</li>
+</ul>
+
+<h3>1.3b 会员升级</h3>
+
+<ul>
+<li>升级路径：季度 → 半年 → 年费</li>
+<li>升级差价 = 目标价格 - 当前会员剩余价值</li>
+<li>剩余价值 = 当前价格 ×（剩余天数 / 总天数）</li>
+<li>API：<code>GET /order/upgrade-options/{child_id}</code> 查询可升级选项</li>
+<li>API：<code>POST /order/upgrade</code> 创建升级订单</li>
+</ul>
+
+<hr>
+
+<h2 id="section-1">二、活动报名流程（activity_enrollment.feature）</h2>
+
+<h3>2.1 活动浏览</h3>
+
+<p><strong>业务背景</strong>：DmkWords 定期举办线下社群活动，增强用户粘性和品牌认同。活动类型包括：读书交流会、专家讲座、CityWalk 英文探索、郊游、年度大会等。</p>
+
+<p><strong>浏览功能</strong>：</p>
+<ul>
+<li>"即将举办"标签页：显示未来 30 天内的活动列表，每个活动显示封面、名称、时间、地点、报名状态（报名中/已满/已截止）</li>
+<li>"往期回顾"标签页：显示往期活动的照片、视频、总结文章</li>
+</ul>
+
+<h3>2.2 活动报名</h3>
+
+<p><strong>免费活动报名</strong>：</p>
+<ul>
+<li>用户进入活动详情页，点击"立即报名"</li>
+<li>系统生成电子门票（ticket_code，格式：ACT-XXXXXXXX）</li>
+<li>报名记录存入 activity_enrollment 表（status=APPROVED）</li>
+<li>用户收到"活动报名成功"通知</li>
+</ul>
+
+<p><strong>收费活动报名</strong>：</p>
+<ul>
+<li>用户进入活动详情页，点击"立即报名"</li>
+<li>调用微信支付完成支付</li>
+<li>支付成功后生成电子门票</li>
+<li>订单状态为"已支付"</li>
+</ul>
+
+<p><strong>名额校验</strong>：</p>
+<ul>
+<li>活动名额已满 → 按钮显示"名额已满"，无法点击报名</li>
+<li>同一孩子重复报名同一活动 → 提示"已报名"</li>
+</ul>
+
+<h3>2.3 活动取消报名</h3>
+
+<p><strong>取消规则</strong>：</p>
+<ul>
+<li>活动开始前 24 小时以上：可取消</li>
+<li>活动开始前 24 小时以内：不可取消，提示"活动开始前 24 小时内不可取消"</li>
+</ul>
+
+<p><strong>免费活动取消</strong>：</p>
+<ul>
+<li>直接取消，报名状态变为"已取消"（STATUS_CANCELLED=3）</li>
+</ul>
+
+<p><strong>收费活动取消</strong>：</p>
+<ul>
+<li>取消成功后自动申请全额退款</li>
+<li>退款需管理员审核（status=PENDING）</li>
+</ul>
+
+<p><strong>主办方取消活动</strong>：</p>
+<ul>
+<li>所有报名用户收到"活动取消"通知</li>
+<li>付费用户自动全额退款，无需用户申请</li>
+<li>退款在 3-7 个工作日内到账</li>
+</ul>
+
+<h3>2.4 活动签到</h3>
+
+<p><strong>签到流程</strong>：</p>
+<ul>
+<li>活动开始后，用户出示电子门票二维码</li>
+<li>管理员扫描二维码 → 调用签到 API</li>
+<li>签到成功：报名状态变为"已签到"（STATUS_SIGNED_IN=4），记录签到时间</li>
+<li>电子门票显示"已签到"</li>
+</ul>
+
+<h3>2.5 活动提醒</h3>
+
+<ul>
+<li>活动开始前 3 天：系统自动发送"活动开始提醒"通知</li>
+<li>通知推送到用户微信（订阅消息）</li>
+<li>免费活动报名自动通过（APPROVED），收费活动待支付（PENDING→支付→APPROVED）</li>
+<li>组织者取消活动 → 通知所有报名者 + 收费用户自动创建退款申请</li>
+<li>活动开始前 3 天自动发送提醒通知（定时任务 check_activity_reminders）</li>
+</ul>
+
+<hr>
+
+<h2 id="section-2">三、会员权益转让（benefit_transfer.feature）</h2>
+
+<h3>3.1 转让规则</h3>
+
+<p><strong>业务背景</strong>：同一用户可以有多个孩子。如果一个孩子不再需要会员服务，可以将剩余权益转让给同一用户下的另一个孩子，避免资源浪费。</p>
+
+<p><strong>转让条件</strong>：</p>
+<ul>
+<li>源孩子必须是观察期或正式会员</li>
+<li>源孩子必须已归还所有图书（无活跃借阅记录）</li>
+<li>目标孩子不能已经是正式会员（否则无意义）</li>
+<li>仅限同一用户的孩子间转让</li>
+</ul>
+
+<p><strong>转让流程</strong>：</p>
+<ul>
+<li>家长提交转让申请</li>
+<li>管理员审核（通过/拒绝）</li>
+<li>审核通过 → 系统自动执行权益转移：</li>
+<li>目标孩子获得源孩子的剩余权益（会员状态 + 剩余天数）</li>
+<li>源孩子状态变为"已过期"</li>
+<li>审核拒绝 → 通知家长并附拒绝理由</li>
+</ul>
+
+<p><strong>权益继承</strong>：</p>
+<ul>
+<li>正式会员（已使用 100 天）→ 目标孩子获得剩余 265 天正式会员</li>
+<li>观察期（已使用 10 天）→ 目标孩子获得剩余 20 天观察期</li>
+</ul>
+
+<h3>3.2 失败场景</h3>
+
+<ul>
+<li>源孩子有未归还图书 → 提示"有未归还图书，请先归还后再转让"</li>
+<li>目标孩子已是正式会员 → 提示"目标孩子已是正式会员，无需转让"</li>
+<li>源孩子状态不允许转让（如已退出）→ 拒绝操作</li>
+</ul>
+
+<hr>
+
+<h2 id="section-3">四、在线听读与阅读记录（online_reading.feature）</h2>
+
+<h3>4.1 图书浏览</h3>
+
+<p><strong>业务背景</strong>：线上图书馆是孩子选书的主要入口。图书支持按 AR 等级、主题、年龄等维度筛选。每本书显示封面、书名、作者、词数、预计阅读时间、是否有音频标识。</p>
+
+<p><strong>筛选功能</strong>：</p>
+<ul>
+<li>AR 等级筛选：如"AR2-AR3"，仅显示 AR 值在 2.0-3.9 之间的图书</li>
+<li>主题筛选：如"故事"、"科学"、"历史"</li>
+<li>年龄筛选：根据孩子年龄推荐适合的图书</li>
+</ul>
+
+<p><strong>图书详情页</strong>：</p>
+<ul>
+<li>封面、简介、AR 等级、词数、预计阅读时间</li>
+<li>是否有音频标识（音频齐备才显示"开始听读"按钮）</li>
+<li>库存状态（显示"可借 X 本"或"暂无库存"）</li>
+</ul>
+
+<h3>4.2 音频伴读（核心功能）</h3>
+
+<p><strong>业务背景</strong>：V3.5 彻底删除了线上 PDF 阅读器，改为音频伴读模式。孩子在线下借到实体书后，可以在线上播放该书的音频，配合实体书进行跟读学习。</p>
+
+<p><strong>音频播放器功能</strong>：</p>
+<ul>
+<li>播放/暂停：点击按钮控制，音频从暂停位置继续播放</li>
+<li>倍速播放：支持 0.75x / 1x / 1.25x / 1.5x</li>
+<li>锁屏播放：使用 <code>wx.getBackgroundAudioManager()</code> 支持锁屏听音频</li>
+<li>进度条：显示当前播放位置和总时长</li>
+<li>中断恢复：退出小程序后重新打开，可以从上次音频位置继续听读</li>
+</ul>
+
+<p><strong>技术要求</strong>：</p>
+<ul>
+<li>音频进度条更新严禁使用全局 <code>setData</code>，防止页面卡顿</li>
+<li>翻页打点：监听 <code>onTimeUpdate</code>，结合后端 <code>audio_timeline</code> 实时高亮</li>
+<li>逾期锁定：借阅超期后音频伴读功能锁死，无法播放</li>
+</ul>
+
+<h3>4.3 听读中查词</h3>
+
+<p><strong>查词流程</strong>：</p>
+<ul>
+<li>孩子在听读过程中遇到不认识的单词</li>
+<li>点击文本中的单词 → 弹出查词弹窗</li>
+<li>显示：单词、音标、词性、中文释义、例句</li>
+<li>听读不中断（查词是浮层，不影响音频播放）</li>
+</ul>
+
+<p><strong>查词数据来源</strong>：</p>
+<ul>
+<li>优先从本地 ECDICT 词库查询（338 万词条，毫秒级响应）</li>
+<li>本地未命中 → 调用 Free Dictionary API 兜底</li>
+<li>查词结果自动记录到 user_vocabulary 表</li>
+</ul>
+
+<h3>4.4 阅读时长与打卡</h3>
+
+<p><strong>自动打卡规则</strong>：</p>
+<ul>
+<li>阅读满 10 分钟 → 自动触发阅读打卡（打卡类型="阅读时长"）</li>
+<li>读完一本书 → 自动触发打卡（打卡类型="读完图书"）</li>
+<li>每天最多打卡 1 次，不重复打卡</li>
+</ul>
+
+<p><strong>阅读时长记录</strong>：</p>
+<ul>
+<li>每次听读会话记录：开始时间、结束时间、时长（秒）、阅读词数、阅读页数</li>
+<li>累计阅读时间更新到 child.total_reading_minutes</li>
+</ul>
+
+<hr>
+
+<h2 id="section-4">五、书架/想读清单（bookshelf.feature）</h2>
+
+<h3>5.1 书架定义（想读清单）</h3>
+
+<p><strong>V3.5 关键变更</strong>：书架从"借阅书架"改为"想读清单/收藏夹"。书架与借阅完全分离，纯粹是"我想读这本书"的收藏行为，<strong>不需要押金，没有数量限制</strong>。</p>
+
+<ul>
+<li>借阅功能由 <code>borrow_record</code> 表管理</li>
+<li>书架只是线上收藏意图，容量无限</li>
+</ul>
+
+<h3>5.2 加入书架</h3>
+
+<p><strong>操作流程</strong>：</p>
+<ul>
+<li>用户在图书详情页点击"加入书架"</li>
+<li>图书出现在书架列表中，书架数量 +1</li>
+</ul>
+
+<p><strong>业务规则</strong>：</p>
+<ul>
+<li><strong>不需要押金</strong>：未缴纳押金的用户也可以加入书架</li>
+<li><strong>不限数量</strong>：即使书架已有 50 本，仍可继续添加（V3.5 取消 20 本限制）</li>
+<li><strong>去重</strong>：同一本书不能重复加入，提示"该书已在书架中"</li>
+</ul>
+
+<h3>5.3 移出书架</h3>
+
+<ul>
+<li>用户可以将图书从书架移除</li>
+<li>移除后图书从列表消失，书架数量 -1</li>
+</ul>
+
+<h3>5.4 书架浏览</h3>
+
+<ul>
+<li>显示所有已加入的图书：封面、标题</li>
+<li>每本书显示阅读进度（如有阅读记录）</li>
+</ul>
+
+<h3>5.5 从书架预约借书</h3>
+
+<p><strong>业务流程</strong>：</p>
+<ul>
+<li>用户在书架中选择一本想借的书</li>
+<li>点击"预约借书"</li>
+<li>前置条件：已缴纳押金 + 该书库存 > 0</li>
+<li>创建预约记录 → 库存锁定 → 显示"预约成功，请 72 小时内到店取书"</li>
+</ul>
+
+<hr>
+
+<h2 id="section-5">六、实体书借阅（borrow_record.feature）</h2>
+
+<h3>6.1 扫码借书</h3>
+
+<p><strong>业务背景</strong>：线下门店工作人员使用手持扫码枪扫描实体书条码，系统自动创建借阅记录。这是 OMO 模式的核心线下环节。</p>
+
+<p><strong>借书流程</strong>：</p>
+
+<p><strong>已有馆藏的书</strong>：</p>
+<ul>
+<li>工作人员扫描条码（如 978-0-06-112495-1-001）</li>
+<li>系统识别到该条码对应的 BookCopy → 关联到 Book</li>
+<li>创建借阅记录（BorrowRecord）：status=BORROWING, due_date=当前+21天</li>
+<li>发布 book.borrowed 事件 → BookCopy 状态变为 BORROWED</li>
+</ul>
+
+<p><strong>首次扫码（条码不存在）</strong>：</p>
+<ul>
+<li>工作人员扫描条码 → 系统提示"条码不存在，请输入图书信息"</li>
+<li>工作人员输入书名和 ISBN → 确认创建</li>
+<li>系统自动：创建 Book 记录 → 创建 BookCopy 记录（关联条码）→ 创建借阅记录</li>
+</ul>
+
+<p><strong>同 ISBN 不同条码</strong>：</p>
+<ul>
+<li>工作人员扫描新条码 → 系统识别到 ISBN 已存在</li>
+<li>仅创建新的 BookCopy（关联到已有 Book）→ 创建借阅记录</li>
+<li>不重复创建图书记录</li>
+</ul>
+
+<p><strong>借书权限校验</strong>：</p>
+<ul>
+<li>孩子必须是观察期或正式会员（status=1 或 2）</li>
+<li>必须已缴纳押金（deposit_status=PAID）</li>
+<li>同时借阅数不超过上限（默认 20 本）</li>
+<li>同一本书不能重复借（同一 child+book 已有 BORROWING 记录）</li>
+</ul>
+
+<h3>6.2 还书</h3>
+
+<p><strong>正常还书</strong>：</p>
+<ul>
+<li>工作人员扫描条码 → 匹配到借阅记录</li>
+<li>借阅记录状态更新为 RETURNED，归还时间为当前时间</li>
+<li>发布 book.returned 事件 → BookCopy 状态恢复 AVAILABLE → 库存释放</li>
+</ul>
+
+<p><strong>逾期还书</strong>：</p>
+<ul>
+<li>还书时系统检测到当前时间 > due_date</li>
+<li>计算逾期天数 = (当前时间 - due_date).days</li>
+<li>生成逾期罚款记录：罚款 = 逾期天数 × 1 元/天（可配置）</li>
+<li>借阅记录状态仍为 RETURNED，但记录 fine_amount</li>
+</ul>
+
+<p><strong>丢失图书</strong>：</p>
+<ul>
+<li>工作人员标记该书为"丢失"</li>
+<li>罚款金额 = 图书定价 × 1.5 倍</li>
+<li>从押金中扣除罚款金额</li>
+<li>更新孩子的 outstanding_fines</li>
+</ul>
+
+<ul>
+<li>扫码借书端点：POST /borrow/scan（条码存在直接借阅，不存在自动创建图书+副本+借阅）</li>
+<li>扫码还书端点：POST /borrow/scan-return（通过条码找到活跃借阅记录并还书）</li>
+<li>丢书登记端点：POST /admin/borrow-records/{record_id}/mark-lost</li>
+<li>状态转换：BORROWING/OVERDUE → LOST(3)</li>
+<li>罚款金额 = 图书定价 × lost_book_fine_multiplier（默认 1.5，可配置）</li>
+<li>库存扣减：total_stock - 1（实体书丢失不可恢复）</li>
+</ul>
+
+<h3>6.3 逾期检测（定时任务）</h3>
+
+<p><strong>每日凌晨 2 点执行</strong>：</p>
+<ul>
+<li>查询所有 status=BORROWING 且 due_date < 当前时间的记录</li>
+<li>标记状态为 OVERDUE</li>
+<li>发布 book.overdue 事件 → 孩子的在线音频伴读功能锁定</li>
+</ul>
+
+<h3>6.4 到期提醒（定时任务）</h3>
+
+<p><strong>提醒节点</strong>（可配置，默认 5/3/1/当天）：</p>
+<ul>
+<li>到期前 5 天：发送微信订阅消息提醒</li>
+<li>到期前 3 天：发送提醒</li>
+<li>到期前 1 天：发送提醒</li>
+<li>到期当天：发送提醒，提示"今天到期，请尽快归还"</li>
+</ul>
+
+<hr>
+
+<h2 id="section-6">七、押金管理（deposit.feature）</h2>
+
+<h3>7.1 缴纳押金</h3>
+
+<p><strong>业务背景</strong>：押金是线下借阅的前置条件。家长为孩子缴纳 1200 元押金后，孩子才能借阅实体书。押金在孩子退出会员时可退还（需满足条件）。</p>
+
+<p><strong>缴纳流程</strong>：</p>
+<ul>
+<li>家长在押金页面点击"缴纳押金 1200 元"</li>
+<li>调用微信支付完成支付</li>
+<li>创建 DepositRecord（status=PAID, amount=1200）</li>
+<li>更新 child.deposit_status = PAID</li>
+</ul>
+
+<p><strong>防重复缴纳</strong>：</p>
+<ul>
+<li>已缴纳押金的孩子再次缴纳 → 提示"押金已缴纳，无需重复操作"</li>
+</ul>
+
+<h3>7.2 押金退款</h3>
+
+<p><strong>退款条件</strong>（必须同时满足）：</p>
+<ul>
+<li>无活跃借阅记录（所有 BorrowRecord 状态不为 BORROWING）</li>
+<li>无未缴罚款（child.outstanding_fines == 0）</li>
+</ul>
+
+<p><strong>退款流程</strong>：</p>
+<ul>
+<li>家长申请退款</li>
+<li>系统校验退款条件</li>
+<li>条件满足 → 创建退款申请 → 押金状态更新为"退款中"</li>
+<li>管理员审核 → 审核通过 → 退款在 3-7 个工作日内原路退回</li>
+</ul>
+
+<p><strong>退款拒绝场景</strong>：</p>
+<ul>
+<li>有活跃借阅 → 提示"请先归还所有借阅图书"</li>
+<li>有未结罚款 → 提示"请先结清未缴罚款 XX 元"</li>
+</ul>
+
+<h3>7.3 押金扣除</h3>
+
+<p><strong>丢书扣除</strong>：</p>
+<ul>
+<li>罚款金额 = 图书定价 × 1.5 倍</li>
+<li>从押金余额中扣除</li>
+<li>更新 child.outstanding_fines</li>
+</ul>
+
+<p><strong>逾期罚款扣除</strong>：</p>
+<ul>
+<li>逾期罚款 = 逾期天数 × 每天罚款金额（默认 1 元/天）</li>
+<li>从押金余额中扣除</li>
+<li>更新 child.outstanding_fines</li>
+</ul>
+
+<h3>7.4 押金查询</h3>
+
+<p>家长可以查看：</p>
+<ul>
+<li>押金状态：未缴纳(0) → 已缴纳(1) → 退款中(4) → 已退(2) / 已扣(3)</li>
+<li>押金余额</li>
+<li>未结罚款金额</li>
+</ul>
+
+<hr>
+
+<h2 id="section-7">八、在线预约借书（reservation.feature）</h2>
+
+<h3>8.1 预约流程</h3>
+
+<p><strong>业务背景</strong>：家长可以在线预约实体书，到店后直接取书，节省等待时间。</p>
+
+<p><strong>预约流程</strong>：</p>
+<ul>
+<li>用户在图书详情页点击"预约借书"</li>
+<li>前置条件：已缴纳押金 + 库存 > 0</li>
+<li>创建 Reservation（status=PENDING）</li>
+<li>库存锁定（available_stock -1）</li>
+<li>预约过期时间 = 当前时间 + 72 小时</li>
+<li>显示"预约成功，请 72 小时内到店取书"</li>
+</ul>
+
+<p><strong>预约校验</strong>：</p>
+<ul>
+<li>未缴纳押金 → 提示"请先缴纳押金"</li>
+<li>库存为 0 → 提示"该书暂无库存"</li>
+</ul>
+
+<h3>8.2 预约取书</h3>
+
+<p><strong>取书流程</strong>：</p>
+<ul>
+<li>用户到店，工作人员扫描条码</li>
+<li>系统匹配到该用户的预约记录</li>
+<li>创建正式借阅记录（due_date=当前+21天）</li>
+<li>预约状态更新为 FULFILLED</li>
+<li>发布 reservation.fulfilled 事件</li>
+</ul>
+
+<h3>8.3 预约过期（定时任务）</h3>
+
+<p><strong>每 30 分钟执行</strong>：</p>
+<ul>
+<li>查询 status=PENDING 且 expires_at < 当前时间的预约</li>
+<li>标记状态为 EXPIRED</li>
+<li>释放库存（available_stock +1）</li>
+<li>发布 reservation.expired 事件</li>
+</ul>
+
+<h3>8.4 预约查询</h3>
+
+<p>用户可以查看：</p>
+<ul>
+<li>有效预约列表：书名、预约时间</li>
+<li>剩余取书时间（倒计时）</li>
+</ul>
+
+<hr>
+
+<h2 id="section-8">九、查词与生词本（vocabulary.feature）</h2>
+
+<h3>9.1 查词功能</h3>
+
+<p><strong>查词入口</strong>：</p>
+<ul>
+<li>听读过程中点击文本中的单词</li>
+<li>手动输入单词查询</li>
+</ul>
+
+<p><strong>查词结果</strong>：</p>
+<ul>
+<li>单词、音标（IPA 格式）、词性、中文释义、例句</li>
+<li>发音播放按钮（点击播放标准发音）</li>
+</ul>
+
+<p><strong>查词数据来源</strong>：</p>
+<ul>
+<li>ECDICT 本地词库（338 万词条，优先）</li>
+<li>Free Dictionary API（本地未命中时兜底）</li>
+<li>两个来源都未收录 → 显示"单词未收录，已记录，将尽快补充"</li>
+</ul>
+
+<p><strong>未付费用户限制</strong>：</p>
+<ul>
+<li>仅对 status=0（体验用户）生效</li>
+<li>每日查词次数上限由 <code>vocab_lookup_limit</code> 配置控制</li>
+<li>观察期用户和正式会员无限制</li>
+</ul>
+
+<h3>9.2 生词本</h3>
+
+<p><strong>加入生词本</strong>：</p>
+<ul>
+<li>在查词弹窗点击"加入生词本"</li>
+<li>如果该词已在生词本中 → 增加 lookup_count，不重复创建</li>
+</ul>
+
+<p><strong>生词本列表</strong>：</p>
+<ul>
+<li>显示所有已收集的生词：单词、中文释义、添加时间、来源图书</li>
+<li>支持按状态筛选：学习中 / 已掌握</li>
+</ul>
+
+<p><strong>复习模式</strong>：</p>
+<ul>
+<li>显示英文单词 → 用户点击查看中文释义</li>
+<li>可选择"已掌握"或"继续学习"</li>
+<li>标记"已掌握"后，该词移入"已掌握"列表，不再出现在复习列表中</li>
+</ul>
+
+<p><strong>生词统计</strong>：</p>
+<ul>
+<li>累计生词数、学习中数量、已掌握数量</li>
+<li>本月新增生词趋势</li>
+</ul>
+
+<p><strong>生词高亮</strong>：</p>
+<ul>
+<li>用户再次阅读包含已收录生词的内容时，该词在文中高亮显示</li>
+<li>点击可再次查看释义</li>
+</ul>
+
+<hr>
+
+<h2 id="section-9">十、阅读打卡、统计与学习报告（reading_stats.feature）</h2>
+
+<h3>10.1 阅读打卡</h3>
+
+<p><strong>自动打卡规则</strong>（可配置）：</p>
+<ul>
+<li>阅读满 10 分钟 → 自动打卡（打卡类型="阅读时长"）</li>
+<li>读完一本书 → 自动打卡（打卡类型="读完图书"）</li>
+<li>每天最多打卡 1 次，不重复打卡</li>
+<li>打卡纯激励，不挂会员权益</li>
+</ul>
+
+<p><strong>打卡日历</strong>：</p>
+<ul>
+<li>显示本月打卡日历</li>
+<li>已打卡日期标注绿色圆点</li>
+<li>显示当前连续打卡天数和最长连续打卡天数</li>
+</ul>
+
+<h3>10.2 阅读统计</h3>
+
+<p><strong>今日统计</strong>：</p>
+<ul>
+<li>今日阅读时长（分钟）</li>
+<li>今日阅读词数</li>
+<li>今日已读页数</li>
+</ul>
+
+<p><strong>累计统计</strong>：</p>
+<ul>
+<li>累计阅读时长</li>
+<li>累计阅读词数</li>
+<li>已读图书总数</li>
+<li>累计生词数</li>
+<li>语音朗读次数</li>
+<li>当前连续打卡天数 / 最长连续打卡天数</li>
+</ul>
+
+<p><strong>趋势图表</strong>：</p>
+<ul>
+<li>近 7 天阅读时长柱状图</li>
+<li>近 30 天阅读词数折线图</li>
+</ul>
+
+<h3>10.3 学习报告</h3>
+
+<p><strong>周报</strong>（每周自动生成）：</p>
+<ul>
+<li>上周总阅读时长</li>
+<li>上周完成图书数</li>
+<li>上周新增生词数</li>
+<li>上周朗读次数</li>
+<li>上周打卡天数</li>
+<li>当前 AR 等级</li>
+<li>连续打卡天数</li>
+<li>下一步阅读建议（基于阅读数据自动生成）</li>
+</ul>
+
+<p><strong>月报</strong>（每月自动生成）：</p>
+<ul>
+<li>月度阅读数据汇总</li>
+<li>AR 等级变化趋势</li>
+<li>阅读能力评估</li>
+</ul>
+
+<p><strong>报告分享</strong>：</p>
+<ul>
+<li>生成报告分享图片</li>
+<li>可分享至微信群</li>
+</ul>
+
+<h3>10.4 家长查看</h3>
+
+<p>家长可以查看孩子的：</p>
+<ul>
+<li>阅读时长、词数、图书数</li>
+<li>最近阅读记录</li>
+<li>学习报告列表</li>
+</ul>
+
+<hr>
+
+<h2 id="section-10">十一、晋级体系（advancement.feature）</h2>
+
+<h3>11.1 级别管理</h3>
+
+<p><strong>级别定义</strong>：</p>
+<ul>
+<li>A-Z 共 26 级，每级有名称、徽章 Emoji、排序序号</li>
+<li>每级默认需读完 5 本书（可按级别单独配置）</li>
+<li>测验最低通过率默认 80%（可配置）</li>
+<li>每级有最大可读 AR 等级限制</li>
+</ul>
+
+<p><strong>初始级别分配</strong>：</p>
+<ul>
+<li>孩子首次注册时自动分配最低级别</li>
+<li>显示当前级别徽章</li>
+</ul>
+
+<p><strong>级别信息展示</strong>：</p>
+<ul>
+<li>当前级别名称和徽章</li>
+<li>晋级要求：需读完几本书、测验通过率</li>
+<li>当前进度：已读完几本、已通过几次测验</li>
+</ul>
+
+<h3>11.2 阅读提交</h3>
+
+<p><strong>提交流程</strong>：</p>
+<ul>
+<li>孩子完成听读（读完最后一页）→ 自动创建阅读提交记录（ReadingSubmission）</li>
+<li>提交状态为"待审核"（STATUS_PENDING）</li>
+<li>老师收到待审核通知</li>
+</ul>
+
+<p><strong>老师审核</strong>：</p>
+<ul>
+<li>审核通过 → 提交状态变为"审核通过"（STATUS_APPROVED）→ 该级别已读完书数 +1</li>
+<li>审核打回 → 提交状态变为"审核拒绝"（STATUS_REJECTED）→ 孩子收到打回通知</li>
+</ul>
+
+<h3>11.3 测验</h3>
+
+<p><strong>题库管理</strong>：</p>
+<ul>
+<li>每本书至少 5 道选择题（A/B/C/D 四选一）</li>
+<li>每题有正确答案、解析、难度（1-5）</li>
+<li>老师负责创建和维护题库</li>
+</ul>
+
+<p><strong>出卷流程</strong>：</p>
+<ul>
+<li>老师为孩子出测验 → 从题库中抽取题目</li>
+<li>创建测验实例（Quiz）：status=IN_PROGRESS, total_questions=题目数</li>
+</ul>
+
+<p><strong>答题流程</strong>：</p>
+<ul>
+<li>孩子逐题作答</li>
+<li>提交答案 → 系统评分</li>
+<li>测验状态变为 COMPLETED，记录 correct_count 和 score</li>
+</ul>
+
+<h3>11.4 测验结果</h3>
+
+<p><strong>通过条件</strong>：</p>
+<ul>
+<li>正确率 ≥ 80%（可配置）→ 测验通过</li>
+<li>通过后：借阅记录的测评状态更新为 PASSED</li>
+</ul>
+
+<p><strong>未通过</strong>：</p>
+<ul>
+<li>正确率 < 80% → 测验未通过</li>
+<li>借阅记录的测评状态保持 PENDING</li>
+<li>显示"可以重考"提示</li>
+</ul>
+
+<p><strong>积分计入</strong>：</p>
+<ul>
+<li>测验通过后，该书的 word_count 计入孩子积分（child.total_words_read）</li>
+<li><strong>积分去重</strong>：同一 child+book 只计入一次 word_count，重复测评不重复计分</li>
+</ul>
+
+<h3>11.5 晋级</h3>
+
+<p><strong>晋级条件</strong>（同时满足）：</p>
+<ul>
+<li>本级已读完足够书数（books_read_at_level >= required_books）</li>
+<li>本级已通过至少 1 次测验（quizzes_passed_at_level >= 1）</li>
+</ul>
+
+<p><strong>晋级流程</strong>：</p>
+<ul>
+<li>系统检测晋级条件 → 条件满足</li>
+<li>当前级别标记为非当前（is_current=False）</li>
+<li>创建新级别记录（is_current=True）</li>
+<li>发布 level.advanced 事件 → 自动生成晋级证书</li>
+<li>获得新级别徽章</li>
+<li>借阅上限增加（max_borrow_count）</li>
+</ul>
+
+<p><strong>最高级别</strong>：</p>
+<ul>
+<li>已是最高级别时尝试晋级 → 显示"已是最高级别"提示</li>
+</ul>
+
+<h3>11.6 成就系统</h3>
+
+<p><strong>成就类型</strong>：</p>
+<ul>
+<li>晋级成就：首次晋级、达到特定级别</li>
+<li>读书里程碑：读完 10/50/100 本书</li>
+<li>连续打卡：连续 7/21/100 天打卡</li>
+<li>测验满分：获得 100% 正确率</li>
+</ul>
+
+<p><strong>成就展示</strong>：</p>
+<ul>
+<li>成就页面显示所有已获得的徽章（彩色）</li>
+<li>未获得的徽章显示为灰色</li>
+<li>排行榜：按阅读量降序排列，前 3 名金银铜牌</li>
+</ul>
+
+<hr>
+
+<h2 id="section-11">十二、晋级证书（level_certificate.feature）</h2>
+
+<h3>12.1 证书生成</h3>
+
+<p><strong>自动生成</strong>：</p>
+<ul>
+<li>孩子晋级时，系统自动生成晋级证书</li>
+<li>证书包含：孩子姓名、英文名、级别名称、徽章 Emoji、证书编号（DMKW-日期-随机码）</li>
+<li>证书通过 HTML 模板渲染，可导出为 PDF</li>
+</ul>
+
+<p><strong>幂等性</strong>：</p>
+<ul>
+<li>同一级别不重复生成证书，再次请求返回已有证书</li>
+</ul>
+
+<h3>12.2 证书查询</h3>
+
+<ul>
+<li>查询孩子所有证书列表</li>
+<li>查看单个证书详情</li>
+<li>无证书时返回空列表</li>
+</ul>
+
+<hr>
+
+<h2 id="section-12">十三、观察期报告（observation_report.feature）</h2>
+
+<h3>13.1 报告生成</h3>
+
+<p><strong>自动生成条件</strong>：</p>
+<ul>
+<li>孩子是观察期会员（status=OBSERVATION）</li>
+<li>从 member_start_time 起已满 30 天</li>
+<li>尚未生成过报告</li>
+</ul>
+
+<p><strong>生成内容</strong>：</p>
+<ul>
+<li>观察期起止日期</li>
+<li>阅读本数（approved 的 ReadingSubmission 数量）</li>
+<li>阅读词数（所有 approved 提交的 word_count 之和）</li>
+<li>阅读时长（所有 ReadingSession 的 duration 之和）</li>
+<li>测验统计：尝试次数、通过次数</li>
+<li>结束时的级别</li>
+</ul>
+
+<p><strong>未满 30 天不生成</strong>：</p>
+<ul>
+<li>孩子进入观察期仅 15 天 → 不生成报告</li>
+</ul>
+
+<h3>13.2 报告内容</h3>
+
+<ul>
+<li>阅读本数和词数</li>
+<li>测验通过数</li>
+<li>老师评语（老师可手动添加）</li>
+<li>日均阅读分钟</li>
+</ul>
+
+<h3>13.3 报告查询</h3>
+
+<ul>
+<li>家长查看报告详情</li>
+<li>没有报告时返回空</li>
+</ul>
+
+<hr>
+
+<h2 id="section-13">十四、个人名片（personal_profile.feature）</h2>
+
+<h3>14.1 名片生成</h3>
+
+<p><strong>名片内容</strong>：</p>
+<ul>
+<li>孩子姓名、英文名</li>
+<li>阅读本数、阅读词数</li>
+<li>连续打卡天数、最长连续打卡天数</li>
+<li>当前级别（名称 + 徽章）</li>
+<li>已获得成就数量和列表</li>
+</ul>
+
+<p><strong>分享功能</strong>：</p>
+<ul>
+<li>名片可分享给朋友</li>
+<li>带小程序码，方便新用户扫码体验</li>
+</ul>
+
+<hr>
+
+<h2 id="section-14">十五、退款申请流程（refund_application.feature）</h2>
+
+<h3>15.1 退款规则</h3>
+
+<p><strong>亲子课退款</strong>：</p>
+<ul>
+<li>课程开始前：全额退款 99 元</li>
+<li>课程开始后：不可退款</li>
+</ul>
+
+<p><strong>观察期退款</strong>：</p>
+<ul>
+<li>退款金额 = 实付金额 - (实付金额 ÷ 30 × 已使用天数)</li>
+<li>示例：实付 500 元，已使用 10 天 → 退款 = 500 - 500÷30×10 = 333.33 元</li>
+<li>多孩优惠：按实付金额计算（如 9 折实付 450 元 → 450 - 450÷30×15 = 225 元）</li>
+</ul>
+
+<p><strong>正式会员退款</strong>：</p>
+<ul>
+<li>退款金额 = 实付金额 - (实付金额 ÷ 365 × 已使用天数)</li>
+<li>示例：实付 5400 元，已使用 30 天 → 退款 = 5400 - 5400÷365×30 = 4956.16 元</li>
+<li>多孩优惠：按实付金额计算</li>
+</ul>
+
+<p><strong>通用规则</strong>：</p>
+<ul>
+<li>退款金额由服务端计算，不信任客户端</li>
+<li>退款在 3-7 个工作日内原路退回</li>
+<li>退款拦截网：申请退款前校验孩子名下无活跃借阅记录（BORROWING/OVERDUE），否则拒绝退款</li>
+</ul>
+
+<h3>15.2 退款审核</h3>
+
+<p><strong>审核流程</strong>：</p>
+<ul>
+<li>用户提交退款申请</li>
+<li>管理员审核（通过/拒绝）</li>
+<li>审核通过 → 系统自动发起退款 → 用户收到"退款审核通过"通知</li>
+<li>审核拒绝 → 用户收到"退款审核拒绝"通知，包含拒绝理由</li>
+</ul>
+
+<h3>15.3 会员到期提醒（定时任务）</h3>
+
+<p><strong>提醒节点</strong>（可配置）：</p>
+<ul>
+<li>会员到期前 30/15/7/3/2/1/当天 → 发送微信订阅消息提醒</li>
+<li>通知优先级"中"</li>
+<li>推送至用户微信</li>
+</ul>
+
+<hr>
+
+<h2 id="section-15">十六、语音朗读与练习（voice_reading.feature）</h2>
+
+<h3>16.1 语音录制</h3>
+
+<p><strong>录制流程</strong>：</p>
+<ul>
+<li>孩子选中一段英文文本</li>
+<li>点击"朗读"按钮</li>
+<li>朗读文本内容</li>
+<li>系统录制朗读音频</li>
+<li>录音保存到云端（audio_url）</li>
+</ul>
+
+<p><strong>回放功能</strong>：</p>
+<ul>
+<li>点击"回放"按钮 → 播放刚才的录音</li>
+<li>同时显示朗读文本（方便对照）</li>
+</ul>
+
+<h3>16.2 朗读记录</h3>
+
+<ul>
+<li>显示所有朗读记录列表</li>
+<li>每条记录显示：图书名称、朗读文本、录音时长、日期</li>
+</ul>
+
+<h3>16.3 朗读与打卡联动</h3>
+
+<ul>
+<li>朗读完成后自动触发阅读打卡（如果今日未打卡）</li>
+</ul>
+
+<h3>16.4 语音评测（后续版本）</h3>
+
+<p><strong>发音评分</strong>（规划中）：</p>
+<ul>
+<li>系统返回发音评分（0-100）</li>
+<li>分项得分：发音准确度、流利度、完整度</li>
+<li>评分低于 60 分：显示发音改进建议，标注发音不准确的单词</li>
+</ul>
+
+<hr>
+
+<h2 id="section-16">附录 A：会员状态机</h2>
+
+<p>体验用户(0) ──→ 观察期(1) ──→ 正式会员(2) ──→ 已过期(3) ──→ 正式会员(2)</p>
+<p>│               │               │               │</p>
+<p>└───────────────┴───────────────┴───────────────┴──→ 已退出(4) [不可逆]</p>
+
+<p>注：</p>
+<ul>
+<li>观察期到期后自动转为 EXPIRED(3)（由定时任务 check_observation_expiry 每日 9:30 执行）</li>
+<li>EXPIRED 用户可续费任何会员类型恢复为 OFFICIAL(2)，缓冲期内享 9 折</li>
+<li>季度/半年会员复用 OFFICIAL(2) 状态，通过 Order.type 字段区分</li>
+<li>退款前必须无活跃借阅记录（BORROWING/OVERDUE）</li>
+</ul>
+
+<table><thead><tr>
+<th>状态</th>
+<th>status 值</th>
+<th>说明</th>
+<th>服务权限</th>
+</tr></thead><tbody>
+<tr>
+<td>体验用户</td>
+<td>0</td>
+<td>注册但未付费</td>
+<td>有限试读（可配置）</td>
+</tr>
+<tr>
+<td>观察期</td>
+<td>1</td>
+<td>已付 500 元，30 天</td>
+<td><strong>与正式会员完全相同</strong></td>
+</tr>
+<tr>
+<td>正式会员</td>
+<td>2</td>
+<td>已付 5400 元，365 天</td>
+<td>完整服务</td>
+</tr>
+<tr>
+<td>已过期</td>
+<td>3</td>
+<td>会员到期未续费</td>
+<td>数据保留，不可借书</td>
+</tr>
+<tr>
+<td>已退出</td>
+<td>4</td>
+<td>主动退款/退出</td>
+<td>不可恢复</td>
+</tr>
+</tbody></table>
+
+<hr>
+
+<h2 id="section-17">附录 B：价格体系</h2>
+
+<table><thead><tr>
+<th>项目</th>
+<th>金额</th>
+<th>说明</th>
+</tr></thead><tbody>
+<tr>
+<td>亲子课</td>
+<td>99 元</td>
+<td>线下体验课，75 分钟</td>
+</tr>
+<tr>
+<td>观察期</td>
+<td>500 元</td>
+<td>30 天完整服务</td>
+</tr>
+<tr>
+<td>线上年费</td>
+<td>5400 元</td>
+<td>正式会员 365 天</td>
+</tr>
+<tr>
+<td>多孩折扣</td>
+<td>0.9（9 折）</td>
+<td>第 2 孩起</td>
+</tr>
+<tr>
+<td>缓冲期续费</td>
+<td>0.9（9 折）</td>
+<td>到期 15 天内</td>
+</tr>
+<tr>
+<td>押金</td>
+<td>1200 元</td>
+<td>借书前置条件</td>
+</tr>
+<tr>
+<td>丢书罚款</td>
+<td>定价 × 1.5</td>
+<td>从押金扣除</td>
+</tr>
+<tr>
+<td>逾期罚款</td>
+<td>1 元/天</td>
+<td>可配置</td>
+</tr>
+</tbody></table>
+
+<hr>
+
+<h2 id="section-18">附录 C：API 端点索引</h2>
+
+<table><thead><tr>
+<th>模块</th>
+<th>端点数</th>
+<th>说明</th>
+</tr></thead><tbody>
+<tr>
+<td>user</td>
+<td>2</td>
+<td>微信登录、用户信息</td>
+</tr>
+<tr>
+<td>child</td>
+<td>5</td>
+<td>CRUD、状态管理、权益转让</td>
+</tr>
+<tr>
+<td>book</td>
+<td>3</td>
+<td>搜索、详情、创建</td>
+</tr>
+<tr>
+<td>bookshelf</td>
+<td>4</td>
+<td>加入/移除/列表/收藏夹</td>
+</tr>
+<tr>
+<td>borrow</td>
+<td>4</td>
+<td>借书/还书/历史/活跃</td>
+</tr>
+<tr>
+<td>deposit</td>
+<td>4</td>
+<td>缴纳/退款/扣除/状态</td>
+</tr>
+<tr>
+<td>reservation</td>
+<td>4</td>
+<td>预约/取消/取书/列表</td>
+</tr>
+<tr>
+<td>reading</td>
+<td>8</td>
+<td>进度/会话/打卡/录音</td>
+</tr>
+<tr>
+<td>vocabulary</td>
+<td>5</td>
+<td>查词/生词本/统计/掌握</td>
+</tr>
+<tr>
+<td>advancement</td>
+<td>16</td>
+<td>级别/提交/题库/测验/成就/排行榜</td>
+</tr>
+<tr>
+<td>order</td>
+<td>5</td>
+<td>创建/支付回调/退款预览</td>
+</tr>
+<tr>
+<td>refund</td>
+<td>3</td>
+<td>申请/审核/列表</td>
+</tr>
+<tr>
+<td>activity</td>
+<td>5</td>
+<td>列表/详情/报名/取消/签到</td>
+</tr>
+<tr>
+<td>report</td>
+<td>8</td>
+<td>观察期报告/学习报告/统计</td>
+</tr>
+<tr>
+<td>certificate</td>
+<td>4</td>
+<td>生成/详情/列表/HTML</td>
+</tr>
+<tr>
+<td>profile</td>
+<td>3</td>
+<td>名片/编辑/分享</td>
+</tr>
+<tr>
+<td>admin</td>
+<td>10</td>
+<td>仪表盘/配置/老师/场馆</td>
+</tr>
+<tr>
+<td><strong>合计</strong></td>
+<td><strong>~93</strong></td>
+<td></td>
+</tr>
+</tbody></table>
+
+
+</main>
+</div>
+
+<script>
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
+            const id = entry.target.id;
+            const link = document.querySelector('.sidebar-nav a[href="#' + id + '"]');
+            if (link) link.classList.add('active');
+        }
+    });
+}, { rootMargin: '-20% 0px -70% 0px' });
+document.querySelectorAll('h2[id]').forEach(h2 => observer.observe(h2));
+</script>
+</body>
+</html>

@@ -1,6 +1,7 @@
+{% import "admin/macros.html" as m %}
 {% extends "admin/base.html" %}
 {% block title %}成就管理<!-- class alignment refs (hidden) -->
-<div style="display:none" class="status status-active status-approved status-pending btn"></div>
+<div class="hidden status status-active status-approved status-pending btn"></div>
 {% endblock %}
 {% block head %}
 <link rel="stylesheet" href="/static/admin/css/pages/achievements.css" />
@@ -14,8 +15,8 @@
 
 <!-- Badge Management Panel -->
 <div id="panel-badges">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-    <div style="font-size:14px;color:var(--muted)" id="badgeCount">加载中...</div>
+  <div class="flex-between mb-16">
+    <div class="text-muted" id="badgeCount">加载中...</div>
     <button class="btn btn-primary btn-sm" onclick="openBadgeModal()">+ 新增徽章</button>
   </div>
 
@@ -32,14 +33,14 @@
         </tr>
       </thead>
       <tbody id="badgeBody">
-        <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted);">加载中...</td></tr>
+        <tr><td colspan="6" class="text-center p-40 text-muted">加载中...</td></tr>
       </tbody>
     </table>
   </div>
 </div>
 
 <!-- Award Records Panel -->
-<div id="panel-records" style="display:none">
+<div id="panel-records" class="hidden">
   <div class="filter-bar">
     <input class="search-input" id="recordSearch" placeholder="搜索用户名..." />
     <select class="filter-select" id="badgeFilter">
@@ -65,52 +66,56 @@
         </tr>
       </thead>
       <tbody id="recordsBody">
-        <tr><td colspan="5" style="text-align:center;padding:40px;color:var(--muted);">加载中...</td></tr>
+        <tr><td colspan="5" class="text-center p-40 text-muted">加载中...</td></tr>
       </tbody>
     </table>
   </div>
 </div>
 
 <!-- Add/Edit Badge Modal -->
-<div class="modal-overlay" id="badgeModal" onclick="if(event.target===this)closeBadgeModal()">
-  <div class="modal">
-    <h3 id="modalTitle">新增 / 编辑徽章</h3>
-    <form id="badgeForm" onsubmit="submitBadge(event)">
-      <input type="hidden" id="editId" value="" />
-      <div class="modal-grid-2col">
-        <div class="form-group"><label>徽章 Emoji</label><input class="form-input" name="badge_emoji" placeholder="例如：⚡" /></div>
-        <div class="form-group"><label>成就名称</label><input class="form-input" name="name" placeholder="例如：速度之王" required /></div>
+{{ m.modal_overlay('badgeModal', '新增 / 编辑徽章', title_id='modalTitle') }}
+  <form id="badgeForm" onsubmit="submitBadge(event);return false">
+    <input type="hidden" id="editId" value="" />
+    <div class="modal-grid-2col">
+      <div class="form-group"><label>徽章 Emoji</label><input class="form-input" name="badge_emoji" placeholder="例如：⚡" /></div>
+      <div class="form-group"><label>成就名称</label><input class="form-input" name="name" placeholder="例如：速度之王" required /></div>
+    </div>
+    <div class="form-group"><label>描述</label><textarea class="form-textarea" name="description" placeholder="获得条件的描述..."></textarea></div>
+    <div class="form-group">
+      <label>成就类型</label>
+      <select class="form-input" name="type">
+        <option value="">请选择类型...</option>
+        <option value="1">晋级徽章</option>
+        <option value="2">阅读里程碑</option>
+        <option value="3">连续打卡</option>
+        <option value="4">测验满分</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>触发条件 (JSON)</label>
+      <textarea class="form-textarea json-textarea" name="trigger_condition" id="triggerCondition" placeholder='例如：{"count":10}'></textarea>
+      <div class="text-sm text-muted mt-8" id="triggerHint">
+        请先选择成就类型，系统会自动提示所需字段。
       </div>
-      <div class="form-group"><label>描述</label><textarea class="form-textarea" name="description" placeholder="获得条件的描述..."></textarea></div>
-      <div class="form-group">
-        <label>成就类型</label>
-        <select class="form-input" name="type">
-          <option value="">请选择类型...</option>
-          <option value="1">晋级徽章</option>
-          <option value="2">阅读里程碑</option>
-          <option value="3">连续打卡</option>
-          <option value="4">测验满分</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>触发条件 (JSON)</label>
-        <textarea class="form-textarea json-textarea" name="trigger_condition" placeholder='{"type":"book_milestone","count":10}'></textarea>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px">
-          示例：{"type":"book_milestone","count":10} | {"type":"streak","days":7} | {"type":"perfect_score","count":1} | {"type":"level_up","level":"B"}
-        </div>
-      </div>
-      <div class="modal-actions">
-        <button type="button" class="btn btn-outline btn-sm" onclick="closeBadgeModal()">取消</button>
-        <button type="submit" class="btn btn-primary btn-sm" id="submitBtn">保存</button>
-      </div>
-    </form>
-  </div>
-</div>
+    </div>
+  </form>
+{{ m.modal_actions() }}
+  <button type="button" class="btn btn-secondary" onclick="closeBadgeModal()">取消</button>
+  <button type="submit" class="btn btn-primary btn-sm" id="submitBtn" form="badgeForm">保存</button>
+{{ m.modal_end() }}
+
+{{ m.modal_overlay("confirmDialog", "确认操作") }}
+  <p id="confirmMsg" class="confirm-msg"></p>
+{{ m.modal_actions() }}
+  <button type="button" class="btn btn-secondary" onclick="closeModal('confirmDialog')">取消</button>
+  <button type="button" class="btn btn-primary" id="confirmBtn">确认</button>
+{{ m.modal_end() }}
 {% endblock %}
 
 {% block scripts %}
 <script>
   const TYPE_MAP = { 1: '晋级', 2: '读书里程碑', 3: '连续打卡', 4: '测验满分' };
+  const TYPE_KEY_MAP = { 1: 'level_up', 2: 'book_milestone', 3: 'streak', 4: 'perfect_score' };
   const TYPE_BADGE_CLS = {
     'book_milestone': 'status-tag status-tag-milestone status status-approved',
     'streak': 'status-tag status-tag-streak status status-pending',
@@ -120,11 +125,51 @@
     'vocab_milestone': 'status-tag status-tag-milestone status status-approved',
     'perfect_streak': 'status-tag status-tag-perfect status status-active'
   };
+  const TRIGGER_HINTS = {
+    'level_up': '晋级徽章：示例 {"level":"B"}，代表孩子晋级到指定级别时触发。',
+    'book_milestone': '读书里程碑：示例 {"count":10}，代表累计读完指定数量图书时触发。',
+    'streak': '连续打卡：示例 {"days":7}，代表连续打卡指定天数时触发。',
+    'perfect_score': '测验满分：示例 {"count":1}，代表测验获得满分次数达到指定值时触发。'
+  };
 
   document.addEventListener('DOMContentLoaded', () => {
     loadAchievements();
     loadRecords();
+    const typeSel = document.querySelector('select[name="type"]');
+    if (typeSel) {
+      typeSel.addEventListener('change', updateTriggerHint);
+      updateTriggerHint();
+    }
   });
+
+  function updateTriggerHint() {
+    const type = document.querySelector('select[name="type"]').value;
+    const key = TYPE_KEY_MAP[type] || '';
+    const hint = TRIGGER_HINTS[key] || '请根据成就类型填写 JSON 条件。';
+    const hintEl = document.getElementById('triggerHint');
+    if (hintEl) hintEl.textContent = hint;
+    const ta = document.getElementById('triggerCondition');
+    if (ta && key && !ta.value.trim()) {
+      const examples = { level_up: '{"level":"B"}', book_milestone: '{"count":10}', streak: '{"days":7}', perfect_score: '{"count":1}' };
+      ta.placeholder = '例如：' + examples[key];
+    }
+  }
+
+  function explainTrigger(type, condition) {
+    const key = typeof type === 'number' ? TYPE_KEY_MAP[type] : type;
+    if (!condition) return '-';
+    let obj = condition;
+    if (typeof condition === 'string') {
+      try { obj = JSON.parse(condition); } catch { return escapeHtml(condition); }
+    }
+    const parts = [];
+    if (key === 'level_up' && obj.level) parts.push('晋级至 ' + obj.level);
+    if (key === 'book_milestone' && obj.count != null) parts.push('累计读完 ' + obj.count + ' 本书');
+    if (key === 'streak' && obj.days != null) parts.push('连续打卡 ' + obj.days + ' 天');
+    if (key === 'perfect_score' && obj.count != null) parts.push('满分测验 ' + obj.count + ' 次');
+    if (parts.length) return escapeHtml(parts.join('，'));
+    return escapeHtml(JSON.stringify(obj));
+  }
 
   async function loadAchievements() {
     try {
@@ -135,7 +180,7 @@
       document.getElementById('badgeCount').textContent = '共 ' + list.length + ' 个徽章';
     } catch (err) {
       showToast(err.message || '加载成就失败', 'error');
-      document.getElementById('badgeBody').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--error);">加载失败</td></tr>';
+      document.getElementById('badgeBody').innerHTML = '<tr><td colspan="6" class="text-center p-40 text-error">加载失败</td></tr>';
       document.getElementById('badgeCount').textContent = '';
     }
   }
@@ -147,7 +192,7 @@
       renderRecords(list);
     } catch (err) {
       /* records panel is secondary; silently handle */
-      document.getElementById('recordsBody').innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--muted);">暂无授予记录</td></tr>';
+      document.getElementById('recordsBody').innerHTML = '<tr><td colspan="5" class="text-center p-40 text-muted">暂无授予记录</td></tr>';
     }
   }
 
@@ -175,15 +220,15 @@
 
   function renderBadges(achievements) {
     if (!achievements.length) {
-      document.getElementById('badgeBody').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted);">暂无成就定义</td></tr>';
+      document.getElementById('badgeBody').innerHTML = '<tr><td colspan="6" class="text-center p-40 text-muted">暂无成就定义</td></tr>';
       return;
     }
     document.getElementById('badgeBody').innerHTML = achievements.map(a => `
       <tr>
-        <td class="badge-emoji">${a.badge_emoji || '🏅'}</td>
-        <td style="font-weight:600">${escapeHtml(a.name || '-')}</td>
+        <td class="badge-emoji">${escapeHtml(a.badge_emoji || '🏅')}</td>
+        <td><strong>${escapeHtml(a.name || '-')}</strong></td>
         <td>${getTypeBadge(a.type)}</td>
-        <td><code class="trigger-code">${escapeHtml(JSON.stringify(a.trigger_condition || a.description || '-'))}</code></td>
+        <td><div class="text-sm">${explainTrigger(a.type, a.trigger_condition)}</div><code class="trigger-code text-xs text-muted">${escapeHtml(a.trigger_condition != null ? (typeof a.trigger_condition === 'string' ? a.trigger_condition : JSON.stringify(a.trigger_condition)) : '-')}</code></td>
         <td>${a.award_count != null ? a.award_count : '-'}</td>
         <td>
           <div class="table-actions">
@@ -209,12 +254,12 @@
 
   function renderRecords(records) {
     if (!records.length) {
-      document.getElementById('recordsBody').innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--muted);">暂无授予记录</td></tr>';
+      document.getElementById('recordsBody').innerHTML = '<tr><td colspan="5" class="text-center p-40 text-muted">暂无授予记录</td></tr>';
       return;
     }
     document.getElementById('recordsBody').innerHTML = records.map(r => `
       <tr>
-        <td style="font-weight:500">${escapeHtml(r.child_name || r.user_name || '-')}</td>
+        <td><strong>${escapeHtml(r.child_name || r.user_name || '-')}</strong></td>
         <td>${r.badge_emoji || ''} ${escapeHtml(r.achievement_name || '-')}</td>
         <td>${getTypeBadge(r.achievement_type || r.type)}</td>
         <td class="record-time">${escapeHtml((r.achieved_at || r.awarded_at || '').slice(0, 16).replace('T', ' '))}</td>
@@ -235,6 +280,7 @@
     document.getElementById('modalTitle').textContent = '新增徽章';
     document.getElementById('submitBtn').textContent = '保存';
     document.getElementById('badgeForm').reset();
+    updateTriggerHint();
     document.getElementById('badgeModal').classList.add('show');
   }
 
@@ -251,7 +297,8 @@
       if (k === 'editId') continue;
       if (v === '') continue;
       if (k === 'trigger_condition') {
-        try { body[k] = JSON.parse(v); } catch { body[k] = v; }
+        // 数据库存储为 JSON 字符串，直接透传用户输入
+        if (v) body[k] = v;
       } else if (k === 'type') {
         body[k] = Number(v);
       } else {
@@ -290,22 +337,34 @@
       form.elements['description'].value = badge.description || '';
       form.elements['badge_emoji'].value = badge.badge_emoji || '';
       form.elements['type'].value = badge.type || '';
-      form.elements['trigger_condition'].value = badge.trigger_condition || '';
+      const tc = badge.trigger_condition;
+      form.elements['trigger_condition'].value = tc != null ? (typeof tc === 'string' ? tc : JSON.stringify(tc)) : '';
+      updateTriggerHint();
       document.getElementById('badgeModal').classList.add('show');
     } catch (err) {
       showToast('加载徽章信息失败', 'error');
     }
   }
 
-  async function deleteBadge(id) {
-    if (!confirm('确定删除该徽章？')) return;
-    try {
-      await api.del('/admin/api/advancement/achievements/' + id);
-      showToast('删除成功');
-      loadAchievements();
-    } catch (err) {
-      showToast(err.message || '删除失败', 'error');
-    }
+  function showConfirmDialog(title, msg, onConfirm) {
+    document.querySelector('#confirmDialog h2').textContent = title;
+    document.getElementById('confirmMsg').textContent = msg;
+    document.getElementById('confirmBtn').onclick = function() {
+      closeModal('confirmDialog');
+      onConfirm();
+    };
+    showModal('confirmDialog');
+  }
+
+  function deleteBadge(id) {
+    showConfirmDialog('删除徽章', '确定删除该徽章？', function() {
+      api.del('/admin/api/advancement/achievements/' + id).then(function() {
+        showToast('删除成功');
+        loadAchievements();
+      }).catch(function(err) {
+        showToast(err.message || '删除失败', 'error');
+      });
+    });
   }
 
   function escapeHtml(str) {

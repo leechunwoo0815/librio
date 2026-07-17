@@ -252,6 +252,7 @@
 /* Flashcard Overlay */
 .flashcard-overlay {
   position: fixed;
+    box-sizing: border-box;
   top: 0;
   left: 0;
   right: 0;
@@ -263,6 +264,7 @@
   justify-content: center;
   visibility: hidden;
   opacity: 0;
+  box-sizing: border-box;
 }
 
 .flashcard-overlay.show {
@@ -333,8 +335,8 @@
 
 .fc-close {
   position: absolute;
-  top: 24rpx;
-  right: 24rpx;
+  top: 20rpx;
+  right: 20rpx;
   width: 64rpx;
   height: 64rpx;
   border-radius: 50%;
@@ -386,6 +388,7 @@
 /* Review Complete Overlay */
 .review-complete-overlay {
   position: fixed;
+    box-sizing: border-box;
   top: 0;
   left: 0;
   right: 0;
@@ -397,6 +400,7 @@
   justify-content: center;
   visibility: hidden;
   opacity: 0;
+  box-sizing: border-box;
 }
 
 .review-complete-overlay.show {
@@ -477,11 +481,3 @@
   color: var(--accent);
 }
 
-/* ===== 原型缺失选择器补全 ===== */
-
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-.nav-bar .back svg { width: 20px; height: 20px; }
-.sort-bar select { font-size: 12px; border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; background: var(--surface); color: var(--fg); }
-.word-actions button { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 8px; color: var(--muted); }
-.word-actions button:hover { background: var(--accent-soft); color: var(--accent); }
-.word-actions button svg { width: 16px; height: 16px; }

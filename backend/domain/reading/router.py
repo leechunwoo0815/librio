@@ -2,13 +2,17 @@
 """阅读域 API 路由"""
 
 from fastapi import APIRouter, Depends, Query
+from sqlalchemy.orm import Session
 
 from backend.common.dependencies import get_reading_service
+from backend.common.exceptions import ValidationError
+from backend.database import get_db
 from backend.middleware.ownership import (
     GetOwnedChild,
     GetOwnedChildFromBody,
     GetOwnedChildFromQuery,
     GetOwnedSession,
+    verify_child_ownership,
 )
 from backend.middleware.auth import get_current_user
 from backend.domain.reading.schemas import (
@@ -54,13 +58,13 @@ def save_progress(
     data: SaveProgressRequest,
     service: ReadingService = Depends(get_reading_service),
     current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     """保存阅读进度"""
     child_id = getattr(current_user, "current_child_id", None)
     if not child_id:
-        from backend.common.exceptions import ValidationError
-
         raise ValidationError("请先选择孩子")
+    verify_child_ownership(child_id, current_user, db)
     return service.save_progress(child_id, data)
 
 
@@ -69,9 +73,13 @@ def start_session(
     data: StartSessionRequest,
     service: ReadingService = Depends(get_reading_service),
     current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     """开始阅读会话"""
-    child_id = getattr(current_user, "current_child_id", None) or data.child_id
+    child_id = data.child_id or getattr(current_user, "current_child_id", None)
+    if not child_id:
+        raise ValidationError("请先选择孩子")
+    verify_child_ownership(child_id, current_user, db)
     return service.start_session(child_id, data)
 
 
@@ -122,8 +130,10 @@ def save_voice_recording(
 @router.get("/voice/records", response_model=list[VoiceRecordingDetailResponse])
 def get_voice_recordings(
     book_id: int | None = None,
+    page: int = Query(1, ge=1, description="页码"),
+    page_size: int = Query(20, ge=1, le=100, description="每页数量"),
     child=Depends(GetOwnedChildFromQuery()),
     service: ReadingService = Depends(get_reading_service),
 ):
     """获取语音录音列表"""
-    return service.get_recordings(child.id, book_id)
+    return service.get_recordings(child.id, book_id, page, page_size)

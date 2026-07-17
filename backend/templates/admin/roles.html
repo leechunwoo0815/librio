@@ -1,0 +1,138 @@
+{% extends "admin/base.html" %}
+{% block title %}角色管理{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="/static/admin/css/pages/roles.css" />
+<style>
+.perm-group { margin-bottom: 16px; }
+.perm-group-title { font-weight: 600; font-size: 14px; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
+.perm-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+.perm-grid label { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; cursor: pointer; padding: 4px 10px; border: 1px solid var(--border); border-radius: 6px; transition: all 0.15s; }
+.perm-grid label:hover { border-color: var(--accent); background: var(--accent-bg); }
+.perm-grid input:checked + span { color: var(--accent); font-weight: 500; }
+.perm-grid label:has(input:checked) { border-color: var(--accent); background: var(--accent-bg); }
+.perm-grid input { margin: 0; }
+.select-all-row { margin-bottom: 12px; font-size: 13px; }
+.select-all-row label { cursor: pointer; display: inline-flex; align-items: center; gap: 4px; color: var(--accent); }
+.role-card { padding: 12px 16px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; transition: all 0.15s; }
+.role-card:hover { border-color: var(--accent); }
+.role-card-info { display: flex; flex-direction: column; gap: 2px; }
+.role-card-name { font-weight: 600; font-size: 15px; }
+.role-card-meta { font-size: 12px; color: var(--text-muted); }
+.role-card-actions { display: flex; gap: 8px; }
+.system-badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: var(--border); color: var(--text-muted); }
+</style>
+{% endblock %}
+{% block page_title %}角色管理{% endblock %}
+{% block content %}
+{% import "admin/macros.html" as m %}
+
+<div class="settings-content">
+  <div class="setting-section">
+    <div class="setting-header">
+      <h2>角色列表</h2>
+      <span class="section-badge">RBAC</span>
+    </div>
+    <div class="setting-body" id="roleList">
+      <div class="text-center p-20 text-muted">加载中...</div>
+    </div>
+  </div>
+</div>
+
+{{ m.modal_overlay("permModal", "编辑权限", "lg") }}
+  <div id="permModalBody">
+    <div class="text-center p-20 text-muted">加载中...</div>
+  </div>
+{{ m.modal_actions() }}
+  <button type="button" class="btn btn-secondary" onclick="closeModal('permModal')">取消</button>
+  <button type="button" class="btn btn-primary" id="savePermBtn" onclick="savePermissions()">保存权限</button>
+{{ m.modal_end() }}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  var _currentRoleId = null;
+
+  document.addEventListener('DOMContentLoaded', function() {
+    loadRolesPage();
+  });
+
+  async function loadRolesPage() {
+    try {
+      var data = await api.get('/admin/api/roles');
+      var roles = data.items || [];
+      var html = roles.map(function(r) {
+        var canEdit = {{ 'true' if user_can('role.edit') else 'false' }};
+        var actions = '';
+        if (canEdit) {
+          actions += '<button class="action-btn-edit" onclick="openPermModal(' + r.id + ')">编辑权限</button>';
+        }
+        return '<div class="role-card">' +
+          '<div class="role-card-info">' +
+            '<div class="role-card-name">' + escapeHtml(r.name) + ' <span class="role-badge role-editor">' + escapeHtml(r.code) + '</span>' + (r.is_system ? ' <span class="system-badge">系统</span>' : '') + '</div>' +
+            '<div class="role-card-meta">' + escapeHtml(r.description || '') + ' — 权限 ' + r.permission_count + ' 项</div>' +
+          '</div>' +
+          '<div class="role-card-actions">' +
+            actions +
+          '</div>' +
+        '</div>';
+      }).join('');
+      document.getElementById('roleList').innerHTML = html || '<div class="text-center p-20 text-muted">暂无角色</div>';
+    } catch (e) {
+      document.getElementById('roleList').innerHTML = '<div class="text-center p-20 text-muted">加载失败</div>';
+    }
+  }
+
+  async function openPermModal(roleId) {
+    _currentRoleId = roleId;
+    document.getElementById('permModalBody').innerHTML = '<div class="text-center p-20 text-muted">加载中...</div>';
+    showModal('permModal');
+    try {
+      var data = await api.get('/admin/api/roles/' + roleId + '/permissions');
+      var groups = data.groups || [];
+      var html = '';
+      groups.forEach(function(g) {
+        var allChecked = g.permissions.every(function(p) { return p.is_assigned; });
+        html += '<div class="perm-group">' +
+          '<div class="perm-group-title">' + escapeHtml(g.group_name) + '</div>' +
+          '<div class="select-all-row"><label><input type="checkbox" onchange="toggleGroup(this, \'' + jsEscape(g.group_name) + '\')" ' + (allChecked ? 'checked' : '') + ' /> 全选</label></div>' +
+          '<div class="perm-grid" data-group="' + escapeHtml(g.group_name) + '">';
+        g.permissions.forEach(function(p) {
+          html += '<label><input type="checkbox" class="perm-cb" value="' + escapeHtml(p.code) + '" data-group="' + escapeHtml(g.group_name) + '" ' + (p.is_assigned ? 'checked' : '') + ' /> <span>' + escapeHtml(p.name) + '</span></label>';
+        });
+        html += '</div></div>';
+      });
+      document.getElementById('permModalBody').innerHTML = html;
+    } catch (e) {
+      document.getElementById('permModalBody').innerHTML = '<div class="text-center p-20 text-muted">加载权限失败</div>';
+    }
+  }
+
+  function toggleGroup(el, groupName) {
+    var checked = el.checked;
+    document.querySelectorAll('.perm-cb[data-group="' + groupName + '"]').forEach(function(cb) {
+      cb.checked = checked;
+    });
+  }
+
+  async function savePermissions() {
+    var codes = [];
+    document.querySelectorAll('.perm-cb:checked').forEach(function(cb) {
+      codes.push(cb.value);
+    });
+    var btn = document.getElementById('savePermBtn');
+    btn.disabled = true;
+    btn.textContent = '保存中...';
+    try {
+      await api.put('/admin/api/roles/' + _currentRoleId + '/permissions', { permission_codes: codes });
+      showToast('权限更新成功');
+      closeModal('permModal');
+      loadRolesPage();
+    } catch (err) {
+      showToast(err.message || '保存失败', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '保存权限';
+    }
+  }
+</script>
+{% endblock %}

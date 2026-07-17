@@ -180,8 +180,8 @@ class AdminSystemService:
         )
 
         for name, Model in models_to_check.items():
-            q = self.db.query(Model).filter(Model.is_deleted == 1)
-            items = q.limit(50).all()
+            q = self.db.query(Model).filter(Model.is_deleted == 1).order_by(Model.update_time.desc())
+            items = q.offset((page - 1) * page_size).limit(page_size).all()
             for item in items:
                 results.append(
                     {
@@ -196,7 +196,7 @@ class AdminSystemService:
                     }
                 )
 
-        return {"items": results[:page_size], "total": len(results)}
+        return {"items": results, "total": len(results)}
 
     def restore_item(self, module: str, item_id: int) -> dict:
         """恢复软删除的数据"""

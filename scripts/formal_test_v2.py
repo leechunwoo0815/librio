@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-MegaWords (Librio) 全面正式测试 v2 — 修正端点路径后的完整测试
+DmkWords (Librio) 全面正式测试 v2 — 修正端点路径后的完整测试
 """
 import requests
 import json

@@ -14,7 +14,8 @@ from backend.database import Base
 from backend.main import app
 # 禁用测试中的定时任务
 from backend.tasks.scheduler import scheduler
-if scheduler.running: scheduler.shutdown(wait=False)
+if scheduler.running:
+    scheduler.shutdown(wait=False)
 
 
 @pytest.fixture

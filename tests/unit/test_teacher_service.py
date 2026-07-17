@@ -11,7 +11,7 @@ from sqlalchemy.orm import sessionmaker
 from backend.database import Base
 from backend.domain.user.models import User
 from backend.domain.child.models import Child
-from backend.domain.admin.models import Teacher, TeacherSchedule
+from backend.domain.admin.models import Teacher
 from backend.domain.admin.services.teacher_service import AdminTeacherService
 
 

@@ -24,9 +24,15 @@ class ActivityService:
         self.activity_repo = ActivityRepository(db)
         self.enrollment_repo = ActivityEnrollmentRepository(db)
 
-    def list_activities(self) -> list[ActivityResponse]:
-        activities = self.activity_repo.list_all(limit=50)
+    def list_activities(self, page: int = 1, page_size: int = 20) -> list[ActivityResponse]:
+        offset = (page - 1) * page_size
+        activities = self.activity_repo.list_all(limit=page_size, offset=offset)
         return [ActivityResponse.model_validate(a) for a in activities]
+
+    def list_with_count(self, page: int = 1, page_size: int = 20) -> dict:
+        items = self.list_activities(page=page, page_size=page_size)
+        total = self.activity_repo.count()
+        return {"items": items, "total": total, "page": page, "page_size": page_size, "has_next": (page * page_size) < total}
 
     def get_activity(self, activity_id: int) -> ActivityResponse:
         return ActivityResponse.model_validate(
@@ -66,9 +72,11 @@ class ActivityService:
             if not updated:
                 raise ValidationError("报名人数已满")
         else:
-            # 没有人数限制，直接递增
-            activity.current_participants = (activity.current_participants or 0) + 1
-            self.activity_repo.update(activity)
+            updated = (
+                self.db.query(Activity)
+                .filter(Activity.id == data.activity_id)
+                .update({Activity.current_participants: Activity.current_participants + 1})
+            )
 
         ticket_code = f"ACT-{uuid.uuid4().hex[:8].upper()}"
         enrollment = ActivityEnrollment(
@@ -91,7 +99,12 @@ class ActivityService:
         """取消报名 — 活动开始前 N 小时可取消（从配置读取）"""
         from backend.common.config_service import ConfigService
 
-        enrollment = self.enrollment_repo.get_by_id(enrollment_id)
+        enrollment = (
+            self.db.query(ActivityEnrollment)
+            .filter(ActivityEnrollment.id == enrollment_id, ActivityEnrollment.is_deleted == 0)
+            .with_for_update()
+            .first()
+        )
         if not enrollment:
             raise NotFoundError("报名记录不存在")
         if enrollment.status == ActivityEnrollment.STATUS_CANCELLED:
@@ -121,6 +134,12 @@ class ActivityService:
         logger.info(f"Enrollment cancelled: id={enrollment_id}")
         return {"id": enrollment.id, "status": enrollment.status}
 
+    def get_enrollment_by_id(self, enrollment_id: int):
+        enrollment = self.enrollment_repo.get_by_id(enrollment_id)
+        if not enrollment:
+            raise NotFoundError("报名记录不存在")
+        return enrollment
+
     def sign_in(self, enrollment_id: int) -> dict:
         """签到 — 已通过的报名才能签到"""
         enrollment = self.enrollment_repo.get_by_id(enrollment_id)
@@ -144,9 +163,33 @@ class ActivityService:
         logger.info(f"Enrollment signed in: id={enrollment_id}")
         return {"id": enrollment.id, "status": enrollment.status}
 
+    def sign_in_by_ticket_code(self, ticket_code: str) -> dict:
+        """管理员通过票码（二维码）签到 — 用于活动签到页扫描"""
+        enrollment = self.enrollment_repo.get_by_field("ticket_code", ticket_code)
+        if not enrollment:
+            raise NotFoundError("签到码对应的报名记录不存在")
+        if enrollment.status == ActivityEnrollment.STATUS_CANCELLED:
+            raise ConflictError("报名已取消，不可签到")
+        if enrollment.status == ActivityEnrollment.STATUS_SIGNED_IN:
+            return {"id": enrollment.id, "status": enrollment.status, "message": "已签到"}
+
+        if enrollment.status not in (
+            ActivityEnrollment.STATUS_APPROVED,
+            ActivityEnrollment.STATUS_PENDING,
+        ):
+            raise ConflictError("当前报名状态不可签到")
+
+        enrollment.status = ActivityEnrollment.STATUS_SIGNED_IN
+        enrollment.sign_in_time = datetime.now()
+        self.enrollment_repo.update(enrollment)
+        self.db.commit()
+        logger.info(f"Enrollment signed in by ticket code: {ticket_code}")
+        return {"id": enrollment.id, "status": enrollment.status}
+
     def get_enrollments(self, activity_id: int) -> list:
         """获取活动报名列表"""
         from backend.domain.child.models import Child
+        from backend.domain.user.models import User
 
         enrollments = (
             self.db.query(ActivityEnrollment)
@@ -157,15 +200,29 @@ class ActivityService:
             .all()
         )
 
+        child_ids = [e.child_id for e in enrollments]
+        children = {
+            c.id: c for c in
+            self.db.query(Child).filter(Child.id.in_(child_ids)).all()
+        }
+        user_ids = [c.user_id for c in children.values() if c.user_id]
+        users = {
+            u.id: u for u in
+            self.db.query(User).filter(User.id.in_(user_ids)).all()
+        } if user_ids else {}
+
         results = []
         for e in enrollments:
-            child = self.db.query(Child).filter(Child.id == e.child_id).first()
+            child = children.get(e.child_id)
+            user = users.get(child.user_id) if child and child.user_id else None
             results.append(
                 {
                     "id": e.id,
                     "child_id": e.child_id,
                     "child_name": child.name if child else "未知",
                     "english_name": child.english_name if child else "",
+                    "parent_name": user.parent_name if user else None,
+                    "parent_phone": user.phone if user else None,
                     "status": e.status,
                     "ticket_code": e.ticket_code,
                     "checked_in": e.status == ActivityEnrollment.STATUS_SIGNED_IN,
@@ -178,18 +235,20 @@ class ActivityService:
 
     def batch_checkin(self, activity_id: int, child_ids: list) -> dict:
         """批量签到"""
+        enrollments = {
+            e.child_id: e for e in
+            self.db.query(ActivityEnrollment)
+            .filter(
+                ActivityEnrollment.activity_id == activity_id,
+                ActivityEnrollment.child_id.in_(child_ids),
+                ActivityEnrollment.is_deleted == 0,
+            )
+            .all()
+        }
         success = 0
         errors = []
         for child_id in child_ids:
-            enrollment = (
-                self.db.query(ActivityEnrollment)
-                .filter(
-                    ActivityEnrollment.activity_id == activity_id,
-                    ActivityEnrollment.child_id == child_id,
-                    ActivityEnrollment.is_deleted == 0,
-                )
-                .first()
-            )
+            enrollment = enrollments.get(child_id)
             if not enrollment:
                 errors.append({"child_id": child_id, "error": "未找到报名记录"})
                 continue
@@ -201,7 +260,7 @@ class ActivityService:
             success += 1
 
         self.db.commit()
-        return {"success": success, "total": len(child_ids), "errors": errors}
+        return {"signed_count": success, "total": len(child_ids), "errors": errors}
 
     def confirm_paid_enrollment(self, enrollment_id: int) -> dict:
         """收费活动支付回调确认 — 将 PENDING 报名改为 APPROVED"""
@@ -219,7 +278,16 @@ class ActivityService:
 
     def cancel_activity(self, activity_id: int, admin_id: int) -> dict:
         """组织者取消活动 — 通知所有报名者 + 付费用户标记退款"""
-        activity = self.activity_repo.get_by_id_or_raise(activity_id)
+        from backend.domain.child.models import Child
+
+        activity = (
+            self.db.query(Activity)
+            .filter(Activity.id == activity_id, Activity.is_deleted == 0)
+            .with_for_update()
+            .first()
+        )
+        if not activity:
+            raise NotFoundError("活动不存在")
         if activity.status == Activity.STATUS_CANCELLED:
             raise ConflictError("活动已取消")
         if activity.status == Activity.STATUS_FINISHED:
@@ -243,6 +311,12 @@ class ActivityService:
             .all()
         )
 
+        child_ids = [e.child_id for e in enrollments]
+        children = {
+            c.id: c for c in
+            self.db.query(Child).filter(Child.id.in_(child_ids)).all()
+        }
+
         cancelled_count = 0
         refund_count = 0
         for e in enrollments:
@@ -250,41 +324,37 @@ class ActivityService:
             self.enrollment_repo.update(e)
             cancelled_count += 1
 
+            child = children.get(e.child_id)
             # 收费活动报名 → 写退款申请
-            if not activity.is_free and activity.price and activity.price > 0:
+            if child and not activity.is_free and activity.price and activity.price > 0:
                 try:
                     from backend.domain.refund.models import RefundApplication
                     from backend.common.base_repo import BaseRepository
-                    from backend.domain.child.models import Child
 
-                    child = self.db.query(Child).filter(Child.id == e.child_id).first()
-                    if child:
-                        refund = RefundApplication(
-                            order_id=None,  # 活动退款无关联订单
-                            user_id=child.user_id,
-                            child_id=e.child_id,
-                            refund_amount=activity.price,
-                            used_days=0,
-                            reason=f"活动「{activity.title}」被组织者取消，自动退款",
-                        )
-                        refund_repo = BaseRepository(self.db, RefundApplication)
-                        refund_repo.create(refund)
-                        refund_count += 1
+                    refund = RefundApplication(
+                        order_id=None,  # 活动退款无关联订单
+                        user_id=child.user_id,
+                        child_id=e.child_id,
+                        refund_amount=activity.price,
+                        used_days=0,
+                        reason=f"活动「{activity.title}」被组织者取消，自动退款",
+                    )
+                    refund_repo = BaseRepository(self.db, RefundApplication)
+                    refund_repo.create(refund)
+                    refund_count += 1
                 except Exception as ex:
                     logger.warning(f"Auto refund failed for enrollment {e.id}: {ex}")
 
             # 发送通知
             try:
-                from backend.domain.child.models import Child
-                from backend.domain.message.models import SystemMessage
-
-                child = self.db.query(Child).filter(Child.id == e.child_id).first()
                 if child:
+                    from backend.domain.message.models import SystemMessage
+
                     msg = SystemMessage(
                         user_id=child.user_id,
                         title="活动取消通知",
                         content=f"活动「{activity.title}」已被取消。{'退款将自动处理，请留意。' if not activity.is_free else ''}",
-                        msg_type=5,  # 活动通知
+                        msg_type=5,
                         priority=1,
                     )
                     self.db.add(msg)

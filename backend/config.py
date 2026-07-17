@@ -18,23 +18,38 @@ class Settings(BaseSettings):
     """
 
     # 应用配置
-    APP_NAME: str = "MegaWords API"
-    APP_VERSION: str = "1.0.0"
+    APP_NAME: str = "DmkWords API"
+    APP_VERSION: str = "0.1.0"
     DEBUG: bool = False
+    ENABLE_TEST_TOKEN: bool = False
+
+    # 运营主体
+    COMPANY_NAME: str = ""      # 微信小程序认证主体公司全称（用于隐私政策/资质展示）
+
+    # Mock 网关开关（仅本地开发使用，生产环境必须关闭）
+    MOCK_PAYMENT: bool = False  # 支付 Mock 网关（默认关闭，生产安全）
+    MOCK_SMS: bool = False      # 短信 Mock 网关（生产必须关闭——真实 SDK 未接入时本地开发手动设为 True）
+
+    # 生产短信服务商配置
+    SMS_PROVIDER: str = "mock"          # mock / tencent / aliyun
+    SMS_APP_ID: str = ""                # SDK AppID
+    SMS_APP_KEY: str = ""               # SDK AppKey / AccessKeySecret
+    SMS_SIGN_NAME: str = "DmkWords"    # 短信签名（需平台审核通过）
+    SMS_TEMPLATE_CODE: str = ""         # 验证码模板 ID
 
     # 数据库配置
     DB_HOST: str = "localhost"
     DB_PORT: int = 3306
     DB_USER: str = "root"
     DB_PASSWORD: str = ""
-    DB_NAME: str = "megawords"
+    DB_NAME: str = "dmkwords"
 
     # Redis配置
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379
     REDIS_DB: int = 0
 
-    # JWT配置
+    # JWT配置 - 通过环境变量 SECRET_KEY 覆盖（pydantic-settings 自动读取）
     SECRET_KEY: str = "your-secret-key-change-in-production"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 2  # 2小时

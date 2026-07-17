@@ -30,10 +30,10 @@
 .student-cell { display: flex; align-items: center; gap: 10px; }
 .student-mini-avatar { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 600; color: white; flex-shrink: 0; }
 .student-mini-avatar.sa1 { background: var(--accent); }
-.student-mini-avatar.sa2 { background: #58a0c8; }
+.student-mini-avatar.sa2 { background: #58a0c8; /* intentional */ }
 .student-mini-avatar.sa3 { background: var(--success); }
 .student-mini-avatar.sa4 { background: var(--warning); }
-.student-mini-avatar.sa5 { background: #a050c8; }
+.student-mini-avatar.sa5 { background: #a050c8; /* intentional */ }
 
 /* Level & score */
 .level-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 500; background: var(--accent-soft); color: var(--accent); font-variant-numeric: tabular-nums; }

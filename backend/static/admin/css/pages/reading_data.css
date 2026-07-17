@@ -139,6 +139,15 @@
 .rank-num.top3 { background: var(--accent); color: white; }
 .rank-num.other { background: var(--border); color: var(--muted); }
 
+/* Trend chart container */
+.trend-chart { height: 200px; }
+
+/* Loading state */
+.chart-loading { text-align: center; padding: 40px; color: var(--muted); }
+
+/* Chart SVG labels */
+.chart-label { font-size: 11px; fill: var(--muted); text-anchor: middle; }
+
 /* Trend chart legend */
 .chart-legend {
   display: flex;

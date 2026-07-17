@@ -2,11 +2,13 @@
 """孩子域业务逻辑 — 会员状态、权益转让、借书权限"""
 
 import logging
+from datetime import datetime
 
 from sqlalchemy.orm import Session
 
-from backend.common.exceptions import ForbiddenError, ValidationError
+from backend.common.exceptions import ForbiddenError, NotFoundError, ValidationError
 from backend.common.types import DepositStatus, MemberStatus
+from backend.domain.child.benefit_transfer_model import BenefitTransferApplication
 from backend.domain.child.models import Child
 from backend.domain.child.repository import ChildRepository
 from backend.domain.child.schemas import (
@@ -87,7 +89,14 @@ class ChildService:
         self, child_id: int, status_data: ChildStatusUpdate
     ) -> ChildResponse:
         """更新会员状态 — 校验迁移合法性"""
-        child = self.child_repo.get_by_id_or_raise(child_id)
+        child = (
+            self.db.query(Child)
+            .filter(Child.id == child_id, Child.is_deleted == 0)
+            .with_for_update()
+            .first()
+        )
+        if not child:
+            raise NotFoundError("孩子不存在")
 
         old_status = child.status
         new_status = status_data.status
@@ -109,10 +118,22 @@ class ChildService:
         logger.info(f"Child {child_id} status changed: {old_status} -> {new_status}")
         return ChildResponse.model_validate(child)
 
-    def transfer_benefit(self, source_id: int, target_id: int) -> dict:
-        """权益转让 — 仅限同一用户的孩子"""
-        source = self.child_repo.get_by_id_or_raise(source_id)
-        target = self.child_repo.get_by_id_or_raise(target_id)
+    def _validate_transfer(self, source_id: int, target_id: int) -> tuple:
+        """校验转让合法性，返回 (source, target)"""
+        source = (
+            self.db.query(Child)
+            .filter(Child.id == source_id, Child.is_deleted == 0)
+            .with_for_update()
+            .first()
+        )
+        target = (
+            self.db.query(Child)
+            .filter(Child.id == target_id, Child.is_deleted == 0)
+            .with_for_update()
+            .first()
+        )
+        if not source or not target:
+            raise NotFoundError("孩子不存在")
 
         if source.user_id != target.user_id:
             raise ForbiddenError("只能在同一用户的孩子间转让")
@@ -123,11 +144,9 @@ class ChildService:
         if target.status == MemberStatus.EXITED:
             raise ForbiddenError("目标孩子已退出，无法转让权益")
 
-        # P0-4: 目标孩子不能已是观察期/正式会员/过期（否则覆盖现有权益）
         if target.status in (MemberStatus.OBSERVATION, MemberStatus.OFFICIAL, MemberStatus.EXPIRED):
             raise ForbiddenError("目标孩子已有会员权益，无法转让")
 
-        # 校验源孩子无未还书
         from backend.domain.borrow.models import BorrowRecord
         from backend.common.types import BorrowStatus
 
@@ -143,13 +162,17 @@ class ChildService:
         if active_borrows > 0:
             raise ValidationError(f"源孩子有 {active_borrows} 本未还书，请先归还")
 
-        # 校验源孩子无未缴罚款
         if source.outstanding_fines and source.outstanding_fines > 0:
             raise ValidationError(
                 f"源孩子有未缴罚款 {source.outstanding_fines} 元，请先结清"
             )
 
-        # 执行转让
+        return source, target
+
+    def transfer_benefit(self, source_id: int, target_id: int) -> dict:
+        """权益转让 — 仅限同一用户的孩子（管理员审核通过后调用）"""
+        source, target = self._validate_transfer(source_id, target_id)
+
         old_status = source.status
         target.status = old_status
         target.member_start_time = source.member_start_time
@@ -165,6 +188,28 @@ class ChildService:
             f"Benefit transferred: {source_id} -> {target_id}, status={old_status}"
         )
         return {"success": True, "transferred_status": old_status}
+
+    def create_benefit_transfer_application(
+        self, source_child_id: int, target_child_id: int, user_id: int
+    ) -> dict:
+        self._validate_transfer(source_child_id, target_child_id)
+        application = BenefitTransferApplication(
+            source_child_id=source_child_id,
+            target_child_id=target_child_id,
+            user_id=user_id,
+            status=0,
+            remark="",
+            create_time=datetime.now(),
+            update_time=datetime.now(),
+        )
+        self.db.add(application)
+        self.db.commit()
+        self.db.refresh(application)
+        return {
+            "application_id": application.id,
+            "status": 0,
+            "message": "申请已提交，等待管理员审核",
+        }
 
     def can_borrow_books(self, child_id: int) -> bool:
         """检查孩子是否可借书 — 会员状态 + 押金状态"""

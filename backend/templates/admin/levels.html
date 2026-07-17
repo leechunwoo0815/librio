@@ -2,9 +2,13 @@
 {% block title %}级别配置{% endblock %}
 {% block head %}
 <link rel="stylesheet" href="/static/admin/css/pages/levels.css" />
+<style>
+.btn-level-save { height: 40px; }
+</style>
 {% endblock %}
 {% block page_title %}级别配置{% endblock %}
 {% block content %}
+{% import "admin/macros.html" as m %}
 <div class="table-card">
   <div class="table-header">
     <h3>A-Z 级别体系（26 级）</h3>
@@ -13,7 +17,7 @@
       <button class="btn btn-outline btn-sm" onclick="window.levelsPage.exportLevels()">导出配置</button>
       <button class="btn btn-outline btn-sm" onclick="window.levelsPage.importLevels()">批量导入配置</button>
       <button class="btn btn-primary btn-sm" onclick="window.levelsPage.openLevelModal()">+ 新增级别</button>
-      <input type="file" id="importFile" accept=".csv,.json" style="display:none" onchange="window.levelsPage.handleImport(this)" />
+      <input type="file" id="importFile" accept=".csv,.json" class="hidden" onchange="window.levelsPage.handleImport(this)" />
     </div>
   </div>
   <table>
@@ -31,7 +35,7 @@
       </tr>
     </thead>
     <tbody id="levelsTable">
-      <tr><td colspan="9" style="text-align:center;padding:40px;color:var(--muted);">加载中...</td></tr>
+      <tr><td colspan="9" class="text-center p-24 text-muted">加载中...</td></tr>
     </tbody>
   </table>
 </div>
@@ -40,54 +44,50 @@
 <div class="level-adjust-panel">
   <h3>为单个孩子调整标准</h3>
   <div class="level-adjust-form">
-    <div class="form-group" style="flex:1;margin:0">
+    <div class="form-group">
       <label>选择孩子</label>
       <select class="form-input" id="adjustChildId">
         <option value="">请选择孩子</option>
       </select>
     </div>
-    <div class="form-group" style="flex:1;margin:0">
+    <div class="form-group">
       <label>调整后需读书数</label>
       <input class="form-input" type="number" id="adjustBooks" value="10" />
     </div>
-    <div class="form-group" style="flex:1;margin:0">
+    <div class="form-group">
       <label>调整后通过率</label>
       <input class="form-input" type="number" id="adjustRate" value="65" />
     </div>
-    <button class="btn btn-primary" style="height:40px" onclick="window.levelsPage.saveAdjustment()">保存</button>
+    <button class="btn btn-primary btn-level-save" onclick="window.levelsPage.saveAdjustment()">保存</button>
   </div>
 </div>
 
 <!-- level modal -->
-<div class="modal-overlay" id="levelModal" onclick="if(event.target===this)window.levelsPage.closeLevelModal()">
-  <div class="modal">
-    <h3 id="modalTitle">新增级别</h3>
-    <form id="levelForm" onsubmit="window.levelsPage.submitLevel(event)">
-      <input type="hidden" id="editId" value="" />
-      <div style="display:grid;grid-template-columns:1fr 2fr;gap:12px">
-        <div class="form-group"><label>级别代码 (A-Z)</label><input class="form-input" name="code" placeholder="例如：D" maxlength="1" required /></div>
-        <div class="form-group"><label>级别名称</label><input class="form-input" name="name" placeholder="例如：短句探索" required /></div>
-      </div>
-      <div class="form-group"><label>徽章 Emoji</label><input class="form-input" name="badge_emoji" placeholder="例如：🏆" /></div>
-      <div class="form-group"><label>排序序号</label><input class="form-input" type="number" name="sort_order" placeholder="7" /></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div class="form-group"><label>需读 N 本书</label><input class="form-input" type="number" name="required_books" placeholder="50" /></div>
-        <div class="form-group"><label>测验通过率 %</label><input class="form-input" type="number" name="pass_rate" placeholder="90" /></div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div class="form-group"><label>最大借阅数</label><input class="form-input" type="number" name="max_borrow_count" placeholder="10" /></div>
-        <div class="form-group"><label>最大 AR 等级</label><input class="form-input" type="number" name="max_ar_level" placeholder="10.0" step="0.1" /></div>
-      </div>
-      <div class="form-group">
-        <label><input type="checkbox" name="require_approval" style="accent-color:var(--accent)" /> 需要老师审核才能晋级</label>
-      </div>
-      <div class="modal-actions">
-        <button type="button" class="btn btn-outline btn-sm" onclick="window.levelsPage.closeLevelModal()">取消</button>
-        <button type="submit" class="btn btn-primary btn-sm" id="submitBtn">保存</button>
-      </div>
-    </form>
-  </div>
-</div>
+{{ m.modal_overlay("levelModal", "新增级别", "md") }}
+  <form id="levelForm" onsubmit="window.levelsPage.submitLevel(event)">
+    <input type="hidden" id="editId" value="" />
+    <div class="modal-grid-1-2">
+      <div class="form-group"><label>级别代码 (A-Z)</label><input class="form-input" name="code" placeholder="例如：D" maxlength="1" required /></div>
+      <div class="form-group"><label>级别名称</label><input class="form-input" name="name" placeholder="例如：短句探索" required /></div>
+    </div>
+    <div class="form-group"><label>徽章 Emoji</label><input class="form-input" name="badge_emoji" placeholder="例如：🏆" /></div>
+    <div class="form-group"><label>排序序号</label><input class="form-input" type="number" name="sort_order" placeholder="7" /></div>
+    <div class="modal-grid-1-1">
+      <div class="form-group"><label>需读 N 本书</label><input class="form-input" type="number" name="required_books" placeholder="50" /></div>
+      <div class="form-group"><label>测验通过率 %</label><input class="form-input" type="number" name="pass_rate" placeholder="90" /></div>
+    </div>
+    <div class="modal-grid-1-1">
+      <div class="form-group"><label>最大借阅数</label><input class="form-input" type="number" name="max_borrow_count" placeholder="10" /></div>
+      <div class="form-group"><label>最大 AR 等级</label><input class="form-input" type="number" name="max_ar_level" placeholder="10.0" step="0.1" /></div>
+    </div>
+    <div class="form-group">
+      <label><input type="checkbox" name="require_approval" class="checkbox-accent" /> 需要老师审核才能晋级</label>
+    </div>
+  </form>
+{{ m.modal_actions() }}
+  <button type="button" class="btn btn-secondary" onclick="window.levelsPage.closeLevelModal()">取消</button>
+  <button type="submit" class="btn btn-primary" id="submitBtn" form="levelForm">保存</button>
+{{ m.modal_end() }}
 {% endblock %}
 
 {% block scripts %}

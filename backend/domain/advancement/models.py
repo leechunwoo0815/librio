@@ -33,6 +33,7 @@ class Level(BaseModel):
     __table_args__ = {"extend_existing": True}
 
     name = Column(String(50), nullable=False, unique=True, comment="级别名称")
+    code = Column(String(10), nullable=True, index=True, comment="级别代码（如 A-Z）")
     badge_icon = Column(String(255), nullable=True, comment="徽章图标URL")
     badge_emoji = Column(String(10), nullable=True, comment="徽章Emoji")
     sort_order = Column(Integer, default=0, comment="排序序号（越小越初级）")

@@ -2,9 +2,12 @@
 """词汇域 API 路由"""
 
 from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
 from backend.common.dependencies import get_vocabulary_service
-from backend.middleware.ownership import GetOwnedChild, GetOwnedVocab
+from backend.common.exceptions import ValidationError
+from backend.database import get_db
+from backend.middleware.ownership import GetOwnedChild, GetOwnedVocab, verify_child_ownership
 from backend.middleware.auth import get_current_user
 from backend.domain.vocabulary.schemas import (
     WordLookupResponse,
@@ -33,9 +36,13 @@ def add_to_vocabulary(
     data: AddVocabRequest,
     service: VocabularyService = Depends(get_vocabulary_service),
     current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     """添加到生词本"""
     child_id = data.child_id or getattr(current_user, "current_child_id", None)
+    if not child_id:
+        raise ValidationError("请先选择孩子")
+    verify_child_ownership(child_id, current_user, db)
     return service.add_to_vocabulary(child_id, word=data.word, book_id=data.book_id)
 
 
@@ -69,6 +76,15 @@ def get_vocabulary_list(
 ):
     """获取生词列表"""
     return service.get_vocabulary_list(child.id, status, sort_by)
+
+
+@router.get("/{child_id}/learning-words", response_model=list[str])
+def get_learning_words(
+    child=Depends(GetOwnedChild()),
+    service: VocabularyService = Depends(get_vocabulary_service),
+):
+    """获取学习中（status=0）的生词列表（用于阅读页高亮）"""
+    return service.get_learning_words(child.id)
 
 
 @router.get("/{child_id}/stats", response_model=VocabStatsResponse)

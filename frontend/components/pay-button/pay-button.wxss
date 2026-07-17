@@ -13,14 +13,4 @@
 }
 .pay-btn.disabled { opacity: 0.5; }
 .pay-amount { font-size: 18px; }
-.ios-notice {
-  background: var(--warning-soft);
-  border: 1px solid var(--warning);
-  border-radius: 12px;
-  padding: 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.ios-icon { font-size: 20px; }
-.ios-text { font-size: 13px; color: var(--warning); line-height: 1.5; }
+.pay-ios-tip { padding: 28rpx 24rpx; background: var(--warning-soft); border-radius: var(--radius); font-size: 24rpx; color: var(--warning); text-align: center; line-height: 1.5; }

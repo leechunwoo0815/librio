@@ -4,7 +4,8 @@
 from fastapi import APIRouter, Depends, Query
 
 from backend.common.dependencies import get_db
-from backend.middleware.admin_auth import get_current_admin
+from backend.middleware.admin_rbac import require_perm
+from backend.middleware.auth import get_current_user
 from backend.domain.parent_course_time.schemas import (
     ParentCourseTimeCreate,
     ParentCourseTimeResponse,
@@ -24,6 +25,7 @@ router = APIRouter(prefix="/parent-course-time", tags=["亲子课时间"])
 def list_slots(
     venue_id: int,
     db=Depends(get_db),
+    current_user=Depends(get_current_user),
 ):
     """用户查看场馆可选时间段"""
     service = ParentCourseTimeService(db)
@@ -41,7 +43,7 @@ def list_slots(
 def admin_list_slots(
     venue_id: int | None = Query(None, description="按场馆筛选"),
     db=Depends(get_db),
-    admin=Depends(get_current_admin),
+    admin=Depends(require_perm("parent_course_time.list")),
 ):
     """管理员查看所有时间段"""
     service = ParentCourseTimeService(db)
@@ -54,7 +56,7 @@ def admin_list_slots(
 def admin_create_slot(
     data: ParentCourseTimeCreate,
     db=Depends(get_db),
-    admin=Depends(get_current_admin),
+    admin=Depends(require_perm("parent_course_time.create")),
 ):
     """管理员创建时间段"""
     service = ParentCourseTimeService(db)
@@ -68,7 +70,7 @@ def admin_update_slot(
     slot_id: int,
     data: ParentCourseTimeUpdate,
     db=Depends(get_db),
-    admin=Depends(get_current_admin),
+    admin=Depends(require_perm("parent_course_time.edit")),
 ):
     """管理员更新时间段"""
     service = ParentCourseTimeService(db)
@@ -81,7 +83,7 @@ def admin_update_slot(
 def admin_delete_slot(
     slot_id: int,
     db=Depends(get_db),
-    admin=Depends(get_current_admin),
+    admin=Depends(require_perm("parent_course_time.delete")),
 ):
     """管理员删除时间段（软删除）"""
     service = ParentCourseTimeService(db)

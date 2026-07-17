@@ -21,6 +21,17 @@ page {
   --warning-soft: rgba(230, 173, 0, 0.1);
   --error: #ee343b;
   --error-soft: rgba(238, 52, 59, 0.1);
+  --error-rgb: 238, 52, 59;
+  --success-rgb: 57, 195, 75;
+  --warning-rgb: 230, 173, 0;
+  --accent-rgb: 85, 96, 207;
+  --accent-light: #a78bfa;
+  --accent-dark: #3a3aaa;
+  --accent-darker: #322680;
+  --warning-dark: #b8860b;
+  --gold: #daa520;
+  --gold-light: #f5e6a3;
+  --gold-dark: #8b6914;
   --radius: 32rpx;
   --radius-sm: 20rpx;
   --radius-lg: 40rpx;
@@ -112,6 +123,7 @@ button {
 /* 全局固定底部栏 */
 .fixed-bottom-bar {
   position: fixed;
+    box-sizing: border-box;
   bottom: 0;
   left: 0;
   right: 0;
@@ -148,3 +160,38 @@ button {
 .badge-warning { background: var(--warning-soft); color: var(--warning); }
 .badge-error { background: var(--error-soft); color: var(--error); }
 .badge-info { background: var(--accent-soft); color: var(--accent); }
+
+
+/* ============================================
+   Icon Font — emoji 替换方案
+   替换系统 emoji 为自定义图标，保证跨端一致性
+   上线前需从 iconfont.cn 下载真实 woff2 文件
+   ============================================ */
+
+/*
+  TODO: 上线前从 iconfont.cn 下载真实字体文件
+  @font-face {
+    font-family: 'iconfont';
+    src: url('/static/iconfont/iconfont.woff2') format('woff2');
+  }
+*/
+
+.icon {
+  font-family: 'iconfont', 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif;
+  font-style: normal;
+  font-size: inherit;
+  vertical-align: middle;
+  display: inline;
+}
+
+/* Icon sizing helpers */
+.icon-sm  { font-size: 0.75em; }
+.icon-lg  { font-size: 1.25em; }
+.icon-xl  { font-size: 1.5em; }
+
+/* Icon color helpers */
+.icon-accent  { color: var(--accent); }
+.icon-success { color: var(--success); }
+.icon-warning { color: var(--warning); }
+.icon-error   { color: var(--error); }
+.icon-muted   { color: var(--muted); }

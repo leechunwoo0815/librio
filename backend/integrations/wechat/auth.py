@@ -1,14 +1,18 @@
 # backend/integrations/wechat/auth.py
 """微信登录集成 — 统一使用 BusinessException"""
 
+import logging
+
 import httpx
 
 from backend.config import get_settings
 from backend.common.exceptions import ValidationError, ForbiddenError
 
+logger = logging.getLogger(__name__)
+
 
 class WeChatAuth:
-    """微信登录 — code 换 openid"""
+    """微信登录 — code 换 openid、手机号"""
 
     CODE2SESSION_URL = "https://api.weixin.qq.com/sns/jscode2session"
 
@@ -44,3 +48,21 @@ class WeChatAuth:
                 raise ValidationError(f"微信登录失败: {errmsg}")
 
         return data
+
+    @staticmethod
+    async def get_phone_number(phone_code: str) -> str | None:
+        """通过微信临时 code 获取用户手机号"""
+        from backend.integrations.wechat.subscribe import _get_access_token
+
+        token = await _get_access_token()
+        token_str = token.get("access_token")
+        if not token_str:
+            return None
+        url = f"https://api.weixin.qq.com/wxa/business/getuserphonenumber?access_token={token_str}"
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(url, json={"code": phone_code}, timeout=5)
+            data = resp.json()
+            if data.get("errcode") == 0:
+                return data["phone_info"]["phoneNumber"]
+            logger.warning("Get phone number failed: errcode=%s, errmsg=%s", data.get("errcode"), data.get("errmsg"))
+            return None

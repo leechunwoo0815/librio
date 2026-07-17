@@ -48,14 +48,18 @@ class ProfileService:
             .all()
         )
         achievements = []
-        for ca in cas:
-            ach = (
-                self.db.query(Achievement)
-                .filter(Achievement.id == ca.achievement_id)
-                .first()
-            )
-            if ach:
-                achievements.append({"name": ach.name, "badge_emoji": ach.badge_emoji})
+        if cas:
+            achievement_ids = {ca.achievement_id for ca in cas}
+            ach_map = {
+                a.id: a
+                for a in self.db.query(Achievement)
+                .filter(Achievement.id.in_(achievement_ids))
+                .all()
+            }
+            for ca in cas:
+                ach = ach_map.get(ca.achievement_id)
+                if ach:
+                    achievements.append({"name": ach.name, "badge_emoji": ach.badge_emoji})
 
         return {
             "child_id": child.id,

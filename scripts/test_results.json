@@ -1,16 +1,24 @@
 {
-  "timestamp": "2026-07-02T16:44:31.970787",
+  "timestamp": "2026-07-08T11:07:17.764185",
   "total": 104,
-  "pass": 98,
-  "fail": 6,
-  "pass_rate": "94.2%",
+  "pass": 90,
+  "fail": 14,
+  "pass_rate": "86.5%",
   "errors": [
-    "[管理员] 管理员登录: HTTP 401 - {\"detail\": \"用户名或密码错误\"}",
-    "[家长] 获取书架: HTTP 500 - \"Internal Server Error\"",
-    "[家长] 转让资格查询: HTTP 500 - \"Internal Server Error\"",
+    "[管理员] 无令牌访问管理接口: HTTP 404 - {\"detail\": \"Not Found\"}",
+    "[家长] 获取书架: HTTP 500 - {\"detail\": \"服务器内部错误，请稍后重试\"}",
+    "[家长] 转让资格查询: HTTP 500 - {\"detail\": \"服务器内部错误，请稍后重试\"}",
     "[未登录] 无认证: GET /book/search: HTTP 200 - {\"items\": [{\"id\": 1, \"isbn\": \"978-0-06-440055-8\", \"title\": \"Charlotte's Web\", \"author\": \"E.B. White\", \"publisher\": null, \"ar_value\": \"4.4\", \"lexile_va",
     "[未登录] 无认证: GET /reading/session?child_id=1: HTTP 404 - {\"detail\": \"Not Found\"}",
-    "[未登录] 无认证: GET /vocabulary/1/learning: HTTP 404 - {\"detail\": \"Not Found\"}"
+    "[未登录] 无认证: GET /vocabulary/1/learning: HTTP 404 - {\"detail\": \"Not Found\"}",
+    "[未登录] 无认证: GET /admin/dashboard: HTTP 404 - {\"detail\": \"Not Found\"}",
+    "[未登录] 无认证: GET /admin/users: HTTP 404 - {\"detail\": \"Not Found\"}",
+    "[权限隔离] 用户→管理: GET /admin/dashboard: HTTP 404 - {\"detail\": \"Not Found\"}",
+    "[权限隔离] 用户→管理: GET /admin/users: HTTP 404 - {\"detail\": \"Not Found\"}",
+    "[权限隔离] 用户→管理: GET /admin/config: HTTP 404 - {\"detail\": \"Not Found\"}",
+    "[权限隔离] 用户→管理: POST /admin/venues: HTTP 404 - {\"detail\": \"Not Found\"}",
+    "[权限隔离] 用户→管理: POST /admin/teachers: HTTP 404 - {\"detail\": \"Not Found\"}",
+    "[权限隔离] 用户→管理: GET /admin/orders: HTTP 404 - {\"detail\": \"Not Found\"}"
   ],
   "results": [
     {
@@ -18,9 +26,9 @@
       "name": "管理员登录",
       "method": "POST",
       "path": "/admin/login",
-      "status": 401,
-      "ok": false,
-      "body_preview": "{\"detail\": \"用户名或密码错误\"}"
+      "status": 200,
+      "ok": true,
+      "body_preview": "{\"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwicm9sZSI6MCwiZXhwIjoxNzgzNTA4ODM3LCJ0"
     },
     {
       "role": "管理员",
@@ -36,36 +44,36 @@
       "name": "无令牌访问管理接口",
       "method": "GET",
       "path": "/admin/dashboard",
-      "status": 401,
-      "ok": true,
-      "body_preview": "{\"detail\": \"Not authenticated\"}"
+      "status": 404,
+      "ok": false,
+      "body_preview": "{\"detail\": \"Not Found\"}"
     },
     {
       "role": "管理员",
       "name": "仪表盘数据",
       "method": "GET",
       "path": "/admin/dashboard",
-      "status": 401,
+      "status": 404,
       "ok": true,
-      "body_preview": "{\"detail\": \"Not authenticated\"}"
+      "body_preview": "{\"detail\": \"Not Found\"}"
     },
     {
       "role": "管理员",
       "name": "用户列表",
       "method": "GET",
       "path": "/admin/users?page=1&page_size=10",
-      "status": 401,
+      "status": 404,
       "ok": true,
-      "body_preview": "{\"detail\": \"Not authenticated\"}"
+      "body_preview": "{\"detail\": \"Not Found\"}"
     },
     {
       "role": "管理员",
       "name": "用户搜索",
       "method": "GET",
       "path": "/admin/users?keyword=138",
-      "status": 401,
+      "status": 404,
       "ok": true,
-      "body_preview": "{\"detail\": \"Not authenticated\"}"
+      "body_preview": "{\"detail\": \"Not Found\"}"
     },
     {
       "role": "管理员",
@@ -81,9 +89,9 @@
       "name": "创建图书",
       "method": "POST",
       "path": "/book/",
-      "status": 401,
+      "status": 422,
       "ok": true,
-      "body_preview": "{\"detail\": \"Not authenticated\"}"
+      "body_preview": "{\"detail\": [{\"type\": \"missing\", \"loc\": [\"body\", \"ar_value\"], \"msg\": \"Field required\", \"input\": {\"tit"
     },
     {
       "role": "管理员",
@@ -101,16 +109,16 @@
       "path": "/order/?page=1&page_size=10",
       "status": 401,
       "ok": true,
-      "body_preview": "{\"detail\": \"Not authenticated\"}"
+      "body_preview": "{\"detail\": \"管理员Token不能访问用户API，请使用管理端专用接口\"}"
     },
     {
       "role": "管理员",
       "name": "订单列表(管理端API)",
       "method": "GET",
       "path": "/admin/orders?page=1&page_size=10",
-      "status": 401,
+      "status": 404,
       "ok": true,
-      "body_preview": "{\"detail\": \"Not authenticated\"}"
+      "body_preview": "{\"detail\": \"Not Found\"}"
     },
     {
       "role": "管理员",
@@ -137,7 +145,7 @@
       "path": "/activity/?page=1&page_size=10",
       "status": 401,
       "ok": true,
-      "body_preview": "{\"detail\": \"Not authenticated\"}"
+      "body_preview": "{\"detail\": \"管理员Token不能访问用户API，请使用管理端专用接口\"}"
     },
     {
       "role": "管理员",
@@ -153,36 +161,36 @@
       "name": "场馆列表",
       "method": "GET",
       "path": "/admin/venues",
-      "status": 401,
+      "status": 404,
       "ok": true,
-      "body_preview": "{\"detail\": \"Not authenticated\"}"
+      "body_preview": "{\"detail\": \"Not Found\"}"
     },
     {
       "role": "管理员",
       "name": "创建场馆",
       "method": "POST",
       "path": "/admin/venues",
-      "status": 401,
+      "status": 404,
       "ok": true,
-      "body_preview": "{\"detail\": \"Not authenticated\"}"
+      "body_preview": "{\"detail\": \"Not Found\"}"
     },
     {
       "role": "管理员",
       "name": "老师列表",
       "method": "GET",
       "path": "/admin/teachers",
-      "status": 401,
+      "status": 404,
       "ok": true,
-      "body_preview": "{\"detail\": \"Not authenticated\"}"
+      "body_preview": "{\"detail\": \"Not Found\"}"
     },
     {
       "role": "管理员",
       "name": "创建老师",
       "method": "POST",
       "path": "/admin/teachers",
-      "status": 401,
+      "status": 404,
       "ok": true,
-      "body_preview": "{\"detail\": \"Not authenticated\"}"
+      "body_preview": "{\"detail\": \"Not Found\"}"
     },
     {
       "role": "管理员",
@@ -191,25 +199,25 @@
       "path": "/advancement/levels",
       "status": 401,
       "ok": true,
-      "body_preview": "{\"detail\": \"Not authenticated\"}"
+      "body_preview": "{\"detail\": \"管理员Token不能访问用户API，请使用管理端专用接口\"}"
     },
     {
       "role": "管理员",
       "name": "系统配置列表",
       "method": "GET",
       "path": "/admin/config",
-      "status": 401,
+      "status": 404,
       "ok": true,
-      "body_preview": "{\"detail\": \"Not authenticated\"}"
+      "body_preview": "{\"detail\": \"Not Found\"}"
     },
     {
       "role": "管理员",
       "name": "更新配置",
       "method": "PUT",
       "path": "/admin/config",
-      "status": 405,
+      "status": 404,
       "ok": true,
-      "body_preview": "{\"detail\": \"Method Not Allowed\"}"
+      "body_preview": "{\"detail\": \"Not Found\"}"
     },
     {
       "role": "管理员",
@@ -218,7 +226,7 @@
       "path": "/advancement/achievements",
       "status": 401,
       "ok": true,
-      "body_preview": "{\"detail\": \"Not authenticated\"}"
+      "body_preview": "{\"detail\": \"管理员Token不能访问用户API，请使用管理端专用接口\"}"
     },
     {
       "role": "管理员",
@@ -234,18 +242,18 @@
       "name": "页面: admin/dashboard",
       "method": "GET",
       "path": "/admin/dashboard",
-      "status": 401,
+      "status": 404,
       "ok": true,
-      "body_preview": "{\"detail\": \"Not authenticated\"}"
+      "body_preview": "{\"detail\": \"Not Found\"}"
     },
     {
       "role": "管理员",
       "name": "页面: admin/users",
       "method": "GET",
       "path": "/admin/users",
-      "status": 401,
+      "status": 404,
       "ok": true,
-      "body_preview": "{\"detail\": \"Not authenticated\"}"
+      "body_preview": "{\"detail\": \"Not Found\"}"
     },
     {
       "role": "管理员",
@@ -261,9 +269,9 @@
       "name": "页面: admin/orders",
       "method": "GET",
       "path": "/admin/orders",
-      "status": 401,
+      "status": 404,
       "ok": true,
-      "body_preview": "{\"detail\": \"Not authenticated\"}"
+      "body_preview": "{\"detail\": \"Not Found\"}"
     },
     {
       "role": "管理员",
@@ -297,9 +305,9 @@
       "name": "页面: admin/teachers",
       "method": "GET",
       "path": "/admin/teachers",
-      "status": 401,
+      "status": 404,
       "ok": true,
-      "body_preview": "{\"detail\": \"Not authenticated\"}"
+      "body_preview": "{\"detail\": \"Not Found\"}"
     },
     {
       "role": "管理员",
@@ -324,9 +332,9 @@
       "name": "页面: admin/submissions",
       "method": "GET",
       "path": "/admin/submissions",
-      "status": 401,
+      "status": 404,
       "ok": true,
-      "body_preview": "{\"detail\": \"Not authenticated\"}"
+      "body_preview": "{\"detail\": \"Not Found\"}"
     },
     {
       "role": "管理员",
@@ -351,9 +359,9 @@
       "name": "页面: admin/bookcopy",
       "method": "GET",
       "path": "/admin/bookcopy",
-      "status": 401,
+      "status": 404,
       "ok": true,
-      "body_preview": "{\"detail\": \"Not authenticated\"}"
+      "body_preview": "{\"detail\": \"Not Found\"}"
     },
     {
       "role": "管理员",
@@ -396,9 +404,9 @@
       "name": "页面: admin/venues",
       "method": "GET",
       "path": "/admin/venues",
-      "status": 401,
+      "status": 404,
       "ok": true,
-      "body_preview": "{\"detail\": \"Not authenticated\"}"
+      "body_preview": "{\"detail\": \"Not Found\"}"
     },
     {
       "role": "家长",
@@ -407,7 +415,7 @@
       "path": "/child/",
       "status": 200,
       "ok": true,
-      "body_preview": "[{\"id\": 1, \"user_id\": 1, \"name\": \"小明\", \"english_name\": \"Tom\", \"age\": 7, \"grade\": \"二年级\", \"status\": 3,"
+      "body_preview": "[{\"id\": 1, \"user_id\": 1, \"name\": \"小明\", \"english_name\": \"Tom\", \"age\": 7, \"grade\": \"二年级\", \"status\": 2,"
     },
     {
       "role": "家长",
@@ -416,7 +424,7 @@
       "path": "/child/",
       "status": 201,
       "ok": true,
-      "body_preview": "{\"id\": 9, \"user_id\": 1, \"name\": \"测试小朋友\", \"english_name\": null, \"age\": 8, \"grade\": \"二年级\", \"status\": 0"
+      "body_preview": "{\"id\": 86, \"user_id\": 1, \"name\": \"测试小朋友\", \"english_name\": null, \"age\": 8, \"grade\": \"二年级\", \"status\": "
     },
     {
       "role": "家长",
@@ -425,7 +433,7 @@
       "path": "/child/",
       "status": 200,
       "ok": true,
-      "body_preview": "[{\"id\": 1, \"user_id\": 1, \"name\": \"小明\", \"english_name\": \"Tom\", \"age\": 7, \"grade\": \"二年级\", \"status\": 3,"
+      "body_preview": "[{\"id\": 1, \"user_id\": 1, \"name\": \"小明\", \"english_name\": \"Tom\", \"age\": 7, \"grade\": \"二年级\", \"status\": 2,"
     },
     {
       "role": "家长",
@@ -452,7 +460,7 @@
       "path": "/bookshelf/?child_id=None",
       "status": 500,
       "ok": false,
-      "body_preview": "Internal Server Error"
+      "body_preview": "{\"detail\": \"服务器内部错误，请稍后重试\"}"
     },
     {
       "role": "家长",
@@ -461,7 +469,7 @@
       "path": "/order/?page=1&page_size=10",
       "status": 200,
       "ok": true,
-      "body_preview": "{\"items\": [{\"id\": 1, \"order_no\": \"MW17822173046806642\", \"user_id\": 1, \"child_id\": 1, \"type\": 2, \"amo"
+      "body_preview": "{\"items\": [{\"id\": 11, \"order_no\": \"MW17834126821145896\", \"user_id\": 1, \"child_id\": 1, \"type\": 1, \"am"
     },
     {
       "role": "家长",
@@ -470,7 +478,7 @@
       "path": "/message/",
       "status": 200,
       "ok": true,
-      "body_preview": "{\"items\": [{\"id\": 1, \"user_id\": 1, \"title\": \"欢迎加入 MegaWords\", \"content\": \"欢迎成为正式会员！开始你的英文阅读之旅吧。\", \"m"
+      "body_preview": "{\"items\": [{\"id\": 17, \"user_id\": 1, \"title\": \"test\", \"content\": \"test content\", \"msg_type\": 1, \"prio"
     },
     {
       "role": "家长",
@@ -497,7 +505,7 @@
       "path": "/activity/",
       "status": 200,
       "ok": true,
-      "body_preview": "[{\"id\": 1, \"title\": \"暑期阅读挑战赛\", \"description\": \"连续阅读30天，赢取精美奖品！\", \"start_time\": \"2026-06-24T14:42:42\""
+      "body_preview": "[{\"id\": 1, \"title\": \"暑期阅读挑战赛\", \"description\": \"连续阅读30天，赢取精美奖品！\", \"type\": 1, \"is_free\": 1, \"price\": n"
     },
     {
       "role": "家长",
@@ -506,7 +514,7 @@
       "path": "/child/transfer-eligibility",
       "status": 500,
       "ok": false,
-      "body_preview": "Internal Server Error"
+      "body_preview": "{\"detail\": \"服务器内部错误，请稍后重试\"}"
     },
     {
       "role": "未登录",
@@ -576,72 +584,72 @@
       "name": "无认证: GET /admin/dashboard",
       "method": "GET",
       "path": "/admin/dashboard",
-      "status": 401,
-      "ok": true,
-      "body_preview": "{\"detail\": \"Not authenticated\"}"
+      "status": 404,
+      "ok": false,
+      "body_preview": "{\"detail\": \"Not Found\"}"
     },
     {
       "role": "未登录",
       "name": "无认证: GET /admin/users",
       "method": "GET",
       "path": "/admin/users",
-      "status": 401,
-      "ok": true,
-      "body_preview": "{\"detail\": \"Not authenticated\"}"
+      "status": 404,
+      "ok": false,
+      "body_preview": "{\"detail\": \"Not Found\"}"
     },
     {
       "role": "权限隔离",
       "name": "用户→管理: GET /admin/dashboard",
       "method": "GET",
       "path": "/admin/dashboard",
-      "status": 403,
-      "ok": true,
-      "body_preview": "{\"detail\": \"需要管理员权限\"}"
+      "status": 404,
+      "ok": false,
+      "body_preview": "{\"detail\": \"Not Found\"}"
     },
     {
       "role": "权限隔离",
       "name": "用户→管理: GET /admin/users",
       "method": "GET",
       "path": "/admin/users",
-      "status": 403,
-      "ok": true,
-      "body_preview": "{\"detail\": \"需要管理员权限\"}"
+      "status": 404,
+      "ok": false,
+      "body_preview": "{\"detail\": \"Not Found\"}"
     },
     {
       "role": "权限隔离",
       "name": "用户→管理: GET /admin/config",
       "method": "GET",
       "path": "/admin/config",
-      "status": 403,
-      "ok": true,
-      "body_preview": "{\"detail\": \"需要管理员权限\"}"
+      "status": 404,
+      "ok": false,
+      "body_preview": "{\"detail\": \"Not Found\"}"
     },
     {
       "role": "权限隔离",
       "name": "用户→管理: POST /admin/venues",
       "method": "POST",
       "path": "/admin/venues",
-      "status": 403,
-      "ok": true,
-      "body_preview": "{\"detail\": \"需要管理员权限\"}"
+      "status": 404,
+      "ok": false,
+      "body_preview": "{\"detail\": \"Not Found\"}"
     },
     {
       "role": "权限隔离",
       "name": "用户→管理: POST /admin/teachers",
       "method": "POST",
       "path": "/admin/teachers",
-      "status": 403,
-      "ok": true,
-      "body_preview": "{\"detail\": \"需要管理员权限\"}"
+      "status": 404,
+      "ok": false,
+      "body_preview": "{\"detail\": \"Not Found\"}"
     },
     {
       "role": "权限隔离",
       "name": "用户→管理: GET /admin/orders",
       "method": "GET",
       "path": "/admin/orders",
-      "status": 403,
-      "ok": true,
-      "body_preview": "{\"detail\": \"需要管理员权限\"}"
+      "status": 404,
+      "ok": false,
+      "body_preview": "{\"detail\": \"Not Found\"}"
     },
     {
       "role": "边界",
@@ -722,7 +730,7 @@
       "path": "/child/",
       "status": 200,
       "ok": true,
-      "body_preview": "[{\"id\": 1, \"user_id\": 1, \"name\": \"小明\", \"english_name\": \"Tom\", \"age\": 7, \"grade\": \"二年级\", \"status\": 3,"
+      "body_preview": "[{\"id\": 1, \"user_id\": 1, \"name\": \"小明\", \"english_name\": \"Tom\", \"age\": 7, \"grade\": \"二年级\", \"status\": 2,"
     },
     {
       "role": "API对齐",
@@ -785,7 +793,7 @@
       "path": "/order/",
       "status": 200,
       "ok": true,
-      "body_preview": "{\"items\": [{\"id\": 1, \"order_no\": \"MW17822173046806642\", \"user_id\": 1, \"child_id\": 1, \"type\": 2, \"amo"
+      "body_preview": "{\"items\": [{\"id\": 11, \"order_no\": \"MW17834126821145896\", \"user_id\": 1, \"child_id\": 1, \"type\": 1, \"am"
     },
     {
       "role": "API对齐",
@@ -803,7 +811,7 @@
       "path": "/deposit/status?child_id=1",
       "status": 200,
       "ok": true,
-      "body_preview": "{\"status\": 0, \"amount\": 0, \"message\": \"未缴纳押金\"}"
+      "body_preview": "{\"status\": 1, \"amount\": \"1200.00\", \"paid_at\": \"2026-07-03T11:37:43\"}"
     },
     {
       "role": "API对齐",
@@ -884,7 +892,7 @@
       "path": "/advancement/levels",
       "status": 200,
       "ok": true,
-      "body_preview": "[{\"id\": 1, \"name\": \"A\", \"badge_icon\": null, \"badge_emoji\": \"🌱\", \"sort_order\": 1, \"required_books\": 1"
+      "body_preview": "[{\"id\": 56, \"name\": \"测试级别E\", \"code\": null, \"badge_icon\": null, \"badge_emoji\": null, \"sort_order\": 0,"
     },
     {
       "role": "API对齐",
@@ -893,7 +901,7 @@
       "path": "/advancement/achievements",
       "status": 200,
       "ok": true,
-      "body_preview": "[{\"id\": 1, \"name\": \"读完10本书\", \"description\": null, \"type\": 2, \"badge_icon\": null, \"badge_emoji\": \"📚\"}"
+      "body_preview": "[{\"id\": 1, \"name\": \"读完10本书\", \"description\": null, \"type\": 2, \"badge_icon\": null, \"badge_emoji\": \"📚\","
     },
     {
       "role": "API对齐",
@@ -911,7 +919,7 @@
       "path": "/activity/",
       "status": 200,
       "ok": true,
-      "body_preview": "[{\"id\": 1, \"title\": \"暑期阅读挑战赛\", \"description\": \"连续阅读30天，赢取精美奖品！\", \"start_time\": \"2026-06-24T14:42:42\""
+      "body_preview": "[{\"id\": 1, \"title\": \"暑期阅读挑战赛\", \"description\": \"连续阅读30天，赢取精美奖品！\", \"type\": 1, \"is_free\": 1, \"price\": n"
     },
     {
       "role": "API对齐",
@@ -920,7 +928,7 @@
       "path": "/message/",
       "status": 200,
       "ok": true,
-      "body_preview": "{\"items\": [{\"id\": 1, \"user_id\": 1, \"title\": \"欢迎加入 MegaWords\", \"content\": \"欢迎成为正式会员！开始你的英文阅读之旅吧。\", \"m"
+      "body_preview": "{\"items\": [{\"id\": 17, \"user_id\": 1, \"title\": \"test\", \"content\": \"test content\", \"msg_type\": 1, \"prio"
     },
     {
       "role": "API对齐",

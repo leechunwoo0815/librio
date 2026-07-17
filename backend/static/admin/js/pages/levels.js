@@ -34,28 +34,29 @@
         <td>${l.badge_emoji || '-'}</td>
         <td>${escapeHtml(l.name || '-')}</td>
         <td>${l.required_books != null ? l.required_books : '-'}</td>
-        <td>${l.pass_rate != null ? l.pass_rate + '%' : '--'}</td>
+        <td>${l.required_quiz_pass_rate != null ? Math.round(l.required_quiz_pass_rate * 100) + '%' : '--'}</td>
         <td>${l.max_borrow_count != null ? l.max_borrow_count : '-'}</td>
         <td>${l.student_count != null ? l.student_count : '-'}</td>
-        <td><button class="btn btn-outline btn-sm" onclick="window.levelsPage.editLevel(${l.id}, '${escapeHtml(l.name || '')}', '${l.badge_emoji || ''}', ${l.sort_order || 0}, ${l.required_books || 5}, ${(l.required_quiz_pass_rate || 0.8) * 100}, ${l.max_borrow_count || 10}, ${l.max_ar_level || 10}, ${l.require_teacher_review ? 'true' : 'false'})">编辑</button>
-        <button class="btn btn-outline btn-sm" style="color:var(--error)" onclick="window.levelsPage.deleteLevel(${l.id}, '${escapeHtml(l.name || '')}')">删除</button></td>
+        <td><button class="btn btn-outline btn-sm" onclick="window.levelsPage.editLevel(${l.id}, '${jsEscape(l.code || '')}', '${jsEscape(l.name || '')}', '${l.badge_emoji || ''}', ${l.sort_order || 0}, ${l.required_books || 5}, ${(l.required_quiz_pass_rate || 0.8) * 100}, ${l.max_borrow_count || 10}, ${l.max_ar_level || 10}, ${l.require_teacher_review ? 'true' : 'false'})">编辑</button>
+        <button class="btn btn-outline btn-sm" style="color:var(--error)" onclick="window.levelsPage.deleteLevel(${l.id}, '${jsEscape(l.name || '')}')">删除</button></td>
       </tr>
     `).join('');
   }
 
   function openLevelModal() {
     document.getElementById('editId').value = '';
-    document.getElementById('modalTitle').textContent = '新增级别';
+    document.querySelector('#levelModal .modal-header h2').textContent = '新增级别';
     document.getElementById('submitBtn').textContent = '保存';
     document.getElementById('levelForm').reset();
-    document.getElementById('levelModal').classList.add('show');
+    showModal('levelModal');
   }
 
-  function editLevel(id, name, emoji, sortOrder, requiredBooks, passRate, maxBorrow, maxAr, requireReview) {
+  function editLevel(id, code, name, emoji, sortOrder, requiredBooks, passRate, maxBorrow, maxAr, requireReview) {
     document.getElementById('editId').value = id;
-    document.getElementById('modalTitle').textContent = '编辑级别';
+    document.querySelector('#levelModal .modal-header h2').textContent = '编辑级别';
     document.getElementById('submitBtn').textContent = '保存修改';
     const form = document.getElementById('levelForm');
+    form.elements['code'].value = code;
     form.elements['name'].value = name;
     form.elements['badge_emoji'].value = emoji;
     form.elements['sort_order'].value = sortOrder;
@@ -64,7 +65,7 @@
     form.elements['max_borrow_count'].value = maxBorrow;
     form.elements['max_ar_level'].value = maxAr;
     form.elements['require_approval'].checked = requireReview;
-    document.getElementById('levelModal').classList.add('show');
+    showModal('levelModal');
   }
 
   async function deleteLevel(id, name) {
@@ -80,11 +81,15 @@
   }
 
   function closeLevelModal() {
-    document.getElementById('levelModal').classList.remove('show');
+    closeModal('levelModal');
   }
 
   async function submitLevel(e) {
     e.preventDefault();
+    const btn = document.querySelector('#levelForm button[type="submit"]');
+    if (btn.disabled) return;
+    btn.disabled = true;
+    btn.textContent = '提交中...';
     const form = document.getElementById('levelForm');
     const fd = new FormData(form);
     const body = {};
@@ -95,7 +100,7 @@
         body['require_teacher_review'] = true;
       } else if (v === '') {
         continue;
-      } else if (['sort_order', 'required_books', 'pass_rate', 'max_borrow_count'].includes(k)) {
+      } else if (['sort_order', 'required_books', 'pass_rate', 'max_borrow_count', 'max_ar_level'].includes(k)) {
         body[k] = Number(v);
       } else {
         body[k] = v;
@@ -118,6 +123,9 @@
       loadLevels();
     } catch (err) {
       showToast(err.message || '操作失败', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '保存';
     }
   }
 

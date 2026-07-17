@@ -14,7 +14,7 @@
       renderReports(reports);
       updateStats(reports);
     } catch (err) {
-      document.getElementById('reportBody').innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--error);">加载失败：' + (err.message || '未知错误') + '</td></tr>';
+      document.getElementById('reportBody').innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--error);">加载失败：' + escapeHtml(err.message || '未知错误') + '</td></tr>';
     }
   }
 

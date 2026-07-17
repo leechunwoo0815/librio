@@ -20,6 +20,7 @@ Page({
     submitRetries: 0,  // MP-008: 重试计数
     loading: true,
     loadError: false,
+    elapsedSeconds: 0,
   },
 
   async onLoad(options) {
@@ -29,11 +30,17 @@ Page({
     const bookId = parseInt(options.bookId) || 0
     if (!bookId) {
       wx.showToast({ title: '参数错误', icon: 'none' })
-      setTimeout(() => wx.navigateBack(), 1500)
+      this._navTimer = setTimeout(() => { wx.navigateBack(); }, 1500)
       return
     }
 
     this.setData({ bookId })
+
+    // Start timer
+    this._timerInterval = setInterval(() => {
+      this.setData({ elapsedSeconds: this.data.elapsedSeconds + 1 })
+    }, 1000)
+
     await this.loadQuestions(bookId)
   },
 
@@ -43,6 +50,13 @@ Page({
       const quiz = await api.startQuiz(bookId)
       const quizId = quiz.id || quiz.quiz_id || 0
 
+      // Fetch book title
+      let bookTitle = ''
+      try {
+        const bookDetail = await api.getBookDetail(bookId)
+        bookTitle = bookDetail.title || bookDetail.name || ''
+      } catch (e) { /* silent */ }
+
       const questions = await api.getQuizQuestions(bookId)
       if (!questions || questions.length === 0) {
         // MP-009: 题库为空 — 友好占位页
@@ -51,11 +65,20 @@ Page({
         return
       }
 
+      // Strip correct_answer from data sent to WXML
+      const sanitizedQuestions = questions.map(q => {
+        const { correct_answer, ...rest } = q
+        return rest
+      })
+      this._correctAnswers = {}
+      questions.forEach(q => { this._correctAnswers[q.id] = q.correct_answer })
+
       this.setData({
         quizId,
-        questions,
+        bookTitle,
+        questions: sanitizedQuestions,
         totalQ: questions.length,
-        question: questions[0],
+        question: sanitizedQuestions[0],
         currentQ: 0,
         selected: '',
         answers: {},
@@ -84,8 +107,12 @@ Page({
         })
       }
     } catch (e) {
-      // MP-009: startQuiz 失败 — 友好提示
       wx.hideLoading()
+      const msg = (e.message || e.errMsg || '').toLowerCase()
+      if (msg.includes('暂无测验题目')) {
+        this.setData({ questions: [], noQuestions: true, bookId, loading: false, loadError: false })
+        return
+      }
       this.setData({ loadError: true, loading: false })
       wx.showModal({
         title: '测评暂时不可用',
@@ -98,17 +125,33 @@ Page({
   },
 
   onRetry() {
+    if (this._retrying) return
+    this._retrying = true
     this.setData({ loadError: false, loading: true })
-    this.loadQuestions(this.data.bookId)
+    this.loadQuestions(this.data.bookId).finally(() => { this._retrying = false })
   },
 
   selectOption(e) {
     const ans = e.currentTarget.dataset.ans
-    this.setData({ selected: ans })
+    const questionId = this.data.questions[this.data.currentQ].id
+    const correctAns = this._correctAnswers[questionId]
+    const isCorrect = ans === correctAns
+    const resultData = {}
+    resultData['result' + ans] = isCorrect ? 'correct' : 'wrong'
+    if (!isCorrect) {
+      resultData['result' + correctAns] = 'correct'
+    }
+    resultData.feedbackType = isCorrect ? 'correct' : 'wrong'
+    resultData.feedbackText = isCorrect ? '回答正确！' + this.data.question.explanation : '正确答案是 ' + correctAns + '，' + this.data.question.explanation
+    this.setData(Object.assign({ selected: ans }, resultData))
     // MP-007: 每次选择后缓存进度
     this._saveProgress()
     // 触觉反馈
     wx.vibrateShort({ type: 'light' })
+    // 自动进入下一题
+    if (this.data.currentQ < this.data.totalQ - 1) {
+      this._nextTimer = setTimeout(() => { this.nextQuestion(); }, 1200)
+    }
   },
 
   nextQuestion() {
@@ -127,7 +170,13 @@ Page({
         currentQ: nextQ,
         question: questions[nextQ],
         selected: savedAnswer,
-        answers: newAnswers
+        answers: newAnswers,
+        resultA: null,
+        resultB: null,
+        resultC: null,
+        resultD: null,
+        feedbackType: '',
+        feedbackText: '',
       })
     } else {
       this.setData({ answers: newAnswers, showConfirm: true })
@@ -175,8 +224,9 @@ Page({
     const { quizId, questions, answers } = this.data
 
     const answerArray = questions.map(q => ({
+      quiz_id: quizId,
       question_id: q.id,
-      answer: answers[q.id] || ''
+      selected_answer: answers[q.id] || ''
     }))
 
     wx.showLoading({ title: '提交中...' })
@@ -189,19 +239,21 @@ Page({
 
       // 错题回顾：缓存题目和答案供结果页使用
       try {
+        var self = this
         var wrongQuestions = questions.filter(function(q) {
-          return answers[q.id] && answers[q.id] !== q.correct_answer
+          return answers[q.id] && answers[q.id] !== (self._correctAnswers[q.id] || '')
         }).map(function(q) {
           return {
             question_text: q.question_text,
             option_a: q.option_a, option_b: q.option_b,
             option_c: q.option_c, option_d: q.option_d,
-            correct_answer: q.correct_answer,
+            correct_answer: self._correctAnswers[q.id] || '',
             user_answer: answers[q.id] || '',
             explanation: q.explanation || ''
           }
         })
-        wx.setStorageSync('quiz_wrong_' + quizId, wrongQuestions)
+        const cacheData = { questions: wrongQuestions, _ts: Date.now() }
+        wx.setStorageSync('quiz_wrong_' + quizId, cacheData)
       } catch (e) { /* 静默 */ }
 
       const params = [
@@ -209,7 +261,8 @@ Page({
         `total=${result.total}`,
         `correct=${result.correct}`,
         `score=${result.score}`,
-        `passed=${result.passed ? 1 : 0}`
+        `passed=${result.passed ? 1 : 0}`,
+        `wordsRead=${result.words_read || 0}`,
       ]
       if (this.data.bookId) {
         params.push(`bookId=${this.data.bookId}`)
@@ -264,5 +317,11 @@ Page({
   // MP-009: 题库为空时的导航
   goBookshelf() {
     wx.switchTab({ url: '/pages/shelf/shelf' })
+  },
+
+  onUnload() {
+    if (this._navTimer) { clearTimeout(this._navTimer); this._navTimer = null; }
+    if (this._nextTimer) { clearTimeout(this._nextTimer); this._nextTimer = null; }
+    if (this._timerInterval) { clearInterval(this._timerInterval); this._timerInterval = null; }
   },
 })

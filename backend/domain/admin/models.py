@@ -6,6 +6,7 @@ from sqlalchemy.orm import relationship
 
 from backend.common.base_model import BaseModel
 from backend.common.types import AdminRole
+from backend.domain.admin.rbac_models import Role
 
 
 class Admin(BaseModel):
@@ -23,27 +24,25 @@ class Admin(BaseModel):
     role = Column(
         SmallInteger,
         default=AdminRole.STAFF,
-        comment="角色: 0=超级管理员 1=运营 2=老师",
+        comment="@deprecated 角色: 0=超级管理员 1=运营 2=老师，请使用 admin_role_id",
     )
     venue_id = Column(BigInteger, nullable=True, comment="所属场馆ID")
     phone = Column(String(11), nullable=True, comment="手机号")
     status = Column(SmallInteger, default=STATUS_ACTIVE, comment="1=启用 0=禁用")
 
-    _pwd_ctx = None
+    # RBAC 扩展字段（Phase 1）
+    admin_role_id = Column(BigInteger, nullable=True, comment="RBAC角色ID (引用 role.id)")
+    teacher_id = Column(BigInteger, nullable=True, comment="关联教师ID (role=teacher时必填)")
 
-    @classmethod
-    def _get_pwd_ctx(cls):
-        if cls._pwd_ctx is None:
-            from passlib.context import CryptContext
+    # ── RBAC 权限方法 ──
 
-            cls._pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
-        return cls._pwd_ctx
+    role_ref = relationship(
+        Role, foreign_keys=[admin_role_id],
+        primaryjoin="Admin.admin_role_id == Role.id",
+        lazy="joined",
+    )
 
-    def set_password(self, password: str):
-        self.password_hash = self._get_pwd_ctx().hash(password)
 
-    def verify_password(self, password: str) -> bool:
-        return self._get_pwd_ctx().verify(password, self.password_hash)
 
 
 class OperationLog(BaseModel):
@@ -148,11 +147,16 @@ class Teacher(BaseModel):
     __table_args__ = {"extend_existing": True}
 
     name = Column(String(50), nullable=False, comment="老师姓名")
+    english_name = Column(String(50), nullable=True, comment="英文名")
     phone = Column(String(11), nullable=False, comment="手机号")
     venue_id = Column(BigInteger, nullable=False, comment="所属场馆ID")
     avatar = Column(String(255), nullable=True, comment="头像URL")
     introduction = Column(Text, nullable=True, comment="老师简介")
     expertise = Column(String(255), nullable=True, comment="擅长领域")
+    title = Column(String(50), nullable=True, comment="职称")
+    status = Column(
+        String(20), default="online", comment="在线状态: online=在线 offline=离线 leave=休假中"
+    )
 
     schedules = relationship(
         "TeacherSchedule",
@@ -199,7 +203,11 @@ class Venue(BaseModel):
     name = Column(String(100), nullable=False, comment="场馆名称")
     address = Column(String(255), nullable=True, comment="场馆地址")
     phone = Column(String(20), nullable=True, comment="联系电话")
-    opening_hours = Column(String(100), nullable=True, comment="营业时间")
+    business_hours = Column(String(100), nullable=True, comment="营业时间")
+    status = Column(
+        String(20), default="active", comment="运营状态: active=运营中 maintenance=维护中 inactive=已关闭"
+    )
+    capacity = Column(BigInteger, default=0, comment="容量/工位数")
 
     def __repr__(self):
         return f"<Venue(id={self.id}, name='{self.name}')>"

@@ -1,13 +1,20 @@
 <!-- frontend/pages/reading-pkg/book-detail/book-detail.wxml -->
 <view class="page-bg">
-  <view style="display:none" class="active in-stock state-toggle"></view>
+  
 
   <!-- Loading state -->
-  <view class="loading" wx:if="{{loading}}">
+  <view class="loading" wx:if="{{loading && !loadError}}">
     <text class="text-secondary">加载中...</text>
   </view>
 
-  <block wx:if="{{!loading}}">
+  <!-- Error state -->
+  <view class="error-state" wx:if="{{loadError}}">
+    <text class="error-icon"><text class="icon icon-warning"><text class="icon icon-warning">⚠</text></text></text>
+    <text class="error-text">加载失败，请稍后重试</text>
+    <button class="retry-btn" bindtap="onLoad">重新加载</button>
+  </view>
+
+  <block wx:if="{{!loading && !loadError}}">
 
     <view class="nav-bar">
       <navigator class="back" open-type="navigateBack" delta="1">
@@ -33,7 +40,7 @@
           <text class="tag tag-age" wx:if="{{book.age_min || book.age_max}}">{{book.age_min}}–{{book.age_max}} 岁</text>
           <text class="tag tag-series" wx:if="{{book.series_name}}">{{book.series_name}}</text>
         </view>
-        <text class="quiz-tag" wx:if="{{book.quiz_count}}">📝 本图书有 {{book.quiz_count}} 道测验题</text>
+        <text class="quiz-tag" wx:if="{{book.quiz_count}}"><text class="icon icon-note">📝</text> 本图书有 {{book.quiz_count}} 道测验题</text>
       </view>
     </view>
 
@@ -50,7 +57,7 @@
 
     <!-- Audio info -->
     <view class="audio-info" wx:if="{{book && book.has_audio}}">
-      <view class="ai-icon">🎧</view>
+      <view class="ai-icon"><text class="icon icon-headphones">🎧</text></view>
       <view class="ai-text">
         <view class="ai-title">有声朗读</view>
         <view class="ai-meta">{{book.audio_narrator || '专业朗读'}}<text wx:if="{{book.audio_duration}}"> · {{book.audio_duration}}</text></view>
@@ -60,7 +67,7 @@
 
     <!-- Inventory status bar -->
     <view class="inv-bar {{book.available_copies > 0 ? 'in-stock' : 'out-of-stock'}}" wx:if="{{book}}">
-      <text>{{book.available_copies > 0 ? '✅' : '⚠️'}}</text>
+      <text>{{book.available_copies > 0 ? '<text class="icon icon-check"><text class="icon icon-checkmark">✓</text></text>' : '<text class="icon icon-warning"><text class="icon icon-warning">⚠</text></text>'}}</text>
       <text>{{book.available_copies > 0 ? '可借' : '无库存'}}</text>
       <text class="inv-detail">{{book.available_copies || 0}}/{{book.total_copies || 0}}本</text>
     </view>
@@ -81,7 +88,7 @@
     <view class="section-card" wx:if="{{book && book.description}}">
       <view class="section-card-header">
         <image src="/images/icons/document.png" mode="aspectFit" class="section-icon" />
-        <text class="icon">📖</text>
+        <text class="icon"><text class="icon icon-book-open">读</text></text>
         <text class="section-card-title">内容简介</text>
       </view>
       <view class="desc-text {{descExpanded ? 'expanded' : ''}}">
@@ -95,7 +102,7 @@
     <!-- Book info grid -->
     <view class="section-card" wx:if="{{book}}">
       <view class="section-card-header">
-        <text class="icon">👶</text>
+        <text class="icon"><text class="icon icon-baby">👶</text></text>
         <text class="section-card-title">适合年龄</text>
       </view>
       <view class="info-grid">
@@ -125,7 +132,7 @@
     <!-- Series info -->
     <view class="section-card" wx:if="{{book}}">
       <view class="section-card-header">
-        <text class="icon">📚</text>
+        <text class="icon"><text class="icon icon-book">书</text></text>
         <text class="section-card-title">系列信息</text>
       </view>
       <view class="info-grid">
@@ -146,8 +153,8 @@
         </view>
         <view class="info-item">
           <text class="info-label">有声书</text>
-          <text class="info-value" wx:if="{{book.has_audio}}">✅ 可用</text>
-          <text class="info-value" wx:else>❌ 不可用</text>
+          <text class="info-value" wx:if="{{book.has_audio}}"><text class="icon icon-check"><text class="icon icon-checkmark">✓</text></text> 可用</text>
+          <text class="info-value" wx:else><text class="icon icon-close"><text class="icon icon-ballot-x">✗</text></text> 不可用</text>
         </view>
       </view>
     </view>
@@ -155,7 +162,7 @@
     <!-- Related books -->
     <view class="section-card" wx:if="{{relatedBooks && relatedBooks.length > 0}}">
       <view class="section-card-header">
-        <text class="icon">💡</text>
+        <text class="icon"><text class="icon icon-lightbulb">💡</text></text>
         <text class="section-card-title">相关推荐</text>
       </view>
       <scroll-view class="related-scroll" scroll-x="true">

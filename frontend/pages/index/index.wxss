@@ -791,6 +791,7 @@
 /* ── FAB Button ── */
 .fab {
   position: fixed;
+    box-sizing: border-box;
   bottom: 40rpx;
   left: 50%;
   transform: translateX(-50%);
@@ -805,11 +806,13 @@
   text-align: center;
   box-shadow: 0 8rpx 40rpx rgba(85, 96, 207, 0.35);
   z-index: 50;
+  box-sizing: border-box;
 }
 
 /* ── Bottom Navigation ── */
 .bottom-nav {
   position: fixed;
+    box-sizing: border-box;
   bottom: 0;
   left: 0;
   right: 0;
@@ -818,6 +821,7 @@
   display: flex;
   padding: 12rpx 0 env(safe-area-inset-bottom, 16rpx);
   z-index: 100;
+  box-sizing: border-box;
 }
 
 .nav-item {
@@ -850,6 +854,7 @@
 /* ── Venue Sheet Overlay ── */
 .venue-overlay {
   position: fixed;
+    box-sizing: border-box;
   top: 0;
   left: 0;
   right: 0;
@@ -859,6 +864,7 @@
   display: none;
   align-items: flex-end;
   justify-content: center;
+  box-sizing: border-box;
 }
 
 .venue-overlay.show {
@@ -1085,7 +1091,3 @@
 .stats .stat .val { font-family: var(--font-display); font-size: 24px; font-weight: 700; color: var(--accent); }
 .stats .stat .lbl { font-size: 12px; color: var(--muted); }
 
-/* ===== 原型缺失选择器补全 ===== */
-
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-.card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(20, 22, 29, 0.08); }

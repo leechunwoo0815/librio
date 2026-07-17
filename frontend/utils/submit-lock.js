@@ -18,7 +18,7 @@ module.exports = {
     try {
       return await fn()
     } finally {
-      locks.set(key, false)
+      locks.delete(key)
     }
   },
 

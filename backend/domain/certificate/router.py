@@ -16,4 +16,5 @@ def get_certificates(
     child=Depends(GetOwnedChild()),
     service: CertificateService = Depends(get_certificate_service),
 ):
+    # low-volume: per child, one cert per passed level, typically <=10 records
     return service.get_child_certificates(child.id)

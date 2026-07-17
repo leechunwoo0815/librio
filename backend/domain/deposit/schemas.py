@@ -30,8 +30,14 @@ class DepositResponse(BaseSchema):
     amount: Decimal
     status: int
     pay_time: datetime | None = None
+    pay_order_id: str | None = None
     refund_time: datetime | None = None
     refund_amount: Decimal | None = None
     deduct_amount: Decimal | None = None
     deduct_reason: str | None = None
     create_time: datetime
+
+
+class DepositPayResponse(BaseSchema):
+    deposit: DepositResponse
+    pay_params: dict

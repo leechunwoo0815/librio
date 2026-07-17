@@ -5,12 +5,13 @@
 {% endblock %}
 {% block page_title %}押金管理{% endblock %}
 {% block content %}
+{% import "admin/macros.html" as m %}
 <!-- Stats -->
 <div class="stats-grid">
   <div class="stat-card"><div class="stat-label">总押金</div><div class="stat-value" id="statTotal">--</div></div>
   <div class="stat-card"><div class="stat-label">待退</div><div class="stat-value" id="statRefunding">--</div></div>
   <div class="stat-card"><div class="stat-label">已扣除</div><div class="stat-value" id="statDeducted">--</div></div>
-  <div class="stat-card"><div class="stat-label">未结罚款</div><div class="stat-value" id="statFine" style="color:var(--error);">--</div></div>
+  <div class="stat-card"><div class="stat-label">未结罚款</div><div class="stat-value text-error" id="statFine">--</div></div>
 </div>
 
 <!-- Filter Tabs -->
@@ -27,12 +28,34 @@
   <table>
     <thead><tr><th>孩子</th><th>押金状态</th><th>余额</th><th>罚款</th><th>缴纳日期</th><th>操作</th></tr></thead>
     <tbody id="depositBody">
-      <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted);">加载中...</td></tr>
+      <tr><td colspan="6" class="text-center p-40 text-muted">加载中...</td></tr>
     </tbody>
   </table>
 </div>
 
 <div class="pagination" id="pagination"></div>
+
+{{ m.modal_overlay("confirmDialog", "确认操作") }}
+  <p id="confirmMsg" class="confirm-msg"></p>
+{{ m.modal_actions() }}
+  <button type="button" class="btn btn-secondary" onclick="closeModal('confirmDialog')">取消</button>
+  <button type="button" class="btn btn-primary" id="confirmBtn">确认</button>
+{{ m.modal_end() }}
+
+{{ m.modal_overlay("deductDialog", "扣除押金") }}
+  <div class="form-group">
+    <label>扣除原因 <span class="required">*</span></label>
+    <input type="text" id="deductReason" class="form-input" placeholder="请输入扣除原因" value="图书损坏/丢失" />
+  </div>
+  <div class="form-group">
+    <label>扣除金额（元）<span class="required">*</span></label>
+    <input type="number" id="deductAmount" class="form-input" placeholder="请输入扣除金额" value="100" min="0.01" step="0.01" />
+  </div>
+{{ m.modal_actions() }}
+  <button type="button" class="btn btn-secondary" onclick="closeModal('deductDialog')">取消</button>
+  <button type="button" class="btn btn-primary" onclick="confirmDeduct()">确认扣除</button>
+{{ m.modal_end() }}
+
 {% endblock %}
 
 {% block scripts %}
@@ -49,7 +72,7 @@
       updateStats(allDeposits);
       renderDeposits(allDeposits);
     } catch (err) {
-      document.getElementById('depositBody').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--error);">加载失败</td></tr>';
+      document.getElementById('depositBody').innerHTML = '<tr><td colspan="6" class="text-center p-40 text-error">加载失败</td></tr>';
     }
   }
 
@@ -78,7 +101,7 @@
 
   function renderDeposits(items) {
     if (!items.length) {
-      document.getElementById('depositBody').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted);">暂无押金记录</td></tr>';
+      document.getElementById('depositBody').innerHTML = '<tr><td colspan="6" class="text-center p-40 text-muted">暂无押金记录</td></tr>';
       return;
     }
     var statusMap = {
@@ -89,31 +112,116 @@
       DEDUCTED: { cls: 'status-deducted', text: '已扣' },
     };
     document.getElementById('depositBody').innerHTML = items.map(function(d) {
-      var s = statusMap[(d.status||'').toUpperCase()] || { cls: '', text: d.status };
-      var actions = '';
-      if ((d.status||'').toUpperCase() === 'PAID') actions = '<span class="action-link" onclick="submitRefund(' + d.child_id + ')">退款</span>';
-      else if ((d.status||'').toUpperCase() === 'REFUNDING') actions = '<span class="action-link" onclick="submitRefund(' + d.child_id + ')">审核</span>';
-      else actions = '<span class="action-link" style="color:var(--muted);">--</span>';
+      var statusKey = (d.status||'').toUpperCase();
+      var s = statusMap[statusKey] || { cls: '', text: d.status };
+      var actions = [];
+      if (statusKey === 'PAID') {
+        actions.push('<span class="action-link" onclick="requestRefund(' + d.child_id + ')">退款</span>');
+        actions.push('<span class="action-link" onclick="deductDeposit(' + d.child_id + ')">扣除</span>');
+      } else if (statusKey === 'UNPAID') {
+        actions.push('<span class="action-link" onclick="payDeposit(' + d.child_id + ')">代缴</span>');
+      } else if (statusKey === 'REFUNDING') {
+        actions.push('<span class="action-link" onclick="markRefunded(' + d.child_id + ')">标记到账</span>');
+        actions.push('<span class="action-link" onclick="cancelRefund(' + d.child_id + ')">取消退款</span>');
+      } else if (statusKey === 'DEDUCTED' || statusKey === 'REFUNDED') {
+        actions.push('<span class="action-link" onclick="payDeposit(' + d.child_id + ')">重新缴纳</span>');
+      }
+      var actionHtml = actions.length ? actions.join(' · ') : '<span class="action-link text-muted cursor-default">--</span>';
       return '<tr>' +
         '<td>' + escapeHtml(d.child_name || d.child_id || '--') + '</td>' +
         '<td><span class="status-badge ' + s.cls + '">' + s.text + '</span></td>' +
         '<td class="amount">' + formatMoney(d.amount) + '</td>' +
         '<td class="amount" style="color:' + (d.fine_amount ? 'var(--error)' : 'var(--muted)') + '">' + formatMoney(d.fine_amount || 0) + '</td>' +
-        '<td style="font-family:var(--font-mono)">' + formatDateTime(d.create_time) + '</td>' +
-        '<td>' + actions + '</td>' +
+        '<td class="font-mono-date">' + formatDateTime(d.create_time) + '</td>' +
+        '<td>' + actionHtml + '</td>' +
       '</tr>';
     }).join('');
   }
 
-  async function submitRefund(childId) {
-    if (!confirm('确认审核退款孩子 ' + childId + '？')) return;
-    try {
-      await api.post('/admin/api/deposits/refund', { child_id: childId });
-      showToast('退款审核成功');
-      loadDeposits();
-    } catch (e) {
-      showToast('退款失败: ' + e.message, 'error');
+  var deductChildId = null;
+
+  function showConfirmDialog(title, msg, onConfirm) {
+    document.querySelector('#confirmDialog h2').textContent = title;
+    document.getElementById('confirmMsg').textContent = msg;
+    document.getElementById('confirmBtn').onclick = function() {
+      closeModal('confirmDialog');
+      onConfirm();
+    };
+    showModal('confirmDialog');
+  }
+
+  function requestRefund(childId) {
+    showConfirmDialog('确认退款', '确认为孩子 ' + childId + ' 申请押金退款？', function() {
+      api.post('/admin/api/deposits/refund', { child_id: childId }).then(function() {
+        showToast('退款申请已提交');
+        loadDeposits();
+      }).catch(function(e) {
+        showToast('退款失败: ' + e.message, 'error');
+      });
+    });
+  }
+
+  function cancelRefund(childId) {
+    showConfirmDialog('取消退款', '确认取消孩子 ' + childId + ' 的退款申请？', function() {
+      api.post('/admin/api/deposits/' + childId + '/cancel-refund').then(function() {
+        showToast('退款申请已取消');
+        loadDeposits();
+      }).catch(function(e) {
+        showToast('取消失败: ' + e.message, 'error');
+      });
+    });
+  }
+
+  function markRefunded(childId) {
+    showConfirmDialog('标记到账', '确认孩子 ' + childId + ' 的押金退款已到账？', function() {
+      api.post('/admin/api/deposits/' + childId + '/mark-refunded').then(function() {
+        showToast('已标记退款到账');
+        loadDeposits();
+      }).catch(function(e) {
+        showToast('标记失败: ' + e.message, 'error');
+      });
+    });
+  }
+
+  function payDeposit(childId) {
+    showConfirmDialog('缴纳押金', '确认为孩子 ' + childId + ' 代缴/重新缴纳押金？', function() {
+      api.post('/admin/api/deposits/pay', { child_id: childId }).then(function() {
+        showToast('押金缴纳成功');
+        loadDeposits();
+      }).catch(function(e) {
+        showToast('缴纳失败: ' + e.message, 'error');
+      });
+    });
+  }
+
+  function deductDeposit(childId) {
+    deductChildId = childId;
+    document.getElementById('deductReason').value = '图书损坏/丢失';
+    document.getElementById('deductAmount').value = '100';
+    showModal('deductDialog');
+  }
+
+  function confirmDeduct() {
+    var childId = deductChildId;
+    if (!childId) return;
+    var reason = document.getElementById('deductReason').value.trim();
+    var amountStr = document.getElementById('deductAmount').value.trim();
+    if (!reason) {
+      showToast('请输入扣除原因', 'error');
+      return;
     }
+    var amount = parseFloat(amountStr);
+    if (isNaN(amount) || amount <= 0) {
+      showToast('金额不正确', 'error');
+      return;
+    }
+    closeModal('deductDialog');
+    api.post('/admin/api/deposits/deduct', { child_id: childId, amount: amount.toFixed(2), reason: reason }).then(function() {
+      showToast('押金扣除成功');
+      loadDeposits();
+    }).catch(function(e) {
+      showToast('扣除失败: ' + e.message, 'error');
+    });
   }
 
   function escapeHtml(str) {

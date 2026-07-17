@@ -1,12 +1,13 @@
 # backend/domain/admin/services/refund_service.py
 """管理端退款 Service — 从 AdminService 拆分出来的独立域服务。"""
 
+from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from backend.common.exceptions import NotFoundError, ValidationError
+from backend.common.types import AdminRole, PayStatus
 from backend.domain.order.models import Order
 from backend.domain.refund.models import RefundApplication
 from backend.domain.refund.service import RefundService
@@ -45,7 +46,7 @@ class AdminRefundService:
                 "id": r.id,
                 "order_id": r.order_id,
                 "order_no": order.order_no if order else None,
-                "amount": float(r.amount) if r.amount else 0,
+                "amount": str(r.amount) if r.amount else "0",
                 "reason": r.reason,
                 "status": r.status,
                 "create_time": r.create_time.isoformat() if r.create_time else None,
@@ -61,24 +62,32 @@ class AdminRefundService:
 
     def approve_refund(self, refund_id: int, data) -> dict:
         """批准退款"""
-        refund = self.db.query(RefundApplication).filter(RefundApplication.id == refund_id).first()
+        refund = (
+            self.db.query(RefundApplication)
+            .filter(RefundApplication.id == refund_id, RefundApplication.is_deleted == 0)
+            .first()
+        )
         if not refund:
             raise NotFoundError("退款申请不存在")
 
-        if refund.status != "pending":
+        if refund.status != RefundApplication.STATUS_PENDING:
             raise ValidationError("退款申请已处理")
 
-        order = self.db.query(Order).filter(Order.id == refund.order_id).first()
+        order = (
+            self.db.query(Order)
+            .filter(Order.id == refund.order_id, Order.is_deleted == 0)
+            .first()
+        )
         if not order:
             raise NotFoundError("关联订单不存在")
 
         # 更新退款状态
-        refund.status = "approved"
+        refund.status = RefundApplication.STATUS_APPROVED
         refund.review_comment = data.get("comment", "")
-        refund.reviewed_at = func.now()
+        refund.review_time = datetime.now()
 
         # 更新订单状态
-        order.status = "refunded"
+        order.pay_status = PayStatus.REFUNDED
 
         self.db.commit()
         return {"success": True, "message": "退款已批准"}
@@ -95,8 +104,8 @@ class AdminRefundService:
 
         return refund, order
 
-    def create_refund(self, order_no: str, data: dict) -> dict:
-        """管理员代客发起退款申请"""
+    def create_refund(self, order_no: str, data: dict, admin=None) -> dict:
+        """管理员代客发起退款申请（超级管理员自动审核通过）"""
         order = (
             self.db.query(Order)
             .filter(Order.order_no == order_no, Order.is_deleted == 0)
@@ -117,6 +126,7 @@ class AdminRefundService:
         if not refund_amount:
             refund_amount = order.amount
 
+        is_admin = admin and getattr(admin, "role", None) == AdminRole.ADMIN
         refund = RefundApplication(
             order_id=order.id,
             user_id=order.user_id,
@@ -125,8 +135,14 @@ class AdminRefundService:
             refund_amount=Decimal(str(refund_amount)),
             used_days=used_days,
             reason=reason,
+            status=RefundApplication.STATUS_APPROVED if is_admin else RefundApplication.STATUS_PENDING,
+            reviewer_id=admin.id if is_admin else None,
+            review_time=datetime.now() if is_admin else None,
         )
         self.db.add(refund)
+        if is_admin:
+            order.pay_status = PayStatus.REFUNDED
         self.db.commit()
         self.db.refresh(refund)
-        return {"success": True, "refund_id": refund.id}
+        msg = "退款已自动通过" if is_admin else "退款申请已提交，等待管理员审核"
+        return {"success": True, "refund_id": refund.id, "message": msg}

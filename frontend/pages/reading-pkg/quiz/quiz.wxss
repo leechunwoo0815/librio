@@ -87,7 +87,7 @@
 }
 
 .cd-btn.confirm {
-  background: linear-gradient(135deg, var(--accent), #3a3aaa);
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
   color: var(--surface);
 }
 
@@ -122,7 +122,7 @@
   flex: 1;
   padding: 28rpx;
   border-radius: var(--radius);
-  background: linear-gradient(135deg, var(--accent), #3a3aaa);
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
   color: var(--surface);
   font-size: 30rpx;
   font-weight: 600;
@@ -282,14 +282,6 @@
   color: var(--fg);
 }
 
-.check-icon {
-  width: 44rpx;
-  height: 44rpx;
-  flex-shrink: 0;
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-
 .option-selected .check-icon,
 .option-correct .check-icon,
 .option-wrong .check-icon {
@@ -327,37 +319,10 @@
   border-top: 2rpx solid var(--border);
 }
 
-.next-btn {
-  width: 100%;
-  padding: 28rpx;
-  border-radius: var(--radius);
-  background: var(--accent);
-  color: var(--surface);
-  font-size: 30rpx;
-  font-weight: 600;
-}
-
-.next-btn:active {
-  opacity: 0.85;
-}
-
-.next-btn:disabled {
-  opacity: 0.5;
-}
-
-.submit-btn {
-  width: 100%;
-  padding: 28rpx;
-  border-radius: var(--radius);
-  background: var(--accent);
-  color: var(--surface);
-  font-size: 30rpx;
-  font-weight: 600;
-}
-
 /* Confirm Dialog */
 .confirm-overlay {
   position: fixed;
+    box-sizing: border-box;
   top: 0;
   left: 0;
   right: 0;
@@ -367,6 +332,7 @@
   display: none;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
 }
 
 .confirm-overlay.show {
@@ -433,60 +399,3 @@
   color: var(--surface);
 }
 
-/* 选项样式（从 inline style 提取，消除硬编码） */
-.option {
-  min-height: 96rpx; padding: 20rpx 24rpx;
-  display: flex; align-items: center; margin-bottom: 16rpx;
-  border-radius: 16rpx; border: 2rpx solid var(--border);
-  background: var(--surface);
-}
-.option-selected {
-  border-color: var(--accent);
-  background: rgba(85, 96, 207, 0.06);
-}
-.option-letter {
-  width: 48rpx; height: 48rpx; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--bg); color: var(--fg);
-  font-weight: 600; margin-right: 16rpx;
-}
-.option-letter-active {
-  background: var(--accent); color: var(--surface);
-}
-
-/* 提交按钮渐变 */
-.submit-btn {
-  background: linear-gradient(135deg, var(--accent), #3a3aaa);
-}
-
-/* 反馈文字颜色修正 */
-.feedback.correct {
-  color: var(--success);
-}
-.feedback.wrong {
-  color: var(--error);
-}
-
-/* 确认弹窗按钮渐变 */
-.cd-confirm {
-  background: linear-gradient(135deg, var(--accent), #3a3aaa);
-}
-
-/* 确认弹窗阴影 */
-.confirm-dialog {
-  box-shadow: 0 24rpx 80rpx rgba(0, 0, 0, 0.15);
-}
-
-/* ===== 原型缺失选择器补全 ===== */
-
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-.question-text .en { color: var(--accent); }
-.option .check-icon { width: 22px; height: 22px; flex-shrink: 0; opacity: 0; transition: opacity 0.15s; }
-.option.selected .check-icon { opacity: 1; }
-.option.correct .check-icon { opacity: 1; }
-.feedback svg { width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; }
-.confirm-dialog .cd-emoji { font-size: 44px; margin-bottom: 8px; }
-.confirm-dialog .cd-title { font-family: var(--font-display); font-size: 18px; font-weight: 700; margin-bottom: 4px; }
-.confirm-dialog .cd-sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
-.confirm-dialog .cd-actions { display: flex; gap: 10px; }
-.confirm-dialog .cd-btn { flex: 1; padding: 13px; border-radius: var(--radius); font-size: 14px; font-weight: 600; }

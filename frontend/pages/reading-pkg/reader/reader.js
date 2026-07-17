@@ -19,8 +19,8 @@ Page({
 
     // 音频状态
     audioPlaying: false,
-    audioLoading: false,    // MP-001: 加载状态
-    audioBuffering: false,  // MP-001: 缓冲状态
+    audioLoading: false,
+    audioBuffering: false,
     audioProgress: 0,
     audioDuration: 0,
     audioCurrentTime: '0:00',
@@ -34,7 +34,7 @@ Page({
     // 查词
     lookupWord: '',
     lookupResult: null,
-    showLookup: false,  // MP-013: 弹窗而非页面跳转
+    showLookup: false,
 
     // 阅读统计
     startTime: 0,
@@ -47,6 +47,12 @@ Page({
     checkinTriggered: false,
     showCheckinAnimation: false,
     checkinStreak: 0,
+
+    // 文本面板
+    pages: [],
+    currentPage: 1,
+    segments: [],
+    vocabMap: {},
   },
 
   async onLoad(options) {
@@ -79,10 +85,18 @@ Page({
       } catch (e) { /* 无借阅记录，继续 */ }
 
       // 开始阅读会话
-      try {
-        const session = await api.startSession(child.id, bookId)
-        this.setData({ sessionId: session.id || session.session_id || 0 })
-      } catch (e) { /* test mode */ }
+      const existingSessionId = parseInt(options.sessionId)
+      if (existingSessionId) {
+        this.setData({ sessionId: existingSessionId })
+      } else {
+        try {
+          const session = await api.startSession(child.id, bookId)
+          this.setData({ sessionId: session.id || session.session_id || 0 })
+        } catch (e) {
+          console.error('[startSession failed]', e)
+          wx.showToast({ title: '阅读会话创建失败', icon: 'none' })
+        }
+      }
 
       // MP-004: 恢复本地缓存进度
       const cached = storage.getReadProgress(bookId, child.id)
@@ -90,9 +104,31 @@ Page({
         this.setData({ audioProgress: cached.audioPos })
       }
 
+      // 加载文本页 + 生词
+      try {
+        const [pages, learningWords] = await Promise.all([
+          api.getBookPages(bookId),
+          api.getLearningWords(child.id),
+        ])
+        const vocabMap = {}
+        if (learningWords && learningWords.length) {
+          learningWords.forEach(w => { vocabMap[w] = true })
+        }
+        const sortedPages = (pages || []).sort((a, b) => a.page_number - b.page_number)
+        const firstSegments = sortedPages.length ? this.buildSegments(sortedPages[0].text_content || '', vocabMap) : []
+        this.setData({ pages: sortedPages, vocabMap, segments: firstSegments, currentPage: 1 })
+      } catch (e) {
+        console.error('Load pages/vocab failed:', e)
+      }
+
       // 初始化音频
-      if (book && book.has_audio && book.audio_url) {
-        this.initAudio(book)
+      if (book && book.has_audio) {
+        if (book.audio_url) {
+          this.initAudio(book)
+        } else {
+          this.setData({ audioLoading: false })
+          console.warn('Book has_audio=true but audio_url is empty:', bookId)
+        }
       }
       this.setData({ loading: false })
     } catch (e) {
@@ -125,9 +161,13 @@ Page({
     }
   },
 
-  onUnload() {
+  async onUnload() {
     this._saveLocalProgress()
-    this.endSession()
+    try {
+      await this.endSession()
+    } catch (e) {
+      console.error('[endSession failed in onUnload]', e)
+    }
     // 移除所有事件监听（bgAudioManager 是全局单例，不移除会重复绑定）
     bgAudioManager.offTimeUpdate()
     bgAudioManager.offPlay()
@@ -167,13 +207,23 @@ Page({
   initAudio(book) {
     const baseURL = getApp().globalData.baseURL || ''
     // MP-006: 锁屏控制适配
-    bgAudioManager.title = book.title || 'MegaWords 听读'
+    bgAudioManager.title = book.title || 'DmkWords 听读'
     bgAudioManager.singer = book.author || ''
     bgAudioManager.coverImgUrl = book.cover
       ? (book.cover.startsWith('http') ? book.cover : baseURL + book.cover)
       : ''
     const audioUrl = book.audio_url.startsWith('http') ? book.audio_url : baseURL + book.audio_url
     bgAudioManager.src = audioUrl
+    bgAudioManager.playbackRate = this.data.audioSpeed
+
+    bgAudioManager.offTimeUpdate()
+    bgAudioManager.offPlay()
+    bgAudioManager.offPause()
+    bgAudioManager.offStop()
+    bgAudioManager.offEnded()
+    bgAudioManager.offWaiting()
+    bgAudioManager.offCanplay()
+    bgAudioManager.offError()
 
     // MP-001: 加载状态
     this.setData({ audioLoading: true })
@@ -181,7 +231,8 @@ Page({
     bgAudioManager.onTimeUpdate(() => {
       if (!bgAudioManager.duration) return
       const newProgress = Math.floor(bgAudioManager.currentTime)
-      if (Math.abs(newProgress - this.data.audioProgress) < 1) return
+      const oldProgress = Math.floor(this.data.audioProgress)
+      if (newProgress === oldProgress) return
       // 只更新进度（每秒变化的字段），减少 setData 开销
       const update = {
         audioProgress: bgAudioManager.currentTime,
@@ -197,6 +248,7 @@ Page({
       if (newProgress % 10 === 0) {
         this._saveLocalProgress()
       }
+      this._updateCurrentPage()
       // MP-015: 打卡动画 — 满 10 分钟自动触发
       if (!this.data.checkinTriggered && this.data.startTime > 0) {
         var totalMinutes = (Date.now() - this.data.startTime) / 60000
@@ -254,6 +306,7 @@ Page({
         },
       })
     })
+    bgAudioManager.play()
   },
 
   toggleAudio() {
@@ -294,6 +347,39 @@ Page({
     return `${m}:${s < 10 ? '0' : ''}${s}`
   },
 
+  buildSegments(text, vocabMap) {
+    if (!text) return []
+    const tokens = text.split(/(\b[a-zA-Z\u00C0-\u024F]+(?:[-'\u2018\u2019][a-zA-Z\u00C0-\u024F]+)*\b)/)
+    return tokens.map(token => {
+      const lower = token.toLowerCase().replace(/[\u2018\u2019]/g, "'")
+      if (vocabMap[lower]) {
+        return { type: 'vocab', text: token, word: lower }
+      }
+      return { type: 'text', text: token }
+    })
+  },
+
+  _updateCurrentPage() {
+    const { pages, audioProgress, audioDuration, vocabMap } = this.data
+    if (!pages.length || !audioDuration) return
+    const pageIndex = Math.min(
+      Math.floor((audioProgress / audioDuration) * pages.length),
+      pages.length - 1
+    )
+    const newPage = pageIndex + 1
+    if (newPage !== this.data.currentPage) {
+      const page = pages[pageIndex]
+      const segments = this.buildSegments(page.text_content || '', vocabMap)
+      this.setData({ currentPage: newPage, segments })
+    }
+  },
+
+  onVocabTap(e) {
+    const word = e.currentTarget.dataset.word
+    this.setData({ lookupWord: word })
+    this.doLookup()
+  },
+
   // ==================== MP-013: 查词弹窗（不中断音频） ====================
 
   toggleLookup() {
@@ -319,6 +405,14 @@ Page({
       // MP-012: 网络异常兜底
       this.setData({ lookupResult: { word, chinese_meaning: '查询失败，请稍后再试', found: false, error: true } })
     }
+  },
+
+  onPlayLookupAudio(e) {
+    const audioUrl = e.currentTarget.dataset.audio
+    if (!audioUrl) return
+    const audio = wx.createInnerAudioContext()
+    audio.src = audioUrl
+    audio.play()
   },
 
   async addLookupToVocab() {
@@ -369,8 +463,11 @@ Page({
     const minutes = Math.round((Date.now() - this.data.startTime) / 60000)
     const words = this.data.book.word_count || 0
     try {
-      await api.endSession(this.data.sessionId, 0, words)
-    } catch (e) { /* silent */ }
+      await api.endSession(this.data.sessionId, 0, words, minutes)
+    } catch (e) {
+      console.error('[endSession failed]', e)
+      wx.showToast({ title: '阅读记录保存失败', icon: 'none' })
+    }
   },
 
   // ==================== 导航 ====================
@@ -381,6 +478,10 @@ Page({
     })
   },
 
+  closePage() {
+    wx.navigateBack()
+  },
+
   goBookshelf() {
     wx.switchTab({ url: '/pages/shelf/shelf' })
   },
@@ -389,7 +490,7 @@ Page({
 
   onShareAppMessage() {
     return {
-      title: `${this.data.book.title} - MegaWords 听读`,
+      title: `${this.data.book.title} - DmkWords 听读`,
       path: `/pages/reading-pkg/reader/reader?bookId=${this.data.bookId}`,
     }
   },

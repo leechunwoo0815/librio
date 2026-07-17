@@ -45,16 +45,24 @@
     </tr>
   </thead>
   <tbody id="audioBody">
-    <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--muted)">加载中...</td></tr>
+    <tr><td colspan="7" class="text-center p-40 text-muted">加载中...</td></tr>
   </tbody>
 </table>
 
-<div class="audio-player-bar" id="audioPlayerBar" style="display:none">
+<div class="audio-player-bar hidden" id="audioPlayerBar">
   <span id="playerFileName"></span>
-  <audio id="audioPreview" controls style="height:32px;flex:1;margin:0 16px"></audio>
+  <audio id="audioPreview" controls class="audio-preview"></audio>
   <button class="btn btn-outline btn-sm" onclick="closePlayer()">关闭</button>
-  <div style="display:none" class="btn-secondary"></div>
+
 </div>
+
+{% import "admin/macros.html" as m %}
+{{ m.modal_overlay("confirmDialog", "确认操作") }}
+  <p id="confirmMsg" class="confirm-msg"></p>
+{{ m.modal_actions() }}
+  <button type="button" class="btn btn-secondary" onclick="closeModal('confirmDialog')">取消</button>
+  <button type="button" class="btn btn-primary" id="confirmBtn">确认</button>
+{{ m.modal_end() }}
 {% endblock %}
 
 {% block scripts %}
@@ -76,7 +84,7 @@
     } catch (err) {
       showToast(err.message || '加载音频数据失败', 'error');
       document.getElementById('audioBody').innerHTML =
-        '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--error)">加载失败</td></tr>';
+        '<tr><td colspan="7" class="text-center p-40 text-error">加载失败</td></tr>';
     }
   }
 
@@ -89,7 +97,7 @@
   function renderTable(list) {
     var body = document.getElementById('audioBody');
     if (!list.length) {
-      body.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--muted)">暂无音频文件</td></tr>';
+      body.innerHTML = '<tr><td colspan="7" class="text-center p-40 text-muted">暂无音频文件</td></tr>';
       return;
     }
     body.innerHTML = list.map(function(item) {
@@ -135,15 +143,25 @@
     });
   }
 
-  async function deleteAudio(id) {
-    if (!confirm('确定删除该音频？')) return;
-    try {
-      await api.del('/admin/api/audio/' + id);
-      showToast('删除成功');
-      loadAudios();
-    } catch (e) {
-      showToast('删除失败: ' + e.message, 'error');
-    }
+  function showConfirmDialog(title, msg, onConfirm) {
+    document.querySelector('#confirmDialog h2').textContent = title;
+    document.getElementById('confirmMsg').textContent = msg;
+    document.getElementById('confirmBtn').onclick = function() {
+      closeModal('confirmDialog');
+      onConfirm();
+    };
+    showModal('confirmDialog');
+  }
+
+  function deleteAudio(id) {
+    showConfirmDialog('删除音频', '确定删除该音频？', function() {
+      api.del('/admin/api/audio/' + id).then(function() {
+        showToast('删除成功');
+        loadAudios();
+      }).catch(function(e) {
+        showToast('删除失败: ' + e.message, 'error');
+      });
+    });
   }
 
   function playAudio(url, name) {

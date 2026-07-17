@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from backend.common.dependencies import get_db
-from backend.middleware.admin_auth import get_current_admin, require_role, ROLE_ADMIN, ROLE_STAFF
+from backend.middleware.admin_rbac import require_perm
 from backend.domain.audio.schemas import (
     AudioCreateRequest,
     AudioUpdateRequest,
@@ -23,7 +23,7 @@ def list_audios(
     reader: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    admin=Depends(get_current_admin),
+    admin=Depends(require_perm("content.list")),
     db: Session = Depends(get_db),
 ):
     """获取音频列表"""
@@ -34,7 +34,7 @@ def list_audios(
 @router.get("/{audio_id}", response_model=AudioResponse)
 def get_audio(
     audio_id: int,
-    admin=Depends(get_current_admin),
+    admin=Depends(require_perm("content.list")),
     db: Session = Depends(get_db),
 ):
     """获取音频详情"""
@@ -45,7 +45,7 @@ def get_audio(
 @router.post("/", response_model=AudioResponse, status_code=201)
 def create_audio(
     data: AudioCreateRequest,
-    admin=Depends(require_role(ROLE_ADMIN, ROLE_STAFF)),
+    admin=Depends(require_perm("content.create")),
     db: Session = Depends(get_db),
 ):
     """创建音频"""
@@ -57,7 +57,7 @@ def create_audio(
 def update_audio(
     audio_id: int,
     data: AudioUpdateRequest,
-    admin=Depends(require_role(ROLE_ADMIN, ROLE_STAFF)),
+    admin=Depends(require_perm("content.edit")),
     db: Session = Depends(get_db),
 ):
     """更新音频"""
@@ -68,7 +68,7 @@ def update_audio(
 @router.delete("/{audio_id}")
 def delete_audio(
     audio_id: int,
-    admin=Depends(require_role(ROLE_ADMIN)),
+    admin=Depends(require_perm("content.delete")),
     db: Session = Depends(get_db),
 ):
     """删除音频"""

@@ -6,21 +6,23 @@
 <link rel="stylesheet" href="/static/admin/css/pages/dictionary.css" />
 {% endblock %}
 
+{% import "admin/macros.html" as m %}
+
 {% block content %}
 <div class="toolbar">
   <div class="left">
-    <select id="levelFilter" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--fg);" onchange="loadWords()">
+    <select id="levelFilter" class="filter-select" onchange="currentPage=1;loadWords()">
       <option value="">全部等级</option>
       <option value="0-2">AR 0-2 (入门)</option>
       <option value="2-4">AR 2-4 (初级)</option>
       <option value="4-6">AR 4-6 (中级)</option>
       <option value="6+">AR 6+ (高级)</option>
     </select>
-    <input type="text" id="searchInput" placeholder="搜索单词..." style="width:180px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface);color:var(--fg);" onkeyup="if(event.key==='Enter')loadWords()" />
+    <input type="text" id="searchInput" class="search-input" placeholder="搜索单词..." onkeyup="if(event.key==='Enter'){currentPage=1;loadWords()}" />
   </div>
   <div class="right">
-    <span style="font-size:12px;color:var(--muted)" id="totalCount">共 0 个词条</span>
-    <button class="btn-primary" onclick="openAddModal()" style="margin-left:12px">+ 添加单词</button>
+    <span class="text-sm text-muted" id="totalCount">共 0 个词条</span>
+    <button class="btn btn-primary ml-12" onclick="openAddModal()">+ 添加单词</button>
   </div>
 </div>
 
@@ -29,7 +31,7 @@
     <tr><th>单词</th><th>音标</th><th>释义</th><th>词性</th><th>难度等级</th><th>操作</th></tr>
   </thead>
   <tbody id="wordBody">
-    <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:32px;">加载中...</td></tr>
+    <tr><td colspan="6" class="text-center text-muted p-24">加载中...</td></tr>
   </tbody>
 </table>
 
@@ -38,53 +40,57 @@
   <div id="paginationBtns"></div>
 </div>
 
+{% import "admin/macros.html" as m %}
+{{ m.modal_overlay("confirmDialog", "确认操作") }}
+  <p id="confirmMsg" class="confirm-msg"></p>
+{{ m.modal_actions() }}
+  <button type="button" class="btn btn-secondary" onclick="closeModal('confirmDialog')">取消</button>
+  <button type="button" class="btn btn-primary" id="confirmBtn">确认</button>
+{{ m.modal_end() }}
+
 <!-- word modal -->
-<div class="modal-overlay" id="wordModal" onclick="if(event.target===this)closeWordModal()">
-  <div class="modal">
-    <h3 id="modalTitle">添加单词</h3>
-    <form id="wordForm" onsubmit="submitWord(event)">
-      <input type="hidden" id="editId" value="" />
-      <div class="form-group">
-        <label>单词 <span style="color:var(--error)">*</span></label>
-        <input type="text" class="form-input" name="word" required />
-      </div>
-      <div class="form-group">
-        <label>音标</label>
-        <input type="text" class="form-input" name="phonetic" placeholder="/ˈwɜːrd/" />
-      </div>
-      <div class="form-group">
-        <label>中文释义 <span style="color:var(--error)">*</span></label>
-        <input type="text" class="form-input" name="cn_definition" required />
-      </div>
-      <div class="form-group">
-        <label>词性</label>
-        <select class="form-input" name="pos">
-          <option value="">请选择</option>
-          <option value="n.">n. 名词</option>
-          <option value="v.">v. 动词</option>
-          <option value="adj.">adj. 形容词</option>
-          <option value="adv.">adv. 副词</option>
-          <option value="prep.">prep. 介词</option>
-          <option value="conj.">conj. 连词</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>AR 等级</label>
-        <input type="number" class="form-input" name="ar_level" step="0.1" placeholder="2.5" />
-      </div>
-      <div class="modal-actions">
-        <button type="button" class="btn-cancel" onclick="closeWordModal()">取消</button>
-        <button type="submit" class="btn-primary" id="submitBtn">保存</button>
-      </div>
-    </form>
-  </div>
-</div>
+{{ m.modal_overlay("wordModal", "添加单词", "md", "modalTitle") }}
+  <form id="wordForm" onsubmit="submitWord(event)">
+    <input type="hidden" id="editId" value="" />
+    <div class="form-group">
+      <label>单词 <span class="text-error">*</span></label>
+      <input type="text" class="form-input" name="word" required />
+    </div>
+    <div class="form-group">
+      <label>音标</label>
+      <input type="text" class="form-input" name="phonetic" placeholder="/ˈwɜːrd/" />
+    </div>
+    <div class="form-group">
+      <label>中文释义 <span class="text-error">*</span></label>
+      <input type="text" class="form-input" name="cn_definition" required />
+    </div>
+    <div class="form-group">
+      <label>词性</label>
+      <select class="form-input" name="pos">
+        <option value="">请选择</option>
+        <option value="n.">n. 名词</option>
+        <option value="v.">v. 动词</option>
+        <option value="adj.">adj. 形容词</option>
+        <option value="adv.">adv. 副词</option>
+        <option value="prep.">prep. 介词</option>
+        <option value="conj.">conj. 连词</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>AR 等级</label>
+      <input type="number" class="form-input" name="ar_level" step="0.1" placeholder="2.5" />
+    </div>
+  </form>
+{{ m.modal_actions() }}
+  <button class="btn btn-secondary" onclick="closeModal('wordModal')">取消</button>
+  <button type="submit" class="btn btn-primary" id="submitBtn" form="wordForm">保存</button>
+{{ m.modal_end() }}
 {% endblock %}
 
 {% block scripts %}
 <script>
 var currentPage = 1;
-var pageSize = 20;
+var pageSize = 15;
 
 function escapeHtml(str) {
   if (!str) return '';
@@ -123,39 +129,76 @@ async function loadWords() {
     var items = r.items || r || [];
     document.getElementById('totalCount').textContent = '共 ' + (r.total || items.length) + ' 个词条';
     if (items.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:32px;">暂无词条</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted p-24">暂无词条</td></tr>';
       return;
     }
     tbody.innerHTML = items.map(function(w) {
       return '<tr>' +
-        '<td style="font-weight:600">' + escapeHtml(w.word) + '</td>' +
-        '<td style="font-family:var(--font-mono);font-size:12px;">' + escapeHtml(w.phonetic || '-') + '</td>' +
+        '<td class="fw-600">' + escapeHtml(w.word) + '</td>' +
+        '<td class="font-mono text-sm">' + escapeHtml(w.phonetic || '-') + '</td>' +
         '<td>' + escapeHtml(w.cn_definition || '-') + '</td>' +
         '<td>' + escapeHtml(w.pos || '-') + '</td>' +
         '<td><span class="tag ' + getTagClass(w.ar_level) + '">' + getTagLabel(w.ar_level) + '</span></td>' +
         '<td>' +
-          '<button class="action-sm" onclick="editWord(' + w.id + ', \'' + escapeHtml(w.word) + '\', \'' + escapeHtml(w.phonetic || '') + '\', \'' + escapeHtml(w.cn_definition || '') + '\', \'' + escapeHtml(w.pos || '') + '\', ' + (w.ar_level || 0) + ')">编辑</button> ' +
+          '<button class="action-sm" onclick="editWord(' + w.id + ', \'' + jsEscape(w.word) + '\', \'' + jsEscape(w.phonetic || '') + '\', \'' + jsEscape(w.cn_definition || '') + '\', \'' + jsEscape(w.pos || '') + '\', ' + (w.ar_level || 0) + ')">编辑</button> ' +
           '<button class="action-sm" onclick="deleteWord(' + w.id + ')">删除</button>' +
         '</td>' +
       '</tr>';
     }).join('');
     var total = r.total || items.length;
     document.getElementById('paginationInfo').textContent = Math.min((currentPage - 1) * pageSize + 1, total) + '-' + Math.min(currentPage * pageSize, total) + ' / ' + total;
+    pageUi(total, pageSize);
   } catch (e) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--error);padding:32px;">加载失败: ' + escapeHtml(e.message) + '</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-error p-24">加载失败: ' + escapeHtml(e.message) + '</td></tr>';
+    document.getElementById('paginationBtns').innerHTML = '';
   }
 }
 
-async function deleteWord(id) {
-  if (!confirm('确定删除该单词？')) return;
-  try {
-    await api.del('/admin/api/dictionary/' + id);
-    showToast('删除成功');
-    loadWords();
-  } catch (e) {
-    showToast('删除失败: ' + e.message, 'error');
+function pageUi(total, pageSize) {
+  var pages = Math.ceil(total / pageSize) || 1;
+  var html = '<div class="flex-center gap-8"><span class="text-muted">共 ' + total + ' 条</span><span class="text-xs text-muted">每页</span><select class="page-size-select" onchange="changePageSize(this.value)"><option value="15"'+(pageSize===15?' selected':'')+'>15</option><option value="30"'+(pageSize===30?' selected':'')+'>30</option><option value="50"'+(pageSize===50?' selected':'')+'>50</option><option value="100"'+(pageSize===100?' selected':'')+'>100</option></select><span class="text-xs text-muted">条</span></div>';
+  html += '<button class="action-sm" ' + (currentPage <= 1 ? 'disabled' : 'onclick="goPage(1)"') + '>首页</button>';
+  html += '<button class="action-sm" ' + (currentPage <= 1 ? 'disabled' : 'onclick="goPage(' + (currentPage - 1) + ')"') + '>上一页</button>';
+  var start = Math.max(1, currentPage - 2);
+  var end = Math.min(pages, currentPage + 2);
+  for (var p = start; p <= end; p++) {
+    html += '<button class="action-sm" ' + (p === currentPage ? 'disabled class="fw-600"' : 'onclick="goPage(' + p + ')"') + '>' + p + '</button>';
   }
+  html += '<button class="action-sm" ' + (currentPage >= pages ? 'disabled' : 'onclick="goPage(' + (currentPage + 1) + ')"') + '>下一页</button>';
+  html += '<button class="action-sm" ' + (currentPage >= pages ? 'disabled' : 'onclick="goPage(' + pages + ')"') + '>末页</button>';
+  document.getElementById('paginationBtns').innerHTML = html;
 }
+
+function goPage(p) {
+  currentPage = p;
+  loadWords();
+}
+
+function changePageSize(newSize) {
+  pageSize = parseInt(newSize);
+  goPage(1);
+}
+
+  function showConfirmDialog(title, msg, onConfirm) {
+    document.querySelector('#confirmDialog h2').textContent = title;
+    document.getElementById('confirmMsg').textContent = msg;
+    document.getElementById('confirmBtn').onclick = function() {
+      closeModal('confirmDialog');
+      onConfirm();
+    };
+    showModal('confirmDialog');
+  }
+
+  function deleteWord(id) {
+    showConfirmDialog('删除单词', '确定删除该单词？', function() {
+      api.del('/admin/api/dictionary/' + id).then(function() {
+        showToast('删除成功');
+        loadWords();
+      }).catch(function(e) {
+        showToast('删除失败: ' + e.message, 'error');
+      });
+    });
+  }
 
 function openAddModal() {
   document.getElementById('editId').value = '';

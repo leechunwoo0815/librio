@@ -10,8 +10,10 @@ from backend.domain.reservation.schemas import (
     ReservationResponse,
 )
 from backend.domain.reservation.service import ReservationService
-from backend.middleware.admin_auth import require_role, ROLE_ADMIN, ROLE_STAFF
+from backend.middleware.admin_rbac import require_perm
+from backend.middleware.auth import get_current_user
 from backend.middleware.ownership import GetOwnedChild, GetOwnedChildFromBody
+from backend.domain.user.schemas import UserResponse
 
 router = APIRouter(prefix="/reservation", tags=["预约"])
 
@@ -29,7 +31,7 @@ def create_reservation(
 def fulfill_reservation(
     data: ReservationFulfillRequest,
     service: ReservationService = Depends(get_reservation_service),
-    admin=Depends(require_role(ROLE_ADMIN, ROLE_STAFF)),
+    admin=Depends(require_perm("reservation.fulfill")),
 ):
     return service.fulfill_reservation(data)
 
@@ -40,3 +42,12 @@ def get_child_reservations(
     service: ReservationService = Depends(get_reservation_service),
 ):
     return service.get_child_reservations(child.id)
+
+
+@router.post("/{reservation_id}/cancel")
+def cancel_reservation(
+    reservation_id: int,
+    service: ReservationService = Depends(get_reservation_service),
+    current_user: UserResponse = Depends(get_current_user),
+):
+    return service.cancel_reservation(reservation_id, user_id=current_user.id)

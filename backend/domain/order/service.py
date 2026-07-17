@@ -44,10 +44,34 @@ class OrderService:
         OrderType.SEMI_ANNUAL: Decimal("2700.00"),
     }
 
+    _DEFAULT_ORIGINAL_PRICES = {
+        OrderType.PARENT_COURSE: 199,
+        OrderType.OFFICIAL_MEMBER: 6000,
+    }
+
     def __init__(self, db: Session):
         self.db = db
         self.order_repo = OrderRepository(db)
         self.child_repo = BaseRepository(db, Child)
+
+    def get_price_for_type(self, order_type: OrderType) -> Decimal:
+        """公开的价格查询方法"""
+        return self._get_price(order_type)
+
+    def get_original_price(self, order_type: OrderType) -> int | None:
+        """公开的原价查询方法"""
+        from backend.common.config_service import ConfigService
+
+        key_map = {
+            OrderType.PARENT_COURSE: "original_price_parent_course",
+            OrderType.OFFICIAL_MEMBER: "original_price_official_member",
+        }
+        key = key_map.get(order_type)
+        if key:
+            val = ConfigService.get_int(self.db, key, None)
+            if val is not None:
+                return val
+        return self._DEFAULT_ORIGINAL_PRICES.get(order_type)
 
     def _get_price(self, order_type: OrderType) -> Decimal:
         """从 ConfigService 读取价格，支持动态配置"""
@@ -74,12 +98,20 @@ class OrderService:
         if child.user_id != user_id:
             raise ForbiddenError("孩子不属于当前用户")
 
-        # 亲子课不可重复
+        # 亲子课不可重复（带行锁防止并发重复报名）
         if order_data.type == OrderType.PARENT_COURSE:
-            count = self.order_repo.count_pending_or_paid_by_child_and_type(
-                order_data.child_id, OrderType.PARENT_COURSE
+            existing_order = (
+                self.db.query(Order)
+                .filter(
+                    Order.child_id == order_data.child_id,
+                    Order.type == OrderType.PARENT_COURSE,
+                    Order.pay_status.in_([PayStatus.PENDING, PayStatus.PAID]),
+                    Order.is_deleted == 0,
+                )
+                .with_for_update()
+                .first()
             )
-            if count > 0:
+            if existing_order:
                 raise ConflictError("该孩子已报名亲子课程，不可重复报名")
 
         # 前置状态校验
@@ -181,6 +213,7 @@ class OrderService:
             self.db.query(Order)
             .filter(
                 Order.order_no == callback.order_no,
+                Order.is_deleted == 0,
             )
             .with_for_update()
             .first()
@@ -348,7 +381,7 @@ class OrderService:
             page_size=page_size,
         )
 
-    def calculate_refund(self, order_id: int, used_days: int) -> Decimal:
+    def calculate_refund(self, order_id: int, used_days: int) -> dict:
         """计算退款金额 — 按实付金额 × 剩余天数比例"""
         order = self.order_repo.get_by_id_or_raise(order_id)
         if order.pay_status != PayStatus.PAID:
@@ -369,8 +402,27 @@ class OrderService:
         elif order.type == OrderType.SEMI_ANNUAL:
             total_days = 180
         else:
-            return order.amount
+            return {"refund_amount": order.amount, "daily_rate": Decimal("0"), "used_amount": Decimal("0"), "total_days": 0}
 
         used = min(used_days, total_days)
-        refund = order.amount - (order.amount / total_days * used)
-        return max(refund.quantize(Decimal("0.01")), Decimal("0"))
+        daily_rate = (order.amount / total_days).quantize(Decimal("0.01"))
+        used_amount = (daily_rate * used).quantize(Decimal("0.01"))
+        refund = max((order.amount - used_amount).quantize(Decimal("0.01")), Decimal("0"))
+        return {
+            "refund_amount": refund,
+            "daily_rate": daily_rate,
+            "used_amount": used_amount,
+            "total_days": total_days,
+        }
+
+    def cancel_order(self, order_id: int, user_id: int) -> OrderResponse:
+        """取消未支付的订单"""
+        order = self.order_repo.get_by_id_or_raise(order_id)
+        if order.user_id != user_id:
+            raise ValidationError("订单不存在")
+        if order.pay_status != 0:
+            raise ValidationError("仅可取消未支付的订单")
+        order.pay_status = PayStatus.CLOSED
+        self.db.commit()
+        self.db.refresh(order)
+        return OrderResponse.model_validate(order)

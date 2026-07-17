@@ -2,7 +2,7 @@
 <view class="page-bg">
   <view style="display:none" class="active bottom-nav checked locked nav-item unlocked"></view>
 
-  <error-view wx:if="{{loadError}}" visible="{{loadError}}" icon="😵" title="加载失败" desc="数据加载出错了，请稍后重试" showRetry="{{true}}" retryText="重试" bind:onRetry="onRetry" />
+  <error-view wx:if="{{loadError}}" visible="{{loadError}}" icon="<text class="icon icon-dizzy-face">😵</text>" title="加载失败" desc="数据加载出错了，请稍后重试" showRetry="{{true}}" retryText="重试" bind:onRetry="onRetry" />
   <loading-skeleton wx:elif="{{loading}}" />
   <block wx:if="{{!loadError && !loading}}">
 
@@ -18,7 +18,7 @@
   <view class="streak-banner">
     <text class="streak-num">{{streak.current_streak || 0}}</text>
     <text class="streak-label">连续打卡天数</text>
-    <text class="streak-sub">🔥 再坚持 {{30 - (streak.current_streak || 0) > 0 ? 30 - (streak.current_streak || 0) : 0}} 天解锁 30 天徽章</text>
+    <text class="streak-sub"><text class="icon icon-fire">🔥</text> 再坚持 {{30 - (streak.current_streak || 0) > 0 ? 30 - (streak.current_streak || 0) : 0}} 天解锁 30 天徽章</text>
     <view class="streak-stats">
       <view class="ss-item">
         <text class="ss-num">{{streak.current_streak || 0}}</text>
@@ -44,7 +44,7 @@
   <!-- Today Status Card -->
   <view class="today-card {{checkedToday ? 'checked' : 'unchecked'}}">
     <view class="tc-icon">
-      <text>{{checkedToday ? '✅' : '⏰'}}</text>
+      <text>{{checkedToday ? '<text class="icon icon-check"><text class="icon icon-checkmark">✓</text></text>' : '<text class="icon icon-alarm">⏰</text>'}}</text>
     </view>
     <view class="tc-info">
       <text class="tc-title">{{checkedToday ? '今日已打卡' : '今日未打卡'}}</text>
@@ -55,7 +55,7 @@
 
   <!-- Auto Trigger Explanation -->
   <view class="auto-trigger">
-    <text class="auto-trigger-icon">ℹ️</text>
+    <text class="auto-trigger-icon"><text class="icon icon-info">ℹ</text></text>
     <text class="auto-trigger-text">阅读满 10 分钟自动打卡，无需手动操作</text>
   </view>
 
@@ -68,7 +68,7 @@
           <text class="cal-nav-icon">◀</text>
         </view>
         <view class="cal-nav-btn" bindtap="nextMonth">
-          <text class="cal-nav-icon">▶</text>
+          <text class="cal-nav-icon"><text class="icon icon-play">▶</text></text>
         </view>
       </view>
     </view>
@@ -93,7 +93,7 @@
     <text class="records-title">最近打卡记录</text>
     <view class="record-item" wx:for="{{records}}" wx:key="index">
       <view class="r-icon">
-        <text>📖</text>
+        <text><text class="icon icon-book-open">读</text></text>
       </view>
       <view class="r-info">
         <text class="r-date">{{item.date}}</text>
@@ -105,7 +105,7 @@
 
   <!-- Share Poster Button -->
   <button class="share-btn" open-type="share">
-    <text class="share-icon">📋</text>
+    <text class="share-icon"><text class="icon icon-clipboard">📋</text></text>
     <text>生成打卡海报</text>
   </button>
 

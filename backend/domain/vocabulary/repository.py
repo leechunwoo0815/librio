@@ -1,7 +1,7 @@
 # backend/domain/vocabulary/repository.py
 """词汇域数据访问层"""
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from backend.common.base_repo import BaseRepository
 from backend.domain.vocabulary.models import DictionaryWord, UserVocabulary
@@ -34,7 +34,7 @@ class UserVocabularyRepository(BaseRepository[UserVocabulary]):
     def get_by_child(
         self, child_id: int, status: int | None = None, sort_by: str = "time"
     ) -> list[UserVocabulary]:
-        q = self.db.query(UserVocabulary).filter(UserVocabulary.child_id == child_id)
+        q = self.db.query(UserVocabulary).options(joinedload(UserVocabulary.word)).filter(UserVocabulary.child_id == child_id)
         if status is not None:
             q = q.filter(UserVocabulary.status == status)
         if sort_by == "alpha":

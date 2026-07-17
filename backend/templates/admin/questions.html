@@ -5,6 +5,7 @@
 {% endblock %}
 {% block page_title %}题库管理{% endblock %}
 {% block content %}
+{% import "admin/macros.html" as m %}
 <div class="stats-grid">
   <div class="stat-card"><div class="stat-label">总题目数</div><div class="stat-value" id="statTotal">--</div></div>
   <div class="stat-card"><div class="stat-label">涉及图书</div><div class="stat-value" id="statBooks">--</div></div>
@@ -12,70 +13,74 @@
   <div class="stat-card"><div class="stat-label">今日新增</div><div class="stat-value" id="statNew">--</div></div>
 </div>
 
-<div style="display:flex;gap:16px;min-height:600px">
+<div class="questions-layout">
   <!-- left: book list -->
-  <div style="width:300px;flex-shrink:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden">
-    <div style="padding:12px;border-bottom:1px solid var(--border)">
-      <input class="search-input" id="bookSearch" placeholder="搜索图书…" style="width:100%" />
+  <div class="book-list-panel">
+    <div class="book-search">
+      <input class="search-input w-full" id="bookSearch" placeholder="搜索图书…" />
     </div>
-    <div style="overflow-y:auto;max-height:540px" id="bookList">
-      <div style="padding:40px;text-align:center;color:var(--muted);font-size:13px;">输入书名或ISBN搜索</div>
+    <div class="book-scroll" id="bookList">
+      <div class="text-center p-24 text-muted text-sm">输入书名或ISBN搜索</div>
     </div>
   </div>
   <!-- right: questions -->
-  <div style="flex:1;display:flex;flex-direction:column;gap:12px" id="questionPanel">
-    <div style="display:flex;justify-content:space-between;align-items:center">
+  <div class="questions-panel" id="questionPanel">
+    <div class="questions-panel-header">
       <div>
-        <div style="font-family:var(--font-display);font-size:16px;font-weight:600" id="selectedBookTitle">选择一本书</div>
-        <div style="font-size:12px;color:var(--muted)" id="selectedBookMeta">请从左侧列表选择</div>
+        <div class="panel-title" id="selectedBookTitle">选择一本书</div>
+        <div class="panel-meta" id="selectedBookMeta">请从左侧列表选择</div>
       </div>
-      <button class="btn btn-primary" onclick="document.getElementById('addQModal').classList.add('show')">+ 新增题目</button>
+      <button class="btn btn-primary" onclick="showModal('addQModal')">+ 新增题目</button>
     </div>
-    <div id="questionsList" style="display:flex;flex-direction:column;gap:12px;">
-      <div style="text-align:center;padding:40px;color:var(--muted);">请从左侧选择一本书查看题目</div>
+    <div id="questionsList" class="flex-col gap-12">
+      <div class="text-center p-24 text-muted">请从左侧选择一本书查看题目</div>
     </div>
   </div>
 </div>
 
 <!-- Add Question Modal -->
-<div class="modal-overlay" id="addQModal">
-  <div class="modal">
-    <h3>新增题目</h3>
-    <div class="form-group"><label>图书ISBN</label><input class="form-input" id="fIsbn" placeholder="输入ISBN自动匹配图书" /></div>
-    <div class="form-group"><label>题目文本</label><textarea class="form-textarea" id="fQuestion" placeholder="输入题目…"></textarea></div>
-    <div class="form-group"><label>选项 A</label><input class="form-input" id="fA" placeholder="选项 A" /></div>
-    <div class="form-group"><label>选项 B</label><input class="form-input" id="fB" placeholder="选项 B" /></div>
-    <div class="form-group"><label>选项 C</label><input class="form-input" id="fC" placeholder="选项 C" /></div>
-    <div class="form-group"><label>选项 D</label><input class="form-input" id="fD" placeholder="选项 D" /></div>
-    <div class="form-group"><label>正确答案</label><select class="form-input" id="fAnswer"><option>A</option><option>B</option><option>C</option><option>D</option></select></div>
-    <div class="form-group"><label>难度 (1-5)</label><input class="form-input" type="number" id="fDiff" value="1" min="1" max="5" /></div>
-    <div class="form-group"><label>解析（选填）</label><textarea class="form-textarea" id="fExplanation" placeholder="为什么这是正确答案…"></textarea></div>
-    <div class="modal-actions">
-      <button class="btn btn-outline" onclick="document.getElementById('addQModal').classList.remove('show')">取消</button>
-      <button class="btn btn-primary" id="addQBtn">保存</button>
-    </div>
+{{ m.modal_overlay("addQModal", "新增题目", "md") }}
+  <div class="form-group">
+    <label>关联图书</label>
+    <input type="hidden" id="fBookId" />
+    <input class="form-input" id="fBookSearch" placeholder="输入书名或ISBN搜索并选择图书" autocomplete="off" />
+    <div id="fBookSearchResults" class="book-search-results"></div>
   </div>
-</div>
+  <div class="form-group"><label>题目文本</label><textarea class="form-textarea" id="fQuestion" placeholder="输入题目…"></textarea></div>
+  <div class="form-group"><label>选项 A</label><input class="form-input" id="fA" placeholder="选项 A" /></div>
+  <div class="form-group"><label>选项 B</label><input class="form-input" id="fB" placeholder="选项 B" /></div>
+  <div class="form-group"><label>选项 C</label><input class="form-input" id="fC" placeholder="选项 C" /></div>
+  <div class="form-group"><label>选项 D</label><input class="form-input" id="fD" placeholder="选项 D" /></div>
+  <div class="form-group"><label>正确答案</label><select class="form-input" id="fAnswer"><option>A</option><option>B</option><option>C</option><option>D</option></select></div>
+  <div class="form-group"><label>难度 (1-5)</label><input class="form-input" type="number" id="fDiff" value="1" min="1" max="5" /></div>
+  <div class="form-group"><label>解析（选填）</label><textarea class="form-textarea" id="fExplanation" placeholder="为什么这是正确答案…"></textarea></div>
+{{ m.modal_actions() }}
+  <button class="btn btn-secondary" onclick="closeModal('addQModal')">取消</button>
+  <button class="btn btn-primary" id="addQBtn">保存</button>
+{{ m.modal_end() }}
 
 <!-- Edit Question Modal -->
-<div class="modal-overlay" id="editQModal">
-  <div class="modal">
-    <h3>编辑题目</h3>
-    <input type="hidden" id="editId" />
-    <div class="form-group"><label>题目文本</label><textarea class="form-textarea" id="editQuestion"></textarea></div>
-    <div class="form-group"><label>选项 A</label><input class="form-input" id="editA" /></div>
-    <div class="form-group"><label>选项 B</label><input class="form-input" id="editB" /></div>
-    <div class="form-group"><label>选项 C</label><input class="form-input" id="editC" /></div>
-    <div class="form-group"><label>选项 D</label><input class="form-input" id="editD" /></div>
-    <div class="form-group"><label>正确答案</label><select class="form-input" id="editAnswer"><option>A</option><option>B</option><option>C</option><option>D</option></select></div>
-    <div class="form-group"><label>难度 (1-5)</label><input class="form-input" type="number" id="editDiff" min="1" max="5" /></div>
-    <div class="form-group"><label>解析</label><input class="form-input" id="editExplanation" /></div>
-    <div class="modal-actions">
-      <button class="btn btn-outline" onclick="document.getElementById('editQModal').classList.remove('show')">取消</button>
-      <button class="btn btn-primary" id="saveEditBtn">保存</button>
-    </div>
-  </div>
-</div>
+{{ m.modal_overlay("editQModal", "编辑题目", "md") }}
+  <input type="hidden" id="editId" />
+  <div class="form-group"><label>题目文本</label><textarea class="form-textarea" id="editQuestion"></textarea></div>
+  <div class="form-group"><label>选项 A</label><input class="form-input" id="editA" /></div>
+  <div class="form-group"><label>选项 B</label><input class="form-input" id="editB" /></div>
+  <div class="form-group"><label>选项 C</label><input class="form-input" id="editC" /></div>
+  <div class="form-group"><label>选项 D</label><input class="form-input" id="editD" /></div>
+  <div class="form-group"><label>正确答案</label><select class="form-input" id="editAnswer"><option>A</option><option>B</option><option>C</option><option>D</option></select></div>
+  <div class="form-group"><label>难度 (1-5)</label><input class="form-input" type="number" id="editDiff" min="1" max="5" /></div>
+  <div class="form-group"><label>解析</label><input class="form-input" id="editExplanation" /></div>
+{{ m.modal_actions() }}
+  <button class="btn btn-secondary" onclick="closeModal('editQModal')">取消</button>
+  <button class="btn btn-primary" id="saveEditBtn">保存</button>
+{{ m.modal_end() }}
+
+{{ m.modal_overlay("confirmDialog", "确认操作") }}
+  <p id="confirmMsg" class="confirm-msg"></p>
+{{ m.modal_actions() }}
+  <button type="button" class="btn btn-secondary" onclick="closeModal('confirmDialog')">取消</button>
+  <button type="button" class="btn btn-primary" id="confirmBtn">确认</button>
+{{ m.modal_end() }}
 {% endblock %}
 
 {% block scripts %}
@@ -87,6 +92,10 @@ function escapeHtml(str) {
   var div = document.createElement('div');
   div.textContent = str || '';
   return div.innerHTML;
+}
+
+function jsEscape(str) {
+  return (str || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 }
 
 // Search books
@@ -106,13 +115,13 @@ async function searchBooks() {
     var items = data.items || [];
     var el = document.getElementById('bookList');
     if (!items.length) {
-      el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);">未找到图书</div>';
+      el.innerHTML = '<div class="p-20 text-center text-muted">未找到图书</div>';
       return;
     }
     el.innerHTML = items.map(function(b) {
-      return '<div style="padding:12px 16px;cursor:pointer;border-bottom:1px solid var(--border)" onclick="selectBook(' + b.id + ',\'' + escapeHtml(b.title) + '\',' + (b.ar_value||0) + ')">' +
-        '<div style="font-weight:600;font-size:14px">' + escapeHtml(b.title) + '</div>' +
-        '<div style="font-size:12px;color:var(--muted)">AR ' + (b.ar_value||'-') + '</div>' +
+      return '<div class="book-item" onclick="selectBook(' + b.id + ',\'' + jsEscape(b.title) + '\',' + (b.ar_value||0) + ')">' +
+        '<div class="book-title">' + escapeHtml(b.title) + '</div>' +
+        '<div class="book-meta">AR ' + (b.ar_value||'-') + '</div>' +
       '</div>';
     }).join('');
   } catch (e) {
@@ -137,7 +146,7 @@ async function selectBook(bookId, title, arLevel) {
 function renderQuestions(items) {
   var el = document.getElementById('questionsList');
   if (!items.length) {
-    el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);">暂无题目</div>';
+    el.innerHTML = '<div class="text-center p-24 text-muted">暂无题目</div>';
     return;
   }
   el.innerHTML = items.map(function(q, i) {
@@ -147,19 +156,19 @@ function renderQuestions(items) {
       { key: 'C', val: q.option_c },
       { key: 'D', val: q.option_d },
     ].filter(function(o) { return o.val; });
-    return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px">' +
-      '<div style="display:flex;justify-content:space-between;align-items:flex-start">' +
-        '<div style="flex:1">' +
-          '<div style="font-weight:600;font-size:14px;margin-bottom:8px">' + (i+1) + '. ' + escapeHtml(q.question_text) + '</div>' +
-          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:13px">' +
+    return '<div class="question-card">' +
+      '<div class="question-card-header">' +
+        '<div class="question-card-body">' +
+          '<div class="question-text">' + (i+1) + '. ' + escapeHtml(q.question_text) + '</div>' +
+          '<div class="question-options">' +
             options.map(function(o) {
-              var color = o.key === q.correct_answer ? 'var(--success)' : 'var(--muted)';
-              return '<div style="color:' + color + '">' + o.key + '. ' + escapeHtml(o.val) + '</div>';
+              var cls = o.key === q.correct_answer ? 'option correct' : 'option';
+              return '<div class="' + cls + '">' + o.key + '. ' + escapeHtml(o.val) + '</div>';
             }).join('') +
           '</div>' +
-          '<div style="margin-top:6px;font-size:12px;color:var(--success)">✓ 正确答案：' + q.correct_answer + '</div>' +
+          '<div class="question-answer">✓ 正确答案：' + q.correct_answer + '</div>' +
         '</div>' +
-        '<div style="display:flex;gap:6px;margin-left:12px">' +
+        '<div class="question-actions">' +
           '<button class="btn btn-outline btn-sm" onclick=\'editQuestion(' + JSON.stringify(q).replace(/'/g, "&#39;") + ')\'>编辑</button>' +
           '<button class="btn btn-danger btn-sm" onclick="deleteQuestion(' + q.id + ')">删除</button>' +
         '</div>' +
@@ -168,6 +177,53 @@ function renderQuestions(items) {
   }).join('');
 }
 
+// Book search in add modal
+(function() {
+  var searchEl = document.getElementById('fBookSearch');
+  var resultsEl = document.getElementById('fBookSearchResults');
+  var bookIdEl = document.getElementById('fBookId');
+  if (!searchEl) return;
+
+  var debounceTimer = null;
+  searchEl.addEventListener('input', function() {
+    clearTimeout(debounceTimer);
+    var kw = searchEl.value.trim();
+    if (!kw) { resultsEl.style.display = 'none'; return; }
+    debounceTimer = setTimeout(async function() {
+      try {
+        var data = await api.get('/admin/api/books?keyword=' + encodeURIComponent(kw));
+        var items = data.items || [];
+        if (!items.length) {
+          resultsEl.innerHTML = '<div class="book-search-noresult">未找到图书</div>';
+          resultsEl.style.display = 'block';
+          return;
+        }
+        resultsEl.innerHTML = items.map(function(b) {
+          return '<div class="book-search-result-item" ' +
+            'onclick="selectAddBook(' + b.id + ', \'' + jsEscape(b.title) + '\')">' +
+            escapeHtml(b.title) + ' <span class="text-muted">ISBN: ' + escapeHtml(b.isbn || '-') + '</span>' +
+          '</div>';
+        }).join('');
+        resultsEl.style.display = 'block';
+      } catch (e) {
+        resultsEl.style.display = 'none';
+      }
+    }, 250);
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!searchEl.contains(e.target) && !resultsEl.contains(e.target)) {
+      resultsEl.style.display = 'none';
+    }
+  });
+})();
+
+window.selectAddBook = function(bookId, title) {
+  document.getElementById('fBookId').value = bookId;
+  document.getElementById('fBookSearch').value = title;
+  document.getElementById('fBookSearchResults').style.display = 'none';
+};
+
 // Add question
 document.getElementById('addQBtn').addEventListener('click', async function() {
   if (isSubmitting) return;
@@ -175,12 +231,10 @@ document.getElementById('addQBtn').addEventListener('click', async function() {
   this.disabled = true;
   this.textContent = '保存中...';
   try {
-    var isbn = document.getElementById('fIsbn').value.trim();
-    var books = await api.get('/admin/api/books?keyword=' + encodeURIComponent(isbn));
-    var book = (books.items || []).find(function(b) { return b.isbn === isbn; });
-    if (!book) { showToast('未找到该ISBN对应的图书', 'error'); return; }
+    var bookId = document.getElementById('fBookId').value;
+    if (!bookId) { showToast('请先选择关联图书', 'error'); return; }
     await api.post('/admin/api/advancement/questions', {
-      book_id: book.id,
+      book_id: parseInt(bookId, 10),
       question_text: document.getElementById('fQuestion').value,
       option_a: document.getElementById('fA').value,
       option_b: document.getElementById('fB').value,
@@ -191,7 +245,17 @@ document.getElementById('addQBtn').addEventListener('click', async function() {
       explanation: document.getElementById('fExplanation').value || null,
     });
     showToast('题目添加成功');
-    document.getElementById('addQModal').classList.remove('show');
+    closeModal('addQModal');
+    document.getElementById('fBookId').value = '';
+    document.getElementById('fBookSearch').value = '';
+    document.getElementById('fQuestion').value = '';
+    document.getElementById('fA').value = '';
+    document.getElementById('fB').value = '';
+    document.getElementById('fC').value = '';
+    document.getElementById('fD').value = '';
+    document.getElementById('fAnswer').value = 'A';
+    document.getElementById('fDiff').value = '1';
+    document.getElementById('fExplanation').value = '';
   } catch (e) {
     showToast('添加失败: ' + e.message, 'error');
   } finally {
@@ -212,7 +276,7 @@ function editQuestion(q) {
   document.getElementById('editAnswer').value = q.correct_answer || 'A';
   document.getElementById('editDiff').value = q.difficulty || 1;
   document.getElementById('editExplanation').value = q.explanation || '';
-  document.getElementById('editQModal').classList.add('show');
+  showModal('editQModal');
 }
 
 document.getElementById('saveEditBtn').addEventListener('click', async function() {
@@ -233,7 +297,7 @@ document.getElementById('saveEditBtn').addEventListener('click', async function(
       explanation: document.getElementById('editExplanation').value || null,
     });
     showToast('题目更新成功');
-    document.getElementById('editQModal').classList.remove('show');
+    closeModal('editQModal');
     if (selectedBookId) selectBook(selectedBookId, document.getElementById('selectedBookTitle').textContent, '');
   } catch (e) {
     showToast('更新失败: ' + e.message, 'error');
@@ -244,15 +308,26 @@ document.getElementById('saveEditBtn').addEventListener('click', async function(
   }
 });
 
+function showConfirmDialog(title, msg, onConfirm) {
+  document.querySelector('#confirmDialog h2').textContent = title;
+  document.getElementById('confirmMsg').textContent = msg;
+  document.getElementById('confirmBtn').onclick = function() {
+    closeModal('confirmDialog');
+    onConfirm();
+  };
+  showModal('confirmDialog');
+}
+
 async function deleteQuestion(id) {
-  if (!confirm('确认删除此题目？')) return;
-  try {
-    await api.del('/admin/api/advancement/questions/' + id);
-    showToast('删除成功');
-    if (selectedBookId) selectBook(selectedBookId, document.getElementById('selectedBookTitle').textContent, '');
-  } catch (e) {
-    showToast('删除失败: ' + e.message, 'error');
-  }
+  showConfirmDialog('确认删除', '确认删除此题目？', async function() {
+    try {
+      await api.del('/admin/api/advancement/questions/' + id);
+      showToast('删除成功');
+      if (selectedBookId) selectBook(selectedBookId, document.getElementById('selectedBookTitle').textContent, '');
+    } catch (e) {
+      showToast('删除失败: ' + e.message, 'error');
+    }
+  });
 }
 </script>
 {% endblock %}

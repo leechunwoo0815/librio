@@ -39,7 +39,7 @@ class RefundApplication(BaseModel):
         BigInteger, ForeignKey("child.id"), nullable=False, index=True, comment="孩子ID"
     )
     user_id = Column(
-        BigInteger, ForeignKey("user.id"), nullable=False, comment="用户ID"
+        BigInteger, ForeignKey("user.id"), nullable=False, index=True, comment="用户ID"
     )
 
     amount = Column(Numeric(10, 2), nullable=True, comment="订单原金额")

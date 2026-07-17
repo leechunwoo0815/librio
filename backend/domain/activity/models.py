@@ -27,7 +27,7 @@ class Activity(BaseModel):
     TYPE_LECTURE = 2
     TYPE_CITY_WALK = 3
     TYPE_OUTING = 4
-    TYPE_MEGAWORDS = 5
+    TYPE_DMKWORDS = 5
     TYPE_OTHER = 6
 
     STATUS_DRAFT = 0

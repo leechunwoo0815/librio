@@ -37,13 +37,16 @@
 .action-sm { padding: 4px 10px; font-size: 12px; color: var(--accent); border-radius: 6px; border: none; background: none; cursor: pointer; }
 .action-sm:hover { background: var(--accent-soft); }
 
+/* Audio preview */
+.audio-preview { height: 32px; flex: 1; margin: 0 16px; }
+
 /* Audio player bar */
 .audio-player-bar { display: flex; align-items: center; padding: 12px 20px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-top: 16px; gap: 12px; font-size: 13px; color: var(--fg); }
 
 /* Modal */
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 50; display: none; align-items: center; justify-content: center; }
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 50; display: none; align-items: center; justify-content: center; box-sizing: border-box; }
 .modal-overlay.show { display: flex; }
-.modal { background: var(--surface); border-radius: var(--radius-lg); padding: 28px; width: 480px; max-height: 80vh; overflow-y: auto; box-shadow: 0 16px 48px rgba(0,0,0,0.12); }
+.modal { background: var(--surface); border-radius: var(--radius-lg); width: 480px; box-shadow: 0 16px 48px rgba(0,0,0,0.12); }
 .modal h3 { font-family: var(--font-display); font-size: 17px; font-weight: 600; margin-bottom: 16px; }
 .form-group { margin-bottom: 14px; }
 .form-group label { display: block; font-size: 12px; font-weight: 500; color: var(--muted); margin-bottom: 4px; }

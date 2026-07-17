@@ -1,0 +1,116 @@
+<!--frontend/pages/order-pkg/borrow-history/borrow-history.wxml-->
+<view class="page-bg">
+  <view class="nav-bar">
+    <view class="back" bindtap="goBack">‹</view>
+    <text class="nav-title">借阅记录</text>
+  </view>
+
+  <view class="tabs">
+    <view class="tab {{activeTab === 'borrowing' ? 'active' : ''}}" data-tab="borrowing" bindtap="switchTab">借阅中</view>
+    <view class="tab {{activeTab === 'returned' ? 'active' : ''}}" data-tab="returned" bindtap="switchTab">已归还</view>
+    <view class="tab {{activeTab === 'all' ? 'active' : ''}}" data-tab="all" bindtap="switchTab">全部</view>
+  </view>
+
+  <view class="summary-bar">
+    <view class="summary-card">
+      <view class="summary-num">{{summary.current}}</view>
+      <view class="summary-label">当前借阅</view>
+    </view>
+    <view class="summary-card">
+      <view class="summary-num">{{summary.total}}</view>
+      <view class="summary-label">累计借阅</view>
+    </view>
+    <view class="summary-card">
+      <view class="summary-num">{{summary.overdue}}</view>
+      <view class="summary-label">逾期记录</view>
+    </view>
+  </view>
+
+  <!-- 借阅中 -->
+  <view class="content-section {{activeTab === 'borrowing' ? 'active' : ''}}">
+    <view class="record-list" wx:if="{{borrowingDisplay.length > 0}}">
+      <block wx:for="{{borrowingDisplay}}" wx:for-index="idx" wx:key="idx">
+        <view class="date-divider" wx:if="{{item._type === 'divider'}}">{{item.text}}</view>
+        <view class="record-card" wx:if="{{item._type === 'record'}}">
+          <view class="record-cover">
+            <image wx:if="{{item.cover}}" src="{{item.cover}}" mode="aspectFill" />
+            <text wx:else><text class="icon icon-book-open">读</text></text>
+          </view>
+          <view class="record-info">
+            <view class="record-title">{{item.title}}</view>
+            <view class="record-dates">
+              <view><text class="icon icon-calendar">📅</text> 借出：{{item.borrowedAt}}</view>
+              <view wx:if="{{!item.returnedAt}}"><text class="icon icon-alarm">⏰</text> 应还：{{item.dueAt}}</view>
+              <view wx:if="{{item.returnedAt}}"><text class="icon icon-calendar">📅</text> 归还：{{item.returnedAt}}</view>
+            </view>
+            <view class="record-tags">
+              <text class="record-status {{item.statusClass}}">{{item.statusText}}</text>
+              <text class="record-test" wx:if="{{item.testPassed}}">AR 通过 <text class="icon icon-check"><text class="icon icon-checkmark">✓</text></text></text>
+              <text class="record-fine" wx:if="{{item.fine}}">罚款 ¥{{item.fine}}</text>
+            </view>
+          </view>
+        </view>
+      </block>
+    </view>
+    <empty-state wx:elif="{{!loading}}" icon="<text class="icon icon-book-open">读</text>" title="暂无借阅记录" desc="去图书馆借一本喜欢的书吧" />
+  </view>
+
+  <!-- 已归还 -->
+  <view class="content-section {{activeTab === 'returned' ? 'active' : ''}}">
+    <view class="record-list" wx:if="{{returnedDisplay.length > 0}}">
+      <block wx:for="{{returnedDisplay}}" wx:for-index="idx" wx:key="idx">
+        <view class="date-divider" wx:if="{{item._type === 'divider'}}">{{item.text}}</view>
+        <view class="record-card" wx:if="{{item._type === 'record'}}">
+          <view class="record-cover">
+            <image wx:if="{{item.cover}}" src="{{item.cover}}" mode="aspectFill" />
+            <text wx:else><text class="icon icon-book-open">读</text></text>
+          </view>
+          <view class="record-info">
+            <view class="record-title">{{item.title}}</view>
+            <view class="record-dates">
+              <view><text class="icon icon-calendar">📅</text> 借出：{{item.borrowedAt}}</view>
+              <view wx:if="{{item.returnedAt}}"><text class="icon icon-calendar">📅</text> 归还：{{item.returnedAt}}</view>
+            </view>
+            <view class="record-tags">
+              <text class="record-status {{item.statusClass}}">{{item.statusText}}</text>
+              <text class="record-test" wx:if="{{item.testPassed}}">AR 通过 <text class="icon icon-check"><text class="icon icon-checkmark">✓</text></text></text>
+              <text class="record-fine" wx:if="{{item.fine}}">罚款 ¥{{item.fine}}</text>
+            </view>
+          </view>
+        </view>
+      </block>
+    </view>
+    <empty-state wx:elif="{{!loading}}" icon="<text class="icon icon-book">书</text>" title="暂无归还记录" desc="借阅的书籍归还后将显示在这里" />
+  </view>
+
+  <!-- 全部 -->
+  <view class="content-section {{activeTab === 'all' ? 'active' : ''}}">
+    <view class="record-list" wx:if="{{allDisplay.length > 0}}">
+      <block wx:for="{{allDisplay}}" wx:for-index="idx" wx:key="idx">
+        <view class="date-divider" wx:if="{{item._type === 'divider'}}">{{item.text}}</view>
+        <view class="record-card" wx:if="{{item._type === 'record'}}">
+          <view class="record-cover">
+            <image wx:if="{{item.cover}}" src="{{item.cover}}" mode="aspectFill" />
+            <text wx:else><text class="icon icon-book-open">读</text></text>
+          </view>
+          <view class="record-info">
+            <view class="record-title">{{item.title}}</view>
+            <view class="record-dates">
+              <view><text class="icon icon-calendar">📅</text> 借出：{{item.borrowedAt}}</view>
+              <view wx:if="{{!item.returnedAt}}"><text class="icon icon-alarm">⏰</text> 应还：{{item.dueAt}}</view>
+              <view wx:if="{{item.returnedAt}}"><text class="icon icon-calendar">📅</text> 归还：{{item.returnedAt}}</view>
+            </view>
+            <view class="record-tags">
+              <text class="record-status {{item.statusClass}}">{{item.statusText}}</text>
+              <text class="record-test" wx:if="{{item.testPassed}}">AR 通过 <text class="icon icon-check"><text class="icon icon-checkmark">✓</text></text></text>
+              <text class="record-fine" wx:if="{{item.fine}}">罚款 ¥{{item.fine}}</text>
+            </view>
+          </view>
+        </view>
+      </block>
+    </view>
+    <empty-state wx:elif="{{!loading}}" icon="<text class="icon icon-book-open">读</text>" title="暂无借阅记录" desc="去图书馆借一本喜欢的书吧" />
+  </view>
+
+  <view class="safe-bottom"></view>
+</view>
