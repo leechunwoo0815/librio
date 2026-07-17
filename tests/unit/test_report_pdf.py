@@ -1,10 +1,15 @@
 """Tests for observation report PDF endpoint"""
+import os
+
 import pytest
 
 try:
+    import weasyprint  # noqa: F401
     PDF_AVAILABLE = True
-except Exception:
+except ImportError:
     PDF_AVAILABLE = False
+
+HAS_MYSQL = not os.environ.get("DATABASE_URL", "").startswith("sqlite")
 
 from fastapi.testclient import TestClient
 from backend.main import app
@@ -32,7 +37,7 @@ def test_observation_pdf_endpoint_is_async():
     )
 
 
-@pytest.mark.skipif(not PDF_AVAILABLE, reason="weasyprint not available on this machine")
+@pytest.mark.skipif(not PDF_AVAILABLE or not HAS_MYSQL, reason="weasyprint or MySQL not available")
 def test_observation_pdf_with_auth():
     """With valid auth token, endpoint should route correctly (no DB data → 404)"""
     response = client.get("/report/observation/1/pdf", headers=AUTH_HEADER)

@@ -5,6 +5,7 @@
 [How] 使用pydantic-settings从环境变量读取配置
 """
 
+import os
 from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -81,8 +82,11 @@ class Settings(BaseSettings):
         """
         [What] 获取数据库连接URL
         [Why] SQLAlchemy需要完整的连接字符串
-        [How] 拼接MySQL连接参数
+        [How] 优先使用 DATABASE_URL 环境变量（CI 用 SQLite）；否则拼接 MySQL 参数
         """
+        env_url = os.environ.get("DATABASE_URL")
+        if env_url:
+            return env_url
         return f"mysql+pymysql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}?charset=utf8mb4"
 
     @property
