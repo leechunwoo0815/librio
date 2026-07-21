@@ -22,8 +22,8 @@
 <div class="search-bar">
   <input class="search-input" placeholder="搜索孩子姓名…" id="searchInput" />
   <select class="filter-select" id="statusFilter"><option value="">全部状态</option><option value="1">已生成</option><option value="2">已查看</option></select>
-  <button class="btn btn-primary" onclick="window.reportsPage.loadReports()">查询</button>
-  <button class="btn btn-outline" onclick="window.reportsPage.generateReports()">批量生成到期报告</button>
+  <button class="btn btn-primary" data-pg="loadReports">查询</button>
+  <button class="btn btn-outline" data-pg="generateReports">批量生成到期报告</button>
 </div>
 
 <!-- Table -->
@@ -31,7 +31,7 @@
   <div class="table-header">
     <h3>观察期报告列表</h3>
     <div class="table-actions">
-      <button class="btn btn-outline" onclick="window.reportsPage.loadReports()">刷新</button>
+      <button class="btn btn-outline" data-pg="loadReports">刷新</button>
     </div>
   </div>
   <table id="reportTable">
@@ -45,11 +45,11 @@
 </div>
 
 <!-- Report Detail Panel -->
-<div class="panel-overlay" id="panelOverlay" onclick="window.reportsPage.closePanel()"></div>
+<div class="panel-overlay" id="panelOverlay" data-pg="closePanel"></div>
 <div class="side-panel" id="sidePanel">
   <div class="panel-header">
     <h3 id="panelTitle">观察期报告详情</h3>
-    <button class="panel-close" onclick="window.reportsPage.closePanel()">&times;</button>
+    <button class="panel-close" data-pg="closePanel">&times;</button>
   </div>
   <div class="panel-body" id="panelBody"></div>
 </div>
@@ -65,8 +65,8 @@
     <textarea class="form-textarea" id="commentText" placeholder="请输入老师对该学生观察期的综合评语…"></textarea>
   </div>
 {{ m.modal_actions() }}
-  <button class="btn btn-secondary" onclick="closeModal('commentModal')">取消</button>
-  <button class="btn btn-primary" onclick="window.reportsPage.saveComment()">保存评语</button>
+  <button class="btn btn-secondary" data-close-modal="commentModal">取消</button>
+  <button class="btn btn-primary" data-pg="saveComment">保存评语</button>
 {{ m.modal_end() }}
 {% endblock %}
 

@@ -8,6 +8,15 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     loadLevels();
+    document.body.addEventListener('click', function(e) {
+      var el = e.target.closest('[data-pg]');
+      if (!el) return;
+      e.preventDefault();
+      var fn = window.levelsPage[el.getAttribute('data-pg')];
+      if (typeof fn === 'function') fn();
+    });
+    document.getElementById('levelForm').addEventListener('submit', function(e) { submitLevel(e); });
+    document.getElementById('importFile').addEventListener('change', function() { handleImport(this); });
   });
 
   async function loadLevels() {

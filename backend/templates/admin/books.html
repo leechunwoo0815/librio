@@ -35,25 +35,25 @@
   <select><option>AR等级：全部</option><option>AR 0.0 - 2.0</option><option>AR 2.1 - 4.0</option><option>AR 4.1 - 6.0</option><option>AR 6.1 - 8.0</option><option>AR 8.1+</option></select>
   <select><option>年龄：全部</option><option>3-5 岁</option><option>6-8 岁</option><option>9-12 岁</option><option>13+ 岁</option></select>
   <div class="flex-1"></div>
-  <button class="btn btn-secondary" onclick="window.booksPage.openUploadModal()">&#x1F4E5; 批量导入</button>
-  <button class="btn btn-primary" onclick="window.booksPage.openAddModal()">＋ 新增图书</button>
+  <button class="btn btn-secondary" data-pg="openUploadModal">&#x1F4E5; 批量导入</button>
+  <button class="btn btn-primary" data-pg="openAddModal">＋ 新增图书</button>
 </div>
 
 <!-- Batch Bar -->
 <div id="batchBar" class="p-16 mb-16 hidden bg-accent-soft br-sm">
   已选 <strong id="selectedCount">0</strong> 项
-  <button class="btn btn-secondary btn-sm" onclick="window.booksPage.batchDelete()">批量删除</button>
-  <button class="btn btn-secondary btn-sm" onclick="window.booksPage.batchExport()">批量导出</button>
+  <button class="btn btn-secondary btn-sm" data-pg="batchDelete">批量删除</button>
+  <button class="btn btn-secondary btn-sm" data-pg="batchExport">批量导出</button>
 </div>
 
 <!-- File Upload Modal -->
 {{ m.modal_overlay('uploadModal', '上传文件', 'md') }}
   <p class="text-sm text-muted mb-16">支持格式：JPG/PNG/GIF/MP3/M4A/WAV/PDF。小文件（&#x2264;10MB）直传，大文件自动分片上传。</p>
-  <div id="uploadDropZone" onclick="document.getElementById('uploadFileInput').click()" class="mb-16 upload-zone">
+  <div id="uploadDropZone" class="mb-16 upload-zone">
     <div class="mb-8 upload-emoji">&#x1F4C1;</div>
     <div class="text-muted">点击选择文件或拖拽到此处</div>
   </div>
-  <input type="file" id="uploadFileInput" class="hidden" onchange="window.booksPage.handleFileSelect(this)" accept=".jpg,.jpeg,.png,.gif,.mp3,.m4a,.wav,.pdf" />
+  <input type="file" id="uploadFileInput" class="hidden" accept=".jpg,.jpeg,.png,.gif,.mp3,.m4a,.wav,.pdf" />
   <div id="uploadFileInfo" class="hidden mb-16"></div>
   <div id="uploadProgress" class="hidden mb-16">
     <div class="flex-between text-sm mb-4">
@@ -67,8 +67,8 @@
   </div>
   <div id="uploadResult" class="mb-16"></div>
 {{ m.modal_actions() }}
-  <button class="btn btn-primary" id="uploadBtn" onclick="window.booksPage.startUpload()" disabled>开始上传</button>
-  <button class="btn btn-secondary" onclick="window.booksPage.closeUploadModal()">关闭</button>
+  <button class="btn btn-primary" id="uploadBtn" data-pg="startUpload" disabled>开始上传</button>
+  <button class="btn btn-secondary" data-pg="closeUploadModal">关闭</button>
 {{ m.modal_end() }}
 
 <!-- Table -->
@@ -106,7 +106,7 @@
 
 <!-- Add Book Modal -->
 {{ m.modal_overlay('addModal', '添加图书', 'md') }}
-<form id="addForm" onsubmit="window.booksPage.submitBook(event)">
+<form id="addForm">
   <div class="form-group">
     <label>ISBN <span class="required">*</span></label>
     <input type="text" class="form-input" name="isbn" required placeholder="978-..." />
@@ -136,7 +136,7 @@
     <input type="number" class="form-input" name="word_count" min="0" required placeholder="总词数" />
   </div>
 {{ m.modal_actions() }}
-  <button type="button" class="btn btn-secondary" onclick="window.booksPage.closeAddModal()">取消</button>
+  <button type="button" class="btn btn-secondary" data-pg="closeAddModal">取消</button>
   <button type="submit" class="btn btn-primary">确认添加</button>
 {{ m.modal_end() }}
 </form>
@@ -144,7 +144,7 @@
 <!-- Confirm Dialog -->
 {{ m.modal_overlay("confirmDialog", "确认操作") }}
   <p id="confirmMsg" class="confirm-msg"></p>
-  <button type="button" class="btn btn-secondary" onclick="closeModal('confirmDialog')">取消</button>
+  <button type="button" class="btn btn-secondary" data-close-modal="confirmDialog">取消</button>
   <button type="button" class="btn btn-primary" id="confirmBtn">确认</button>
 {{ m.modal_end() }}
 

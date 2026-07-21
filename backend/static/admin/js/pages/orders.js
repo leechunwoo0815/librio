@@ -39,6 +39,33 @@
       if (_confirmCb) _confirmCb(input);
       hideConfirm();
     });
+
+    // onchange handlers
+    document.getElementById('pageSizeSelect').addEventListener('change', function() { changePageSize(this.value); });
+    document.getElementById('offlineToggle').addEventListener('change', toggleOffline);
+    document.getElementById('childSearchInput').addEventListener('input', searchChildrenForOrder);
+    document.getElementById('childSearchInput').addEventListener('focus', searchChildrenForOrder);
+    document.getElementById('createType').addEventListener('change', updateDefaultAmount);
+    document.querySelectorAll('input[name="payStatus"]').forEach(function(el) {
+      el.addEventListener('change', togglePayStatus);
+    });
+
+    // confirmModal overlay click-to-close
+    document.getElementById('confirmModal').addEventListener('click', function(e) {
+      if (e.target === this) hideConfirm();
+    });
+
+    // Delegated handler for data-pg buttons
+    document.body.addEventListener('click', function(e) {
+      const el = e.target.closest('[data-pg]');
+      if (!el) return;
+      const fn = window.ordersPage[el.getAttribute('data-pg')];
+      if (typeof fn === 'function') {
+        e.preventDefault();
+        fn();
+      }
+    });
+
     // Populate age/grade dropdowns
     var agesHtml = '<option value="">请选择</option>';
     for (var i = 3; i <= 15; i++) agesHtml += '<option value="' + i + '">' + i + ' 岁</option>';
@@ -558,8 +585,11 @@
       .catch(function(err) { showToast(err.message, 'error'); });
   }
 
+  function loadFirstPage() { loadOrders(1); }
+
   // 暴露到全局供 HTML onclick 调用
   window.ordersPage = {
+    loadFirstPage,
     loadOrders,
     exportOrders,
     showCreateModal,

@@ -23,6 +23,17 @@
     const addForm = document.getElementById('addForm');
     if (addForm) {
       addForm.addEventListener('input', saveDraft);
+      addForm.addEventListener('submit', submitBook);
+    }
+
+    const dropZone = document.getElementById('uploadDropZone');
+    if (dropZone) {
+      dropZone.addEventListener('click', () => document.getElementById('uploadFileInput').click());
+    }
+
+    const fileInput = document.getElementById('uploadFileInput');
+    if (fileInput) {
+      fileInput.addEventListener('change', function() { handleFileSelect(this); });
     }
 
     BatchSelect.init('#booksTable', (ids) => {
@@ -30,6 +41,17 @@
       const bar = document.getElementById('batchBar');
       if (countEl) countEl.textContent = ids.length;
       if (bar) bar.classList.toggle('hidden', ids.length === 0);
+    });
+
+    // Delegated handler for data-pg buttons
+    document.body.addEventListener('click', function(e) {
+      const el = e.target.closest('[data-pg]');
+      if (!el) return;
+      const fn = window.booksPage[el.getAttribute('data-pg')];
+      if (typeof fn === 'function') {
+        e.preventDefault();
+        fn();
+      }
     });
   });
 

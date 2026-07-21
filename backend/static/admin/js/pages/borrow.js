@@ -29,6 +29,21 @@
         if (dropdown) dropdown.style.display = 'none';
       }
     });
+
+    const childSearch = document.getElementById('childSearchInput');
+    if (childSearch) {
+      childSearch.addEventListener('input', searchChildrenDebounced);
+    }
+
+    document.body.addEventListener('click', function(e) {
+      const el = e.target.closest('[data-pg]');
+      if (!el) return;
+      const fn = window.borrowPage[el.getAttribute('data-pg')];
+      if (typeof fn === 'function') {
+        e.preventDefault();
+        fn();
+      }
+    });
   });
 
   async function loadAllChildren() {

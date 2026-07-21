@@ -129,7 +129,16 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', loadReports);
+  document.addEventListener('DOMContentLoaded', function() {
+    loadReports();
+    document.body.addEventListener('click', function(e) {
+      var el = e.target.closest('[data-pg]');
+      if (!el) return;
+      e.preventDefault();
+      var fn = window.reportsPage[el.getAttribute('data-pg')];
+      if (typeof fn === 'function') fn();
+    });
+  });
 
   window.reportsPage = {
     loadReports: loadReports,

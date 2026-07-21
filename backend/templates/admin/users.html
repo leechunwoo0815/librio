@@ -11,16 +11,16 @@
 <div class="toolbar">
   <input type="text" class="search-input" id="searchInput"
     placeholder="搜索姓名或手机号" />
-  <select class="filter-select" id="statusFilter" onchange="loadUsers(1)">
+  <select class="filter-select" id="statusFilter">
     <option value="">全部身份</option>
     <option value="2">正式会员</option>
     <option value="1">观察期</option>
     <option value="0">体验课</option>
   </select>
   <div class="toolbar-spacer"></div>
-  <button class="btn btn-primary" onclick="usersPage.loadUsers(1)">搜索</button>
-  <button class="btn btn-outline" onclick="usersPage.exportUsers()">导出 Excel</button>
-  <button class="btn btn-primary" onclick="usersPage.openCreateUserModal()">添加用户</button>
+  <button class="btn btn-primary" data-pg="loadFirstPage">搜索</button>
+  <button class="btn btn-outline" data-pg="exportUsers">导出 Excel</button>
+  <button class="btn btn-primary" data-pg="openCreateUserModal">添加用户</button>
 </div>
 
 <!-- 列表 -->
@@ -53,19 +53,19 @@
 {{ m.modal_overlay('detailModal', '用户详情', 'xl') }}
   <div id="detailContent"></div>
   {{ m.modal_actions() }}
-    <button class="btn btn-secondary" onclick="closeModal('detailModal')">关闭</button>
+    <button class="btn btn-secondary" data-close-modal="detailModal">关闭</button>
   {{ m.modal_end() }}
 
 <!-- 孩子详情弹窗 -->
 {{ m.modal_overlay('childModal', '孩子详情', 'lg') }}
   <div id="childContent"></div>
   {{ m.modal_actions() }}
-    <button class="btn btn-secondary" onclick="closeModal('childModal')">关闭</button>
+    <button class="btn btn-secondary" data-close-modal="childModal">关闭</button>
   {{ m.modal_end() }}
 
 <!-- 编辑用户弹窗 -->
 {{ m.modal_overlay('editModal', '编辑用户', 'md') }}
-<form id="editForm" onsubmit="submitUserEdit(event)">
+<form id="editForm">
   <input type="hidden" id="editUserId" value="" />
   <div class="form-group">
     <label>家长姓名</label>
@@ -86,14 +86,14 @@
     </select>
   </div>
 {{ m.modal_actions() }}
-  <button type="button" class="btn btn-secondary" onclick="closeModal('editModal')">取消</button>
+  <button type="button" class="btn btn-secondary" data-close-modal="editModal">取消</button>
   <button type="submit" class="btn btn-primary">保存</button>
 {{ m.modal_end() }}
 </form>
 
 <!-- 添加孩子弹窗 -->
 {{ m.modal_overlay('addChildModal', '添加孩子', 'md') }}
-<form id="addChildForm" onsubmit="submitAddChild(event)">
+<form id="addChildForm">
   <input type="hidden" id="addChildUserId" value="" />
   <div class="form-group">
     <label>孩子姓名 <span class="required">*</span></label>
@@ -116,14 +116,14 @@
     </select>
   </div>
 {{ m.modal_actions() }}
-  <button type="button" class="btn btn-secondary" onclick="closeModal('addChildModal')">取消</button>
+  <button type="button" class="btn btn-secondary" data-close-modal="addChildModal">取消</button>
   <button type="submit" class="btn btn-primary">保存</button>
 {{ m.modal_end() }}
 </form>
 
 <!-- 编辑孩子弹窗 -->
 {{ m.modal_overlay('editChildModal', '编辑孩子', 'md') }}
-<form id="editChildForm" onsubmit="submitEditChild(event)">
+<form id="editChildForm">
   <input type="hidden" id="editChildId" value="" />
   <div class="form-group">
     <label>孩子姓名</label>
@@ -146,14 +146,14 @@
     </select>
   </div>
 {{ m.modal_actions() }}
-  <button type="button" class="btn btn-secondary" onclick="closeModal('editChildModal')">取消</button>
+  <button type="button" class="btn btn-secondary" data-close-modal="editChildModal">取消</button>
   <button type="submit" class="btn btn-primary">保存</button>
 {{ m.modal_end() }}
 </form>
 
 <!-- 添加用户弹窗 -->
 {{ m.modal_overlay('createUserModal', '添加用户', 'lg') }}
-<form id="createUserForm" onsubmit="submitCreateUser(event)">
+<form id="createUserForm">
   <div class="form-group">
     <label>家长姓名 <span class="required">*</span></label>
     <input type="text" id="createParentName" class="form-input" required />
@@ -191,7 +191,7 @@
     </select>
   </div>
 {{ m.modal_actions() }}
-  <button type="button" class="btn btn-secondary" onclick="closeModal('createUserModal')">取消</button>
+  <button type="button" class="btn btn-secondary" data-close-modal="createUserModal">取消</button>
   <button type="submit" class="btn btn-primary">创建</button>
 {{ m.modal_end() }}
 </form>

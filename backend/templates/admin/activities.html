@@ -12,7 +12,7 @@
 {% block content %}
 {% import "admin/macros.html" as m %}
 <div class="toolbar">
-  <button class="btn btn-primary" onclick="window.activitiesPage.showCreateModal()">+ 创建活动</button>
+  <button class="btn btn-primary" data-pg="showCreateModal">+ 创建活动</button>
 </div>
 
 <div class="table-wrap">
@@ -31,39 +31,39 @@
 {{ m.modal_overlay("createModal", "创建活动", "lg") }}
   <input type="hidden" id="editActivityId" value="" />
   <div class="form-group"><label>标题 <span class="required">*</span></label><input class="form-input" id="actTitle" placeholder="活动标题" required /></div>
-  <div class="form-group"><label>类型</label><select class="form-input" id="actType" onchange="window.activitiesPage.onTypeChange()">
+  <div class="form-group"><label>类型</label><select class="form-input" id="actType">
     <option value="1">读书交流</option><option value="2">讲座</option><option value="3">CityWalk</option><option value="4">郊游</option><option value="5">大会</option><option value="6">其他</option>
   </select></div>
   <div class="form-group"><label>开始时间 <span class="required">*</span></label><input class="form-input" id="actStart" type="datetime-local" required /></div>
   <div class="form-group"><label>结束时间 <span class="required">*</span></label><input class="form-input" id="actEnd" type="datetime-local" required /></div>
   <div class="form-group"><label>地点</label><input class="form-input" id="actVenue" placeholder="活动地点" /></div>
   <div class="form-group"><label>最大参与人数</label><input class="form-input" id="actMax" type="number" value="30" min="1" /></div>
-  <div class="form-group"><label>是否免费</label><select class="form-input" id="actFree" onchange="window.activitiesPage.onFreeChange()"><option value="1">免费</option><option value="0">收费</option></select></div>
+  <div class="form-group"><label>是否免费</label><select class="form-input" id="actFree"><option value="1">免费</option><option value="0">收费</option></select></div>
   <div class="form-group hidden" id="priceGroup"><label>收费金额 (元) <span class="required">*</span></label><input class="form-input" id="actPrice" type="number" min="0" step="0.01" placeholder="请输入金额" /></div>
   <div class="form-group"><label>活动描述</label><textarea class="form-input" id="actDesc" rows="3" placeholder="活动详细描述"></textarea></div>
 {{ m.modal_actions() }}
-  <button class="btn btn-secondary" onclick="closeModal('createModal')">取消</button>
-  <button class="btn btn-primary" id="submitBtn" onclick="window.activitiesPage.submitActivity()">创建</button>
+  <button class="btn btn-secondary" data-close-modal="createModal">取消</button>
+  <button class="btn btn-primary" id="submitBtn" data-pg="submitActivity">创建</button>
 {{ m.modal_end() }}
 
 <!-- 报名管理弹窗 -->
-<div class="modal-overlay" id="signinModal" onclick="if(event.target===this)window.activitiesPage.hideSigninModal()">
+<div class="modal-overlay" id="signinModal">
   <div class="modal modal-sticky modal-lg">
     <div class="modal-header">
       <h2>报名管理</h2>
-      <button class="modal-close" onclick="window.activitiesPage.hideSigninModal()">&times;</button>
+      <button class="modal-close" data-pg="hideSigninModal">&times;</button>
     </div>
     <div class="modal-body">
       <div class="mb-12">
         <label class="text-sm cursor-pointer">
-          <input type="checkbox" id="signinCheckAll" onchange="window.activitiesPage.toggleSigninAll()" /> 全选
+          <input type="checkbox" id="signinCheckAll" /> 全选
         </label>
       </div>
       <div id="signinList" class="signin-list">加载中...</div>
     </div>
     <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="window.activitiesPage.hideSigninModal()">取消</button>
-      <button class="btn btn-primary" onclick="window.activitiesPage.submitSignin()">确认签到</button>
+      <button class="btn btn-secondary" data-pg="hideSigninModal">取消</button>
+      <button class="btn btn-primary" data-pg="submitSignin">确认签到</button>
     </div>
   </div>
 </div>
@@ -71,7 +71,7 @@
 {{ m.modal_overlay("confirmModal", "确认操作", "sm") }}
   <p id="confirmMsg" class="m-0"></p>
 {{ m.modal_actions() }}
-  <button class="btn btn-secondary" onclick="closeModal('confirmModal')">取消</button>
+  <button class="btn btn-secondary" data-close-modal="confirmModal">取消</button>
   <button class="btn btn-primary" id="confirmBtn">确认</button>
 {{ m.modal_end() }}
 {% endblock %}

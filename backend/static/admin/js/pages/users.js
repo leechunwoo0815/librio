@@ -17,6 +17,18 @@
     if (searchEl) searchEl.addEventListener('keydown', e => {
       if (e.key === 'Enter') loadUsers(1);
     });
+    document.getElementById('statusFilter').addEventListener('change', function() { loadUsers(1); });
+    document.getElementById('editForm').addEventListener('submit', function(e) { submitUserEdit(e); });
+    document.getElementById('addChildForm').addEventListener('submit', function(e) { submitAddChild(e); });
+    document.getElementById('editChildForm').addEventListener('submit', function(e) { submitEditChild(e); });
+    document.getElementById('createUserForm').addEventListener('submit', function(e) { submitCreateUser(e); });
+    document.body.addEventListener('click', function(e) {
+      var el = e.target.closest('[data-pg]');
+      if (!el) return;
+      e.preventDefault();
+      var fn = window.usersPage[el.getAttribute('data-pg')];
+      if (typeof fn === 'function') fn();
+    });
     populateAgeSelects();
     populateGradeSelects();
     loadVenues();
@@ -134,6 +146,8 @@
     }
     el.innerHTML = html;
   }
+
+  function loadFirstPage() { loadUsers(1); }
 
   function changePageSize(newSize) {
     pageSize = parseInt(newSize);
@@ -439,7 +453,7 @@
 
   // ── exports ──
   window.usersPage = {
-    loadUsers, renderUsers, pageUi, changePageSize,
+    loadUsers, loadFirstPage, renderUsers, pageUi, changePageSize,
     showDetail, showChildDetail, closeChildModal,
     editUser, closeEditModal, submitUserEdit, exportUsers,
     showAddChild, closeAddChildModal, submitAddChild,

@@ -239,7 +239,36 @@
     } catch (err) { showToast('签到失败: ' + err.message, 'error'); }
   }
 
-  document.addEventListener('DOMContentLoaded', loadActivities);
+  document.addEventListener('DOMContentLoaded', function() {
+    loadActivities();
+
+    // onchange handlers
+    const typeEl = document.getElementById('actType');
+    if (typeEl) typeEl.addEventListener('change', onTypeChange);
+    const freeEl = document.getElementById('actFree');
+    if (freeEl) freeEl.addEventListener('change', onFreeChange);
+    const checkAll = document.getElementById('signinCheckAll');
+    if (checkAll) checkAll.addEventListener('change', toggleSigninAll);
+
+    // signin overlay click-to-close
+    const signinModal = document.getElementById('signinModal');
+    if (signinModal) {
+      signinModal.addEventListener('click', function(e) {
+        if (e.target === this) hideSigninModal();
+      });
+    }
+
+    // Delegated handler for data-pg buttons
+    document.body.addEventListener('click', function(e) {
+      const el = e.target.closest('[data-pg]');
+      if (!el) return;
+      const fn = window.activitiesPage[el.getAttribute('data-pg')];
+      if (typeof fn === 'function') {
+        e.preventDefault();
+        fn();
+      }
+    });
+  });
 
   // 暴露到全局供 HTML onclick 调用
   window.activitiesPage = {

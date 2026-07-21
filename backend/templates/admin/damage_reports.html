@@ -1,0 +1,122 @@
+{% extends "admin/base.html" %}
+{% block title %}图书损坏定责{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="/static/admin/css/pages/damage_reports.css" />
+{% endblock %}
+{% block page_title %}图书损坏定责{% endblock %}
+{% block content %}
+{% import "admin/macros.html" as m %}
+
+<!-- Stats -->
+<div class="stats-grid">
+  <div class="stat-card"><div class="stat-label">待申诉</div><div class="stat-value" id="statPending">--</div></div>
+  <div class="stat-card"><div class="stat-label">申诉中</div><div class="stat-value" id="statDisputed">--</div></div>
+  <div class="stat-card"><div class="stat-label">已确认</div><div class="stat-value" id="statConfirmed">--</div></div>
+  <div class="stat-card"><div class="stat-label">已冲正</div><div class="stat-value" id="statOverridden">--</div></div>
+</div>
+
+<!-- Filter Tabs -->
+<div class="tabs">
+  <div class="tab active" onclick="filterTab(this,'')">全部</div>
+  <div class="tab" onclick="filterTab(this,'0')">待申诉</div>
+  <div class="tab" onclick="filterTab(this,'2')">申诉中</div>
+  <div class="tab" onclick="filterTab(this,'1')">已确认</div>
+  <div class="tab" onclick="filterTab(this,'3')">已冲正</div>
+</div>
+
+<!-- Toolbar -->
+<div class="toolbar">
+  <button class="btn btn-primary" onclick="showCreateDialog()">+ 登记损坏</button>
+</div>
+
+<!-- Table -->
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>借阅记录</th>
+        <th>孩子</th>
+        <th>定级</th>
+        <th>罚款</th>
+        <th>状态</th>
+        <th>登记时间</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody id="reportBody">
+      <tr><td colspan="8" class="text-center p-40 text-muted">加载中...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="pagination" id="pagination"></div>
+
+<!-- Create Dialog -->
+{{ m.modal_overlay("createDialog", "登记损坏") }}
+  <div class="form-group">
+    <label>借阅记录ID <span class="required">*</span></label>
+    <input type="number" id="createBorrowId" class="form-input" placeholder="请输入借阅记录ID" min="1" />
+  </div>
+  <div class="form-group">
+    <label>定级 <span class="required">*</span></label>
+    <select id="createLevel" class="form-input">
+      <option value="1">轻度（免费）</option>
+      <option value="2">重度（0.5×定价）</option>
+      <option value="3">丢失（1.5×定价）</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label>照片URL</label>
+    <input type="text" id="createPhoto" class="form-input" placeholder="损坏照片URL（可选）" />
+  </div>
+  <div class="form-group">
+    <label>说明</label>
+    <textarea id="createDesc" class="form-input" rows="3" placeholder="定责说明（可选）"></textarea>
+  </div>
+{{ m.modal_actions() }}
+  <button type="button" class="btn btn-secondary" onclick="closeModal('createDialog')">取消</button>
+  <button type="button" class="btn btn-primary" onclick="confirmCreate()">确认登记</button>
+{{ m.modal_end() }}
+
+<!-- Appeal Dialog -->
+{{ m.modal_overlay("appealDialog", "申诉处理") }}
+  <p id="appealInfo" class="confirm-msg"></p>
+  <div class="form-group">
+    <label>申诉理由</label>
+    <textarea id="appealReason" class="form-input" rows="3" readonly placeholder="暂无申诉理由"></textarea>
+  </div>
+  <div class="form-group">
+    <label>审核操作</label>
+    <select id="reviewAction" class="form-input" onchange="toggleOverrideFields()">
+      <option value="approve">确认罚款</option>
+      <option value="override">冲正改判</option>
+    </select>
+  </div>
+  <div id="overrideFields" style="display:none;">
+    <div class="form-group">
+      <label>冲正后定级</label>
+      <select id="overrideLevel" class="form-input">
+        <option value="1">轻度（免费）</option>
+        <option value="2">重度（0.5×定价）</option>
+        <option value="3">丢失（1.5×定价）</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>冲正后罚款（元）</label>
+      <input type="number" id="overrideFine" class="form-input" placeholder="0" min="0" step="0.01" />
+    </div>
+  </div>
+  <div class="form-group">
+    <label>审核备注</label>
+    <textarea id="reviewRemark" class="form-input" rows="2" placeholder="处理说明（可选）"></textarea>
+  </div>
+{{ m.modal_actions() }}
+  <button type="button" class="btn btn-secondary" onclick="closeModal('appealDialog')">取消</button>
+  <button type="button" class="btn btn-primary" onclick="confirmReview()">提交审核</button>
+{{ m.modal_end() }}
+
+{% endblock %}
+{% block scripts %}
+<script src="/static/admin/js/pages/damage_reports.js"></script>
+{% endblock %}

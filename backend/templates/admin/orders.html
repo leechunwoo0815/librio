@@ -33,9 +33,9 @@
   <span class="text-muted">至</span>
   <input type="date" id="dateTo" class="date-input" />
   <div class="toolbar-spacer"></div>
-  <button class="btn btn-outline" onclick="window.ordersPage.loadOrders(1)">查询</button>
-  <button class="btn btn-outline" onclick="window.ordersPage.exportOrders()">导出 Excel</button>
-  <button class="btn btn-primary" onclick="window.ordersPage.showCreateModal()">+ 新建订单</button>
+  <button class="btn btn-outline" data-pg="loadFirstPage">查询</button>
+  <button class="btn btn-outline" data-pg="exportOrders">导出 Excel</button>
+  <button class="btn btn-primary" data-pg="showCreateModal">+ 新建订单</button>
 </div>
 
 <!-- 统计卡片 -->
@@ -82,7 +82,7 @@
   <div class="flex-center gap-12">
     <span id="orderCount">共 0 条记录 · 第 1/1 页</span>
     <span class="text-sm text-muted">每页</span>
-    <select class="filter-select page-size-select" id="pageSizeSelect" onchange="window.ordersPage.changePageSize(this.value)">
+    <select class="filter-select page-size-select" id="pageSizeSelect">
       <option value="15">15</option>
       <option value="30">30</option>
       <option value="50">50</option>
@@ -99,7 +99,7 @@
   <!-- 线下新用户开关 -->
   <div class="mb-16">
     <label class="flex-center gap-8 cursor-pointer">
-      <input type="checkbox" id="offlineToggle" onchange="window.ordersPage.toggleOffline()" />
+      <input type="checkbox" id="offlineToggle" />
       线下新用户（兜底）
     </label>
   </div>
@@ -109,7 +109,7 @@
     <div class="form-group">
       <label>选择孩子 <span class="required">*</span></label>
       <div class="pos-relative">
-        <input type="text" class="form-input" id="childSearchInput" placeholder="输入孩子姓名或手机号搜索..." oninput="window.ordersPage.searchChildrenForOrder()" onfocus="window.ordersPage.searchChildrenForOrder()" />
+        <input type="text" class="form-input" id="childSearchInput" placeholder="输入孩子姓名或手机号搜索..." />
         <input type="hidden" id="createChildId" />
         <div id="childDropdown" class="hidden dropdown-popup dropdown-below"></div>
       </div>
@@ -156,7 +156,7 @@
   <!-- 订单信息 -->
   <div class="form-group">
     <label>订单类型 <span class="required">*</span></label>
-    <select class="form-input" id="createType" onchange="window.ordersPage.updateDefaultAmount()">
+    <select class="form-input" id="createType">
       <option value="1">亲子课 (99元)</option>
       <option value="2">观察期 (500元)</option>
       <option value="3">正式会员 (5400元/年)</option>
@@ -176,11 +176,11 @@
     <label>支付状态</label>
     <div class="flex gap-16">
       <label class="flex-center gap-4 cursor-pointer">
-        <input type="radio" name="payStatus" value="pending" checked onchange="window.ordersPage.togglePayStatus()" />
+        <input type="radio" name="payStatus" value="pending" checked />
         待支付
       </label>
       <label class="flex-center gap-4 cursor-pointer">
-        <input type="radio" name="payStatus" value="paid" onchange="window.ordersPage.togglePayStatus()" />
+        <input type="radio" name="payStatus" value="paid" />
         已支付
       </label>
     </div>
@@ -207,8 +207,8 @@
   </div>
 
 {{ m.modal_actions() }}
-  <button class="btn btn-secondary" onclick="window.ordersPage.hideCreateModal()">取消</button>
-  <button class="btn btn-primary" onclick="window.ordersPage.createOrder()">创建订单</button>
+  <button class="btn btn-secondary" data-pg="hideCreateModal">取消</button>
+  <button class="btn btn-primary" data-pg="createOrder">创建订单</button>
 {{ m.modal_end() }}
 
 <!-- 订单详情弹窗 -->
@@ -216,15 +216,15 @@
   <div id="detailContent"></div>
   <div id="detailActions"></div>
   {{ m.modal_actions() }}
-    <button class="btn btn-secondary" onclick="window.ordersPage.hideDetailModal()">关闭</button>
+    <button class="btn btn-secondary" data-pg="hideDetailModal">关闭</button>
   {{ m.modal_end() }}
 
 <!-- 确认弹窗 -->
-<div id="confirmModal" class="modal-overlay" onclick="if(event.target===this)window.ordersPage.hideConfirm()">
+<div id="confirmModal" class="modal-overlay">
   <div class="modal modal-sticky modal-sm">
     <div class="modal-header">
       <h2 id="confirmTitle">确认操作</h2>
-      <button class="modal-close" onclick="window.ordersPage.hideConfirm()">&times;</button>
+      <button class="modal-close" data-pg="hideConfirm">&times;</button>
     </div>
     <div class="modal-body">
       <p id="confirmMsg"></p>
@@ -234,7 +234,7 @@
       </div>
     </div>
     <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="window.ordersPage.hideConfirm()">取消</button>
+      <button class="btn btn-secondary" data-pg="hideConfirm">取消</button>
       <button class="btn btn-primary" id="confirmBtn">确认</button>
     </div>
   </div>

@@ -13,11 +13,11 @@
   <div class="table-header">
     <h3>A-Z 级别体系（26 级）</h3>
     <div class="table-actions">
-      <button class="btn btn-outline btn-sm" onclick="window.levelsPage.loadLevels()">刷新</button>
-      <button class="btn btn-outline btn-sm" onclick="window.levelsPage.exportLevels()">导出配置</button>
-      <button class="btn btn-outline btn-sm" onclick="window.levelsPage.importLevels()">批量导入配置</button>
-      <button class="btn btn-primary btn-sm" onclick="window.levelsPage.openLevelModal()">+ 新增级别</button>
-      <input type="file" id="importFile" accept=".csv,.json" class="hidden" onchange="window.levelsPage.handleImport(this)" />
+      <button class="btn btn-outline btn-sm" data-pg="loadLevels">刷新</button>
+      <button class="btn btn-outline btn-sm" data-pg="exportLevels">导出配置</button>
+      <button class="btn btn-outline btn-sm" data-pg="importLevels">批量导入配置</button>
+      <button class="btn btn-primary btn-sm" data-pg="openLevelModal">+ 新增级别</button>
+      <input type="file" id="importFile" accept=".csv,.json" class="hidden" />
     </div>
   </div>
   <table>
@@ -58,13 +58,13 @@
       <label>调整后通过率</label>
       <input class="form-input" type="number" id="adjustRate" value="65" />
     </div>
-    <button class="btn btn-primary btn-level-save" onclick="window.levelsPage.saveAdjustment()">保存</button>
+    <button class="btn btn-primary btn-level-save" data-pg="saveAdjustment">保存</button>
   </div>
 </div>
 
 <!-- level modal -->
 {{ m.modal_overlay("levelModal", "新增级别", "md") }}
-  <form id="levelForm" onsubmit="window.levelsPage.submitLevel(event)">
+  <form id="levelForm">
     <input type="hidden" id="editId" value="" />
     <div class="modal-grid-1-2">
       <div class="form-group"><label>级别代码 (A-Z)</label><input class="form-input" name="code" placeholder="例如：D" maxlength="1" required /></div>
@@ -85,7 +85,7 @@
     </div>
   </form>
 {{ m.modal_actions() }}
-  <button type="button" class="btn btn-secondary" onclick="window.levelsPage.closeLevelModal()">取消</button>
+  <button type="button" class="btn btn-secondary" data-close-modal="levelModal">取消</button>
   <button type="submit" class="btn btn-primary" id="submitBtn" form="levelForm">保存</button>
 {{ m.modal_end() }}
 {% endblock %}

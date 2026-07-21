@@ -16,7 +16,7 @@
 {{ m.modal_overlay("confirmModal", "确认操作", "sm", "confirmTitle") }}
   <p id="confirmMsg" class="pre-line"></p>
 {{ m.modal_actions() }}
-  <button class="btn btn-secondary" onclick="closeModal('confirmModal')">取消</button>
+  <button class="btn btn-secondary" data-close-modal="confirmModal">取消</button>
   <button class="btn btn-primary" id="confirmModalBtn">确认</button>
 {{ m.modal_end() }}
 
@@ -28,8 +28,8 @@
 <!-- Scan Area -->
 <div class="scan-area">
   <input class="scan-input" id="barcodeInput" type="text" placeholder="扫描或输入图书条码..." autofocus />
-  <button class="btn btn-primary" onclick="window.borrowPage.lookupBarcode()">&#x1F4F7; 查找</button>
-  <button class="btn btn-danger" onclick="window.borrowPage.sendOverdueReminders()">&#x1F4E2; 发送逾期提醒</button>
+  <button class="btn btn-primary" data-pg="lookupBarcode">&#x1F4F7; 查找</button>
+  <button class="btn btn-danger" data-pg="sendOverdueReminders">&#x1F4E2; 发送逾期提醒</button>
 </div>
 
 <!-- Scan Result Card -->
@@ -48,14 +48,14 @@
       <select class="filter-select" id="childSelect">
         <option>-- 请选择 --</option>
       </select>
-      <input class="form-input child-search-input" id="childSearchInput" type="text" placeholder="输入孩子姓名搜索..." oninput="window.borrowPage.searchChildrenDebounced()" />
+      <input class="form-input child-search-input" id="childSearchInput" type="text" placeholder="输入孩子姓名搜索..." />
       <input id="childIdInput" type="hidden" />
       <div id="childDropdown" class="hidden dropdown-popup"></div>
       <span id="selectedChild" class="fw-500 text-accent"></span>
     </div>
     <div class="action-btns">
-      <button class="btn btn-success" onclick="window.borrowPage.doBorrow()">&#x2705; 确认借出</button>
-      <button class="btn btn-primary" onclick="window.borrowPage.doReturn()">&#x1F504; 确认归还</button>
+      <button class="btn btn-success" data-pg="doBorrow">&#x2705; 确认借出</button>
+      <button class="btn btn-primary" data-pg="doReturn">&#x1F504; 确认归还</button>
       <button class="btn btn-danger">&#x274C; 标记丢失</button>
     </div>
   </div>
