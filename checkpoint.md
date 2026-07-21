@@ -1,7 +1,7 @@
 # DmkWords (librio) 项目检查点
 
 > 更新时间：2026-07-21 GMT+8 (v8)
-> 状态：✅ V3.11 — T3.6a 图书损坏定责完成，294/5 pytest + 151/1030 behave + 55/55 集成全绿
+> 状态：✅ V3.11 — T3 批次 1-5 全量交付完毕，294/5 pytest + 160/1095 behave + 55/55 集成全绿 + CI 同构九关落地
 
 ---
 
@@ -21,12 +21,12 @@ DmkWords 是一个儿童英语阅读管理平台：
 | 检查项 | 状态 |
 |--------|------|
 | pytest | ✅ 294 passed (本地) |
-| behave | ✅ 151 scenarios / 1030 steps |
+| behave | ✅ 160 scenarios / 1095 steps |
 | ruff check `backend/ tests/` | ✅ 0 errors |
 | ruff check `features/ scripts/` | ✅ 0 errors |
-| ruff format `--check .` | ✅ 328 files formatted |
+| ruff format `--check .` | ✅ 342 files formatted |
 | verify_api_contract | ✅ OK |
-| check_model_consistency | ✅ 54 tables |
+| check_model_consistency | ✅ 53 tables |
 | alembic check (MySQL only) | ✅ No new upgrade operations detected |
 | 生产模式启动 | ✅ DEBUG=false + 真实 SECRET_KEY + MOCK_SMS 警告日志 |
 
@@ -208,9 +208,9 @@ cd /Users/litianyu/cc-projects/librio
 python3 -m uvicorn backend.main:app --reload --port 8002
 # http://localhost:8002/admin/view/login (admin / admin123)
 
-venv/bin/python -m pytest tests/unit/ -x -q
+venv/bin/python -m pytest tests/ -x -q --tb=short
 venv/bin/python -m behave features/ --no-capture -q
-venv/bin/ruff check backend/
+venv/bin/ruff check backend/ tests/
 ```
 
 ---
@@ -1288,6 +1288,6 @@ activity_checkin.html:  2    profile.html:           1    base.html:            
 | 指标 | 之前 | 之后 |
 |------|------|------|
 | pytest | 239/4 (本地) / 251/5 (CI) | 254 passed, 5 skipped |
-| behave | 138 scenarios / 970 steps | 151 scenarios / 1030 steps |
+| behave | 138 scenarios / 970 steps | 160 scenarios / 1095 steps |
 | 集成测试 | — | 55/55 全绿 |
 | ruff | 0 errors | 0 errors |

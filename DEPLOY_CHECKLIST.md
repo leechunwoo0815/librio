@@ -136,10 +136,10 @@ GET /health
 
 ```bash
 # 语法与规范
-venv/bin/ruff check backend/
+venv/bin/ruff check backend/ tests/
 
 # 单元测试
-venv/bin/python -m pytest tests/unit/ -x -q
+venv/bin/python -m pytest tests/ -x -q --tb=short
 
 # BDD 测试
 venv/bin/python -m behave features/ --no-capture -q

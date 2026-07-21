@@ -2,7 +2,7 @@
 
 > **生成时间**: 2026-07-21 GMT+8 (v14)
 > **项目版本**: V3.11 — T3.6a 图书损坏定责完成
-> **测试状态**: pytest 294/5 (本地) · behave 151/1030 · ruff 0 · API契约 OK · 模型一致 54 tables
+> **测试状态**: pytest 294/5 (本地) · behave 160/1095 · ruff 0 · API契约 OK · 模型一致 53 tables
 
 ---
 
@@ -20,15 +20,15 @@ ruff check backend/ tests/           # 0 errors ✅
 ruff check features/ scripts/        # 0 errors ✅
 ruff format --check .                # 328 files formatted ✅
 python -m pytest tests/ -q           # 294/5 (local) ✅
-python -m behave features/ -q        # 151 scenarios / 1030 steps / 0 failed ✅
+python -m behave features/ -q        # 160 scenarios / 1095 steps / 0 failed ✅
 python -m scripts.verify_api_contract # OK ✅
-python -m scripts.check_model_consistency # 54 tables ✅
+python -m scripts.check_model_consistency # 53 tables ✅
 ```
 
 | Check | 本地 |
 |-------|:----:|
 | pytest | 294 passed, 5 skipped |
-| behave | 151/1030/0 |
+| behave | 160/1095/0 |
 | ruff check | 0 errors |
 | ruff format | 328 fmt'd |
 | api-contract | OK |
