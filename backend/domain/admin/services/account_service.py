@@ -11,6 +11,32 @@ from backend.domain.admin.models import Admin
 from backend.utils.password import hash_password, verify_password
 
 
+def assert_not_last_super_admin(db: Session, exclude_admin_id: int):
+    """如果操作后 enabled super_admin 数量为 0，拒绝操作。"""
+    from backend.domain.admin.rbac_models import Role
+
+    super_admin_role = (
+        db.query(Role)
+        .filter(Role.code == "super_admin", Role.is_deleted == 0)
+        .first()
+    )
+    if not super_admin_role:
+        return
+
+    count = (
+        db.query(Admin)
+        .filter(
+            Admin.admin_role_id == super_admin_role.id,
+            Admin.is_deleted == 0,
+            Admin.status == Admin.STATUS_ACTIVE,
+            Admin.id != exclude_admin_id,
+        )
+        .count()
+    )
+    if count == 0:
+        raise ValidationError("至少需要保留一个启用的超级管理员")
+
+
 class AdminAccountService:
     """管理员账号：认证、CRUD。"""
 
@@ -244,6 +270,12 @@ class AdminAccountService:
         current = self.db.query(Admin).filter(Admin.id == current_admin_id).first()
 
         self._check_admin_role_change(target, data, current)
+
+        # R4-4: 最后一个超管保护（禁用或降权时）
+        if self.is_super_admin(target):
+            if data.status is not None and data.status == Admin.STATUS_DISABLED:
+                assert_not_last_super_admin(self.db, target.id)
+
         if (
             data.status is not None
             and target.id == current.id
@@ -258,6 +290,19 @@ class AdminAccountService:
                 setattr(target, key, value)
         if "admin_role_id" in update_data:
             target.admin_role_id = self._resolve_admin_role_id(data)
+            # R4-4: 最后一个超管保护（降权）
+            if self.is_super_admin(target):
+                from backend.domain.admin.rbac_models import Role
+
+                new_role = (
+                    self.db.query(Role)
+                    .filter(
+                        Role.id == target.admin_role_id, Role.is_deleted == 0
+                    )
+                    .first()
+                )
+                if new_role and new_role.code != "super_admin":
+                    assert_not_last_super_admin(self.db, target.id)
             self._sync_legacy_role(target)
         elif "role" in update_data:
             target.admin_role_id = self._resolve_admin_role_id(data)
@@ -361,6 +406,9 @@ class AdminAccountService:
         # 不能删除自己
         if target.id == current_admin_id:
             raise ValidationError("不能删除当前登录的管理员")
+
+        if self.is_super_admin(target):
+            assert_not_last_super_admin(self.db, target.id)
 
         target.is_deleted = 1
         self.db.commit()

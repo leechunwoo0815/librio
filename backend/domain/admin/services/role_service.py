@@ -197,6 +197,9 @@ class AdminRoleService:
         if not role:
             raise NotFoundError("角色不存在")
 
+        if role.is_system and name is not None and role.name != name:
+            raise ForbiddenError("系统内置角色不可改名")
+
         if name is not None:
             role.name = name
         if description is not None:

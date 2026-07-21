@@ -16,6 +16,7 @@ from backend.domain.report.schemas import (
     TodayStatsResponse,
     TrendEntryResponse,
     WeeklyReportResponse,
+    MonthlyReportResponse,
 )
 from backend.domain.report.service import ReportService
 from backend.middleware.admin_rbac import require_perm
@@ -64,6 +65,15 @@ def get_weekly_report(
 ):
     """生成周报"""
     return service.generate_weekly_report(child.id)
+
+
+@router.get("/stats/monthly", response_model=MonthlyReportResponse)
+def get_monthly_report(
+    child=Depends(GetOwnedChildFromQuery()),
+    service: ReportService = Depends(get_report_service),
+):
+    """生成月报"""
+    return service.generate_monthly_report(child.id)
 
 
 # ==================== 学习报告 ====================

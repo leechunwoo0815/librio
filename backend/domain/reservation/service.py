@@ -21,6 +21,7 @@ from backend.common.events import (
 from backend.common.exceptions import ConflictError, NotFoundError, ValidationError
 from backend.common.types import ReservationStatus
 from backend.domain.book.models import Book
+from backend.domain.child.service import assert_no_pending_transfer
 from backend.domain.reservation.models import Reservation
 from backend.domain.reservation.repository import ReservationRepository
 from backend.domain.reservation.schemas import (
@@ -58,6 +59,8 @@ class ReservationService:
             raise ValidationError("该书不支持线下借阅")
         if (book.available_stock or 0) <= 0:
             raise ValidationError("库存不足，无法预约")
+
+        assert_no_pending_transfer(self.db, data.child_id)
 
         # 重复预约校验
         from backend.common.types import ReservationStatus

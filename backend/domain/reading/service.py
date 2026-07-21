@@ -362,6 +362,7 @@ class ReadingService:
             duration_seconds=data.duration,
         )
         created = self.voice_repo.create(recording)
+        self._check_voice_checkin(data.child_id)
         self.db.commit()
         logger.info(f"Voice recorded: child={data.child_id}, duration={data.duration}s")
         return VoiceRecordingResponse(
@@ -369,6 +370,40 @@ class ReadingService:
             audio_url=created.audio_url,
             duration_seconds=created.duration_seconds,
         )
+
+    def _check_voice_checkin(self, child_id: int):
+        """朗读自动打卡：朗读完成触发每日打卡（仅正式会员/观察期）"""
+        from backend.common.types import MemberStatus
+
+        child = (
+            self.db.query(Child)
+            .filter(Child.id == child_id, Child.is_deleted == 0)
+            .first()
+        )
+        if not child or child.status not in (
+            MemberStatus.OBSERVATION,
+            MemberStatus.OFFICIAL,
+        ):
+            return
+
+        today = date.today()
+        existing = self.checkin_repo.get_today_checkin(child_id, today)
+        if existing:
+            return
+
+        daily_limit = ConfigService.get_int(self.db, "daily_checkin_limit", 1)
+        today_count = self.checkin_repo.count_today_checkins(child_id, today)
+        if today_count >= daily_limit:
+            return
+
+        checkin = CheckIn(
+            child_id=child_id,
+            check_date=today,
+            check_type=CheckIn.TYPE_VOICE,
+        )
+        self.checkin_repo.create(checkin)
+        event_bus.publish(CheckInEvent(child_id=child_id, streak_days=0), db=self.db)
+        logger.info(f"Voice checkin: child={child_id}")
 
     def get_recordings(
         self,

@@ -86,12 +86,6 @@ class ConfigService:
         return val.lower() in ("true", "1", "yes")
 
     @classmethod
-    def get_str(cls, db: Session, key: str, default: str) -> str:
-        """读取字符串配置"""
-        val = cls._get_raw(db, key)
-        return val if val is not None else default
-
-    @classmethod
     def get_int_list(cls, db: Session, key: str, default: list[int]) -> list[int]:
         """读取逗号分隔的整数列表配置"""
         val = cls._get_raw(db, key)

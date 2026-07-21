@@ -119,6 +119,20 @@ class TrendEntryResponse(BaseSchema):
     words_read: int = 0
 
 
+class MonthlyReportResponse(BaseSchema):
+    """月报"""
+
+    report_type: str = "monthly"
+    period: str = ""
+    total_minutes: int = 0
+    total_words: int = 0
+    books_finished: int = 0
+    checkin_days: int = 0
+    checkin_rate: int = 0
+    current_ar_level: float | None = None
+    streak_days: int = 0
+
+
 class WeeklyReportResponse(BaseSchema):
     """周报"""
 

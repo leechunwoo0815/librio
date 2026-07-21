@@ -27,7 +27,9 @@ class Reservation(BaseModel):
     venue_id = Column(BigInteger, nullable=True, comment="预约取书场馆")
 
     status = Column(SmallInteger, default=ReservationStatus.PENDING, comment="预约状态")
-    expire_time = Column(DateTime, nullable=False, comment="过期时间（创建+72小时）")
+    expire_time = Column(
+        DateTime, nullable=False, index=True, comment="过期时间（创建+72小时）"
+    )
     fulfilled_time = Column(DateTime, nullable=True, comment="取书时间")
     borrow_record_id = Column(
         BigInteger, nullable=True, comment="取书后关联的借阅记录ID"

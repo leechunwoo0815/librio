@@ -27,7 +27,7 @@ _LOCKOUT_SECONDS = 900  # 15 分钟
 
 class AdminLoginRequest(BaseSchema):
     username: str = Field(..., min_length=1, max_length=50)
-    password: str = Field(..., min_length=1, max_length=128)
+    password: str = Field(..., min_length=8, max_length=128)
 
 
 class AdminLoginResponse(BaseSchema):

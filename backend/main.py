@@ -260,6 +260,12 @@ from backend.domain.admin.routers.admin_role_router import router as admin_role_
 from backend.domain.admin.routers.admin_benefit_transfer_router import (  # noqa: E402
     router as admin_benefit_transfer_router,
 )
+from backend.domain.admin.routers.admin_damage_router import (  # noqa: E402
+    router as admin_damage_router,
+)
+
+# 确保 T3.6a damage_model 被 SQLAlchemy Base 注册
+import backend.domain.book.damage_model  # noqa: E402, F401
 
 app.include_router(admin_page_router)  # HTML 页面路由（优先匹配）
 app.include_router(admin_auth_router)  # 认证 API 路由
@@ -275,6 +281,7 @@ app.include_router(admin_reports_router)
 app.include_router(admin_system_router)
 app.include_router(admin_role_router)
 app.include_router(admin_benefit_transfer_router)
+app.include_router(admin_damage_router)
 
 # ============================================================
 # Mock 辅助路由（仅本地开发环境注册）

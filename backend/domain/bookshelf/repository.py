@@ -59,6 +59,7 @@ class FavoritesRepository(BaseRepository[Favorites]):
             .filter(
                 Favorites.child_id == child_id,
                 Favorites.book_id == book_id,
+                Favorites.is_deleted == 0,
             )
             .first()
         )

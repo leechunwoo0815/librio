@@ -184,6 +184,11 @@ PERMISSIONS = [
     {"code": "dictionary.edit", "name": "编辑词库", "group_name": "dictionary"},
     {"code": "dictionary.create", "name": "创建单词", "group_name": "dictionary"},
     {"code": "dictionary.delete", "name": "删除单词", "group_name": "dictionary"},
+    # book_damage
+    {"code": "book_damage.create", "name": "登记损坏", "group_name": "book_damage"},
+    {"code": "book_damage.list", "name": "损坏列表", "group_name": "book_damage"},
+    {"code": "book_damage.appeal", "name": "申诉处理", "group_name": "book_damage"},
+    {"code": "book_damage.review", "name": "审核定责", "group_name": "book_damage"},
     # content
     {"code": "content.list", "name": "内容列表", "group_name": "content"},
     {"code": "content.edit", "name": "编辑内容", "group_name": "content"},
@@ -317,6 +322,10 @@ STAFF_PERMS = [
     "parent_course_time.edit",
     "parent_course_time.delete",
     "benefit_transfer.list",
+    "book_damage.create",
+    "book_damage.list",
+    "book_damage.appeal",
+    "book_damage.review",
     "content.create",
     "content.delete",
 ]

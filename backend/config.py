@@ -24,9 +24,6 @@ class Settings(BaseSettings):
     DEBUG: bool = False
     ENABLE_TEST_TOKEN: bool = False
 
-    # 运营主体
-    COMPANY_NAME: str = ""  # 微信小程序认证主体公司全称（用于隐私政策/资质展示）
-
     # Mock 网关开关（仅本地开发使用，生产环境必须关闭）
     MOCK_PAYMENT: bool = False  # 支付 Mock 网关（默认关闭，生产安全）
     MOCK_SMS: bool = (

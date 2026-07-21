@@ -49,6 +49,7 @@ PAGE_PERM_MAP: dict[str, str] = {
     "messages": "message.list",
     "roles": "role.list",
     "benefit-transfers": "benefit_transfer.list",
+    "damage-reports": "book_damage.list",
 }
 
 
@@ -297,6 +298,12 @@ async def roles(request: Request):
 @router.get("/benefit-transfers", response_class=HTMLResponse)
 async def benefit_transfers(request: Request):
     return _render_page(request, "benefit-transfers")
+
+
+# ===== 图书损坏定责 =====
+@router.get("/damage-reports", response_class=HTMLResponse)
+async def damage_reports(request: Request):
+    return _render_page(request, "damage-reports")
 
 
 # ===== 权限不足页面 =====

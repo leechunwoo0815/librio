@@ -149,12 +149,6 @@ def get_activity_service(db: Session = Depends(get_db)):
     return ActivityService(db)
 
 
-def get_admin_service(db: Session = Depends(get_db)):
-    from backend.domain.admin.service import AdminService
-
-    return AdminService(db)
-
-
 def get_admin_venue_service(db: Session = Depends(get_db)):
     from backend.domain.admin.services.venue_service import AdminVenueService
 

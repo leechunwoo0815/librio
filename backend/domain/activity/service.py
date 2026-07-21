@@ -347,6 +347,7 @@ class ActivityService:
             child = children.get(e.child_id)
             # 收费活动报名 → 写退款申请
             if child and not activity.is_free and activity.price and activity.price > 0:
+                eid = e.id
                 try:
                     from backend.domain.refund.models import RefundApplication
                     from backend.common.base_repo import BaseRepository
@@ -363,7 +364,7 @@ class ActivityService:
                     refund_repo.create(refund)
                     refund_count += 1
                 except Exception as ex:
-                    logger.warning(f"Auto refund failed for enrollment {e.id}: {ex}")
+                    logger.warning(f"Auto refund failed for enrollment {eid}: {ex}")
 
             # 发送通知
             try:
