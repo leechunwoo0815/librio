@@ -1,7 +1,7 @@
 # DmkWords (librio) 项目检查点
 
 > 更新时间：2026-07-21 GMT+8 (v8)
-> 状态：✅ V3.11 — T3 批次 1-5 全量交付完毕，294/5 pytest + 160/1095 behave + 55/55 集成全绿 + CI 同构九关落地
+> 状态：✅ V3.11 — XSS深度修复 X1-X6 交付 + T3 批次 1-5 全量交付完毕，307/5 pytest（+13 XSS回归） + 160/1095 behave + 55/55 集成全绿 + CI 同构九关落地
 
 ---
 
@@ -20,7 +20,7 @@ DmkWords 是一个儿童英语阅读管理平台：
 
 | 检查项 | 状态 |
 |--------|------|
-| pytest | ✅ 294 passed (本地) |
+| pytest | ✅ 307 passed (本地) |
 | behave | ✅ 160 scenarios / 1095 steps |
 | ruff check `backend/ tests/` | ✅ 0 errors |
 | ruff check `features/ scripts/` | ✅ 0 errors |
