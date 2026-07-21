@@ -1,7 +1,7 @@
 # DmkWords (librio) 项目检查点
 
-> 更新时间：2026-07-17 GMT+8 (v5)
-> 状态：✅ V3.10 — 零宕机审查 8/8 修复全绿，178 测试全面
+> 更新时间：2026-07-21 GMT+8 (v8)
+> 状态：✅ V3.11 — T3.6a 图书损坏定责完成，294/5 pytest + 151/1030 behave + 55/55 集成全绿
 
 ---
 
@@ -9,8 +9,8 @@
 
 DmkWords 是一个儿童英语阅读管理平台：
 - **微信小程序**：家长端，31 页，12 通用组件
-- **PC 管理后台**：36 模板页面（含 base.html），180+ API 端点
-- **后端 API**：FastAPI + SQLAlchemy + MySQL，26 领域模块
+- **PC 管理后台**：37 模板页面（含 base.html），184+ API 端点
+- **后端 API**：FastAPI + SQLAlchemy + MySQL，27 领域模块
 
 ---
 
@@ -20,11 +20,14 @@ DmkWords 是一个儿童英语阅读管理平台：
 
 | 检查项 | 状态 |
 |--------|------|
-| pytest | ✅ **178** passed (含 25 RBAC 测试 + 13 并发测试 + 状态机测试) |
-| behave | ✅ 138 scenarios / 970 steps |
-| ruff check `backend/` | ✅ 0 errors |
-| alembic check | ✅ No new upgrade operations detected |
-| integration_test | ✅ 53/53 passed |
+| pytest | ✅ 294 passed (本地) |
+| behave | ✅ 151 scenarios / 1030 steps |
+| ruff check `backend/ tests/` | ✅ 0 errors |
+| ruff check `features/ scripts/` | ✅ 0 errors |
+| ruff format `--check .` | ✅ 328 files formatted |
+| verify_api_contract | ✅ OK |
+| check_model_consistency | ✅ 54 tables |
+| alembic check (MySQL only) | ✅ No new upgrade operations detected |
 | 生产模式启动 | ✅ DEBUG=false + 真实 SECRET_KEY + MOCK_SMS 警告日志 |
 
 ### 2.2 前端架构健康度
@@ -43,6 +46,12 @@ DmkWords 是一个儿童英语阅读管理平台：
 | 弹窗宏 inline onclick | ✅ data-close-modal + ESC 关闭 |
 | 表格布局 | ✅ `table-layout: auto` 自动伸缩 |
 | 自定义每页条数 | ✅ 全局 renderPagination 支持 onPageSizeChange |
+| 内联 `<script>` 标签 | ✅ 34 模板清零 → 34 page JS + base-init.js |
+| IIFE 全覆盖 | ✅ 34/34 page JS 全文件包裹 |
+| inline onclick 清零 | ✅ 7 模板迁移 data-pg 委托（剩 27 模板 135 处） |
+| B1 escapeHtml 冲突 | ✅ 11/11 修复（2 手动 + 9 IIFE 隔离） |
+| B5 getElementById 保护 | ✅ dictionary.js 22 处 safeEl() 包装 |
+| window.XxxPage 导出 | ✅ 34/34 统一导出模式 |
 
 ### 2.3 功能状态
 
@@ -57,10 +66,32 @@ DmkWords 是一个儿童英语阅读管理平台：
 | 关闭订单 | ✅ `PUT /admin/api/orders/{no}/status` |
 | 发起退款 | ✅ `POST /admin/api/orders/{no}/refund` |
 | 图书列表导航已删除 | ✅ 只保留"图书管理" |
+| 图书损坏定责 T3.6a | ✅ 三级定级 + 7天申诉 + 冲正改判 + D05丢失联动 + 家长通知 |
 
 ---
 
 ## 三、本次会话变更摘要
+
+### T3.6a 图书损坏定责（2026-07-21）
+
+| 文件 | 变更 |
+|------|------|
+| `backend/domain/book/damage_model.py` | `BookDamageReport` ORM 模型（三级定级 + 四态状态机） |
+| `backend/domain/book/damage_schemas.py` | Pydantic 请求/响应 + 重度丢失 photo_url 必填校验 |
+| `backend/domain/admin/services/damage_admin_service.py` | 登记/申诉/审核/过期确认 + D05联动 + 冲正回滚BookCopy/库存/record + ROUND_HALF_UP + 自然日历日口径 |
+| `backend/domain/admin/routers/admin_damage_router.py` | 4个API端点（create/list/appeal/review） |
+| `backend/templates/admin/damage_reports.html` | 管理端定责页面（统计卡片/筛选Tabs/登记弹窗/审核弹窗） |
+| `backend/static/admin/css/pages/damage_reports.css` | 页面样式 |
+| `backend/static/admin/js/pages/damage_reports.js` | 页面逻辑 |
+| `backend/domain/admin/admin_page_router.py` | 页面路由 + 权限 `book_damage.list` |
+| `backend/templates/admin/base.html` | 侧边栏"损坏定责"导航 |
+| `alembic/env.py` | 加 `BookDamageReport` import |
+| `alembic/versions/026_create_book_damage_report.py` | book_damage_report 建表迁移 |
+| `backend/seeds/seed_rbac.py` | 4权限码（create/list/appeal/review）+ staff分配 |
+| `backend/tasks/scheduler.py` | 每日0点 `confirm_expired_damage_reports` 任务 |
+| `backend/domain/message/models.py` | 创建损坏报告时自动推送 SystemMessage 给家长 |
+| `tests/unit/test_damage_report.py` | 9个测试（含申诉窗口/冲正场景） |
+| `features/rbac.feature` | 权限计数 104→108 |
 
 ### RBAC Phase 1（2026-07-08）
 
@@ -224,10 +255,23 @@ venv/bin/ruff check backend/
 | `templates/admin/settings.html` | 角色下拉框从后端 API 动态加载；`admin_role_id` 提交 |
 | `templates/admin/roles.html` | 新建：角色列表 + 权限树 UI（分组 checkbox、全选/取消） |
 
-### 其他
-1. **微信支付退款对接**：当前退款是内部标记，未真实调用微信退款接口
-2. **stylelint 引入**（可选）：建立禁止 style= + 重复选择器门禁
-3. **base.css 拆分**（可选）：tokens.css + components.css + utilities.css
+### V3.11 剩余工作
+
+| 优先级 | 项 | 说明 |
+|--------|----|------|
+| P0 | appid 占位符 | `project.config.json:4` `wx0000000000000000`，需微信公众平台 |
+| P0 | 服务协议页 | `service-agreement.wxml` 仅占位文本，需法务 |
+| P0 | 隐私政策运营主体 | `privacy-policy.wxml:16` 公司全称，需运营 |
+| P1 | Phase 2 扩展 | 27 模板 135 处 inline handler → data-pg 委托 |
+| P1 | 移除兼容重导出 | 26 文件 `for(var k in window.xxxPage)` → Phase 2 后删除 |
+| P1 | 删除局部 escapeHtml | 17 文件 IIFE 内 escapeHtml → admin.js 全局版本 |
+| P1 | iconfont woff2 | iconfont.cn 下载，取消 app.wxss @font-face 注释 |
+| P1 | nginx rate limit | 9 个资金/用户端点 |
+| P1 | 前端 onError handler | app.js 全局 JS 错误捕获 |
+| P2 | reading-stats 折线图 | 产品决策待定 |
+| P2 | pytest 覆盖 | 6 个 core service (<30%) |
+
+详见 §二十一。
 
 ---
 
@@ -277,7 +321,9 @@ venv/bin/ruff check backend/
 | Round 5 | 3 | 1 | 0 | Refund 真实支付路径、Callback 异步、WeChatPayV3 ABC、Alembic 漂移 3 版本 |
 | **前端审计 2026-07-15** | **16** | **50** | **8** | **6 路子代理并行，67 文件，74 项修复** |
 | **零宕机审查 2026-07-17** | **6** | **2** | **0** | **8 项 bug 修复（6 fatal + 2 serious）** |
-| **总计** | **64** | **92** | **14** | **170 缺陷修复** |
+| **深度审查修复 2026-07-17** | **0** | **0** | **0** | **B1/B3/B5 + 死代码 + 覆盖提升** |
+| **内联脚本 Ph1+2 2026-07-19** | **0** | **0** | **0** | **29 模板提取 + 7 模板 onclick 清零 + IIFE 34/34** |
+| **总计** | **64** | **92** | **14** | **170+ 缺陷修复 + 内联脚本收敛** |
 
 ### 新增测试
 
@@ -996,3 +1042,252 @@ alembic check:                 No new upgrade operations detected ✅
 ### 结论
 
 ✅ **全部 P0/P1 可执行指南已交付，开发模型可立即接续施工。**
+
+---
+
+## 二十一、2026-07-19 内联脚本收敛 Phase 1+2 + 深度审查修复 + CI 全覆盖
+
+> 最终会话：管理后台内联脚本收敛 + CI 7 项全绿 + 深度审查 5 项修复 + 12 次 CI 运行终稳定。
+
+### 内联脚本 Phase 1 — 提取（29 模板 → 34 page JS）
+
+| 步骤 | 内容 | 状态 |
+|------|------|:----:|
+| 内联 `<script>` 提取 | 29 模板的内联 JS 提取为独立文件 | ✅ |
+| base-init.js | 全局基础设施（modal/pagination/skeleton/auth） | ✅ |
+| 34 个 `pages/<name>.js` | 每页面一个独立 JS 文件 | ✅ |
+| `roles.html` 特例 | Jinja2 `can_edit_role` 变量 → `data-can-edit-role` body 属性 | ✅ |
+| `scripts/extract_inline_js.py` | 提取脚本（已 ruff format） | ✅ |
+
+### Phase 2 — 7 模板 inline handler 清零
+
+将 7 个核心模板的 onclick/onsubmit/onchange 全部转换为 `data-pg` 委托 + `addEventListener`：
+
+| 模板 | inline handlers | 模式 |
+|------|:---------------:|------|
+| books, borrow, activities, orders, reports, levels, users | 35 → **0** | `data-pg="fnName"` click 委托 + form/input `addEventListener` |
+
+**剩余**: 27 个模板仍有 **135 处** inline handler（见下方分布表）。
+
+### IIFE 全覆盖 — 34/34
+
+| 类别 | 文件数 | 说明 |
+|------|:------:|------|
+| 初始已有完好 IIFE | 9 | activities, books, borrow, content, levels, message_manage, orders, reports, users |
+| 首轮误判（假 IIFE） | 11 | 因 `'(function()' in content` 匹配内部模式，误认为已包裹 |
+| 终轮验证 | 34/34 | 逐文件检查首非注释行=`(function() {` + 末行=`})();` |
+
+**R1→R2→R3 修复轮次**:
+1. **R1**: 首轮用 `'(function()' in content` 检测 → 假阳性 11 个
+2. **R2**: 纠正为 `first_line` + `last_line` 检测 → 发现 11 个假 IIFE
+3. **R3**: 11 个文件逐一添加全文件 IIFE 包裹 → 34/34 ✅
+
+### B1 escapeHtml 全局冲突修复
+
+| 类型 | 文件 | 方式 |
+|------|------|------|
+| 手动删除 | content.js, quiz.js | `function escapeHtml` 定义删除，统一用 admin.js 全局版本 |
+| IIFE 自动隔离 | 9 个文件 | escapeHtml 在 IIFE 内，不再覆盖全局 |
+
+### B5 dictionary.js 安全修复
+
+22 处 `document.getElementById` 用 `safeEl()` 包装函数统一防护。
+
+### 死代码清理
+
+| 文件 | 删除内容 |
+|------|---------|
+| `backend/common/types.py` | `PayType` 枚举（仅 1/6 值被使用） |
+| `backend/common/dependencies.py` | `get_admin_service()`（无调用） |
+| `backend/config.py` | `COMPANY_NAME`（定义无读取） |
+| `backend/common/config_service.py` | `get_str()`（无调用） |
+| `backend/gateways/exceptions.py` | 4 个未用异常子类 |
+
+### Activity service 覆盖提升
+
+41 个单元测试覆盖 list/list_with_count, get, enroll(free/paid/already/cancelled/full/status), cancel_enrollment, sign_in×2, get_enrollments, batch_checkin, confirm_paid, cancel_activity, CRUD → **~95% 行覆盖**（原 12%）。
+
+### CI 12 次运行记录
+
+| 运行 | 内容 | 结果 |
+|------|------|:----:|
+| 1st | MySQL pool + pymysql 盲试 | ❌ |
+| 2-4 | SQLite 适配 + DATABASE_URL + bcrypt/pytest-asyncio | ❌ |
+| 5th | MySQL 跳过 + lint + test | ✅ |
+| 6th | behave + model-check + hamcrest/PyHamcrest | ❌ 缺 PyHamcrest |
+| 7th | PyHamcrest 修正 | ✅ 3 jobs |
+| 8th | ruff features/scripts/ + format + 4 新路由 | ❌ lint 127 |
+| 9th | 127 lint + format 176 + 4 后端路由 | ✅ 3 jobs |
+| 10th | 15 service tests | ❌ lint 18 |
+| 11th | imports + 21 HTTP tests + 7 boundary | ❌ lint + format |
+| 12th | 最终修复 | ✅ 3 jobs 全绿 |
+
+### 新增路由与测试
+
+| 路由 | 说明 |
+|------|------|
+| `GET /child/transfer/records` | `ChildService.get_transfer_records()` |
+| `GET /book/{book_id}/related` | `BookService.get_related_books()` |
+| `GET /reading/checkin/{child_id}/records` | `ReadingService.get_checkin_records()` |
+| `DELETE /child/{child_id}` | `ChildService.delete_child()` + 归属 |
+
+| 测试文件 | 数量 | 覆盖 |
+|----------|:----:|------|
+| `test_new_routes.py` | 15 | Service: 正常/空/异常/边界 |
+| `test_new_routes_http.py` | 21 | HTTP: 鉴权/序列化/参数/7 边界 |
+
+### 最终 CI 数字
+
+| 项 | 值 |
+|----|-----|
+| ruff check `backend/ tests/` | 0 errors |
+| ruff check `features/ scripts/` | 0 errors |
+| ruff format `--check .` | 328 files formatted |
+| pytest (本地) | 239 passed, 4 skipped |
+| pytest (CI) | 251 passed, 5 skipped |
+| behave | 138 scenarios, 970 steps, 0 failed |
+| verify_api_contract | OK |
+| check_model_consistency | 53 tables |
+| IIFE 覆盖 | 34/34 |
+
+### 剩余 inline handler 分布（27 模板，135 处）
+
+```
+content.html:          13    page_template.html:    10    assessments.html:      9
+teachers.html:          8    settings.html:          8    deposit.html:           8
+submissions.html:       7    bookcopy.html:          7    library.html:           6
+achievements.html:      6    reservation.html:       5    recycle_bin.html:       5
+dictionary.html:        5    certificates.html:      5    reading_data.html:      4
+questions.html:         4    benefit_transfers.html:  4    audio.html:             4
+venues.html:            3    roles.html:             2    quiz.html:              2
+operation_logs.html:    2    message_manage.html:    2    login.html:             2
+activity_checkin.html:  2    profile.html:           1    base.html:              1
+```
+
+### 未完成事项
+
+| 优先级 | 项 | 说明 |
+|--------|----|------|
+| P0 | appid 占位符 | `project.config.json:4` `wx0000000000000000`，需微信公众平台 |
+| P0 | 服务协议页 | `service-agreement.wxml` 仅占位文本，需法务 |
+| P0 | 隐私政策运营主体 | `privacy-policy.wxml:16` 公司全称，需运营 |
+| P1 | Phase 2 扩展 | 27 模板 135 处 inline handler → data-pg 委托 |
+| P1 | 移除兼容重导出 | 26 文件 `for (var k in window.xxxPage)` → 随 Phase 2 扩展后删除 |
+| P1 | 删除局部 escapeHtml | 17 文件 IIFE 内 escapeHtml → admin.js 全局版本统一 |
+| P1 | iconfont woff2 | iconfont.cn 下载，取消 app.wxss @font-face 注释 |
+| P1 | nginx rate limit | 9 个资金/用户端点 |
+| P1 | 前端 onError handler | app.js 全局 JS 错误捕获 |
+| P2 | reading-stats 折线图 | 产品决策待定 |
+| P2 | pytest 覆盖 | 6 个 core service (<30%) |
+| P2 | alembic/env.py 29 F401 | noqa 位置 |
+
+---
+
+## §二十三、V3.8 需求审计与整改执行上下文（2026-07-19）
+
+> 审计方：专家审查组（8 份报告 → `专家意见/`）
+> 执行方：开发大模型
+> 基线版本：PRD 标识 V3.8 / 2026-07-15
+
+### 审计结论
+
+**判定：不合格（需重大修订）**。P0×6、P1×21、P2×25+。核心问题：契约层（状态机/枚举/公式/配置/权限）在 PRD、UML-ER、表结构、BDD、全流程文档五方间不一致。
+
+### 6 个 P0
+
+| # | 问题 | 修正后性质 |
+|---|------|-----------|
+| P0-1 | 已关停状态 → 代码无此状态 | 纯文档任务（T2.1） |
+| P0-2 | 订单状态机三处矛盾 → 统一补丁方案 | 文档+代码（T2.2） |
+| P0-3 | 押金枚举缺 3 个值（4=REFUNDING, 5=PENDING, 6=REFUND_PENDING） | 文档+代码（T2.4）⚠️ 审计漏报 5/6 |
+| P0-4 | 预约状态机"已备" → 代码无此状态 | 文档+代码对齐代码枚举（T2.3）⚠️ 审计补丁冲突已修正 |
+| P0-5 | 书架容量矛盾 → 代码已是无上限模型 | 纯文档任务（T2.7） |
+| P0-6 | iOS 支付合规零定义 → A 主力+B 备用方案 | 文档+代码（T1.1/T4.7） |
+
+### 15 个拷问的批复要点
+
+| # | 主题 | 裁定 |
+|---|------|------|
+| ① | iOS A+B 双线维护成本 | ✅ 采纳：A 主力+B 开关关闭备用，非双态同时在线 |
+| ③ | favorites 废弃方案 | 三步：查存量→迁移/转只读→下版本删表，禁止 UNION 永久双轨 |
+| ④ | 多孩 3600 押金门槛 | 审计立场升级：在 D6 决策材料附书面商业风险提示 |
+| ⑤ | 12.5d 估算缺陷 | ✅ 认领：未计入代码反查成本；修正为 0B 强制前置 0.5-1d |
+| ⑥ | T5.2 假绿根因 | step 断言 `in (200, 404)` 人为豁免实锤。月报已有 service → 补路由；分享删场景 |
+| ⑦ | 定时任务 BDD 可测试性 | 项目已有成熟模式（borrow_record 可复用），前 6 强制项避开定时任务 |
+| ⑧ | 挂起策略 | 允许拆分，48h 无答复按默认方案执行 |
+| ⑨ | 已关停存量 | ✅ 已查：代码零存在，直接删除 |
+| ⑩ | 冻结范围 | B：仅冻结契约层 PR，`[HOTFIX]` 豁免 |
+| ⑪ | 退款下限 1d vs 0d | 升级为 D11：24h 内全额退+30 天限 1 次 |
+| ⑫ | 并发测试方案 | API 层 threading+TestClient（复用现有模式），DB 层不强求 |
+| ⑬ | 书架容量代码现状 | ✅ 已查：场景 A，纯文档任务 |
+| ⑮ | 偏差处理 | 🟢绿灯（直接修+报）/ 🟡黄灯（对齐代码+24h 报）/ 🔴红灯（停等） |
+
+### 审计方认领的 2 项偏差
+
+1. **押金枚举漏报**：DepositStatus 有 6 个值（UNPAID/PAID/REFUNDED/DEDUCTED/REFUNDING/PENDING/REFUND_PENDING），审计只报了缺 REFUNDING=4，漏了 PENDING=5 和 REFUND_PENDING=6
+2. **预约枚举补丁冲突**：原补丁编号与代码 `FULFILLED=1` 冲突，已作废重发修正方案
+
+### 3 个开放问题关闭
+
+| # | 问题 | 结论 |
+|---|------|------|
+| #1 图书定价字段 | ✅ book.models.price 已存在，表结构漏写 |
+| #2 重考冷却起点 | ✅ 代码从创建时刻算 60min，文档对齐即可 |
+| #3 月报假绿 | ✅ generate_monthly_report() 已存在，补路由即可；分享删场景 |
+
+### 执行基线
+
+- **0B 代码基线调查（Day 0）**：8+3 项（含 favorites 存量、试读拦截位置、月报路由确认）
+- **双流任务**：同一 PR 含文档+代码+测试三件套
+- **9 天并行排期**：Week1 状态机/资金双流 + Week2 规则补全/测试修复 + 回归审查
+- **偏差汇报**：按三区规则（🟢🟡🔴）行动
+- **D1-D10 全部按开发模型建议接受**（D1 A主B备、D2-4 D9-10 采纳、D5 加查存量、D6/D7 附加风险提示、D8 维持、D9 配置化）
+
+### 0B 基线调查清单（待执行）
+
+| 项 | 内容 | 证据来源 |
+|----|------|---------|
+| 0B-1 | 押金枚举现状（已查：6 个值，含 PENDING/REFUND_PENDING） | 专家 §四 |
+| 0B-2 | 书架模型现状 | 专家 §二 |
+| 0B-3 | 退款计算口径（used_days 自然日/取整/负数兜底） | 需自查 |
+| 0B-4 | 测验重考冷却（已确认：60min 从创建时刻算） | 专家 §四 |
+| 0B-5 | 已关闭订单迟到支付回调 | 需自查 |
+| 0B-6 | BDD step 假绿根因（已确认：断言 in(200,404)） | 专家 §三 |
+| 0B-7 | 预约状态枚举对齐代码现状（PENDING/FULFILLED/EXPIRED/CANCELLED） | 专家 §四 |
+| 0B-8 | book.price 字段（已确认：存在） | 专家 §四 |
+| 0B-9 | favorites 存量行数与 bookshelf 重合度 | 需自查 |
+| 0B-10 | 试读拦截（trial_pages）代码位置 | 需自查 |
+| 0B-11 | 月报路由是否缺失（report/stats/monthly） | 需自查 |
+
+
+## 二十四、2026-07-20 R-1/R-3 双重转换修复
+
+> 修复专家审查发现的押金+订单回调两处 P0 双重 分→元 转换 bug。
+
+### 修复项
+
+| 文件 | 变更 | 根因 |
+|------|------|------|
+| `backend/domain/deposit/router.py:107-108` | 移除 `/ Decimal("100")` | 两个网关 decrypt 层已做分→元，router 重复再除 |
+| `backend/domain/order/router.py:249` | 移除 `/ Decimal("100")` | 同款 bug，生产必炸（99→0.99），mock 走 else 分支绕过 |
+
+### 清理
+
+全库 grep `Decimal("100")` 清零。仅剩 3 处正确使用：两个网关层（分→元）+ `order/router.py:313`（元→分，方向相反）。
+
+### 新单测
+
+`tests/unit/test_new_routes_http.py::test_order_callback_via_encrypted_branch` — 构造 `resource` 加密包裹走 MockPaymentGateway 全路径解密，覆盖真实网关分支（之前是测试盲区，mock 走 else 明文分支）。
+
+### 集成测试更新
+
+`scripts/integration_test.py` Flow 6 适配 V3.8 REFUND_PENDING(6) 审批流：用户申请 → `REFUND_PENDING` → 管理员 approve → `REFUNDING` → 到账确认 → `REFUNDED`。结果 55/55 全绿。
+
+### 指标提升
+
+| 指标 | 之前 | 之后 |
+|------|------|------|
+| pytest | 239/4 (本地) / 251/5 (CI) | 254 passed, 5 skipped |
+| behave | 138 scenarios / 970 steps | 151 scenarios / 1030 steps |
+| 集成测试 | — | 55/55 全绿 |
+| ruff | 0 errors | 0 errors |

@@ -117,7 +117,7 @@ stateDiagram-v2
     已退 --> [*]
 ```
 
-代码常量（`deposit_record.status`）：0=未付 1=已付 2=已退 3=已扣 4=退款中
+代码常量（`deposit_record.status`）：0=未付 1=已付 2=已退 3=已扣 4=退款中 5=支付中 6=退款待审核
 
 ### 1.8 预约取书状态流转图 ★ V3.5
 
@@ -130,7 +130,7 @@ stateDiagram-v2
     取消 --> [*] : 释放库存
 ```
 
-代码常量（`reservation.status`）：0=待取 1=已备 2=已取 3=取消
+代码常量（`reservation.status`）：0=待取 1=已取 2=已过期 3=取消
 
 ### 1.9 权益转让申请状态流转图 ★ V3.8
 
@@ -284,7 +284,7 @@ erDiagram
         bigint id PK
         bigint book_id FK
         varchar barcode UK "唯一副本条码"
-        tinyint status "0=可用 1=借出 2=维修 3=报废"
+        tinyint status "0=可用 1=借出 2=维修 3=报废 4=损坏 5=丢失"
         varchar condition_note
         varchar location
     }
@@ -344,7 +344,7 @@ erDiagram
         bigint id PK
         bigint child_id FK
         bigint book_id FK
-        tinyint status "0=待取 1=已备 2=已取 3=取消"
+        tinyint status "0=待取 1=已取 2=已过期 3=取消"
         datetime expires_at "预约+72小时"
         datetime picked_up_at
         bigint borrow_record_id FK
@@ -364,7 +364,7 @@ erDiagram
         bigint id PK
         bigint child_id FK
         decimal amount "默认1200"
-        tinyint status "0=未付 1=已付 2=已退 3=已扣"
+        tinyint status "0=未付 1=已付 2=已退 3=已扣 4=退款中 5=支付中 6=退款待审核"
         datetime paid_at
         datetime refunded_at
         varchar deduction_reason
@@ -577,7 +577,7 @@ erDiagram
         varchar order_no UK
         bigint user_id FK
         bigint child_id FK
-        tinyint type "1=亲子课 2=观察期 3=正式会员"
+        tinyint type "1=亲子课 2=观察期 3=正式会员 4=季度会员 5=半年会员"
         decimal amount
         tinyint pay_status "0=待支付 1=已支付 ... 5=已关闭"
         datetime pay_time

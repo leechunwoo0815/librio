@@ -17,10 +17,15 @@ Page({
     statusIcon: '',
     statusCls: '',
     statusBadgeCls: '',
+    isIOS: false,
   },
 
   onLoad() {
     if (!auth.requireAuth()) return
+    try {
+      var windowInfo = wx.getWindowInfo();
+      this.setData({ isIOS: windowInfo.platform === 'ios' });
+    } catch (e) {}
     this.loadDepositInfo()
   },
 
@@ -109,6 +114,10 @@ Page({
   },
 
   async onPay() {
+    if (this.data.isIOS) {
+      wx.showModal({ title: '暂不支持 iOS 支付', content: '当前暂不支持 iOS 端支付，请使用安卓设备或联系客服办理', showCancel: false })
+      return
+    }
     const child = auth.getCurrentChild()
     if (!child) {
       wx.showToast({ title: '请先选择孩子', icon: 'none' })
@@ -142,6 +151,10 @@ Page({
   },
 
   async onTopUp() {
+    if (this.data.isIOS) {
+      wx.showModal({ title: '暂不支持 iOS 支付', content: '当前暂不支持 iOS 端支付，请使用安卓设备或联系客服办理', showCancel: false })
+      return
+    }
     const child = auth.getCurrentChild()
     if (!child) {
       wx.showToast({ title: '请先选择孩子', icon: 'none' })

@@ -1,9 +1,15 @@
 # DmkWords 完整需求文档（V3.5 OMO 模式）
 
-> **版本**: V3.8 | **日期**: 2026-07-15
+> **版本**: V3.15 | **日期**: 2026-07-21
 
 > **本次更新（V3.7, 2026-07-09）**：全量终审通过。P0(8)+P1(13)+P2(8) 共 35 项修复。前后端代码已对齐，所有测试通过。
 > **本次更新（V3.8, 2026-07-15）**：新增权益转让、个人名片QR码、生词高亮、季度/半年会员。
+> **本次更新（V3.11, 2026-07-20）**：R-1 押金回调双重转换修复 + R-3 订单回调 P0 双重转换修复。全库 Decimal("100") 残留清零。新增加密分支单测覆盖盲区。
+> **本次更新（V3.12, 2026-07-20）**：T3.3 权益转让校验补全（源孩子5项+目标孩子3项）+ T3.4 重考冷却可配置化（quiz_cooldown_minutes，范围5-1440）。
+> **本次更新（V3.13, 2026-07-20）**：T3.5 枚举补全（check_type/activity_type/msg_type/priority）+ T3.7 库存双口径联动矩阵（含审计偏差报告+每日对账任务定义）。
+> **本次更新（V3.14, 2026-07-20）**：T3.6a 图书损坏三级定责全流程（模型/服务/路由/测试）+ 跟进项1 朗读/生词打卡自动触发 + T3.9 附录E权限矩阵 + T3.10 附录D-F-G-H标准化。PRD 附录从3个扩展为8个（A-H）。
+> **本次更新（V3.15, 2026-07-21）**：T3.10 附录I/J/K/L标准化（多角色操作定义/非功能性需求/文案规范/页面三态规则）+ T5.4 新 BDD 场景（季度/半年会员、升级差价、缓冲期续费9折、查词上限、试读页数限制）。PRD 附录扩展为12个（A-L）。
+> **决策记录（2026-07-20）**：D1-D11 全部按专家建议执行。iOS 虚拟支付合规（D1=C）、"已关停"删除（D2=A）、订单状态机终态（D3=A）、预约"已备"删除（D4=A）、favorites 废弃（D5=A）、多孩押金独立（D6=A）、欠费不连坐（D7=A）、逾期还书先还后罚（D8=A）、亲子课30人（D9=A）、重考冷却60min可配置（D10=A）、退款口径ROUND_HALF_UP+自然日历日（D11=A）。
 > 审计报告：`deliverables/audit-2026-07-08/final-full-audit-20260709.md`
 > **产品定位**: 3-15 岁儿童英文原版阅读成长平台（OMO 模式）
 > **核心闭环**: 线上选书 → 线下扫码借书 → 线上音频伴读 → 手动查词 → 异步测评 → 自动晋级
@@ -66,9 +72,13 @@
 4. 支付成功 → 孩子状态变为正式会员（status=2）→ 会员有效期 365 天
 
 **多孩优惠规则**：
-- 同一 user 下已有 1 个孩子是观察期或正式会员 → 第 2 个孩子起享 9 折
-- 优惠金额 = 原价 × 0.9，四舍五入到分
+- **资格判定条件**：同一 user 下已有 ≥1 个孩子状态为 观察期(1) 或 正式会员(2) → 该 user 的第 2 个孩子起享 9 折
+- **覆盖范围**：适用于 观察期(500→450)、正式会员(5400→4860)、季度(1350→1215)、半年(2700→2430) 全部付费类型
+- **优惠金额** = 原价 × `multi_child_discount`（默认 0.9），四舍五入到分
+- **与续费折扣互斥**：多孩优惠与缓冲期续费折扣不可叠加；同时满足两项条件时，仅适用单重 9 折（不叠加为 8.1 折）
+- **防刷规则**：已享受 9 折的订单不追溯补缴差价；该 user 的后续订单如不再满足资格条件（如所有老孩子退出），不再享多孩优惠
 - 前端自动显示优惠价格，并提示"多孩优惠已应用"
+- 价格表中"多孩折扣 0.9（9 折）"标注为可配置（配置键 `multi_child_discount`）
 
 **前置条件校验**：
 - 观察期评估未通过 → 提示"观察期评估未通过，暂不能报名正式会员"，无法进入报名页
@@ -167,10 +177,18 @@
 **业务背景**：同一用户可以有多个孩子。如果一个孩子不再需要会员服务，可以将剩余权益转让给同一用户下的另一个孩子，避免资源浪费。
 
 **转让条件**：
-- 源孩子必须是观察期或正式会员
-- 源孩子必须已归还所有图书（无活跃借阅记录）
-- 目标孩子不能已经是正式会员（否则无意义）
-- 仅限同一用户的孩子间转让
+
+源孩子校验（5 项）：
+1. 必须是观察期(1)或正式会员(2)
+2. 必须已归还所有图书（无 BORROWING/OVERDUE 借阅记录）
+3. 无未缴罚款（outstanding_fines == 0）
+4. 无审核中的转让申请（无 PENDING 记录）
+5. 该孩子此前未被转入过权益（无 APPROVED 记录 where target_child_id = 孩子ID）
+
+目标孩子校验（3 项）：
+1. 必须是体验用户（TRIAL=0）
+2. 无活跃借阅（无 BORROWING/OVERDUE 记录）
+3. 无未缴罚款（outstanding_fines == 0）
 
 **转让流程**：
 1. 家长提交转让申请
@@ -183,6 +201,8 @@
 **权益继承**：
 - 正式会员（已使用 100 天）→ 目标孩子获得剩余 265 天正式会员
 - 观察期（已使用 10 天）→ 目标孩子获得剩余 20 天观察期
+
+> **T3.3 更新（2026-07-20）**：补全源孩子5项校验（新增"无审核中申请"和"未被转入过"）、目标孩子3项校验（D12确认目标仅限TRIAL=0）。
 
 ### 3.2 失败场景
 
@@ -413,6 +433,22 @@
 - 押金余额
 - 未结罚款金额
 
+### 7.5 多孩押金规则（D6/D7）
+
+**多孩押金**（D6=A）：
+- 多孩家庭押金**无优惠**，每个孩子独立缴纳 1200 元（与会员费多孩 9 折为独立策略；押金是履约担保而非消费，不参与折扣）
+- 已缴纳押金的孩子不影响其他未缴纳孩子的状态
+
+**欠费连坐**（D7=A）：
+- **孩子各自独立**：outstanding_fines 按孩子独立记录，不跨孩子连坐
+- 孩子 A 有未缴罚款 → 不影响孩子 B 的借阅、退款、报名活动
+- 退款拦截网（15.1）只校验**本孩子的**活跃借阅与未缴罚款
+- 押金退款条件（7.2）只校验**本孩子的**无活跃借阅 + 无未缴罚款
+
+**商业风险提示**：
+- 3 孩家庭预付超 13000 元（押金 3600 + 会员费），需运营验证该门槛对多孩转化率的影响
+- 若运营反馈负面，D6 商业策略（如押金分期、家庭押金池）需重开决策
+
 ---
 
 ## 八、在线预约借书（reservation.feature）
@@ -512,6 +548,9 @@
 **自动打卡规则**（可配置）：
 - 阅读满 10 分钟 → 自动打卡（打卡类型="阅读时长"）
 - 读完一本书 → 自动打卡（打卡类型="读完图书"）
+- 朗读完成 → 自动打卡（打卡类型="朗读"），每次录音完成后触发
+- 添加生词（首次） → 自动打卡（打卡类型="生词"），首次加入生词本时触发
+- 语音/生词打卡仅在今日未打卡时创建，不会重复打卡
 - 每天最多打卡 1 次，不重复打卡
 - 打卡纯激励，不挂会员权益
 
@@ -913,6 +952,488 @@
 
 ---
 
+## 附录D：库存双口径联动矩阵
+
+### D.1 BookCopy 六类状态枚举
+
+| 编码 | 常量名 | 含义 | 备注 |
+|------|--------|------|------|
+| 0 | AVAILABLE | 可借（在馆） | 初始状态 |
+| 1 | BORROWED | 已借出 | 借书 / 预约取书时转入 |
+| 2 | MAINTENANCE | 维修中 | 管理员手动标记（目前无操作入口） |
+| 3 | SCRAPPED | 报废 | 管理员手动标记（目前无操作入口） |
+| 4 | DAMAGED | 损坏 | T3.6a 引入，三级定级后标记 |
+| 5 | LOST | 丢失 | T3.6a 引入，赔偿后标记 |
+
+### D.2 BookCopy 状态变更 → Book 库存联动矩阵
+
+每本 Book 的 `total_stock`/`available_stock` 为**汇总口径**，由该 Book 下所有 BookCopy 的状态派生而来。以下矩阵定义每类状态变更对 Book 库存字段的原子影响：
+
+| # | 操作 | BookCopy 旧状态 | BookCopy 新状态 | total_stock | available_stock |
+|---|------|----------------|-----------------|-------------|-----------------|
+| 1 | 新增副本 | — | AVAILABLE(0) | +1 | +1 |
+| 2 | 借出 | AVAILABLE(0) | BORROWED(1) | 不变 | -1 |
+| 3 | 还书 | BORROWED(1) | AVAILABLE(0) | 不变 | +1 |
+| 4 | 预约创建 | —（预约不占具体副本） | — | 不变 | -1 |
+| 5 | 预约取消/过期 | — | — | 不变 | +1 |
+| 6 | 标记维修(在馆) | AVAILABLE(0) | MAINTENANCE(2) | 不变 | -1 |
+| 7 | 标记维修(已借出) | BORROWED(1) | MAINTENANCE(2) | 不变 | 不变 |
+| 8 | 维修完成 | MAINTENANCE(2) | AVAILABLE(0) | 不变 | +1 |
+| 9 | 标记损坏(在馆) | AVAILABLE(0) | DAMAGED(4) | 不变 | -1 |
+| 10 | 标记损坏(已借出) | BORROWED(1) | DAMAGED(4) | 不变 | 不变 |
+| 11 | 损坏修复 | DAMAGED(4) | AVAILABLE(0) | 不变 | +1 |
+| 12 | 丢失赔偿 | BORROWED(1) | LOST(5) | -1 | -1（已扣，无实际影响） |
+| 13 | 报废(在馆) | AVAILABLE(0) | SCRAPPED(3) | -1 | -1 |
+| 14 | 报废(已借出) | BORROWED(1) | SCRAPPED(3) | -1 | 不变 |
+| 15 | 报废(维修中) | MAINTENANCE(2) | SCRAPPED(3) | -1 | 不变 |
+| 16 | 报废(损坏) | DAMAGED(4) | SCRAPPED(3) | -1 | 不变 |
+
+**口径规则**：
+- `total_stock` = 该 Book 下状态为 AVAILABLE + BORROWED + MAINTENANCE + DAMAGED 的 BookCopy 数量（SCRAPPED 和 LOST 不计入）
+- `available_stock` = 该 Book 下状态为 AVAILABLE 的 BookCopy 数量
+- 所有库存变更必须使用 SQL 原子操作（`UPDATE ... SET field = field +/- N`），避免并发超卖
+
+### D.3 代码审计偏差报告（2026-07-20）
+
+| # | 偏差 | 严重程度 | 说明 |
+|---|------|---------|------|
+| D01 | BookCopyStatus 缺 DAMAGED/LOST 两状态 | 高 | 已在 backend/common/types.py 补全为六类枚举。实际使用者为 T3.6a。 |
+| D02 | 维修/报废无管理员操作入口 | 中 | MAINTENANCE(2) / SCRAPPED(3) 状态在 BookCopy 模型中已定义 4 年，但后台没有对应菜单和 API。不是本轮修复范围。 |
+| D03 | 预约创建只校验 available_stock > 0，不锁定具体副本 | 低 | 预约不锁定具体 BookCopy（取书时才分配），在预约量 < 库存量时不会超卖。但在高并发下预约数量可能短时超过库存。当前设计可接受。 |
+| D04 | `book/service.py add_copies()` 和 `borrow/service.py create_book()` 各有一套库存递增逻辑，重复 | 低 | 两个入口服务于不同场景：admin 后台 vs 扫码录入。逻辑等价，暂不合。 |
+| D05 | 丢书赔偿后 (`deposit/service.py`) 未更新 BookCopy.status → LOST | 高 | 丢书扣款后 BookCopy.status 仍为 BORROWED(1)，未标记 LOST(5)。需 T3.6a 落地后联动。 |
+
+### D.4 每日对账任务定义
+
+**任务名称**：`daily_stock_reconciliation`
+
+**触发时间**：每天凌晨 3:00
+
+**逻辑**：
+
+```python
+def reconcile_stock():
+    """每日库存对账：Book.total_stock/available_stock 与 BookCopy 实际计数对比"""
+    for book in all_books:
+        copy_count = SELECT COUNT(*) FROM book_copy
+            WHERE book_id = :book_id AND is_deleted = 0
+        total_count = SELECT COUNT(*) FROM book_copy
+            WHERE book_id = :book_id AND is_deleted = 0
+            AND status IN (AVAILABLE, BORROWED, MAINTENANCE, DAMAGED)
+        avail_count = SELECT COUNT(*) FROM book_copy
+            WHERE book_id = :book_id AND is_deleted = 0
+            AND status = AVAILABLE
+        
+        if book.total_stock != total_count OR book.available_stock != avail_count:
+            # 记录偏差到 operation_log
+            INSERT INTO operation_log(
+                action='stock_reconciliation',
+                target_type='book',
+                target_id=book.id,
+                detail=json(...),
+            )
+            # 自动修正（静默对齐）
+            book.total_stock = total_count
+            book.available_stock = avail_count
+```
+
+**部署**：在 `backend/tasks/scheduler.py` 的 `init_scheduler()` 中注册。
+
+---
+
+## 附录E：RBAC 权限矩阵
+
+### E.1 角色定义
+
+| 角色代码 | 角色名称 | 权限数 | 说明 |
+|---------|---------|:----:|------|
+| super_admin | 超级管理员 | 82 | 全部权限，不可编辑 |
+| staff | 运营人员 | 70 | 日常运营权限，不含敏感管理操作 |
+| teacher | 教师 | 27 | 教学相关权限，只读为主 |
+
+### E.2 权限分组矩阵
+
+| 分组 | 权限代码 | 权限名称 | 超管 | 运营 | 教师 |
+|------|---------|---------|:---:|:---:|:---:|
+| **dashboard** | dashboard.view | 数据概览 | ✅ | ✅ | ✅ |
+| **user** | user.list | 用户列表 | ✅ | ✅ | ❌ |
+| | user.view | 用户详情 | ✅ | ✅ | ❌ |
+| | user.create | 创建用户 | ✅ | ✅ | ❌ |
+| | user.edit | 编辑用户 | ✅ | ✅ | ❌ |
+| | user.delete | 删除用户 | ✅ | ✅ | ❌ |
+| | user.export | 导出用户 | ✅ | ✅ | ❌ |
+| **child** | child.list | 孩子列表 | ✅ | ✅ | ✅ |
+| | child.view | 孩子详情 | ✅ | ✅ | ✅ |
+| | child.create | 添加孩子 | ✅ | ✅ | ❌ |
+| | child.edit | 编辑孩子 | ✅ | ✅ | ❌ |
+| | child.delete | 删除孩子 | ✅ | ✅ | ❌ |
+| **order** | order.list | 订单列表 | ✅ | ✅ | ❌ |
+| | order.view | 订单详情 | ✅ | ✅ | ❌ |
+| | order.create | 创建订单 | ✅ | ✅ | ❌ |
+| | order.edit | 修改订单 | ✅ | ✅ | ❌ |
+| | order.delete | 删除订单 | ✅ | ❌ | ❌ |
+| | order.mark_paid | 标记已付 | ✅ | ✅ | ❌ |
+| | order.refund | 发起退款 | ✅ | ❌ | ❌ |
+| | order.export | 导出订单 | ✅ | ✅ | ❌ |
+| **book** | book.list | 图书列表 | ✅ | ✅ | ✅ |
+| | book.view | 图书详情 | ✅ | ✅ | ✅ |
+| | book.create | 添加图书 | ✅ | ✅ | ❌ |
+| | book.edit | 编辑图书 | ✅ | ✅ | ❌ |
+| | book.delete | 删除图书 | ✅ | ❌ | ❌ |
+| | book.import | 批量导入 | ✅ | ✅ | ❌ |
+| | book.export | 导出图书 | ✅ | ✅ | ❌ |
+| **bookcopy** | bookcopy.list | 馆藏列表 | ✅ | ✅ | ❌ |
+| | bookcopy.create | 生成馆藏 | ✅ | ✅ | ❌ |
+| | bookcopy.edit | 编辑馆藏页 | ✅ | ✅ | ❌ |
+| **upload** | upload.manage | 文件上传 | ✅ | ✅ | ❌ |
+| **borrow** | borrow.list | 借阅记录 | ✅ | ✅ | ✅ |
+| | borrow.create | 借出 | ✅ | ✅ | ❌ |
+| | borrow.return | 归还 | ✅ | ✅ | ❌ |
+| | borrow.overdue | 逾期提醒 | ✅ | ✅ | ❌ |
+| | borrow.fine_clear | 清除罚款 | ✅ | ✅ | ❌ |
+| | borrow.mark_lost | 标记丢失 | ✅ | ✅ | ✅ |
+| **deposit** | deposit.list | 押金列表 | ✅ | ✅ | ❌ |
+| | deposit.pay | 代缴押金 | ✅ | ✅ | ❌ |
+| | deposit.refund | 退款操作 | ✅ | ❌ | ❌ |
+| | deposit.deduct | 扣除押金 | ✅ | ❌ | ❌ |
+| **reservation** | reservation.list | 预约列表 | ✅ | ✅ | ❌ |
+| | reservation.create | 创建预约 | ✅ | ✅ | ❌ |
+| | reservation.fulfill | 确认取书 | ✅ | ✅ | ❌ |
+| | reservation.cancel | 取消预约 | ✅ | ✅ | ❌ |
+| **submission** | submission.list | 提交列表 | ✅ | ✅ | ✅ |
+| | submission.view | 提交详情 | ✅ | ✅ | ✅ |
+| | submission.approve | 审核通过 | ✅ | ✅ | ✅ |
+| | submission.reject | 审核打回 | ✅ | ✅ | ✅ |
+| **activity** | activity.list | 活动列表 | ✅ | ✅ | ✅ |
+| | activity.view | 活动详情 | ✅ | ✅ | ✅ |
+| | activity.create | 创建活动 | ✅ | ✅ | ❌ |
+| | activity.edit | 编辑活动 | ✅ | ✅ | ❌ |
+| | activity.delete | 删除活动 | ✅ | ❌ | ❌ |
+| | activity.cancel | 取消活动 | ✅ | ✅ | ❌ |
+| | activity.enrollment | 报名列表 | ✅ | ✅ | ✅ |
+| | activity.checkin | 签到 | ✅ | ✅ | ✅ |
+| **assessment** | assessment.list | 评估列表 | ✅ | ✅ | ✅ |
+| | assessment.view | 评估详情 | ✅ | ✅ | ✅ |
+| | assessment.create | 创建评估 | ✅ | ✅ | ❌ |
+| | assessment.edit | 编辑评估 | ✅ | ✅ | ❌ |
+| | assessment.delete | 删除评估 | ✅ | ❌ | ❌ |
+| **evaluation** | evaluation.create | 创建AR测评 | ✅ | ✅ | ❌ |
+| | evaluation.list | AR测评列表 | ✅ | ✅ | ❌ |
+| | evaluation.view | AR测评详情 | ✅ | ✅ | ❌ |
+| **quiz** | quiz.list | 测验列表 | ✅ | ✅ | ✅ |
+| | quiz.view | 测验详情 | ✅ | ✅ | ✅ |
+| **question** | question.list | 题库列表 | ✅ | ✅ | ✅ |
+| | question.create | 创建题目 | ✅ | ✅ | ❌ |
+| | question.edit | 编辑题目 | ✅ | ✅ | ❌ |
+| | question.delete | 删除题目 | ✅ | ✅ | ❌ |
+| | question.import | 批量导入 | ✅ | ✅ | ❌ |
+| **level** | level.list | 级别列表 | ✅ | ✅ | ✅ |
+| | level.create | 创建级别 | ✅ | ✅ | ❌ |
+| | level.edit | 编辑级别 | ✅ | ✅ | ❌ |
+| | level.delete | 删除级别 | ✅ | ❌ | ❌ |
+| **achievement** | achievement.list | 成就列表 | ✅ | ✅ | ✅ |
+| | achievement.create | 创建成就 | ✅ | ✅ | ❌ |
+| | achievement.edit | 编辑成就 | ✅ | ✅ | ❌ |
+| | achievement.delete | 删除成就 | ✅ | ❌ | ❌ |
+| **certificate** | certificate.list | 证书列表 | ✅ | ✅ | ✅ |
+| | certificate.regenerate | 重新生成 | ✅ | ✅ | ❌ |
+| | certificate.delete | 删除证书 | ✅ | ❌ | ❌ |
+| **report** | report.list | 报告列表 | ✅ | ✅ | ✅ |
+| | report.view | 报告详情 | ✅ | ✅ | ✅ |
+| | report.generate | 生成报告 | ✅ | ✅ | ❌ |
+| | report.comment | 评语 | ✅ | ✅ | ✅ |
+| | report.reading_data | 阅读数据 | ✅ | ✅ | ✅ |
+| **refund** | refund.list | 退款列表 | ✅ | ✅ | ❌ |
+| | refund.audit | 退款审核 | ✅ | ✅ | ❌ |
+| **benefit_transfer** | benefit_transfer.list | 权益转移列表 | ✅ | ✅ | ❌ |
+| | benefit_transfer.review | 权益转移审核 | ✅ | ❌ | ❌ |
+| **teacher** | teacher.list | 老师列表 | ✅ | ✅ | ❌ |
+| | teacher.view | 老师详情 | ✅ | ✅ | ❌ |
+| | teacher.create | 添加老师 | ✅ | ✅ | ❌ |
+| | teacher.edit | 编辑老师 | ✅ | ✅ | ❌ |
+| | teacher.delete | 删除老师 | ✅ | ❌ | ❌ |
+| | teacher.assign | 分配学生 | ✅ | ✅ | ❌ |
+| | teacher.schedule | 排课管理 | ✅ | ✅ | ❌ |
+| **venue** | venue.list | 场馆列表 | ✅ | ✅ | ❌ |
+| | venue.create | 创建场馆 | ✅ | ✅ | ❌ |
+| | venue.edit | 编辑场馆 | ✅ | ✅ | ❌ |
+| | venue.delete | 删除场馆 | ✅ | ❌ | ❌ |
+| **message** | message.list | 消息列表 | ✅ | ✅ | ✅ |
+| | message.send | 发送消息 | ✅ | ✅ | ❌ |
+| | message.delete | 删除消息 | ✅ | ❌ | ❌ |
+| **config** | config.view | 配置查看 | ✅ | ❌ | ❌ |
+| | config.edit | 配置编辑 | ✅ | ❌ | ❌ |
+| **admin** | admin.list | 管理员列表 | ✅ | ❌ | ❌ |
+| | admin.create | 创建管理员 | ✅ | ❌ | ❌ |
+| | admin.edit | 编辑管理员 | ✅ | ❌ | ❌ |
+| | admin.delete | 删除管理员 | ✅ | ❌ | ❌ |
+| | admin.password | 改密码 | ✅ | ❌ | ❌ |
+| **role** | role.list | 角色列表 | ✅ | ❌ | ❌ |
+| | role.edit | 角色权限 | ✅ | ❌ | ❌ |
+| **log** | log.list | 操作日志 | ✅ | ✅ | ❌ |
+| **recycle** | recycle.list | 回收站 | ✅ | ✅ | ❌ |
+| | recycle.restore | 恢复 | ✅ | ❌ | ❌ |
+| | recycle.delete | 彻底删除 | ✅ | ❌ | ❌ |
+| **dictionary** | dictionary.list | 词库列表 | ✅ | ✅ | ❌ |
+| | dictionary.edit | 编辑词库 | ✅ | ✅ | ❌ |
+| | dictionary.create | 创建单词 | ✅ | ✅ | ❌ |
+| | dictionary.delete | 删除单词 | ✅ | ✅ | ❌ |
+| **content** | content.list | 内容列表 | ✅ | ✅ | ❌ |
+| | content.edit | 编辑内容 | ✅ | ✅ | ❌ |
+| | content.create | 创建内容 | ✅ | ✅ | ❌ |
+| | content.delete | 删除内容 | ✅ | ✅ | ❌ |
+| **parent_course_time** | parent_course_time.list | 时间段列表 | ✅ | ✅ | ❌ |
+| | parent_course_time.create | 创建时间段 | ✅ | ✅ | ❌ |
+| | parent_course_time.edit | 编辑时间段 | ✅ | ✅ | ❌ |
+| | parent_course_time.delete | 删除时间段 | ✅ | ✅ | ❌ |
+
+### 角色生命周期管理
+
+- **创建**：支持创建自定义角色，可从 staff 或 teacher 模板快照复制权限（非引用，独立副本）。
+  - 角色名必填（≤20 字），角色代码必填（小写字母/数字/下划线，唯一，创建后不可修改）。
+  - 创建成功后自动打开该角色的权限配置弹窗。
+- **重命名**：支持修改角色名称和描述。系统内置角色（is_system=1）禁止改名。
+- **删除**：支持删除自定义角色。系统内置角色不可删除；有管理员账号引用的角色不可删除（返回错误提示）。
+- **最后一个启用超管保护**：禁用、删除或降权操作时，自动校验操作后启用状态的超级管理员数量 ≥ 1，否则拒绝操作（返回"至少需要保留一个启用的超级管理员"）。
+
+---
+
+## 附录F：枚举值总表
+
+### F.1 Child — 会员状态
+
+| 编码 | 常量名 | 含义 | 备注 |
+|:---:|--------|------|------|
+| 0 | TRIAL | 体验用户 | 注册但未付费，有限试读 |
+| 1 | OBSERVATION | 观察期 | 已付 500 元，30 天完整服务 |
+| 2 | OFFICIAL | 正式会员 | 已付 5400 元，365 天 |
+| 3 | EXPIRED | 已过期 | 到期未续费，数据保留不可借书 |
+| 4 | EXITED | 已退出 | 主动退款/退出，不可恢复 |
+
+### F.2 BookCopy — 副本状态
+
+| 编码 | 常量名 | 含义 | 备注 |
+|:---:|--------|------|------|
+| 0 | AVAILABLE | 可借（在馆） | 初始状态 |
+| 1 | BORROWED | 已借出 | 借书/预约取书时转入 |
+| 2 | MAINTENANCE | 维修中 | 管理员手动标记 |
+| 3 | SCRAPPED | 报废 | 管理员手动标记 |
+| 4 | DAMAGED | 损坏 | T3.6a 引入，三级定级后标记 |
+| 5 | LOST | 丢失 | T3.6a 引入，赔偿后标记 |
+
+### F.3 BorrowRecord — 借阅状态
+
+| 编码 | 常量名 | 含义 |
+|:---:|--------|------|
+| 0 | BORROWING | 借阅中 |
+| 1 | RETURNED | 已归还 |
+| 2 | OVERDUE | 逾期 |
+
+### F.4 CheckIn — 打卡类型
+
+| 编码 | 常量名 | 含义 |
+|:---:|--------|------|
+| 1 | TYPE_READING | 阅读时长 |
+| 2 | TYPE_FINISH_BOOK | 读完图书 |
+| 3 | TYPE_VOICE | 朗读 |
+| 4 | TYPE_VOCABULARY | 生词 |
+
+### F.5 Activity — 活动状态
+
+| 编码 | 常量名 | 含义 |
+|:---:|--------|------|
+| 0 | STATUS_DRAFT | 草稿 |
+| 1 | STATUS_ENROLLING | 报名中 |
+| 2 | STATUS_ENROLL_CLOSED | 报名截止 |
+| 3 | STATUS_IN_PROGRESS | 进行中 |
+| 4 | STATUS_FINISHED | 已结束 |
+| 5 | STATUS_CANCELLED | 已取消 |
+
+### F.6 Activity — 活动类型
+
+| 编码 | 常量名 | 含义 |
+|:---:|--------|------|
+| 1 | TYPE_CLASS | 亲子课 |
+| 2 | TYPE_STORY | 故事会 |
+| 3 | TYPE_WORKSHOP | 工作坊 |
+| 4 | TYPE_OUTDOOR | 户外活动 |
+| 5 | TYPE_PARENTING | 家长课堂 |
+| 6 | TYPE_OTHER | 其他 |
+
+### F.7 SystemMessage — 消息类型
+
+| 编码 | 常量名 | 含义 |
+|:---:|--------|------|
+| 1 | TYPE_SYSTEM | 系统通知 |
+| 2 | TYPE_REMINDER | 提醒消息 |
+| 3 | TYPE_ACHIEVEMENT | 成就消息 |
+| 4 | TYPE_REPORT | 报告消息 |
+| 5 | TYPE_EXPIRY | 到期提醒 |
+
+### F.8 SystemMessage — 优先级
+
+| 编码 | 常量名 | 含义 |
+|:---:|--------|------|
+| 0 | PRIORITY_NORMAL | 普通 |
+| 1 | PRIORITY_IMPORTANT | 重要 |
+| 2 | PRIORITY_URGENT | 紧急 |
+
+### F.9 Order — 支付状态
+
+| 编码 | 常量名 | 含义 |
+|:---:|--------|------|
+| 0 | PENDING | 待支付 |
+| 1 | PAID | 已支付 |
+| 2 | CLOSED | 已关闭 |
+| 3 | CANCELLED | 已取消 |
+
+### F.10 Deposit — 押金状态
+
+| 编码 | 常量名 | 含义 |
+|:---:|--------|------|
+| 0 | UNPAID | 未缴纳 |
+| 1 | PAID | 已缴纳 |
+| 2 | REFUNDED | 已退还 |
+| 3 | DEDUCTED | 已扣除 |
+
+### F.11 Reservation — 预约状态
+
+| 编码 | 常量名 | 含义 |
+|:---:|--------|------|
+| 0 | PENDING | 待取书 |
+| 1 | FULFILLED | 已取书 |
+| 2 | CANCELLED | 已取消 |
+| 3 | EXPIRED | 已过期 |
+
+### F.12 DamageReport — 损坏定级
+
+| 编码 | 常量名 | 含义 |
+|:---:|--------|------|
+| 1 | LEVEL_LIGHT | 轻度损坏（免费） |
+| 2 | LEVEL_HEAVY | 重度损坏（0.5×定价） |
+| 3 | LEVEL_LOST | 丢失（1.5×定价） |
+
+### F.13 DamageReport — 报告状态
+
+| 编码 | 常量名 | 含义 |
+|:---:|--------|------|
+| 0 | PENDING | 待审核 |
+| 1 | APPROVED | 已通过 |
+| 2 | REJECTED | 已驳回 |
+| 3 | APPEALING | 申诉中 |
+| 4 | CLOSED | 已结案 |
+
+### F.14 UserVocabulary — 掌握状态
+
+| 编码 | 常量名 | 含义 |
+|:---:|--------|------|
+| 0 | STATUS_LEARNING | 学习中 |
+| 1 | STATUS_MASTERED | 已掌握 |
+
+### F.15 ReadingSubmission — 提交状态
+
+| 编码 | 常量名 | 含义 |
+|:---:|--------|------|
+| 0 | STATUS_PENDING | 待审核 |
+| 1 | STATUS_APPROVED | 已通过 |
+| 2 | STATUS_REJECTED | 已驳回 |
+
+### F.16 Quiz — 测验状态
+
+| 编码 | 常量名 | 含义 |
+|:---:|--------|------|
+| 0 | STATUS_PENDING | 待完成 |
+| 1 | STATUS_COMPLETED | 已完成 |
+
+### F.17 ActivityEnrollment — 报名状态
+
+| 编码 | 常量名 | 含义 |
+|:---:|--------|------|
+| 0 | STATUS_PENDING | 待审核 |
+| 1 | STATUS_APPROVED | 已通过 |
+| 2 | STATUS_CANCELLED | 已取消 |
+
+### F.18 RefundApplication — 退款状态
+
+| 编码 | 常量名 | 含义 |
+|:---:|--------|------|
+| 0 | STATUS_PENDING | 待审核 |
+| 1 | STATUS_APPROVED | 已批准 |
+| 2 | STATUS_REJECTED | 已拒绝 |
+| 3 | STATUS_COMPLETED | 已完成 |
+
+---
+
+## 附录G：系统配置项清单
+
+所有配置存储在 `system_config` 表，通过 `ConfigService` 统一读取（带TTL缓存）。
+
+| 配置键 | 类型 | 默认值 | 说明 |
+|--------|:---:|:-----:|------|
+| trial_pages | int | 10 | 体验用户试读页数 |
+| vocab_lookup_limit | int | 10 | 体验用户查词次数上限 |
+| enable_trial_reading | bool | true | 是否开启试读功能 |
+| enable_vocab_lookup | bool | true | 是否开启查词功能 |
+| observation_days | int | 30 | 观察期天数 |
+| member_days | int | 365 | 正式会员有效期（天） |
+| member_grace_days | int | 15 | 会员到期缓冲天数 |
+| renewal_discount | string | 0.9 | 缓冲期内续费折扣 |
+| multi_child_discount | string | 0.9 | 第2孩起折扣 |
+| borrow_limit | int | 20 | 最大同时借阅数 |
+| borrow_period_days | int | 21 | 单次借阅期限（天） |
+| due_remind_days | string | 5,3,1,0 | 到期前提醒天数列表 |
+| overdue_fine_per_day | int | 1 | 逾期罚款（元/天） |
+| lost_book_fine_multiplier | string | 1.5 | 丢书罚款倍率 |
+| deposit_amount | int | 1200 | 押金金额（元） |
+| reservation_expire_hours | int | 72 | 预约过期时间（小时） |
+| default_required_books | int | 5 | 每级默认需读完书数 |
+| quiz_pass_rate | string | 0.80 | 测验最低通过率 |
+| quiz_total_questions | int | 5 | 每本书测验默认题数 |
+| quiz_pass_count | int | 5 | 每级需通过测验的最少书数 |
+| require_teacher_review | bool | false | 晋级是否需要老师审核 |
+| checkin_min_minutes | int | 10 | 打卡最低阅读分钟数 |
+| checkin_min_vocab | int | 5 | 打卡最低生词数 |
+| daily_checkin_limit | int | 1 | 每天最多打卡次数 |
+| bookshelf_limit | int | 0 | 书架最大数量（0=无限制） |
+| venue_name | string | 人广馆 | 场馆名称 |
+| venue_address | string | 上海市黄浦区 | 场馆地址 |
+| order_expire_minutes | int | 30 | 订单未支付自动关闭时间（分钟） |
+| price_parent_course | string | 99 | 亲子课价格（元） |
+| price_observation | string | 500 | 观察期价格（元） |
+| price_official_member | string | 5400 | 正式会员年费（元） |
+| price_quarterly | string | 1350 | 季度会员价格（元） |
+| price_semi_annual | string | 2700 | 半年会员价格（元） |
+| admin_token_expire_hours | int | 8 | 管理员 Token 有效期（小时） |
+| activity_cancel_hours | int | 24 | 活动开始前不可取消小时数 |
+| member_expire_remind_days | string | 30,15,7,3,2,1,0 | 会员到期提醒天数列表 |
+| observation_remind_days | string | 7,5,3,2,1,0 | 观察期到期提醒天数列表 |
+
+---
+
+## 附录H：定时任务清单
+
+全部注册在 `backend/tasks/scheduler.py` 的 `init_scheduler()` 中。
+
+| 任务ID | 触发时间 | 说明 |
+|--------|---------|------|
+| check_member_expiry | 每天 09:00 | 会员到期提醒 |
+| check_observation_reminders | 每天 09:00 | 观察期到期提醒 |
+| check_observation_expiry | 每天 09:30 | 观察期到期检查（状态迁移 + 报告生成） |
+| check_activity_reminders | 每天 10:00 | 活动开始前3天提醒 |
+| remind_pending_submissions | 每天 11:00 | 晋级待审超过7天提醒 |
+| alert_stale_refunds | 每天 12:00 | 退款7天未到账告警 |
+| check_due_date_reminders | 每天 01:00 | 借阅到期提醒 |
+| check_grace_period_shutdown | 每天 02:00 | 缓冲期关停检查 |
+| mark_overdue_books | 每天 02:30 | 逾期检测 + 罚款按日累计 |
+| reconcile_stock | 每天 03:00 | 库存双口径对账（T3.7 新增） |
+| generate_weekly_reports | 每周一 08:00 | 生成周报 |
+| generate_monthly_reports | 每月1日 08:00 | 生成月报 + 平台级月度统计 |
+| close_expired_orders | 每分钟 | 订单30分钟未支付自动关闭 |
+| migrate_activity_status | 每5分钟 | 活动状态自动迁移 |
+| expire_reservations | 每30分钟 | 预约过期检查（72h取书） |
+
+---
+
 ## V3.8 新增功能（2026-07-15）
 
 | 功能 | 说明 | 对应需求章节 |
@@ -927,3 +1448,87 @@
 - **SMS 真实 SDK**：当前使用 Mock SMS 网关（`MOCK_SMS` 环境变量控制），需生产 SMS 凭证后切换为真实 SDK
 - **语音评测 16.4**：发音评分功能规划中，预计后续版本实现
 - **证书自动轮换**：`pay_v3.py:99` 存在 TODO，微信支付平台证书自动轮换尚未实现
+
+---
+
+## 附录I：多角色操作定义
+
+### I.1 角色与登录态
+- 家长：微信小程序唯一登录主体，持有微信 openid 会话。所有支付、退款、押金、权益转让操作必须由家长完成。
+- 孩子：无独立登录态，是家长账号下的数据实体。家长通过"当前选中孩子"（user.current_child_id）切换操作对象。
+- 孩子侧所有操作（听读、查词、朗读、答题）均以"家长设备 + 当前选中孩子"执行，产生的数据归属当前选中孩子。
+
+### I.2 多孩子切换规则
+- 切换入口：小程序首页顶部孩子头像，点击展开孩子列表。
+- 切换后：所有页面数据（书架、统计、生词本、晋级）立即切换为选中孩子的数据，无缓存残留。
+- 切换时机限制：支付流程中禁止切换孩子（防止订单归属错乱）；听读进行中切换孩子，当前听读会话强制结束并结算时长（前端已实现/待验证）。
+
+### I.3 年龄差异化
+- 本版本不做年龄差异化 UI。所有孩子共用同一套交互。3-6 岁孩子由家长辅助操作，属使用场景假设，不构成系统功能需求。
+
+---
+
+## 附录J：非功能性需求
+
+### J.1 性能指标
+| 场景 | 指标 | 测量方式 |
+|------|------|---------|
+| 扫码借书/还书接口 | P95 ≤ 1.5s | 服务端日志 |
+| 图书搜索（筛选+关键词） | P95 ≤ 800ms | 服务端日志 |
+| 查词接口（ECDICT 命中） | P95 ≤ 50ms | 服务端日志 |
+| 逾期检测定时任务 | 1 万条记录 ≤ 5 分钟 | 任务日志 |
+| 观察期报告 PDF 生成 | 单次 ≤ 10s，并发上限 4 | 任务日志 |
+| 小程序首屏 | ≤ 2s（4G 网络） | 前端埋点 |
+
+### J.2 容量假设
+- 同时在线用户 ≤ 500；借阅记录总量 ≤ 10 万；图书总量 ≤ 2 万册。
+
+---
+
+## 附录K：文案规范
+
+### K.1 提示文案唯一真源
+以下文案以本表为准，其他文档（含 BDD、全流程文档）引用时不得改写：
+
+| 场景 | 标准文案 |
+|------|---------|
+| 预约时库存为 0 | 该书暂无库存 |
+| 借书时未缴押金 | 请先缴纳押金（金额从 deposit_amount 配置读取，禁止写死） |
+| 借书时已达上限 | 已达最大借阅数，请先归还部分图书 |
+| 重复加入书架 | 该书已在书架中 |
+| 重复报名活动 | 已报名 |
+| 预约成功 | 预约成功，请 {reservation_expire_hours} 小时内到店取书 |
+| 名额已满 | 该时间段名额已满，请选择其他时间 |
+
+### K.2 文案规则
+- 涉及金额、数量、时限的文案一律使用配置变量插值，禁止硬编码数字
+- 按钮文案统一用动词开头：立即支付 / 立即报名 / 预约借书 / 取消报名
+- 错误提示不暴露技术细节（不出现"数据库""接口 500"等字样）
+
+---
+
+## 附录L：页面三态规则
+
+### L.1 空状态（逐页定义）
+| 页面 | 空状态文案 | 引导按钮 |
+|------|-----------|---------|
+| 书架 | 书架还是空的 | 去图书馆看看 |
+| 生词本 | 还没有生词 | 去读一本书 |
+| 借阅记录 | 暂无借阅记录 | 预约借书 |
+| 预约列表 | 暂无预约 | 去图书馆看看 |
+| 证书列表 | 还没有证书，继续努力 | — |
+| 活动列表 | 近期没有活动 | — |
+| 消息中心 | 暂无消息 | — |
+
+### L.2 加载态
+- 首屏数据加载：骨架屏；分页加载：底部 loading 文字；按钮提交：按钮内 loading 图标+禁用。
+
+### L.3 错误态
+| HTTP 状态 | 用户文案 |
+|-----------|---------|
+| 401 | 登录已过期，请重新进入小程序 |
+| 403 | 暂无权限查看 |
+| 404 | 内容不存在或已删除 |
+| 409 | 操作冲突，请刷新后重试 |
+| 422 | 展示后端返回的 detail 业务文案 |
+| 500/网络超时 | 网络异常，请稍后重试（附重试按钮） |

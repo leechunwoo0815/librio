@@ -16,6 +16,12 @@
 
   <block wx:elif="{{!loading}}">
 
+    <!-- iOS Restriction Banner -->
+    <view wx:if="{{isIOS}}" class="ios-restrict">
+      <text class="ios-restrict-icon"><text class="icon icon-apple">🍎</text></text>
+      <text class="ios-restrict-text">当前暂不支持 iOS 端支付，请使用安卓设备或联系客服办理</text>
+    </view>
+
     <!-- Status Card -->
     <view class="status-section" wx:if="{{depositInfo}}">
       <view class="status-card">
