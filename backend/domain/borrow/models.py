@@ -41,9 +41,13 @@ class BorrowRecord(BaseModel):
     operator_id = Column(BigInteger, nullable=True, comment="操作运营人员ID")
 
     borrow_time = Column(DateTime, nullable=False, comment="借出时间")
-    due_date = Column(DateTime, nullable=False, comment="应还日期（借出+21天）")
+    due_date = Column(
+        DateTime, nullable=False, index=True, comment="应还日期（借出+21天）"
+    )
     return_time = Column(DateTime, nullable=True, comment="实际归还时间")
-    status = Column(SmallInteger, default=BorrowStatus.BORROWING, comment="借阅状态")
+    status = Column(
+        SmallInteger, default=BorrowStatus.BORROWING, index=True, comment="借阅状态"
+    )
 
     # 逾期相关
     overdue_days = Column(Integer, default=0, comment="逾期天数")

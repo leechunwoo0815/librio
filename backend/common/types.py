@@ -46,17 +46,6 @@ class PayStatus(IntEnum):
     CLOSED = 5  # 已关闭
 
 
-class PayType(IntEnum):
-    """付款方式"""
-
-    WECHAT = 1  # 微信支付
-    ALIPAY = 2  # 支付宝
-    BANK_CARD = 3  # 银行卡
-    CASH = 4  # 现金
-    TRANSFER = 5  # 转账
-    OTHER = 6  # 其他
-
-
 # ============================================================
 # 会员状态枚举
 # ============================================================
@@ -87,12 +76,14 @@ class BorrowStatus(IntEnum):
 
 
 class BookCopyStatus(IntEnum):
-    """实体书副本状态"""
+    """实体书副本状态（六类：可借/已借出/维修中/报废/损坏/丢失）"""
 
     AVAILABLE = 0  # 可借
     BORROWED = 1  # 已借出
     MAINTENANCE = 2  # 维修中
     SCRAPPED = 3  # 报废
+    DAMAGED = 4  # 损坏（T3.6a 引入）
+    LOST = 5  # 丢失（T3.6a 引入）
 
 
 # ============================================================

@@ -21,6 +21,54 @@ from backend.domain.child.schemas import (
 logger = logging.getLogger(__name__)
 
 
+def assert_no_pending_transfer(db: Session, source_child_id: int) -> None:
+    """校验孩子无审核中或已通过的权益转让记录
+
+    用于在借书/预约/退款/续费等入口前拦截，防止转让期间操作。
+    不拦截 REJECTED 记录或软删除记录。
+    """
+    from backend.domain.child.benefit_transfer_model import BenefitTransferApplication
+    from backend.common.exceptions import ValidationError
+
+    approved = (
+        db.query(BenefitTransferApplication)
+        .filter(
+            BenefitTransferApplication.source_child_id == source_child_id,
+            BenefitTransferApplication.status == 1,
+            BenefitTransferApplication.is_deleted == 0,
+        )
+        .first()
+    )
+    if approved:
+        raise ValidationError("该孩子已有审核通过的权益转让记录，无法继续")
+
+    approved_as_target = (
+        db.query(BenefitTransferApplication)
+        .filter(
+            BenefitTransferApplication.target_child_id == source_child_id,
+            BenefitTransferApplication.status == 1,
+            BenefitTransferApplication.is_deleted == 0,
+        )
+        .first()
+    )
+    if approved_as_target:
+        raise ValidationError("该孩子已有审核通过的权益转让记录，无法继续")
+
+    pending = (
+        db.query(BenefitTransferApplication)
+        .filter(
+            BenefitTransferApplication.source_child_id == source_child_id,
+            BenefitTransferApplication.status == 0,
+            BenefitTransferApplication.is_deleted == 0,
+        )
+        .first()
+    )
+    if pending:
+        raise ValidationError(
+            f"该孩子有审核中的转让申请（申请ID={pending.id}），请等待审核完成"
+        )
+
+
 class ChildService:
     """孩子服务
 
@@ -171,6 +219,22 @@ class ChildService:
                 f"源孩子有未缴罚款 {source.outstanding_fines} 元，请先结清"
             )
 
+        # 目标孩子校验：无活跃借阅 + 无未缴罚款
+        target_active_borrows = (
+            self.db.query(BorrowRecord)
+            .filter(
+                BorrowRecord.child_id == target_id,
+                BorrowRecord.status.in_([BorrowStatus.BORROWING, BorrowStatus.OVERDUE]),
+                BorrowRecord.is_deleted == 0,
+            )
+            .count()
+        )
+        if target_active_borrows > 0:
+            raise ValidationError(f"目标孩子有 {target_active_borrows} 本未还书")
+
+        if target.outstanding_fines and target.outstanding_fines > 0:
+            raise ValidationError(f"目标孩子有未缴罚款 {target.outstanding_fines} 元")
+
         return source, target
 
     def transfer_benefit(self, source_id: int, target_id: int) -> dict:
@@ -196,6 +260,7 @@ class ChildService:
     def create_benefit_transfer_application(
         self, source_child_id: int, target_child_id: int, user_id: int
     ) -> dict:
+        assert_no_pending_transfer(self.db, source_child_id)
         self._validate_transfer(source_child_id, target_child_id)
         application = BenefitTransferApplication(
             source_child_id=source_child_id,

@@ -2,9 +2,13 @@
 """词汇域业务逻辑 — 查词、生词本管理"""
 
 import logging
-from datetime import datetime
+from datetime import date, datetime
 from sqlalchemy.orm import Session
 from backend.common.exceptions import ValidationError
+from backend.common.events import CheckInEvent, event_bus
+from backend.common.types import MemberStatus
+from backend.domain.child.models import Child
+from backend.domain.reading.models import CheckIn
 from backend.domain.vocabulary.models import UserVocabulary
 from backend.domain.vocabulary.repository import (
     DictionaryWordRepository,
@@ -75,6 +79,7 @@ class VocabularyService:
             last_review_time=datetime.now(),
         )
         created = self.vocab_repo.create(uv)
+        self._check_vocab_checkin(child_id)
         self.db.commit()
         logger.info(f"Vocab added: child={child_id}, word={dw.word}")
         return {
@@ -145,6 +150,56 @@ class VocabularyService:
             "total": learning + mastered,
         }
 
+    def _check_vocab_checkin(self, child_id: int) -> None:
+        """生词打卡：添加生词后触发每日打卡（仅正式会员/观察期）"""
+        child = (
+            self.db.query(Child)
+            .filter(Child.id == child_id, Child.is_deleted == 0)
+            .first()
+        )
+        if not child or child.status not in (
+            MemberStatus.OBSERVATION,
+            MemberStatus.OFFICIAL,
+        ):
+            return
+
+        today = date.today()
+        existing = (
+            self.db.query(CheckIn)
+            .filter(
+                CheckIn.child_id == child_id,
+                CheckIn.check_date == today,
+                CheckIn.is_deleted == 0,
+            )
+            .first()
+        )
+        if existing:
+            return
+
+        from backend.common.config_service import ConfigService
+
+        daily_limit = ConfigService.get_int(self.db, "daily_checkin_limit", 1)
+        today_count = (
+            self.db.query(CheckIn)
+            .filter(
+                CheckIn.child_id == child_id,
+                CheckIn.check_date == today,
+                CheckIn.is_deleted == 0,
+            )
+            .count()
+        )
+        if today_count >= daily_limit:
+            return
+
+        checkin = CheckIn(
+            child_id=child_id,
+            check_date=today,
+            check_type=CheckIn.TYPE_VOCABULARY,
+        )
+        self.db.add(checkin)
+        event_bus.publish(CheckInEvent(child_id=child_id, streak_days=0), db=self.db)
+        logger.info(f"Vocab checkin: child={child_id}")
+
     def check_lookup_allowed(self, user_id: int) -> None:
         """检查查词是否允许（开关 + 次数限制）。不允许时抛出 ForbiddenError。"""
         from backend.common.config_service import ConfigService
@@ -157,13 +212,17 @@ class VocabularyService:
         if not enabled:
             raise ForbiddenError("查词功能已关闭")
 
-        # 检查查词次数限制（仅 TRIAL 用户）
-        child = (
+        # 检查查词次数限制 — 无有效会员孩子（OBSERVATION/OFFICIAL）的试读用户才限
+        children = (
             self.db.query(Child)
             .filter(Child.user_id == user_id, Child.is_deleted == 0)
-            .first()
+            .all()
         )
-        if child and child.status == MemberStatus.TRIAL:
+        has_paid_member = any(
+            c.status in (MemberStatus.OBSERVATION, MemberStatus.OFFICIAL)
+            for c in children
+        )
+        if not has_paid_member:
             limit = ConfigService.get_int(self.db, "vocab_lookup_limit", 10)
             today_count = self.get_today_lookup_count(user_id)
             if today_count >= limit:

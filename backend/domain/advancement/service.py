@@ -85,8 +85,8 @@ class AdvancementService:
     # ==================== 测验 ====================
 
     def start_quiz(self, child_id: int, data: QuizStartRequest) -> QuizResponse:
-        """开始测验 — 含重考间隔限制（1小时）"""
-        from datetime import timedelta, timezone
+        """开始测验 — 含可配置重考间隔限制"""
+        from datetime import timezone
 
         questions = self.question_repo.get_by_book(data.book_id)
         if not questions:
@@ -99,7 +99,8 @@ class AdvancementService:
         if len(questions) > max_questions:
             questions = questions[:max_questions]
 
-        # 重考间隔检查：同一本书 1 小时内不可重考
+        # 重考间隔检查：从配置读取冷却分钟数（5-1440，默认60）
+        cooldown_minutes = ConfigService.get_int(self.db, "quiz_cooldown_minutes", 60)
         now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
         recent_quiz = (
             self.db.query(Quiz)
@@ -107,14 +108,16 @@ class AdvancementService:
                 Quiz.child_id == child_id,
                 Quiz.book_id == data.book_id,
                 Quiz.status == Quiz.STATUS_COMPLETED,
-                Quiz.create_time > now_utc - timedelta(hours=1),
+                Quiz.create_time > now_utc - timedelta(minutes=cooldown_minutes),
                 Quiz.is_deleted == 0,
             )
             .order_by(Quiz.create_time.desc())
             .first()
         )
         if recent_quiz:
-            remaining = timedelta(hours=1) - (now_utc - recent_quiz.create_time)
+            remaining = timedelta(minutes=cooldown_minutes) - (
+                now_utc - recent_quiz.create_time
+            )
             minutes = int(remaining.total_seconds() / 60)
             raise ConflictError(f"测验冷却中，请 {minutes} 分钟后重试")
 

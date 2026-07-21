@@ -12,6 +12,7 @@ from decimal import Decimal
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from sqlalchemy import func as sql_func
+from sqlalchemy.orm import Session
 from backend.common.distributed_lock import distributed_lock
 from backend.common.types import MemberStatus
 
@@ -90,6 +91,14 @@ def init_scheduler(app):
         replace_existing=True,
     )
 
+    # 每天凌晨0点：损坏报告过期自动确认
+    scheduler.add_job(
+        confirm_expired_damage_reports,
+        CronTrigger(hour=0, minute=0),
+        id="confirm_expired_damage_reports",
+        replace_existing=True,
+    )
+
     # 每天凌晨1点：借阅到期提醒
     scheduler.add_job(
         check_due_date_reminders,
@@ -138,8 +147,16 @@ def init_scheduler(app):
         replace_existing=True,
     )
 
+    # 每天凌晨3点：库存双口径对账
+    scheduler.add_job(
+        reconcile_stock,
+        CronTrigger(hour=3, minute=0),
+        id="reconcile_stock",
+        replace_existing=True,
+    )
+
     scheduler.start()
-    logger.info("Scheduler started with 14 jobs")
+    logger.info("Scheduler started with 15 jobs")
 
 
 def stop_scheduler():
@@ -170,6 +187,87 @@ def _create_message(
         priority=priority,
     )
     db.add(msg)
+
+
+@distributed_lock("job:reconcile_stock", timeout=300)
+def reconcile_stock(db: Session | None = None):
+    """每日库存对账：Book.total_stock/available_stock 与 BookCopy 实际计数对齐
+
+    参数 db：可选的 session 注入（测试用），不传则自行创建。
+    """
+    import json
+    from backend.common.types import BookCopyStatus
+    from backend.domain.book.models import Book, BookCopy
+
+    valid_statuses = (
+        BookCopyStatus.AVAILABLE,
+        BookCopyStatus.BORROWED,
+        BookCopyStatus.MAINTENANCE,
+        BookCopyStatus.DAMAGED,
+    )
+    own_session = db is None
+    if own_session:
+        db = _get_db_session()
+    try:
+        books = db.query(Book).filter(Book.is_deleted == 0).all()
+        fixed = 0
+        for book in books:
+            total_count = (
+                db.query(BookCopy.id)
+                .filter(
+                    BookCopy.book_id == book.id,
+                    BookCopy.is_deleted == 0,
+                    BookCopy.status.in_(valid_statuses),
+                )
+                .count()
+            )
+            avail_count = (
+                db.query(BookCopy.id)
+                .filter(
+                    BookCopy.book_id == book.id,
+                    BookCopy.is_deleted == 0,
+                    BookCopy.status == BookCopyStatus.AVAILABLE,
+                )
+                .count()
+            )
+            if book.total_stock != total_count or book.available_stock != avail_count:
+                detail = json.dumps(
+                    {
+                        "book_id": book.id,
+                        "expected": {
+                            "total_stock": total_count,
+                            "available_stock": avail_count,
+                        },
+                        "actual": {
+                            "total_stock": book.total_stock,
+                            "available_stock": book.available_stock,
+                        },
+                    },
+                    ensure_ascii=False,
+                )
+                from backend.domain.admin.models import OperationLog
+
+                log = OperationLog(
+                    admin_id=0,
+                    module="book",
+                    operation="stock_reconciliation",
+                    content=detail,
+                )
+                db.add(log)
+                book.total_stock = total_count
+                book.available_stock = avail_count
+                fixed += 1
+        db.commit()
+        if fixed:
+            logger.info(f"Stock reconciliation: {fixed} books fixed")
+        else:
+            logger.info("Stock reconciliation: all consistent")
+    except Exception as e:
+        logger.error(f"Stock reconciliation failed: {e}")
+        db.rollback()
+    finally:
+        if own_session:
+            db.close()
 
 
 @distributed_lock("job:check_member_expiry", timeout=600)
@@ -1027,5 +1125,21 @@ def check_activity_reminders():
     except Exception as e:
         db.rollback()
         logger.error(f"check_activity_reminders failed: {e}", exc_info=True)
+    finally:
+        db.close()
+
+
+def confirm_expired_damage_reports():
+    """确认过期未申诉的损坏报告（超过7天自动确认）"""
+    from backend.domain.admin.services.damage_admin_service import DamageAdminService
+
+    db = _get_db_session()
+    try:
+        svc = DamageAdminService(db)
+        count = svc.batch_confirm_expired()
+        if count:
+            logger.info("定时任务 confirm_expired_damage_reports: 确认 %d 条", count)
+    except Exception as e:
+        logger.error(f"confirm_expired_damage_reports failed: {e}", exc_info=True)
     finally:
         db.close()

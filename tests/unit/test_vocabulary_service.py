@@ -6,7 +6,7 @@
 """
 
 import pytest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 from backend.domain.vocabulary.service import VocabularyService
 from backend.domain.vocabulary.models import UserVocabulary
 from datetime import datetime
@@ -45,7 +45,8 @@ def test_lookup_word_not_found(vocab_service, mock_db):
     assert result is None
 
 
-def test_add_to_vocabulary_new(vocab_service, mock_db):
+@patch.object(VocabularyService, "_check_vocab_checkin")
+def test_add_to_vocabulary_new(mock_checkin, vocab_service, mock_db):
     """添加生词——首次"""
     mock_word = MagicMock()
     mock_word.id = 1
@@ -61,9 +62,30 @@ def test_add_to_vocabulary_new(vocab_service, mock_db):
     mock_db.add.return_value = None
 
     vocab_service.add_to_vocabulary(child_id=1, word="curiosity", book_id=1)
+    mock_checkin.assert_called_once_with(1)
 
 
-def test_add_to_vocabulary_already_exists(vocab_service, mock_db):
+def test_add_to_vocabulary_checkin_triggered(vocab_service, mock_db):
+    """添加生词首次→应触发打卡（非 mock 跳过）"""
+    mock_word = MagicMock()
+    mock_word.id = 1
+    mock_db.query.return_value.filter.return_value.first.side_effect = [
+        mock_word,
+        None,
+    ]
+    mock_uv = MagicMock()
+    mock_uv.id = 1
+    mock_uv.word_id = 1
+    mock_uv.status = UserVocabulary.STATUS_LEARNING
+    mock_db.add.return_value = None
+
+    with patch.object(VocabularyService, "_check_vocab_checkin") as mock_fn:
+        vocab_service.add_to_vocabulary(child_id=1, word="curiosity", book_id=1)
+        mock_fn.assert_called_once_with(1)
+
+
+@patch.object(VocabularyService, "_check_vocab_checkin")
+def test_add_to_vocabulary_already_exists(mock_checkin, vocab_service, mock_db):
     """添加生词——已存在，增加查询次数"""
     mock_word = MagicMock()
     mock_word.id = 1

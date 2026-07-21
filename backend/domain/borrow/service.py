@@ -22,6 +22,7 @@ from backend.common.exceptions import (
 )
 from backend.common.types import BorrowStatus, DepositStatus, MemberStatus
 from backend.domain.book.models import Book, BookCopy
+from backend.domain.child.service import assert_no_pending_transfer
 from backend.domain.borrow.models import BorrowRecord
 from backend.domain.borrow.repository import BorrowRecordRepository
 from backend.domain.borrow.schemas import (
@@ -51,6 +52,7 @@ class BorrowService:
     def borrow_book(self, data: BorrowBookRequest) -> BorrowRecordResponse:
         """借书 — 校验权限 + 上限 + 创建记录 + 发布事件"""
         try:
+            assert_no_pending_transfer(self.db, data.child_id)
             # 校验会员状态 + 押金
             child = (
                 self.db.query(Child)
