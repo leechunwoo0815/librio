@@ -4,7 +4,6 @@
 import logging
 import os
 
-from jinja2 import Template
 from sqlalchemy.orm import Session
 from backend.common.base_repo import BaseRepository
 from backend.common.exceptions import NotFoundError
@@ -127,8 +126,13 @@ class CertificateService:
             os.path.dirname(__file__), "..", "..", "templates", "level_certificate.html"
         )
         try:
+            from jinja2 import Environment, select_autoescape
+
+            env = Environment(
+                autoescape=select_autoescape(default=True, default_for_string=True)
+            )
             with open(template_path, encoding="utf-8") as f:
-                template = Template(f.read())
+                template = env.from_string(f.read())
         except FileNotFoundError:
             logger.warning(f"Template not found: {template_path}")
             return None

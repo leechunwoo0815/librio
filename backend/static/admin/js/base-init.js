@@ -81,9 +81,15 @@
       document.body.removeChild(link);
     }
 
-    // JS 字符串转义 — 用于 onclick 内嵌用户数据
+    // JS 字符串转义 — 用于 onclick 内嵌用户数据（& 必须最先替换，防止二次转义 &quot; → &amp;quot;）
     function jsEscape(str) {
-      return (str == null ? '' : String(str)).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+      var s = (str == null ? '' : String(str));
+      return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    }
+
+    // HTML 属性值转义 — 用于 data-* 属性构造
+    function escapeAttr(str) {
+      return (str == null ? '' : String(str)).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
 
     // 全局弹窗显隐 — 配合 modal-overlay + show/hide class

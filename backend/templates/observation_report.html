@@ -101,7 +101,7 @@ body { font-family: "Noto Sans CJK SC", "PingFang SC", "Helvetica Neue", sans-se
     <div class="section">
       <h2>老师评语</h2>
       <div class="comment-box">
-        <div class="comment-text">{{ teacher_comment_section }}</div>
+        <div class="comment-text">{{ teacher_comment_section | safe }}</div>
       </div>
     </div>
     {% endif %}

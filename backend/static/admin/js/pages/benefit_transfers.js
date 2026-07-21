@@ -31,7 +31,7 @@
       pageUi(total, page, pageSize);
     } catch (err) {
       document.getElementById('transferTable').innerHTML =
-        '<tr><td colspan="7" class="text-center p-40 text-muted">加载失败：' + (err.message || '未知错误') + '</td></tr>';
+        '<tr><td colspan="7" class="text-center p-40 text-muted">加载失败：' + escapeHtml(err.message || '未知错误') + '</td></tr>';
     }
   }
 

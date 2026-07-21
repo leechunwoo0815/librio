@@ -147,7 +147,7 @@
     document.getElementById('recordsBody').innerHTML = records.map(r => `
       <tr>
         <td><strong>${escapeHtml(r.child_name || r.user_name || '-')}</strong></td>
-        <td>${r.badge_emoji || ''} ${escapeHtml(r.achievement_name || '-')}</td>
+        <td>${escapeHtml(r.badge_emoji || '')} ${escapeHtml(r.achievement_name || '-')}</td>
         <td>${getTypeBadge(r.achievement_type || r.type)}</td>
         <td class="record-time">${escapeHtml((r.achieved_at || r.awarded_at || '').slice(0, 16).replace('T', ' '))}</td>
         <td>${r.award_method === 'manual' ? '手动授予' : '自动'}</td>

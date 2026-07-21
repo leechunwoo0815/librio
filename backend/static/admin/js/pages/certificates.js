@@ -57,13 +57,13 @@
         '<td><strong>' + escapeHtml(cert.child_name || '-') + '</strong>' +
         (cert.child_id ? '<br><span class="text-muted text-sm">ID: ' + escapeHtml(cert.child_id) + '</span>' : '') +
         '</td>' +
-        '<td><span class="level-badge ' + levelCls + '">Level ' + (cert.level_name || '-') + '</span></td>' +
+        '<td><span class="level-badge ' + levelCls + '">Level ' + escapeHtml(cert.level_name || '-') + '</span></td>' +
         '<td><span class="cert-id">' + escapeHtml(cert.certificate_no || '-') + '</span></td>' +
         '<td>' + escapeHtml((cert.issued_at || '-').slice(0,10)) + '</td>' +
         '<td>' + escapeHtml((cert.create_time || '-').slice(0,10)) + '</td>' +
         '<td>' +
         '<button class="btn btn-primary btn-sm" onclick="openCert(' + idx + ')">查看</button>' +
-        '<button class="btn btn-outline btn-sm ml-4" onclick="regenerate(\'' + escapeAttr(cert.child_name || '') + '\', ' + cert.id + ')">重新生成</button>' +
+        '<button class="btn btn-outline btn-sm ml-4" data-action="regenerate-cert" data-id="' + cert.id + '" data-name="' + escapeAttr(cert.child_name || '') + '">重新生成</button>' +
         '</td>' +
         '</tr>';
     }).join('');
@@ -115,14 +115,14 @@
     html += '<div class="cert-subtitle">Certificate of Level Advancement</div>';
     html += '<div class="cert-name">' + escapeHtml(c.child_name || '-') + '</div>';
     html += '<div class="cert-desc">';
-    html += '恭喜通过 Level ' + levelName + ' 的阅读晋级考核！';
+    html += '恭喜通过 Level ' + escapeHtml(levelName) + ' 的阅读晋级考核！';
     html += '特此证明该学员在 DmkWords 英语阅读计划中的优异表现。';
     html += '</div>';
-    html += '<div class="cert-level">Level ' + levelName + '</div>';
+    html += '<div class="cert-level">Level ' + escapeHtml(levelName) + '</div>';
     html += '<div class="cert-stats">';
     html += '<div class="cs"><div class="cs-val">' + (c.book_count || 0) + '</div><div class="cs-lbl">阅读本数</div></div>';
     html += '<div class="cs"><div class="cs-val">' + (c.word_count >= 1000 ? (c.word_count / 1000).toFixed(1) + 'K' : (c.word_count || 0)) + '</div><div class="cs-lbl">累计词数</div></div>';
-    html += '<div class="cs"><div class="cs-val">Level ' + levelName + '</div><div class="cs-lbl">晋级至</div></div>';
+    html += '<div class="cs"><div class="cs-val">Level ' + escapeHtml(levelName) + '</div><div class="cs-lbl">晋级至</div></div>';
     html += '</div>';
     html += '<div class="cert-seal"><div class="cert-seal-inner">&#127942;</div></div>';
     html += '<div class="cert-date">签发日期：' + escapeHtml(issuedAt.slice(0, 10)) + '</div>';
@@ -181,6 +181,15 @@
   function escapeAttr(str) {
     return str.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    document.body.addEventListener('click', function(e) {
+      var el = e.target.closest('[data-action="regenerate-cert"]');
+      if (!el) return;
+      e.preventDefault();
+      regenerate(el.dataset.name, parseInt(el.dataset.id));
+    });
+  });
 
   window.certificatesPage = { certsData, loadCertificates, renderStats, formatPeriod, renderTable, populateFilters, openCert, closeCert, showConfirmDialog, regenerate, filterTable, escapeAttr };
   for (var k in window.certificatesPage) window[k] = window.certificatesPage[k];

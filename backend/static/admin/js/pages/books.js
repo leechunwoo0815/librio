@@ -120,7 +120,7 @@
         '<td>' + wc + '</td>' +
         '<td>' + (series ? '<span class="badge badge-accent">' + escapeHtml(series) + '</span>' : '<span class="badge badge-muted">-</span>') + '</td>' +
         '<td>' + (hasAudio ? '<span class="badge badge-success">有</span>' : '<span class="badge badge-muted">无</span>') + '</td>' +
-        '<td>' + qCount + '</td>' +
+        '<td>' + escapeHtml(qCount) + '</td>' +
         '<td><span class="badge ' + statusCls + '">' + statusText + '</span></td>' +
         '<td style="font-family:var(--font-mono);font-size:12px;">' + escapeHtml(barcode) + '</td>' +
         '<td>' + totalStock + ' / ' + availStock + '</td>' +

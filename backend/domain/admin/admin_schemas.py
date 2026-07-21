@@ -10,7 +10,7 @@
 
 from datetime import datetime
 from decimal import Decimal
-from pydantic import BaseModel, Field, ConfigDict, model_validator
+from pydantic import BaseModel, Field, ConfigDict, model_validator, field_validator
 
 
 # ==================== 通用响应 ====================
@@ -369,6 +369,18 @@ class SendMessageRequest(BaseModel):
         description="目标用户分组: trial/observation/member, target=all时可选, 默认全部",
     )
 
+    @field_validator("target_role_groups")
+    @classmethod
+    def validate_target_role_groups(cls, v):
+        if v is not None:
+            allowed = {"trial", "observation", "member"}
+            for g in v:
+                if g not in allowed:
+                    raise ValueError(
+                        f"无效用户分组 '{g}'，允许值: {', '.join(sorted(allowed))}"
+                    )
+        return v
+
 
 class MessageRecord(BaseModel):
     """消息记录响应"""
@@ -490,7 +502,7 @@ class BulkImportBookItem(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    isbn: str = Field(..., min_length=1)
+    isbn: str = Field(..., min_length=10, max_length=20)
     title: str = ""
     author: str = ""
     ar_value: float | None = None
@@ -669,7 +681,7 @@ class CreateLevelRequest(BaseModel):
 
     name: str = Field(..., min_length=1, max_length=50)
     code: str | None = Field(None, max_length=10, description="级别代码（如 A-Z）")
-    badge_emoji: str | None = None
+    badge_emoji: str | None = Field(None, max_length=20)
     sort_order: int | None = None
     required_books: int = Field(5, ge=1)
     pass_rate: float = Field(0.80, ge=0, le=1)
@@ -685,7 +697,7 @@ class UpdateLevelRequest(BaseModel):
 
     name: str | None = Field(None, min_length=1, max_length=50)
     code: str | None = Field(None, max_length=10, description="级别代码（如 A-Z）")
-    badge_emoji: str | None = None
+    badge_emoji: str | None = Field(None, max_length=20)
     sort_order: int | None = None
     required_books: int | None = Field(None, ge=1)
     pass_rate: float | None = Field(None, ge=0, le=1)
@@ -721,7 +733,7 @@ class CreateAchievementRequest(BaseModel):
     type: int = Field(
         1, ge=1, le=4
     )  # 1=level_up, 2=book_milestone, 3=streak, 4=perfect_score
-    badge_emoji: str | None = None
+    badge_emoji: str | None = Field(None, max_length=20)
     trigger_condition: str | None = None
 
 
@@ -733,7 +745,7 @@ class UpdateAchievementRequest(BaseModel):
     name: str | None = Field(None, min_length=1, max_length=100)
     description: str | None = None
     type: int | None = Field(None, ge=1, le=4)
-    badge_emoji: str | None = None
+    badge_emoji: str | None = Field(None, max_length=20)
     trigger_condition: str | None = None
 
 

@@ -74,7 +74,7 @@
       return '<tr>' +
         '<td>' + r.id + '</td>' +
         '<td>' + r.borrow_record_id + '</td>' +
-        '<td>' + (r.child_name || r.child_id) + '</td>' +
+        '<td>' + escapeHtml(r.child_name || r.child_id) + '</td>' +
         '<td><span class="status-badge ' + levelColor + '">' + levelName + '</span></td>' +
         '<td class="amount">' + fine + '</td>' +
         '<td><span class="status-badge ' + sColor + '">' + sName + '</span></td>' +

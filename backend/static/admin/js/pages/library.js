@@ -61,7 +61,7 @@ async function loadBooks() {
       var contentStatus = (b.total_stock > 0 || b.has_audio) ? 'configured' : 'unconfigured';
       return '<tr>' +
         '<td><div class="book-cell"><div class="book-cover ' + colorCls + '">' + escapeHtml(getInitials(b.title)) + '</div><div><div class="book-title-text">' + escapeHtml(b.title || '') + '</div><div class="book-author">' + escapeHtml(b.author || '') + '</div></div></div></td>' +
-        '<td class="font-mono text-sm">' + (b.isbn || '-') + '</td>' +
+        '<td class="font-mono text-sm">' + escapeHtml(b.isbn || '-') + '</td>' +
         '<td><span class="ar-badge">' + (b.ar_value || '-') + '</span></td>' +
         '<td>' + (b.word_count ? b.word_count.toLocaleString() : '-') + '</td>' +
         '<td>' + (b.total_pages ? Math.round(b.total_pages * 2) + '分钟' : '-') + '</td>' +

@@ -40,7 +40,7 @@
       <tr>
         <td>${l.sort_order != null ? l.sort_order : '-'}</td>
         <td style="font-family:var(--font-mono);font-weight:600">${escapeHtml(l.code || l.name || '-')}</td>
-        <td>${l.badge_emoji || '-'}</td>
+        <td>${escapeHtml(l.badge_emoji || '-')}</td>
         <td>${escapeHtml(l.name || '-')}</td>
         <td>${l.required_books != null ? l.required_books : '-'}</td>
         <td>${l.required_quiz_pass_rate != null ? Math.round(l.required_quiz_pass_rate * 100) + '%' : '--'}</td>

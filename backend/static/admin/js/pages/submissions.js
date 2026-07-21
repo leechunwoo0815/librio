@@ -92,7 +92,9 @@
         '<td>' + formatDateTime(s.submitted_at) + '</td>' +
         '<td>' + (s.total_pages ? s.total_pages + ' 页' : '-') + '</td>' +
         '<td><span class="status ' + (statusMap[s.status]||'') + '">' + (statusText[s.status]||'--') + '</span></td>' +
-        '<td>' + (s.status === 0 ? '<button class="btn btn-primary btn-sm" onclick="openReview(' + s.id + ',\'' + jsEscape(s.child_name||'') + '\',\'' + jsEscape(s.book_title||'') + '\',\'' + jsEscape((s.submitted_at||'').slice(0,16)) + '\')">审核</button>' : '<button class="btn btn-outline btn-sm" onclick="openReview(' + s.id + ',\'' + jsEscape(s.child_name||'') + '\',\'' + jsEscape(s.book_title||'') + '\',\'' + jsEscape((s.submitted_at||'').slice(0,16)) + '\',true)">查看</button>') + '</td>' +
+        '<td>' + (s.status === 0
+          ? '<button class="btn btn-primary btn-sm" data-action="open-review" data-id="' + s.id + '" data-child="' + escapeAttr(s.child_name||'') + '" data-book="' + escapeAttr(s.book_title||'') + '" data-time="' + escapeAttr((s.submitted_at||'').slice(0,16)) + '">审核</button>'
+          : '<button class="btn btn-outline btn-sm" data-action="open-review" data-id="' + s.id + '" data-child="' + escapeAttr(s.child_name||'') + '" data-book="' + escapeAttr(s.book_title||'') + '" data-time="' + escapeAttr((s.submitted_at||'').slice(0,16)) + '" data-readonly="true">查看</button>') + '</td>' +
       '</tr>';
     }).join('');
     renderPagination();
@@ -138,6 +140,14 @@
   }
 
   document.addEventListener('DOMContentLoaded', loadSubmissions);
+  document.addEventListener('DOMContentLoaded', function() {
+    document.body.addEventListener('click', function(e) {
+      var el = e.target.closest('[data-action="open-review"]');
+      if (!el) return;
+      e.preventDefault();
+      openReview(parseInt(el.dataset.id), el.dataset.child, el.dataset.book, el.dataset.time, el.dataset.readonly === 'true');
+    });
+  });
 
   window.submissionsPage = { currentReviewId, currentTab, currentPage, pageSize, totalItems, searchKeyword, getStatusParam, switchTab, loadSubmissions, goToPage, onPageSizeChange, updateStats, renderSubmissions, openReview, doReview };
   for (var k in window.submissionsPage) window[k] = window.submissionsPage[k];

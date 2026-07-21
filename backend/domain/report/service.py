@@ -10,7 +10,6 @@ import os
 from datetime import date, datetime, timedelta
 from typing import Optional
 
-from jinja2 import Template
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -317,8 +316,13 @@ class ReportService:
             "observation_report.html",
         )
         try:
+            from jinja2 import Environment, select_autoescape
+
+            env = Environment(
+                autoescape=select_autoescape(default=True, default_for_string=True)
+            )
             with open(template_path, encoding="utf-8") as f:
-                template = Template(f.read())
+                template = env.from_string(f.read())
         except FileNotFoundError:
             logger.warning(f"Template not found: {template_path}")
             return None

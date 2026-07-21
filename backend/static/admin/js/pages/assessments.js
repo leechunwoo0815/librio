@@ -59,7 +59,7 @@ loadAssessments();
       return '<tr>' +
         '<td><div class="student-cell"><div class="student-mini-avatar ' + avatarCls + '">' + initial + '</div><span>' + escapeHtml(item.child_name || '-') + age + '</span></div></td>' +
         '<td>' + escapeHtml(item.venue || '-') + '</td>' +
-        '<td>' + (item.assess_date || '&mdash;') + '</td>' +
+        '<td>' + (item.assess_date ? escapeHtml(item.assess_date) : '&mdash;') + '</td>' +
         '<td>' + currentAr + '</td>' +
         '<td>' + prevAr + '</td>' +
         '<td>' + arChange + '</td>' +

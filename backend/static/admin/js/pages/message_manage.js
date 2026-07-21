@@ -103,7 +103,7 @@
           var time = m.create_time ? m.create_time.replace('T', ' ').substring(0, 19) : '-';
           var groups = '';
           if (m.target_groups && m.target_groups.length > 0) {
-            groups = m.target_groups.map(function(g) { return groupNameMap[g] || g; }).join(', ');
+            groups = m.target_groups.map(function(g) { return groupNameMap[g] || escHtml(g); }).join(', ');
           } else if (m.user_id) {
             groups = '个人';
           } else {
@@ -138,7 +138,7 @@
 
   function escHtml(s) {
     if (!s) return '';
-    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
   // Initial load

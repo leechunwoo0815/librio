@@ -29,6 +29,17 @@
       var fn = window.usersPage[el.getAttribute('data-pg')];
       if (typeof fn === 'function') fn();
     });
+    document.body.addEventListener('click', function(e) {
+      var el = e.target.closest('[data-action]');
+      if (!el) return;
+      e.preventDefault();
+      var action = el.getAttribute('data-action');
+      if (action === 'edit-user') {
+        window.usersPage.editUser(parseInt(el.dataset.userId), el.dataset.parentName, el.dataset.phone, parseInt(el.dataset.status), parseInt(el.dataset.childId));
+      } else if (action === 'edit-child') {
+        window.usersPage.showEditChild(parseInt(el.dataset.childId), el.dataset.name, el.dataset.englishName, parseInt(el.dataset.age), el.dataset.grade);
+      }
+    });
     populateAgeSelects();
     populateGradeSelects();
     loadVenues();
@@ -120,7 +131,7 @@
         '<td>' + venueCell + '</td>' +
         '<td><div class="table-actions">' +
           '<span class="action-link" onclick="usersPage.showDetail(' + u.id + ')">查看</span>' +
-          '<span class="action-link" onclick="usersPage.editUser(' + u.id + ', \'' + jsEscape(u.parent_name || '') + '\', \'' + jsEscape(u.phone || '') + '\', ' + status + ', ' + childId + ')">编辑</span>' +
+          '<span class="action-link" data-action="edit-user" data-user-id="' + u.id + '" data-parent-name="' + escapeAttr(u.parent_name || '') + '" data-phone="' + escapeAttr(u.phone || '') + '" data-status="' + status + '" data-child-id="' + childId + '">编辑</span>' +
         '</div></td>' +
         '</tr>';
     }).join('');
@@ -183,7 +194,7 @@
         html += '<div class="table-wrap"><table><thead><tr class="text-muted"><th>姓名</th><th>年龄</th><th>年级</th><th>场馆</th><th>状态</th><th>AR等级</th><th>阅读分钟</th><th>读完本数</th><th>连续打卡</th><th>会员到期</th><th>操作</th></tr></thead><tbody>';
         d.children.forEach(c => {
           html += '<tr><td><strong>' + escapeHtml(c.name) + '</strong>' + (c.english_name ? ' ('+escapeHtml(c.english_name)+')' : '') + '</td><td>' + c.age + '</td><td>' + escapeHtml(c.grade||'-') + '</td><td>' + escapeHtml(c.venue_name||'-') + '</td><td>' + (statusMap[c.status]||c.status) + '</td><td>' + (c.ar_level||'-') + '</td><td>' + (c.total_reading_minutes||0) + '</td><td>' + (c.total_books_finished||0) + '</td><td>' + (c.current_streak_days||0) + '天</td><td>' + (c.member_expire_time?formatDate(c.member_expire_time):'-') + '</td><td><div class="table-actions">' +
-            '<span class="action-link" onclick="usersPage.showEditChild(' + c.id + ', \'' + jsEscape(c.name||'') + '\', \'' + jsEscape(c.english_name||'') + '\', ' + (c.age||0) + ', \'' + jsEscape(c.grade||'') + '\')">编辑</span>' +
+            '<span class="action-link" data-action="edit-child" data-child-id="' + c.id + '" data-name="' + escapeAttr(c.name||'') + '" data-english-name="' + escapeAttr(c.english_name||'') + '" data-age="' + (c.age||0) + '" data-grade="' + escapeAttr(c.grade||'') + '">编辑</span>' +
             '<span class="action-link text-error" onclick="usersPage.deleteChild(' + c.id + ')">删除</span>' +
           '</div></td></tr>';
         });
