@@ -216,6 +216,7 @@ def step_today_lookup_at_limit(context):
     from datetime import datetime
     from backend.common.config_service import ConfigService
     from backend.domain.vocabulary.models import UserVocabulary, DictionaryWord
+
     limit = ConfigService.get_int(context.db, "vocab_lookup_limit", 10)
     today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     for i in range(limit):

@@ -481,11 +481,7 @@ def test_order_callback_via_encrypted_branch():
         assert resp.status_code == 200, f"callback failed: {resp.text}"
 
         db.expire_all()
-        order = (
-            db.query(Order)
-            .filter(Order.order_no == "CB_ENCRYPTED_TEST")
-            .first()
-        )
+        order = db.query(Order).filter(Order.order_no == "CB_ENCRYPTED_TEST").first()
         assert order is not None
         assert order.pay_status == PayStatus.PAID, (
             f"order not paid: status={order.pay_status}"

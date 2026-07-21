@@ -141,6 +141,7 @@ def step_trial_pages_at_limit(context):
     from datetime import datetime, timedelta
     from backend.common.config_service import ConfigService
     from backend.domain.reading.models import ReadingSession
+
     limit = ConfigService.get_int(context.db, "trial_pages", 10)
     session = ReadingSession(
         child_id=context.child.id,

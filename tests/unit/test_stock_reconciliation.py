@@ -1,4 +1,5 @@
 """T3.7 库存双口径对账任务测试"""
+
 import pytest
 from datetime import datetime
 from sqlalchemy import create_engine
@@ -56,6 +57,7 @@ def test_stock_consistent_no_change(db_session):
     db_session.commit()
 
     from backend.tasks.scheduler import reconcile_stock
+
     reconcile_stock(db=db_session)
 
     db_session.refresh(book)
@@ -73,6 +75,7 @@ def test_stock_fix_total_mismatch(db_session):
     db_session.commit()
 
     from backend.tasks.scheduler import reconcile_stock
+
     reconcile_stock(db=db_session)
 
     db_session.refresh(book)
@@ -89,6 +92,7 @@ def test_stock_fix_available_mismatch(db_session):
     db_session.commit()
 
     from backend.tasks.scheduler import reconcile_stock
+
     reconcile_stock(db=db_session)
 
     db_session.refresh(book)
@@ -105,6 +109,7 @@ def test_scrapped_not_counted_in_total(db_session):
     db_session.commit()
 
     from backend.tasks.scheduler import reconcile_stock
+
     reconcile_stock(db=db_session)
 
     db_session.refresh(book)
@@ -121,6 +126,7 @@ def test_lost_not_counted_in_total(db_session):
     db_session.commit()
 
     from backend.tasks.scheduler import reconcile_stock
+
     reconcile_stock(db=db_session)
 
     db_session.refresh(book)
@@ -137,6 +143,7 @@ def test_damaged_counted_in_total_but_not_available(db_session):
     db_session.commit()
 
     from backend.tasks.scheduler import reconcile_stock
+
     reconcile_stock(db=db_session)
 
     db_session.refresh(book)

@@ -16,9 +16,7 @@ def assert_not_last_super_admin(db: Session, exclude_admin_id: int):
     from backend.domain.admin.rbac_models import Role
 
     super_admin_role = (
-        db.query(Role)
-        .filter(Role.code == "super_admin", Role.is_deleted == 0)
-        .first()
+        db.query(Role).filter(Role.code == "super_admin", Role.is_deleted == 0).first()
     )
     if not super_admin_role:
         return
@@ -296,9 +294,7 @@ class AdminAccountService:
 
                 new_role = (
                     self.db.query(Role)
-                    .filter(
-                        Role.id == target.admin_role_id, Role.is_deleted == 0
-                    )
+                    .filter(Role.id == target.admin_role_id, Role.is_deleted == 0)
                     .first()
                 )
                 if new_role and new_role.code != "super_admin":

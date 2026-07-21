@@ -1,4 +1,5 @@
 """测验冷却单元测试 — T3.4 quiz_cooldown_minutes 可配置"""
+
 import pytest
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import create_engine, update
@@ -45,9 +46,7 @@ def _setup_quiz(db, child_id, book_id, create_time, status=1):
     )
     db.add(quiz)
     db.commit()
-    db.execute(
-        update(Quiz).where(Quiz.id == quiz.id).values(create_time=create_time)
-    )
+    db.execute(update(Quiz).where(Quiz.id == quiz.id).values(create_time=create_time))
     db.commit()
     db.refresh(quiz)
     return quiz
@@ -77,10 +76,25 @@ class TestQuizCooldown:
         user = User(openid="qc1", phone="1")
         db.add(user)
         db.commit()
-        child = Child(user_id=user.id, name="测试", age=6, grade="一年级", status=1, deposit_status=1)
+        child = Child(
+            user_id=user.id,
+            name="测试",
+            age=6,
+            grade="一年级",
+            status=1,
+            deposit_status=1,
+        )
         db.add(child)
         db.commit()
-        book = Book(title="测试书", isbn="T001", author="作者", word_count=100, ar_value=2.0, age_min=3, age_max=15)
+        book = Book(
+            title="测试书",
+            isbn="T001",
+            author="作者",
+            word_count=100,
+            ar_value=2.0,
+            age_min=3,
+            age_max=15,
+        )
         db.add(book)
         db.commit()
         _setup_question(db, book.id)
@@ -95,10 +109,25 @@ class TestQuizCooldown:
         user = User(openid="qc2", phone="2")
         db.add(user)
         db.commit()
-        child = Child(user_id=user.id, name="测试", age=6, grade="一年级", status=1, deposit_status=1)
+        child = Child(
+            user_id=user.id,
+            name="测试",
+            age=6,
+            grade="一年级",
+            status=1,
+            deposit_status=1,
+        )
         db.add(child)
         db.commit()
-        book = Book(title="测试书2", isbn="T002", author="作者", word_count=100, ar_value=2.0, age_min=3, age_max=15)
+        book = Book(
+            title="测试书2",
+            isbn="T002",
+            author="作者",
+            word_count=100,
+            ar_value=2.0,
+            age_min=3,
+            age_max=15,
+        )
         db.add(book)
         db.commit()
         _setup_question(db, book.id)
@@ -114,10 +143,25 @@ class TestQuizCooldown:
         user = User(openid="qc3", phone="3")
         db.add(user)
         db.commit()
-        child = Child(user_id=user.id, name="测试", age=6, grade="一年级", status=1, deposit_status=1)
+        child = Child(
+            user_id=user.id,
+            name="测试",
+            age=6,
+            grade="一年级",
+            status=1,
+            deposit_status=1,
+        )
         db.add(child)
         db.commit()
-        book = Book(title="测试书3", isbn="T003", author="作者", word_count=100, ar_value=2.0, age_min=3, age_max=15)
+        book = Book(
+            title="测试书3",
+            isbn="T003",
+            author="作者",
+            word_count=100,
+            ar_value=2.0,
+            age_min=3,
+            age_max=15,
+        )
         db.add(book)
         db.commit()
         _setup_question(db, book.id)
@@ -131,11 +175,34 @@ class TestQuizCooldown:
         user = User(openid="qc4", phone="4")
         db.add(user)
         db.commit()
-        child = Child(user_id=user.id, name="测试", age=6, grade="一年级", status=1, deposit_status=1)
+        child = Child(
+            user_id=user.id,
+            name="测试",
+            age=6,
+            grade="一年级",
+            status=1,
+            deposit_status=1,
+        )
         db.add(child)
         db.commit()
-        book1 = Book(title="书A", isbn="T004", author="作者", word_count=100, ar_value=2.0, age_min=3, age_max=15)
-        book2 = Book(title="书B", isbn="T005", author="作者", word_count=100, ar_value=2.0, age_min=3, age_max=15)
+        book1 = Book(
+            title="书A",
+            isbn="T004",
+            author="作者",
+            word_count=100,
+            ar_value=2.0,
+            age_min=3,
+            age_max=15,
+        )
+        book2 = Book(
+            title="书B",
+            isbn="T005",
+            author="作者",
+            word_count=100,
+            ar_value=2.0,
+            age_min=3,
+            age_max=15,
+        )
         db.add(book1)
         db.add(book2)
         db.commit()

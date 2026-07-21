@@ -1,4 +1,5 @@
 """T3.6a 图书损坏定责 — 测试"""
+
 import pytest
 from decimal import Decimal
 from datetime import datetime, timedelta
@@ -40,7 +41,9 @@ def _setup_book(db, price=Decimal("100")):
 
 
 def _setup_copy(db, book_id):
-    copy = BookCopy(book_id=book_id, barcode="DAMAGE-TEST-001", status=BookCopyStatus.BORROWED)
+    copy = BookCopy(
+        book_id=book_id, barcode="DAMAGE-TEST-001", status=BookCopyStatus.BORROWED
+    )
     db.add(copy)
     db.flush()
     return copy
@@ -90,11 +93,16 @@ class TestCreateDamageReport:
         borrow = _setup_borrow(db_session, child.id, book.id, copy.id)
         db_session.commit()
 
-        from backend.domain.admin.services.damage_admin_service import DamageAdminService
+        from backend.domain.admin.services.damage_admin_service import (
+            DamageAdminService,
+        )
+
         svc = DamageAdminService(db_session)
         report = svc.create_report(
-            borrow_record_id=borrow.id, damage_level=1,
-            description="封面轻微折痕", admin_id=0,
+            borrow_record_id=borrow.id,
+            damage_level=1,
+            description="封面轻微折痕",
+            admin_id=0,
         )
         assert report.damage_level == 1
         assert report.fine_amount == Decimal("0")
@@ -109,11 +117,16 @@ class TestCreateDamageReport:
         borrow = _setup_borrow(db_session, child.id, book.id, copy.id)
         db_session.commit()
 
-        from backend.domain.admin.services.damage_admin_service import DamageAdminService
+        from backend.domain.admin.services.damage_admin_service import (
+            DamageAdminService,
+        )
+
         svc = DamageAdminService(db_session)
         report = svc.create_report(
-            borrow_record_id=borrow.id, damage_level=2,
-            description="多页严重涂画", admin_id=0,
+            borrow_record_id=borrow.id,
+            damage_level=2,
+            description="多页严重涂画",
+            admin_id=0,
         )
         assert report.damage_level == 2
         assert report.fine_amount == Decimal("100.00")  # 200 × 0.5
@@ -128,11 +141,16 @@ class TestCreateDamageReport:
         borrow = _setup_borrow(db_session, child.id, book.id, copy.id)
         db_session.commit()
 
-        from backend.domain.admin.services.damage_admin_service import DamageAdminService
+        from backend.domain.admin.services.damage_admin_service import (
+            DamageAdminService,
+        )
+
         svc = DamageAdminService(db_session)
         report = svc.create_report(
-            borrow_record_id=borrow.id, damage_level=3,
-            description="图书丢失", admin_id=0,
+            borrow_record_id=borrow.id,
+            damage_level=3,
+            description="图书丢失",
+            admin_id=0,
         )
         assert report.damage_level == 3
         assert report.fine_amount == Decimal("150.00")  # 100 × 1.5
@@ -149,8 +167,11 @@ class TestCreateDamageReport:
 
     def test_borrow_not_found(self, db_session):
         """不存在的借阅记录"""
-        from backend.domain.admin.services.damage_admin_service import DamageAdminService
+        from backend.domain.admin.services.damage_admin_service import (
+            DamageAdminService,
+        )
         from backend.common.exceptions import NotFoundError
+
         svc = DamageAdminService(db_session)
         with pytest.raises(NotFoundError):
             svc.create_report(borrow_record_id=9999, damage_level=1)
@@ -166,10 +187,15 @@ class TestAppeal:
         borrow = _setup_borrow(db_session, child.id, book.id, copy.id)
         db_session.commit()
 
-        from backend.domain.admin.services.damage_admin_service import DamageAdminService
+        from backend.domain.admin.services.damage_admin_service import (
+            DamageAdminService,
+        )
+
         svc = DamageAdminService(db_session)
         report = svc.create_report(
-            borrow_record_id=borrow.id, damage_level=2, admin_id=0,
+            borrow_record_id=borrow.id,
+            damage_level=2,
+            admin_id=0,
         )
         appealed = svc.appeal(report.id, "图书归还时并未损坏")
         assert appealed.status == BookDamageReport.STATUS_DISPUTED
@@ -178,6 +204,7 @@ class TestAppeal:
     def test_appeal_after_7_days_rejected(self, db_session):
         """超过7天申诉期被拒绝"""
         import time
+
         user = _setup_user(db_session)
         child = _setup_child(db_session)
         book = _setup_book(db_session)
@@ -185,21 +212,25 @@ class TestAppeal:
         borrow = _setup_borrow(db_session, child.id, book.id, copy.id)
         db_session.commit()
 
-        from backend.domain.admin.services.damage_admin_service import DamageAdminService
+        from backend.domain.admin.services.damage_admin_service import (
+            DamageAdminService,
+        )
+
         svc = DamageAdminService(db_session)
         report = svc.create_report(
-            borrow_record_id=borrow.id, damage_level=2, admin_id=0,
+            borrow_record_id=borrow.id,
+            damage_level=2,
+            admin_id=0,
         )
         # 模拟超过7天
         db_session.query(BookDamageReport).filter(
             BookDamageReport.id == report.id
-        ).update({
-            BookDamageReport.create_time: datetime.now() - timedelta(days=8)
-        })
+        ).update({BookDamageReport.create_time: datetime.now() - timedelta(days=8)})
         db_session.commit()
         db_session.refresh(report)
 
         from backend.common.exceptions import ValidationError
+
         with pytest.raises(ValidationError, match="已超过7天申诉期"):
             svc.appeal(report.id, "申诉")
 
@@ -214,13 +245,20 @@ class TestReview:
         borrow = _setup_borrow(db_session, child.id, book.id, copy.id)
         db_session.commit()
 
-        from backend.domain.admin.services.damage_admin_service import DamageAdminService
+        from backend.domain.admin.services.damage_admin_service import (
+            DamageAdminService,
+        )
+
         svc = DamageAdminService(db_session)
         report = svc.create_report(
-            borrow_record_id=borrow.id, damage_level=2, admin_id=0,
+            borrow_record_id=borrow.id,
+            damage_level=2,
+            admin_id=0,
         )
         svc.appeal(report.id, "申诉")
-        reviewed = svc.review(report.id, action="approve", review_remark="查监控确认损坏", admin_id=1)
+        reviewed = svc.review(
+            report.id, action="approve", review_remark="查监控确认损坏", admin_id=1
+        )
         assert reviewed.status == BookDamageReport.STATUS_CONFIRMED
         assert reviewed.appeal_result == "查监控确认损坏"
 
@@ -233,19 +271,27 @@ class TestReview:
         borrow = _setup_borrow(db_session, child.id, book.id, copy.id)
         db_session.commit()
 
-        from backend.domain.admin.services.damage_admin_service import DamageAdminService
+        from backend.domain.admin.services.damage_admin_service import (
+            DamageAdminService,
+        )
+
         svc = DamageAdminService(db_session)
         report = svc.create_report(
-            borrow_record_id=borrow.id, damage_level=2, admin_id=0,
+            borrow_record_id=borrow.id,
+            damage_level=2,
+            admin_id=0,
         )
         assert report.fine_amount == Decimal("100.00")
 
         # 申诉后冲正为轻度（免费）
         svc.appeal(report.id, "轻微折痕不应重度定级")
         reviewed = svc.review(
-            report.id, action="override",
-            override_level=1, override_fine=Decimal("0"),
-            review_remark="改判轻度", admin_id=1,
+            report.id,
+            action="override",
+            override_level=1,
+            override_fine=Decimal("0"),
+            review_remark="改判轻度",
+            admin_id=1,
         )
         assert reviewed.status == BookDamageReport.STATUS_OVERRIDDEN
         assert reviewed.override_level == 1
@@ -261,19 +307,27 @@ class TestReview:
         db_session.commit()
         orig_total = book.total_stock
 
-        from backend.domain.admin.services.damage_admin_service import DamageAdminService
+        from backend.domain.admin.services.damage_admin_service import (
+            DamageAdminService,
+        )
+
         svc = DamageAdminService(db_session)
         report = svc.create_report(
-            borrow_record_id=borrow.id, damage_level=3, admin_id=0,
+            borrow_record_id=borrow.id,
+            damage_level=3,
+            admin_id=0,
         )
         assert report.fine_amount == Decimal("150.00")
 
         # 申诉：书找到了只是损坏
         svc.appeal(report.id, "书已找到，重度损坏")
         reviewed = svc.review(
-            report.id, action="override",
-            override_level=2, override_fine=Decimal("50.00"),
-            review_remark="改判重度", admin_id=1,
+            report.id,
+            action="override",
+            override_level=2,
+            override_fine=Decimal("50.00"),
+            review_remark="改判重度",
+            admin_id=1,
         )
         assert reviewed.status == BookDamageReport.STATUS_OVERRIDDEN
         assert reviewed.override_level == 2

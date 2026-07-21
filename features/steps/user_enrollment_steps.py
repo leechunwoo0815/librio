@@ -424,6 +424,7 @@ def step_unlock_borrow(context):
 def step_child_can_enroll_quarterly(context):
     """创建唯一的观察期孩子（无其他活跃兄弟姐妹，避免触发多孩优惠）"""
     from backend.common.types import MemberStatus
+
     # 将背景创建的正式会员孩子置为已过期，不触发多孩优惠
     context.db.query(Child).filter(
         Child.user_id == context.user.id, Child.is_deleted == 0
@@ -444,6 +445,7 @@ def step_child_can_enroll_quarterly(context):
 def step_child_can_enroll_semiannual(context):
     """创建唯一的观察期孩子（无其他活跃兄弟姐妹）"""
     from backend.common.types import MemberStatus
+
     context.db.query(Child).filter(
         Child.user_id == context.user.id, Child.is_deleted == 0
     ).update({Child.status: MemberStatus.EXPIRED})
@@ -594,6 +596,7 @@ def step_membership_180_days(context):
 def step_child_is_quarterly(context):
     from datetime import datetime, timedelta
     from backend.common.types import MemberStatus
+
     # 清除背景创建的正式会员孩子
     context.db.query(Child).filter(
         Child.user_id == context.user.id, Child.is_deleted == 0
@@ -642,7 +645,10 @@ def step_remaining_value_900(context):
     assert context.response.status_code == 200
     options = context.response.json()
     assert len(options) > 0
-    opt = next((o for o in options if o["target_type"] == OrderType.OFFICIAL_MEMBER.value), None)
+    opt = next(
+        (o for o in options if o["target_type"] == OrderType.OFFICIAL_MEMBER.value),
+        None,
+    )
     assert opt is not None, f"升级选项不含年费: {options}"
     remaining_value = float(opt["remaining_value"])
     # 剩余价值 = 1350 × 剩余天数/90，剩余天数可能因执行时序略少于60天
@@ -652,7 +658,10 @@ def step_remaining_value_900(context):
 @then("显示升级差价为4500元")
 def step_upgrade_price_4500(context):
     options = context.response.json()
-    opt = next((o for o in options if o["target_type"] == OrderType.OFFICIAL_MEMBER.value), None)
+    opt = next(
+        (o for o in options if o["target_type"] == OrderType.OFFICIAL_MEMBER.value),
+        None,
+    )
     assert opt is not None
     remaining_value = float(opt["remaining_value"])
     expected_upgrade = 5400.0 - remaining_value
@@ -668,6 +677,7 @@ def step_upgrade_price_4500(context):
 def step_child_expired_in_grace(context):
     from datetime import datetime, timedelta
     from backend.common.types import MemberStatus
+
     child = Child(
         user_id=context.user.id,
         name="小明",

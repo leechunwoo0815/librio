@@ -17,6 +17,7 @@ Revises: 026_create_book_damage_report
 Create Date: 2026-07-21 11:00:00.000000
 
 """
+
 from typing import Sequence, Union
 
 from alembic import op
@@ -30,28 +31,32 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     op.alter_column(
-        "book_damage_report", "id",
+        "book_damage_report",
+        "id",
         existing_type=sa.BigInteger(),
         existing_nullable=False,
         nullable=False,
         comment="主键",
     )
     op.alter_column(
-        "book_damage_report", "create_time",
+        "book_damage_report",
+        "create_time",
         existing_type=sa.DateTime(),
         existing_nullable=True,
         nullable=True,
         comment="创建时间",
     )
     op.alter_column(
-        "book_damage_report", "update_time",
+        "book_damage_report",
+        "update_time",
         existing_type=sa.DateTime(),
         existing_nullable=True,
         nullable=True,
         comment="更新时间",
     )
     op.alter_column(
-        "book_damage_report", "is_deleted",
+        "book_damage_report",
+        "is_deleted",
         existing_type=sa.SmallInteger(),
         existing_nullable=True,
         nullable=True,
@@ -61,28 +66,32 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.alter_column(
-        "book_damage_report", "id",
+        "book_damage_report",
+        "id",
         existing_type=sa.BigInteger(),
         existing_nullable=False,
         nullable=False,
         comment=None,
     )
     op.alter_column(
-        "book_damage_report", "create_time",
+        "book_damage_report",
+        "create_time",
         existing_type=sa.DateTime(),
         existing_nullable=True,
         nullable=True,
         comment=None,
     )
     op.alter_column(
-        "book_damage_report", "update_time",
+        "book_damage_report",
+        "update_time",
         existing_type=sa.DateTime(),
         existing_nullable=True,
         nullable=True,
         comment=None,
     )
     op.alter_column(
-        "book_damage_report", "is_deleted",
+        "book_damage_report",
+        "is_deleted",
         existing_type=sa.SmallInteger(),
         existing_nullable=True,
         nullable=True,

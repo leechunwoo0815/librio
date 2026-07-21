@@ -1,4 +1,5 @@
 """权益转让校验单元测试 — T3.3"""
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -45,6 +46,7 @@ def _create_child(db, user_id, status=0, name="测试", fines=0):
 def _create_transfer_app(db, source_id, target_id, status=0, deleted=0):
     """创建转让申请记录"""
     from datetime import datetime
+
     app = BenefitTransferApplication(
         source_child_id=source_id,
         target_child_id=target_id,
@@ -135,6 +137,7 @@ class TestValidateTransferTarget:
     def test_target_active_borrows(self, db, child_service):
         """目标孩子有活跃借阅 → 校验失败"""
         from datetime import datetime
+
         _, src, tgt = self._setup_two_children(db)
         borrow = BorrowRecord(
             child_id=tgt.id,

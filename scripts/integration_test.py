@@ -884,11 +884,15 @@ if refund_ok:
             headers={"Authorization": f"Bearer {ADMIN_TOKEN}"},
         )
         audit_ok = audit_resp.status_code == 200
-        step("Admin: audit refund approve", audit_ok, f"status={audit_resp.status_code}")
+        step(
+            "Admin: audit refund approve", audit_ok, f"status={audit_resp.status_code}"
+        )
 
     if audit_ok:
         db.expire_all()
-        dep = db.query(DepositRecord).filter_by(child_id=child1_id, is_deleted=0).first()
+        dep = (
+            db.query(DepositRecord).filter_by(child_id=child1_id, is_deleted=0).first()
+        )
         step(
             "DB: deposit REFUNDING",
             dep is not None and dep.status == DepositStatus.REFUNDING,

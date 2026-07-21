@@ -66,7 +66,14 @@ def test_apply_refund_duplicate_raises_conflict(db):
 
 # ── T1.5 退款拦截网：活跃借阅拦截 ──
 def _book(db):
-    book = Book(isbn="T1_5_TEST", title="退款拦截测试用书", author="测试作者", ar_value="1.0", age_min=3, age_max=12)
+    book = Book(
+        isbn="T1_5_TEST",
+        title="退款拦截测试用书",
+        author="测试作者",
+        ar_value="1.0",
+        age_min=3,
+        age_max=12,
+    )
     db.add(book)
     db.flush()
     return book
@@ -200,7 +207,13 @@ def test_preview_refund_matches_actual_calculation(db):
     user = User(openid="preview_vs_actual", phone="13800138000")
     db.add(user)
     db.flush()
-    child = Child(user_id=user.id, name="预览测试", age=7, grade="二年级", status=Child.STATUS_OFFICIAL)
+    child = Child(
+        user_id=user.id,
+        name="预览测试",
+        age=7,
+        grade="二年级",
+        status=Child.STATUS_OFFICIAL,
+    )
     db.add(child)
     db.flush()
     order = Order(

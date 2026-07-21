@@ -131,25 +131,25 @@ def step_visit_role_page(context):
     context.response = response
 
 
-@when('访问老师管理页面')
+@when("访问老师管理页面")
 def step_visit_teacher_page(context):
     response = context.client.get("/admin/api/teachers", headers=context.headers)
     context.response = response
 
 
-@when('访问用户管理页面')
+@when("访问用户管理页面")
 def step_visit_user_page(context):
     response = context.client.get("/admin/api/users", headers=context.headers)
     context.response = response
 
 
-@when('访问孩子列表')
+@when("访问孩子列表")
 def step_visit_child_list(context):
     response = context.client.get("/admin/api/child", headers=context.headers)
     context.response = response
 
 
-@when('访问管理后台')
+@when("访问管理后台")
 def step_visit_admin_dashboard(context):
     response = context.client.get("/admin/api/dashboard", headers=context.headers)
     context.response = response
@@ -158,7 +158,7 @@ def step_visit_admin_dashboard(context):
 # ==================== 角色管理操作 ====================
 
 
-@when('打开运营人员角色的权限编辑弹窗')
+@when("打开运营人员角色的权限编辑弹窗")
 def step_open_role_permission_editor(context):
     """获取运营人员角色的权限"""
     list_resp = context.client.get("/admin/api/roles", headers=context.headers)
@@ -209,7 +209,14 @@ def step_try_delete_role(context, role_name):
         )
     else:
         # 无删除端点，模拟 405
-        response = type("Resp", (), {"status_code": 405, "json": lambda self: {"message": "系统内置角色不可删除"}})()
+        response = type(
+            "Resp",
+            (),
+            {
+                "status_code": 405,
+                "json": lambda self: {"message": "系统内置角色不可删除"},
+            },
+        )()
     context.response = response
 
 
@@ -218,7 +225,11 @@ def step_create_admin_account(context, username, password, role_name):
     """创建管理员账号"""
 
     role_map = _seed_rbac_data(context.db)
-    role_code_map = {"超级管理员": "super_admin", "运营人员": "staff", "教师": "teacher"}
+    role_code_map = {
+        "超级管理员": "super_admin",
+        "运营人员": "staff",
+        "教师": "teacher",
+    }
     role_code = role_code_map.get(role_name, "staff")
     role_id = role_map.get(role_code)
 
@@ -236,13 +247,19 @@ def step_create_admin_account(context, username, password, role_name):
     context.created_admin_username = username
 
 
-@when('创建管理员账号（用户名"{username}"，密码"{password}"，角色"{role_name}"，关联教师ID）')
+@when(
+    '创建管理员账号（用户名"{username}"，密码"{password}"，角色"{role_name}"，关联教师ID）'
+)
 def step_create_admin_account_with_teacher(context, username, password, role_name):
     """创建管理员账号并关联教师"""
     from backend.domain.admin.models import Teacher
 
     role_map = _seed_rbac_data(context.db)
-    role_code_map = {"超级管理员": "super_admin", "运营人员": "staff", "教师": "teacher"}
+    role_code_map = {
+        "超级管理员": "super_admin",
+        "运营人员": "staff",
+        "教师": "teacher",
+    }
     role_code = role_code_map.get(role_name, "staff")
     role_id = role_map.get(role_code)
 
@@ -268,7 +285,7 @@ def step_create_admin_account_with_teacher(context, username, password, role_nam
     context.linked_teacher_id = teacher.id
 
 
-@when('打开创建管理员弹窗')
+@when("打开创建管理员弹窗")
 def step_open_create_admin_modal(context):
     """模拟打开创建管理员弹窗 — 获取角色列表"""
     response = context.client.get("/admin/api/roles", headers=context.headers)
@@ -279,19 +296,23 @@ def step_open_create_admin_modal(context):
 @when('选择角色为"{role_name}"')
 def step_select_role_with_wei(context, role_name):
     """选择角色（带"为"）"""
-    role_code_map = {"超级管理员": "super_admin", "运营人员": "staff", "教师": "teacher"}
+    role_code_map = {
+        "超级管理员": "super_admin",
+        "运营人员": "staff",
+        "教师": "teacher",
+    }
     context.selected_role_code = role_code_map.get(role_name, "staff")
     # 获取该角色的权限数
     list_resp = context.client.get("/admin/api/roles", headers=context.headers)
     roles = _get_items(list_resp.json())
-    target = next((r for r in roles if r.get("code") == context.selected_role_code), None)
+    target = next(
+        (r for r in roles if r.get("code") == context.selected_role_code), None
+    )
     if target:
         perm_resp = context.client.get(
             f"/admin/api/roles/{target['id']}/permissions", headers=context.headers
         )
-        assert perm_resp.status_code == 200, (
-            f"获取角色权限返回 {perm_resp.status_code}"
-        )
+        assert perm_resp.status_code == 200, f"获取角色权限返回 {perm_resp.status_code}"
         context.selected_role_perm_count = len(_get_assigned_codes(perm_resp.json()))
 
 
@@ -327,7 +348,11 @@ def step_submit_create_admin(context):
 @when('将运营人员的角色改为"{new_role_name}"')
 def step_change_admin_role(context, new_role_name):
     """更改管理员角色"""
-    role_code_map = {"超级管理员": "super_admin", "运营人员": "staff", "教师": "teacher"}
+    role_code_map = {
+        "超级管理员": "super_admin",
+        "运营人员": "staff",
+        "教师": "teacher",
+    }
     new_role_code = role_code_map.get(new_role_name, "staff")
 
     # 获取角色ID
@@ -338,6 +363,7 @@ def step_change_admin_role(context, new_role_name):
 
     # 先创建或获取 staff admin
     from backend.domain.admin.models import Admin
+
     admin = context.db.query(Admin).filter(Admin.username == "test_staff").first()
     if not admin:
         role_map = _seed_rbac_data(context.db)
@@ -387,7 +413,11 @@ def step_fill_username_password(context):
 
 @when('选择角色"{role_name}"')
 def step_select_role_in_form(context, role_name):
-    role_code_map = {"超级管理员": "super_admin", "运营人员": "staff", "教师": "teacher"}
+    role_code_map = {
+        "超级管理员": "super_admin",
+        "运营人员": "staff",
+        "教师": "teacher",
+    }
     context.selected_role_code = role_code_map.get(role_name, "staff")
 
 
@@ -413,7 +443,7 @@ def step_save_form(context):
     context.created_admin_username = payload["username"]
 
 
-@when('修改运营人员的权限')
+@when("修改运营人员的权限")
 def step_modify_staff_permissions(context):
     """修改运营人员权限"""
     # 获取角色列表
@@ -423,6 +453,7 @@ def step_modify_staff_permissions(context):
     assert staff_role, "运营人员角色不存在"
 
     from backend.seeds.seed_rbac import STAFF_PERMS
+
     new_perms = [p for p in STAFF_PERMS if p != "order.delete"]
     response = context.client.put(
         f"/admin/api/roles/{staff_role['id']}/permissions",
@@ -501,7 +532,9 @@ def step_show_role_delete_warning(context):
     assert context.response is not None
     resp_json = context.response.json()
     msg = resp_json.get("message") or resp_json.get("detail") or ""
-    assert "系统内置角色不可删除" in msg, f"期望提示包含「系统内置角色不可删除」，实际「{msg}」"
+    assert "系统内置角色不可删除" in msg, (
+        f"期望提示包含「系统内置角色不可删除」，实际「{msg}」"
+    )
 
 
 @then("创建成功")
@@ -518,9 +551,11 @@ def step_admin_has_permission_count(context, count):
         return
 
     from backend.domain.admin.models import Admin
+
     admin = context.db.query(Admin).filter(Admin.username == username).first()
     if admin and admin.admin_role_id:
         from backend.domain.admin.rbac_models import RolePermission
+
         perm_count = (
             context.db.query(RolePermission)
             .filter(
@@ -564,6 +599,7 @@ def step_admin_linked_to_teacher(context):
     if not username:
         return
     from backend.domain.admin.models import Admin
+
     admin = context.db.query(Admin).filter(Admin.username == username).first()
     if admin:
         assert admin.teacher_id is not None, "管理员未关联到教师"
@@ -576,7 +612,7 @@ def step_admin_permissions_changed(context, from_count, to_count):
     assert context.response.status_code in (200, 201)
 
 
-@then('每张老师卡片显示管理员账号状态')
+@then("每张老师卡片显示管理员账号状态")
 def step_teacher_card_show_admin_status(context):
     """验证老师列表响应包含管理员状态"""
     assert hasattr(context, "response") and context.response is not None, "无响应"
@@ -588,7 +624,7 @@ def step_teacher_card_show_admin_status(context):
         assert "admin_status" in t or "admin" in t, "老师卡片缺少管理员状态字段"
 
 
-@then('已关联管理员显示角色名称')
+@then("已关联管理员显示角色名称")
 def step_linked_admin_show_role(context):
     pass  # 前端渲染逻辑，API 验证跳过
 
@@ -609,6 +645,7 @@ def step_linked_to_teacher(context):
     username = getattr(context, "created_admin_username", None)
     if username:
         from backend.domain.admin.models import Admin
+
         admin = context.db.query(Admin).filter(Admin.username == username).first()
         if admin:
             assert admin.teacher_id is not None, "管理员未关联教师"
@@ -618,14 +655,18 @@ def step_linked_to_teacher(context):
 def step_no_system_settings_in_sidebar(context):
     """验证 403 或无权限"""
     response = context.client.get("/admin/api/settings", headers=context.headers)
-    assert response.status_code in (403, 404), f"期望 403/404，实际 {response.status_code}"
+    assert response.status_code in (403, 404), (
+        f"期望 403/404，实际 {response.status_code}"
+    )
 
 
 @then('侧边栏不显示"角色管理"链接')
 def step_no_role_management_in_sidebar(context):
     """验证无 role.list 权限"""
     response = context.client.get("/admin/api/roles", headers=context.headers)
-    assert response.status_code in (403, 404), f"期望 403/404，实际 {response.status_code}"
+    assert response.status_code in (403, 404), (
+        f"期望 403/404，实际 {response.status_code}"
+    )
 
 
 @then('不显示"删除"按钮')
@@ -662,9 +703,9 @@ def step_log_records_admin_id_and_detail(context):
     logs = _get_items(response.json())
     perm_logs = [log for log in logs if log.get("operation") == "update_permissions"]
     if perm_logs:
-            log = perm_logs[0]
-            assert "admin_id" in log or "operator_id" in log, "日志缺少管理员ID"
-            assert "content" in log or "detail" in log, "日志缺少变更详情"
+        log = perm_logs[0]
+        assert "admin_id" in log or "operator_id" in log, "日志缺少管理员ID"
+        assert "content" in log or "detail" in log, "日志缺少变更详情"
 
 
 # ==================== R4 角色生命周期步骤 ====================
@@ -705,7 +746,7 @@ def step_create_custom_role_with_template(context, code, name, template):
             assert put_resp.status_code == 200, f"复制权限返回 {put_resp.status_code}"
 
 
-@then('角色拥有 {count:d} 个权限')
+@then("角色拥有 {count:d} 个权限")
 def step_role_has_permission_count(context, count):
     """验证新角色的权限数"""
     role_id = getattr(context, "created_role_id", None)
@@ -724,14 +765,18 @@ def step_get_role_id(context, role_name):
     list_resp = context.client.get("/admin/api/roles", headers=context.headers)
     assert list_resp.status_code == 200
     roles = list_resp.json().get("items", [])
-    role_code_map = {"超级管理员": "super_admin", "运营人员": "staff", "教师": "teacher"}
+    role_code_map = {
+        "超级管理员": "super_admin",
+        "运营人员": "staff",
+        "教师": "teacher",
+    }
     code = role_code_map.get(role_name, role_name)
     target = next((r for r in roles if r.get("code") == code), None)
     assert target, f"角色 {role_name} 不存在"
     context.role_id_for_delete = target["id"]
 
 
-@when('尝试通过角色ID删除该角色')
+@when("尝试通过角色ID删除该角色")
 def step_try_delete_role_by_id(context):
     """尝试通过角色ID删除角色"""
     role_id = getattr(context, "role_id_for_delete", None)
@@ -747,7 +792,11 @@ def step_create_admin_with_role_code(context, username, password, role_code):
     """使用角色代码创建管理员"""
     from backend.domain.admin.rbac_models import Role
 
-    role = context.db.query(Role).filter(Role.code == role_code, Role.is_deleted == 0).first()
+    role = (
+        context.db.query(Role)
+        .filter(Role.code == role_code, Role.is_deleted == 0)
+        .first()
+    )
     assert role, f"角色 {role_code} 不存在"
     response = context.client.post(
         "/admin/api/admins",
@@ -782,10 +831,12 @@ def step_show_admin_reference_error(context):
     assert context.response is not None, "无响应"
     resp_json = context.response.json()
     detail = resp_json.get("detail") or resp_json.get("message") or ""
-    assert "管理员" in detail and "无法删除" in detail, f"期望包含管理员/无法删除，实际「{detail}」"
+    assert "管理员" in detail and "无法删除" in detail, (
+        f"期望包含管理员/无法删除，实际「{detail}」"
+    )
 
 
-@when('获取超级管理员角色ID')
+@when("获取超级管理员角色ID")
 def step_get_super_admin_role_id(context):
     """获取超级管理员角色ID"""
     from backend.domain.admin.rbac_models import Role
@@ -795,7 +846,7 @@ def step_get_super_admin_role_id(context):
     context.super_admin_role_id = super_role.id
 
 
-@when('尝试禁用最后一个超级管理员')
+@when("尝试禁用最后一个超级管理员")
 def step_try_disable_last_super_admin(context):
     """尝试禁用当前登录的超级管理员"""
     admin = context.admin

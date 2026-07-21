@@ -163,7 +163,12 @@ class OrderService:
         return OrderResponse.model_validate(created)
 
     def _apply_discount(
-        self, user_id: int, order_type: int, amount: Decimal, child_status: int = None, child_id: int = None
+        self,
+        user_id: int,
+        order_type: int,
+        amount: Decimal,
+        child_status: int = None,
+        child_id: int = None,
     ) -> Decimal:
         """多孩优惠 + 续费折扣（从配置读取，不可叠加，取最低价）"""
         from backend.common.config_service import ConfigService
@@ -194,13 +199,10 @@ class OrderService:
         # 排除报名孩子自身，避免单孩子也享受多孩优惠
         from backend.domain.child.models import Child
 
-        active_children = (
-            self.db.query(Child)
-            .filter(
-                Child.user_id == user_id,
-                Child.status.in_([MemberStatus.OBSERVATION, MemberStatus.OFFICIAL]),
-                Child.is_deleted == 0,
-            )
+        active_children = self.db.query(Child).filter(
+            Child.user_id == user_id,
+            Child.status.in_([MemberStatus.OBSERVATION, MemberStatus.OFFICIAL]),
+            Child.is_deleted == 0,
         )
         if child_id is not None:
             active_children = active_children.filter(Child.id != child_id)

@@ -49,6 +49,7 @@ def _create_child(db: Session, status: int = MemberStatus.OFFICIAL) -> Child:
 
 def _create_book(db, child):
     from backend.domain.book.models import Book
+
     book = Book(
         title="Test Book",
         author="Author",
