@@ -20,12 +20,13 @@ from backend.common.exceptions import (
     PaymentError,
     ValidationError,
 )
+from backend.domain.child.service import assert_no_pending_transfer
 from backend.common.gateways.payment import (
     PaymentGateway,
     PaymentOrderRequest,
     PaymentRefundRequest,
 )
-from backend.common.types import BorrowStatus, DepositStatus
+from backend.common.types import BookCopyStatus, BorrowStatus, DepositStatus
 from backend.domain.borrow.models import BorrowRecord
 from backend.domain.child.models import Child
 from backend.domain.deposit.models import DepositRecord
@@ -248,6 +249,8 @@ class DepositService:
         if not record:
             raise NotFoundError("未找到已缴纳的押金记录")
 
+        assert_no_pending_transfer(self.db, data.child_id)
+
         active_borrows = (
             self.db.query(BorrowRecord)
             .filter(
@@ -285,18 +288,22 @@ class DepositService:
         return DepositResponse.model_validate(record)
 
     def deduct_deposit(self, data: DepositDeductRequest) -> DepositResponse:
-        """扣除押金 — 仅允许 PAID 状态下扣除"""
+        """扣除押金 — 仅允许 PAID 状态下扣除
+
+        若罚款金额超过押金余额，则全额扣除押金，超出部分转为未缴罚款（outstanding_fines）。
+        """
         record = self.deposit_repo.get_active_by_child_for_update(data.child_id)
         if not record:
             raise NotFoundError("未找到已缴纳的押金记录")
         if record.status != DepositStatus.PAID:
             raise ConflictError(f"当前状态({record.status})不允许扣除，仅 PAID 可扣除")
 
-        if data.amount > record.amount:
-            raise ValidationError("扣除金额超过押金余额")
+        # 罚款超押金：扣满押金，超出记 outstanding_fines
+        actual_deduct = min(data.amount, record.amount)
+        remaining_fine = data.amount - actual_deduct
 
         record.status = DepositStatus.DEDUCTED
-        record.deduct_amount = data.amount
+        record.deduct_amount = actual_deduct
         record.deduct_reason = data.reason
         self.deposit_repo.update(record)
 
@@ -308,9 +315,15 @@ class DepositService:
         )
         if child:
             child.deposit_status = DepositStatus.DEDUCTED
-            child.outstanding_fines = (child.outstanding_fines or 0) + data.amount
+            # 押金抵扣后的剩余罚款记入 outstanding_fines
+            child.outstanding_fines = (child.outstanding_fines or 0) + remaining_fine
 
         self.db.commit()
+        logger.info(
+            f"Deposit deducted: child={data.child_id}, "
+            f"amount={data.amount}, actual_deduct={actual_deduct}, "
+            f"remaining_fine={remaining_fine}"
+        )
         return DepositResponse.model_validate(record)
 
     def mark_book_lost(self, borrow_record_id: int, admin_id: int) -> dict:
@@ -318,7 +331,7 @@ class DepositService:
         from backend.domain.borrow.models import BorrowRecord
         from backend.common.types import BorrowStatus
         from backend.common.config_service import ConfigService
-        from backend.domain.book.models import Book
+        from backend.domain.book.models import Book, BookCopy
 
         record = (
             self.db.query(BorrowRecord)
@@ -348,6 +361,13 @@ class DepositService:
         )
         if child:
             child.outstanding_fines = (child.outstanding_fines or 0) + fine_amount
+
+        # D05 联动：丢失标记 → BookCopy.status = LOST
+        if record.book_copy_id:
+            self.db.query(BookCopy).filter(BookCopy.id == record.book_copy_id).update(
+                {BookCopy.status: BookCopyStatus.LOST},
+                synchronize_session="fetch",
+            )
 
         if book:
             self.db.query(Book).filter(Book.id == record.book_id).update(

@@ -3,7 +3,6 @@
 
 import asyncio
 import json
-from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 
@@ -104,11 +103,8 @@ async def deposit_callback(
         associated_data=encrypted.get("associated_data", ""),
     )
 
-    callback_amount = (
-        (Decimal(str(callback_data.amount)) / Decimal("100"))
-        if callback_data.amount is not None
-        else None
-    )
+    # 网关 decrypt_callback_data 已做分→元转换，直接使用
+    callback_amount = callback_data.amount
     result = await asyncio.to_thread(
         service.handle_callback, callback_data.out_trade_no, callback_amount
     )

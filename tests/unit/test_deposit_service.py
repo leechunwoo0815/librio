@@ -169,19 +169,23 @@ async def test_deduct_deposit(db):
     assert result.status == DepositStatus.DEDUCTED
     db.refresh(child)
     assert child.deposit_status == DepositStatus.DEDUCTED
-    assert float(child.outstanding_fines) == 120.0
+    # 罚款120元未超过押金1200，outstanding_fines 不变
+    assert float(child.outstanding_fines) == 0
 
 
 @pytest.mark.asyncio
 async def test_deduct_deposit_exceeds_balance(db):
+    """罚款超过押金时，扣满押金，超出部分转为未缴罚款"""
     user, child = _setup(db)
     svc = DepositService(db)
     await svc.pay_deposit(
         DepositPayRequest(child_id=child.id), _mock_gateway(), current_user=user
     )
-    with pytest.raises(Exception, match="超过"):
-        svc.deduct_deposit(
-            DepositDeductRequest(
-                child_id=child.id, amount=Decimal("2000"), reason="巨额"
-            )
+    result = svc.deduct_deposit(
+        DepositDeductRequest(
+            child_id=child.id, amount=Decimal("2000"), reason="巨额赔偿"
         )
+    )
+    assert result.deduct_amount == Decimal("1200")
+    db.refresh(child)
+    assert child.outstanding_fines == Decimal("800")  # 2000-1200=800 未缴

@@ -246,9 +246,8 @@ async def payment_callback(
             order_no=decrypted.out_trade_no,
             trade_no=decrypted.transaction_id,
             pay_type=1,
-            amount=Decimal(str(decrypted.amount)) / Decimal("100")
-            if decrypted.amount is not None
-            else Decimal("0"),
+            # 网关 decrypt_callback_data 已做分→元转换，直接使用
+            amount=decrypted.amount if decrypted.amount is not None else Decimal("0"),
         )
     else:
         callback = OrderPayCallback(**parsed)
@@ -273,7 +272,7 @@ async def get_pay_params(
     开发/测试环境返回模拟参数。
     """
     _, order = _ctx
-    if order.pay_status != 0:
+    if order.pay_status not in (0, 5):  # PENDING(0) 或 CLOSED(5) 均可获取支付参数
         raise ConflictError("订单状态不允许支付")
 
     settings = get_settings()

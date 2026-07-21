@@ -384,3 +384,113 @@ class TestDeleteChildHTTP:
 
         r = client.delete(f"/child/{child.id}", headers=_auth(user))
         assert r.status_code == 404
+
+
+# ══════════════════════════════════════════════════════════════
+# Order payment callback via encrypted gateway path (P0)
+# ══════════════════════════════════════════════════════════════
+
+
+def test_order_callback_via_encrypted_branch():
+    """
+    [What] 订单支付回调 — 走真实网关加密解密分支（resource wrapped）
+    [Why] 测试盲区：mock 回调走 else 明文分支，未覆盖加密解密路径
+    [How] 构造 resource 格式请求通过 MockPaymentGateway 解密，验证金额匹配
+    """
+    import os
+
+    os.environ["MOCK_PAYMENT"] = "true"
+
+    import backend.config
+
+    backend.config.get_settings.cache_clear()
+
+    from decimal import Decimal
+
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy.pool import StaticPool
+    from fastapi.testclient import TestClient
+
+    engine = create_engine(
+        "sqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(bind=engine)
+    Session = sessionmaker(bind=engine)
+
+    def override_get_db():
+        db = Session()
+        try:
+            yield db
+        finally:
+            db.close()
+
+    app.dependency_overrides[get_db] = override_get_db
+    client = TestClient(app)
+    db = Session()
+
+    try:
+        from backend.domain.user.models import User
+        from backend.domain.child.models import Child
+        from backend.domain.order.models import Order, PayStatus
+
+        user = User(openid="cb_enc_test", phone="13800000000", parent_name="测试")
+        db.add(user)
+        db.flush()
+
+        child = Child(user_id=user.id, name="测试孩子", age=6, grade="一", status=2)
+        db.add(child)
+        db.flush()
+
+        order = Order(
+            order_no="CB_ENCRYPTED_TEST",
+            user_id=user.id,
+            child_id=child.id,
+            type=1,
+            amount=Decimal("99.00"),
+        )
+        db.add(order)
+        db.commit()
+        assert order.pay_status == Order.PAY_PENDING
+
+        import json as _json
+
+        resp = client.post(
+            "/order/payment-callback",
+            json={
+                "resource": {
+                    "ciphertext": _json.dumps(
+                        {
+                            "out_trade_no": "CB_ENCRYPTED_TEST",
+                            "amount": 9900,  # 99元 = 9900分
+                        }
+                    ),
+                    "nonce": "mock_nonce",
+                    "associated_data": "",
+                }
+            },
+            headers={
+                "wechatpay-signature": "mock_sig",
+                "wechatpay-timestamp": "1234567890",
+                "wechatpay-nonce": "mock_nonce",
+            },
+        )
+
+        assert resp.status_code == 200, f"callback failed: {resp.text}"
+
+        db.expire_all()
+        order = (
+            db.query(Order)
+            .filter(Order.order_no == "CB_ENCRYPTED_TEST")
+            .first()
+        )
+        assert order is not None
+        assert order.pay_status == PayStatus.PAID, (
+            f"order not paid: status={order.pay_status}"
+        )
+    finally:
+        db.close()
+        app.dependency_overrides.clear()
+        Base.metadata.drop_all(bind=engine)

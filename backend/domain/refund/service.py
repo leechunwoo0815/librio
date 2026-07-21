@@ -2,8 +2,8 @@
 """退款域业务逻辑 — 退款申请、审核、退款计算"""
 
 import logging
-from datetime import datetime
-from decimal import Decimal
+from datetime import date, datetime
+from decimal import Decimal, ROUND_HALF_UP
 
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -16,6 +16,7 @@ from backend.common.exceptions import (
     ValidationError,
 )
 from backend.common.types import OrderType, PayStatus
+from backend.domain.child.service import assert_no_pending_transfer
 from backend.domain.order.models import Order
 from backend.domain.refund.models import RefundApplication
 from backend.domain.refund.repository import RefundRepository
@@ -48,6 +49,8 @@ class RefundService:
             raise ForbiddenError("订单不属于当前用户")
         if order.pay_status != PayStatus.PAID:
             raise ValidationError("订单未支付，无法退款")
+
+        assert_no_pending_transfer(self.db, order.child_id)
 
         existing = (
             self.db.query(RefundApplication)
@@ -125,7 +128,7 @@ class RefundService:
             )
 
         # 计算退款金额（服务端计算已用天数，不信任前端）
-        used_days = (datetime.now() - order.pay_time).days if order.pay_time else 0
+        used_days = (date.today() - order.pay_time.date()).days if order.pay_time else 0
         refund_amount = self._calculate(order, used_days)
 
         refund = RefundApplication(
@@ -297,7 +300,9 @@ class RefundService:
 
         used = min(used_days, total_days)
         refund = order.amount - (order.amount / total_days * used)
-        return max(refund.quantize(Decimal("0.01")), Decimal("0"))
+        return max(
+            refund.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP), Decimal("0")
+        )
 
     def get_refund_with_order(self, refund_id: int) -> tuple | None:
         refund = (

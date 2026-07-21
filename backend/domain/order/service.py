@@ -18,6 +18,7 @@ from backend.common.exceptions import (
 )
 from backend.common.types import MemberStatus, OrderType, PayStatus
 from backend.domain.child.models import Child
+from backend.domain.child.service import assert_no_pending_transfer
 from backend.domain.order.models import Order
 from backend.domain.order.repository import OrderRepository
 from backend.domain.order.schemas import (
@@ -98,6 +99,10 @@ class OrderService:
         if child.user_id != user_id:
             raise ForbiddenError("孩子不属于当前用户")
 
+        # 权益转让校验：非亲子课订单检查转让锁定
+        if order_data.type != OrderType.PARENT_COURSE:
+            assert_no_pending_transfer(self.db, order_data.child_id)
+
         # 亲子课不可重复（带行锁防止并发重复报名）
         if order_data.type == OrderType.PARENT_COURSE:
             existing_order = (
@@ -141,7 +146,7 @@ class OrderService:
 
         # 多孩优惠
         final_amount = self._apply_discount(
-            user_id, order_data.type, base_amount, child.status
+            user_id, order_data.type, base_amount, child.status, order_data.child_id
         )
 
         order = Order(
@@ -158,7 +163,7 @@ class OrderService:
         return OrderResponse.model_validate(created)
 
     def _apply_discount(
-        self, user_id: int, order_type: int, amount: Decimal, child_status: int = None
+        self, user_id: int, order_type: int, amount: Decimal, child_status: int = None, child_id: int = None
     ) -> Decimal:
         """多孩优惠 + 续费折扣（从配置读取，不可叠加，取最低价）"""
         from backend.common.config_service import ConfigService
@@ -186,6 +191,7 @@ class OrderService:
             renewal_price = (amount * renewal_disc).quantize(Decimal("0.01"))
 
         # P0-6: 多孩优惠 — 检查该用户是否有其他孩子是观察期/正式会员
+        # 排除报名孩子自身，避免单孩子也享受多孩优惠
         from backend.domain.child.models import Child
 
         active_children = (
@@ -195,9 +201,11 @@ class OrderService:
                 Child.status.in_([MemberStatus.OBSERVATION, MemberStatus.OFFICIAL]),
                 Child.is_deleted == 0,
             )
-            .count()
         )
-        if active_children >= 1:
+        if child_id is not None:
+            active_children = active_children.filter(Child.id != child_id)
+        active_children_count = active_children.count()
+        if active_children_count >= 1:
             discount = ConfigService.get_decimal(
                 self.db, "multi_child_discount", MULTI_CHILD_DISCOUNT
             )
@@ -229,6 +237,9 @@ class OrderService:
                 f"支付金额不一致: 回调{callback.amount}, 订单{order.amount}"
             )
 
+        # 记录迟到支付（CLOSED → PAID）
+        was_closed = order.pay_status == PayStatus.CLOSED
+
         order.pay_status = PayStatus.PAID
         order.pay_type = callback.pay_type
         order.trade_no = callback.trade_no
@@ -247,6 +258,24 @@ class OrderService:
         )
 
         self.db.commit()
+
+        # 迟到支付补记操作日志（不入事务，不影响主流程）
+        if was_closed:
+            try:
+                from backend.domain.admin.services.system_service import (
+                    AdminSystemService,
+                )
+
+                system_service = AdminSystemService(self.db)
+                system_service.write_operation_log(
+                    admin_id=None,
+                    module="order",
+                    operation="late_payment",
+                    content=f"订单 {callback.order_no} 迟到支付激活（原 CLOSED），金额={callback.amount}",
+                )
+            except Exception:
+                logger.exception(f"迟到支付日志写入失败: {callback.order_no}")
+
         logger.info(f"Payment received: {callback.order_no}")
         return OrderResponse.model_validate(order)
 
@@ -413,15 +442,23 @@ class OrderService:
             }
 
         used = min(used_days, total_days)
-        daily_rate = (order.amount / total_days).quantize(Decimal("0.01"))
-        used_amount = (daily_rate * used).quantize(Decimal("0.01"))
+        from decimal import ROUND_HALF_UP
+
+        # 公式完整计算后取整，中间步骤不取整（与 refund/service.py 实际退款口径一致）
+        used_amount_raw = order.amount / total_days * used
         refund = max(
-            (order.amount - used_amount).quantize(Decimal("0.01")), Decimal("0")
+            (order.amount - used_amount_raw).quantize(
+                Decimal("0.01"), rounding=ROUND_HALF_UP
+            ),
+            Decimal("0"),
+        )
+        daily_rate = (order.amount / total_days).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP
         )
         return {
             "refund_amount": refund,
             "daily_rate": daily_rate,
-            "used_amount": used_amount,
+            "used_amount": (order.amount - refund).quantize(Decimal("0.01")),
             "total_days": total_days,
         }
 
