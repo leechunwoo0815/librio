@@ -268,6 +268,29 @@ def step_child_is_observation_member(context):
         context.child = child
 
 
+@given("用户的孩子是体验用户")
+def step_child_is_trial_user(context):
+    from backend.domain.child.models import Child
+    from backend.common.types import MemberStatus
+
+    # 将用户的其他孩子置为已过期，确保"无有效会员孩子"语义正确
+    context.db.query(Child).filter(
+        Child.user_id == context.user.id,
+        Child.status.in_([MemberStatus.OBSERVATION, MemberStatus.OFFICIAL]),
+        Child.is_deleted == 0,
+    ).update({Child.status: MemberStatus.EXPIRED})
+    child = Child(
+        user_id=context.user.id,
+        name="体验小明",
+        age=5,
+        grade="幼儿园大班",
+        status=Child.STATUS_TRIAL,
+    )
+    context.db.add(child)
+    context.db.commit()
+    context.child = child
+
+
 @given("用户正在阅读图书")
 def step_user_is_reading(context):
     # 标记用户正在阅读状态

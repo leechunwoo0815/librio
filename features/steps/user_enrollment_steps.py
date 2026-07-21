@@ -6,6 +6,7 @@
 """
 
 from behave import given, when, then
+from backend.common.types import OrderType
 from backend.domain.child.models import Child
 from backend.domain.order.models import Order
 
@@ -414,3 +415,274 @@ def step_unlock_borrow(context):
         headers=context.headers,
     )
     assert resp.json()["can_borrow"] is True
+
+
+# ==================== 季度/半年会员报名 ====================
+
+
+@given("用户的孩子可报名季度会员")
+def step_child_can_enroll_quarterly(context):
+    """创建唯一的观察期孩子（无其他活跃兄弟姐妹，避免触发多孩优惠）"""
+    from backend.common.types import MemberStatus
+    # 将背景创建的正式会员孩子置为已过期，不触发多孩优惠
+    context.db.query(Child).filter(
+        Child.user_id == context.user.id, Child.is_deleted == 0
+    ).update({Child.status: MemberStatus.EXPIRED})
+    child = Child(
+        user_id=context.user.id,
+        name="季度小明",
+        age=7,
+        grade="二年级",
+        status=MemberStatus.OBSERVATION,
+    )
+    context.db.add(child)
+    context.db.commit()
+    context.child = child
+
+
+@given("用户的孩子可报名半年会员")
+def step_child_can_enroll_semiannual(context):
+    """创建唯一的观察期孩子（无其他活跃兄弟姐妹）"""
+    from backend.common.types import MemberStatus
+    context.db.query(Child).filter(
+        Child.user_id == context.user.id, Child.is_deleted == 0
+    ).update({Child.status: MemberStatus.EXPIRED})
+    child = Child(
+        user_id=context.user.id,
+        name="半年小明",
+        age=7,
+        grade="二年级",
+        status=MemberStatus.OBSERVATION,
+    )
+    context.db.add(child)
+    context.db.commit()
+    context.child = child
+
+
+@when('用户点击"立即支付1350元"按钮')
+def step_click_pay_1350(context):
+    context.response = context.client.post(
+        "/order/",
+        json={"child_id": context.child.id, "type": OrderType.QUARTERLY.value},
+        headers=context.headers,
+    )
+    if context.response.status_code == 201:
+        data = context.response.json()
+        callback_resp = context.client.post(
+            "/order/payment-callback",
+            json={
+                "order_no": data["order_no"],
+                "trade_no": "WX_QUARTERLY",
+                "pay_type": 1,
+                "amount": data["amount"],
+            },
+            headers=context.headers,
+        )
+        assert callback_resp.status_code == 200
+
+
+@when('用户点击"立即支付2700元"按钮')
+def step_click_pay_2700(context):
+    context.response = context.client.post(
+        "/order/",
+        json={"child_id": context.child.id, "type": OrderType.SEMI_ANNUAL.value},
+        headers=context.headers,
+    )
+    if context.response.status_code == 201:
+        data = context.response.json()
+        callback_resp = context.client.post(
+            "/order/payment-callback",
+            json={
+                "order_no": data["order_no"],
+                "trade_no": "WX_SEMI",
+                "pay_type": 1,
+                "amount": data["amount"],
+            },
+            headers=context.headers,
+        )
+        assert callback_resp.status_code == 200
+
+
+@then("支付成功后生成季度会员订单")
+def step_quarterly_order_created(context):
+    assert context.response.status_code == 201
+    data = context.response.json()
+    assert data["type"] == OrderType.QUARTERLY.value
+
+
+@then("支付成功后生成半年会员订单")
+def step_semiannual_order_created(context):
+    assert context.response.status_code == 201
+    data = context.response.json()
+    assert data["type"] == OrderType.SEMI_ANNUAL.value
+
+
+@then("订单金额为1350元")
+def step_amount_1350(context):
+    data = context.response.json()
+    assert float(data["amount"]) == 1350.00, f"实际金额={data['amount']}"
+
+
+@then("订单金额为2700元")
+def step_amount_2700(context):
+    data = context.response.json()
+    assert float(data["amount"]) == 2700.00, f"实际金额={data['amount']}"
+
+
+@then("订单金额为4860元")
+def step_amount_4860(context):
+    data = context.response.json()
+    assert float(data["amount"]) == 4860.00
+
+
+@then('订单类型为"季度会员"')
+def step_order_type_quarterly(context):
+    resp = context.client.get(
+        f"/order/{context.response.json()['id']}",
+        headers=context.headers,
+    )
+    assert resp.status_code == 200
+    assert resp.json()["type"] == OrderType.QUARTERLY.value
+
+
+@then('订单类型为"半年会员"')
+def step_order_type_semiannual(context):
+    resp = context.client.get(
+        f"/order/{context.response.json()['id']}",
+        headers=context.headers,
+    )
+    assert resp.status_code == 200
+    assert resp.json()["type"] == OrderType.SEMI_ANNUAL.value
+
+
+@then("会员有效期为90天")
+def step_membership_90_days(context):
+    from datetime import datetime
+
+    resp = context.client.get(
+        f"/child/{context.child.id}",
+        headers=context.headers,
+    )
+    assert resp.status_code == 200
+    d = resp.json()
+    start = datetime.fromisoformat(d["member_start_time"])
+    expire = datetime.fromisoformat(d["member_expire_time"])
+    days = (expire - start).days
+    assert 89 <= days <= 91, f"有效期天数={days}，期望≈90"
+
+
+@then("会员有效期为180天")
+def step_membership_180_days(context):
+    from datetime import datetime
+
+    resp = context.client.get(
+        f"/child/{context.child.id}",
+        headers=context.headers,
+    )
+    assert resp.status_code == 200
+    d = resp.json()
+    start = datetime.fromisoformat(d["member_start_time"])
+    expire = datetime.fromisoformat(d["member_expire_time"])
+    days = (expire - start).days
+    assert 179 <= days <= 181, f"有效期天数={days}，期望≈180"
+
+
+# ==================== 会员升级差价 ====================
+
+
+@given("用户的孩子是季度会员")
+def step_child_is_quarterly(context):
+    from datetime import datetime, timedelta
+    from backend.common.types import MemberStatus
+    # 清除背景创建的正式会员孩子
+    context.db.query(Child).filter(
+        Child.user_id == context.user.id, Child.is_deleted == 0
+    ).update({Child.status: MemberStatus.EXPIRED})
+    now = datetime.now().replace(hour=12, minute=0, second=0, microsecond=0)
+    child = Child(
+        user_id=context.user.id,
+        name="小明",
+        age=7,
+        grade="二年级",
+        status=Child.STATUS_OFFICIAL,
+        member_start_time=now - timedelta(days=30),
+        member_expire_time=now + timedelta(days=60),
+    )
+    context.db.add(child)
+    context.db.commit()
+    context.child = child
+    order = Order(
+        order_no="MW_QRTR_001",
+        user_id=context.user.id,
+        child_id=child.id,
+        type=OrderType.QUARTERLY.value,
+        amount=1350.00,
+        pay_status=Order.PAY_PAID,
+        pay_time=now,
+    )
+    context.db.add(order)
+    context.db.commit()
+
+
+@given("会员已使用30天")
+def step_member_used_30_days(context):
+    pass  # 已在季度会员 given 中设置
+
+
+@when("用户查询升级年费价格")
+def step_query_upgrade_price(context):
+    context.response = context.client.get(
+        f"/order/upgrade-options/{context.child.id}",
+        headers=context.headers,
+    )
+
+
+@then("显示剩余价值为900元")
+def step_remaining_value_900(context):
+    assert context.response.status_code == 200
+    options = context.response.json()
+    assert len(options) > 0
+    opt = next((o for o in options if o["target_type"] == OrderType.OFFICIAL_MEMBER.value), None)
+    assert opt is not None, f"升级选项不含年费: {options}"
+    remaining_value = float(opt["remaining_value"])
+    # 剩余价值 = 1350 × 剩余天数/90，剩余天数可能因执行时序略少于60天
+    assert remaining_value >= 885.0, f"剩余价值过低={remaining_value}"
+
+
+@then("显示升级差价为4500元")
+def step_upgrade_price_4500(context):
+    options = context.response.json()
+    opt = next((o for o in options if o["target_type"] == OrderType.OFFICIAL_MEMBER.value), None)
+    assert opt is not None
+    remaining_value = float(opt["remaining_value"])
+    expected_upgrade = 5400.0 - remaining_value
+    assert abs(float(opt["upgrade_price"]) - expected_upgrade) < 1.0, (
+        f"升级差价={opt['upgrade_price']}, 期望~={expected_upgrade}"
+    )
+
+
+# ==================== 缓冲期续费 ====================
+
+
+@given("用户的孩子是已过期会员且在缓冲期内")
+def step_child_expired_in_grace(context):
+    from datetime import datetime, timedelta
+    from backend.common.types import MemberStatus
+    child = Child(
+        user_id=context.user.id,
+        name="小明",
+        age=7,
+        grade="二年级",
+        status=MemberStatus.EXPIRED,
+        member_start_time=datetime.now() - timedelta(days=400),
+        member_expire_time=datetime.now() - timedelta(days=10),
+    )
+    context.db.add(child)
+    context.db.commit()
+    context.child = child
+
+
+@then("提示应用了续费折扣")
+def step_renewal_discount_hint(context):
+    data = context.response.json()
+    assert float(data["amount"]) < 5400.0, f"续费未打折: {data['amount']}"

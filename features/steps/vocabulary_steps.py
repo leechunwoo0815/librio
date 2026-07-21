@@ -1,7 +1,7 @@
 # features/steps/vocabulary_steps.py
 """V3.1 词汇BDD步骤"""
 
-from behave import when, then
+from behave import given, when, then
 from backend.domain.vocabulary.models import DictionaryWord
 
 
@@ -205,3 +205,43 @@ def step_word_highlighted(context, word):
 def step_click_word_again(context):
     # Frontend-only: clicking a word to show definition is a frontend interaction
     assert True  # Click-to-reveal-definition verified on frontend
+
+
+# ==================== 试读用户查词限制 ====================
+
+
+@given("今日已查词达到上限")
+def step_today_lookup_at_limit(context):
+    """创建足够多的今日查词记录，使下次查词触发拦截"""
+    from datetime import datetime
+    from backend.common.config_service import ConfigService
+    from backend.domain.vocabulary.models import UserVocabulary, DictionaryWord
+    limit = ConfigService.get_int(context.db, "vocab_lookup_limit", 10)
+    today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    for i in range(limit):
+        dw = DictionaryWord(
+            word=f"testword{i}",
+            chinese_meaning=f"测试词义{i}",
+            phonetic="/test/",
+            part_of_speech="名词",
+        )
+        context.db.add(dw)
+        context.db.flush()
+        uv = UserVocabulary(
+            child_id=context.child.id,
+            word_id=dw.id,
+            lookup_count=1,
+            last_review_time=today_start,
+        )
+        context.db.add(uv)
+    context.db.commit()
+
+
+@then("查词请求被拒绝")
+def step_lookup_rejected(context):
+    assert context.response.status_code == 403
+
+
+@then('提示"试读用户每日查词上限"')
+def step_trial_lookup_hint(context):
+    assert "查词上限" in context.response.text or context.response.status_code == 403

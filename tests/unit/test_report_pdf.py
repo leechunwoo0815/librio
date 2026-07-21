@@ -12,7 +12,7 @@ try:
     import weasyprint  # noqa: F401
 
     PDF_AVAILABLE = True
-except ImportError:
+except (ImportError, OSError):
     PDF_AVAILABLE = False
 
 HAS_MYSQL = not os.environ.get("DATABASE_URL", "").startswith("sqlite")

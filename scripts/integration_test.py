@@ -59,6 +59,7 @@ os.environ["DATABASE_URL"] = f"sqlite:///{DB_PATH}"
 # Import ALL model modules so their tables register with Base.metadata
 import backend.domain.user.models  # noqa: E402, F401
 import backend.domain.child.models  # noqa: E402, F401
+import backend.domain.child.benefit_transfer_model  # noqa: E402, F401
 import backend.domain.book.models  # noqa: E402, F401
 import backend.domain.order.models  # noqa: E402, F401
 import backend.domain.borrow.models  # noqa: E402, F401
@@ -867,25 +868,55 @@ if refund_ok:
     db = get_db_session()
     dep = db.query(DepositRecord).filter_by(child_id=child1_id, is_deleted=0).first()
     step(
-        "DB: deposit REFUNDING",
-        dep is not None and dep.status == DepositStatus.REFUNDING,
+        "DB: deposit REFUND_PENDING",
+        dep is not None and dep.status == DepositStatus.REFUND_PENDING,
         f"status={dep.status if dep else 'NONE'}",
     )
 
     from backend.domain.deposit.service import DepositService
 
-    DepositService(db).mark_refunded(child1_id)
-    db.commit()
+    # Admin audit: approve refund (V3.8: REFUND_PENDING → REFUNDING)
+    audit_ok = False
+    if ADMIN_TOKEN:
+        audit_resp = client.post(
+            f"/admin/api/deposits/{child1_id}/audit-refund",
+            json={"action": "approve"},
+            headers={"Authorization": f"Bearer {ADMIN_TOKEN}"},
+        )
+        audit_ok = audit_resp.status_code == 200
+        step("Admin: audit refund approve", audit_ok, f"status={audit_resp.status_code}")
 
-    dep2 = db.query(DepositRecord).filter_by(child_id=child1_id, is_deleted=0).first()
-    step(
-        "DB: deposit REFUNDED",
-        dep2 is not None and dep2.status == DepositStatus.REFUNDED,
-        f"status={dep2.status if dep2 else 'NONE'}",
-    )
+    if audit_ok:
+        db.expire_all()
+        dep = db.query(DepositRecord).filter_by(child_id=child1_id, is_deleted=0).first()
+        step(
+            "DB: deposit REFUNDING",
+            dep is not None and dep.status == DepositStatus.REFUNDING,
+            f"status={dep.status if dep else 'NONE'}",
+        )
+
+        if dep and dep.status == DepositStatus.REFUNDING:
+            DepositService(db).mark_refunded(child1_id)
+            db.commit()
+            dep2 = (
+                db.query(DepositRecord)
+                .filter_by(child_id=child1_id, is_deleted=0)
+                .first()
+            )
+            step(
+                "DB: deposit REFUNDED",
+                dep2 is not None and dep2.status == DepositStatus.REFUNDED,
+                f"status={dep2.status if dep2 else 'NONE'}",
+            )
+        else:
+            step("DB: deposit REFUNDED", False, "SKIP: not REFUNDING")
+    else:
+        step("DB: deposit REFUNDING", False, "SKIP: audit failed")
+        step("DB: deposit REFUNDED", False, "SKIP")
     db.close()
 else:
-    step("DB: deposit REFUNDING", False, "SKIP: refund failed")
+    step("DB: deposit REFUND_PENDING", False, "SKIP: refund failed")
+    step("DB: deposit REFUNDING", False, "SKIP")
     step("DB: deposit REFUNDED", False, "SKIP")
 
 
