@@ -35,7 +35,9 @@ def http():
     db = Session()
 
     # 创建测试用户，使 create_access_token({"sub": "1"}) 通过认证
-    user = User(openid="test_report_openid", phone="13800138001", parent_name="报告测试用户")
+    user = User(
+        openid="test_report_openid", phone="13800138001", parent_name="报告测试用户"
+    )
     db.add(user)
     db.commit()
     db.refresh(user)
