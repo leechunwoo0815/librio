@@ -7,16 +7,11 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from backend.common.base_model import BaseModel
-from backend.common.types import MemberStatus, DepositStatus
+from backend.common.types import MemberStatus
 from backend.domain.child.models import Child
-from backend.domain.reading.models import CheckIn, VoiceRecording
+from backend.domain.reading.models import CheckIn
 from backend.domain.reading.service import ReadingService
-from backend.domain.reading.repository import (
-    VoiceRecordingRepository,
-    CheckInRepository,
-)
 from backend.domain.reading.schemas import SaveRecordingRequest
-from backend.common.events import EventBus
 
 
 @pytest.fixture

@@ -86,7 +86,7 @@ def _setup_user(db):
 class TestCreateDamageReport:
     def test_level_1_light(self, db_session):
         """轻度损坏（免费）"""
-        user = _setup_user(db_session)
+        _setup_user(db_session)
         child = _setup_child(db_session)
         book = _setup_book(db_session)
         copy = _setup_copy(db_session, book.id)
@@ -110,7 +110,7 @@ class TestCreateDamageReport:
 
     def test_level_2_heavy(self, db_session):
         """重度损坏（0.5×定价）"""
-        user = _setup_user(db_session)
+        _setup_user(db_session)
         child = _setup_child(db_session)
         book = _setup_book(db_session, price=Decimal("200"))
         copy = _setup_copy(db_session, book.id)
@@ -134,7 +134,7 @@ class TestCreateDamageReport:
 
     def test_level_3_lost_with_d05(self, db_session):
         """丢失（1.5×定价）+ D05 联动验证 BookCopy.status → LOST"""
-        user = _setup_user(db_session)
+        _setup_user(db_session)
         child = _setup_child(db_session)
         book = _setup_book(db_session, price=Decimal("100"))
         copy = _setup_copy(db_session, book.id)
@@ -180,7 +180,7 @@ class TestCreateDamageReport:
 class TestAppeal:
     def test_appeal_within_7_days(self, db_session):
         """7天申诉期可申诉"""
-        user = _setup_user(db_session)
+        _setup_user(db_session)
         child = _setup_child(db_session)
         book = _setup_book(db_session)
         copy = _setup_copy(db_session, book.id)
@@ -203,9 +203,8 @@ class TestAppeal:
 
     def test_appeal_after_7_days_rejected(self, db_session):
         """超过7天申诉期被拒绝"""
-        import time
 
-        user = _setup_user(db_session)
+        _setup_user(db_session)
         child = _setup_child(db_session)
         book = _setup_book(db_session)
         copy = _setup_copy(db_session, book.id)
@@ -238,7 +237,7 @@ class TestAppeal:
 class TestReview:
     def test_review_approve(self, db_session):
         """管理员确认申诉无效（确认罚款）"""
-        user = _setup_user(db_session)
+        _setup_user(db_session)
         child = _setup_child(db_session)
         book = _setup_book(db_session)
         copy = _setup_copy(db_session, book.id)
@@ -264,7 +263,7 @@ class TestReview:
 
     def test_review_override_reversal(self, db_session):
         """申诉改判冲正 — 从重度改为轻度（罚款归零）"""
-        user = _setup_user(db_session)
+        _setup_user(db_session)
         child = _setup_child(db_session)
         book = _setup_book(db_session, price=Decimal("200"))
         copy = _setup_copy(db_session, book.id)
@@ -299,13 +298,12 @@ class TestReview:
 
     def test_review_override_partial(self, db_session):
         """申诉改判 — 从丢失改为重度（1.5×→0.5×）"""
-        user = _setup_user(db_session)
+        _setup_user(db_session)
         child = _setup_child(db_session)
         book = _setup_book(db_session, price=Decimal("100"))
         copy = _setup_copy(db_session, book.id)
         borrow = _setup_borrow(db_session, child.id, book.id, copy.id)
         db_session.commit()
-        orig_total = book.total_stock
 
         from backend.domain.admin.services.damage_admin_service import (
             DamageAdminService,

@@ -1,7 +1,6 @@
 """T3.7 库存双口径对账任务测试"""
 
 import pytest
-from datetime import datetime
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from backend.database import Base
