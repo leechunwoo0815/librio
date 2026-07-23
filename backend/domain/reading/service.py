@@ -395,7 +395,9 @@ class ReadingService:
             ):
                 from backend.common.exceptions import ForbiddenError
 
-                raise ForbiddenError("请先同意语音数据收集政策")
+                raise ForbiddenError(
+                    "请先同意语音数据收集政策", error_code="voice_consent_required"
+                )
         recording = VoiceRecording(
             child_id=data.child_id,
             book_id=data.book_id,

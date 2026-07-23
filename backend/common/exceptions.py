@@ -26,9 +26,15 @@ class BusinessException(Exception):
     全局异常处理器会将其转换为对应的 HTTP 响应。
     """
 
-    def __init__(self, message: str = "业务异常", code: int = 400):
+    def __init__(
+        self,
+        message: str = "业务异常",
+        code: int = 400,
+        error_code: str | None = None,
+    ):
         self.message = message
         self.code = code
+        self.error_code = error_code
         super().__init__(self.message)
 
 
@@ -40,10 +46,13 @@ class NotFoundError(BusinessException):
 
 
 class ForbiddenError(BusinessException):
-    """权限不足 (403)"""
+    """权限不足 (403)
 
-    def __init__(self, message: str = "权限不足"):
-        super().__init__(message, 403)
+    error_code: 可选结构化错误码（如 consent_required），前端据此触发对应交互
+    """
+
+    def __init__(self, message: str = "权限不足", error_code: str | None = None):
+        super().__init__(message, 403, error_code=error_code)
 
 
 class ConflictError(BusinessException):
@@ -108,7 +117,10 @@ async def business_exception_handler(
       Service 层 raise NotFoundError("订单不存在")
       → 自动转换为 HTTP 404 {"detail": "订单不存在"}
     """
+    content: dict = {"detail": exc.message}
+    if exc.error_code is not None:
+        content["error_code"] = exc.error_code
     return JSONResponse(
         status_code=exc.code,
-        content={"detail": exc.message},
+        content=content,
     )

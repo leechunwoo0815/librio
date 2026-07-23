@@ -113,7 +113,9 @@ class ChildService:
         ):
             from backend.common.exceptions import ForbiddenError
 
-            raise ForbiddenError("请先同意儿童信息收集政策")
+            raise ForbiddenError(
+                "请先同意儿童信息收集政策", error_code="consent_required"
+            )
 
         child = Child(
             user_id=user_id,

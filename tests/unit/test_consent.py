@@ -152,8 +152,9 @@ class TestChildConsentInterceptor:
     def test_create_child_without_consent_403(self, db, user):
         service = ChildService(db)
         data = ChildCreate(name="未同意孩子", age=4, grade="小班")
-        with pytest.raises(ForbiddenError, match="请先同意"):
+        with pytest.raises(ForbiddenError, match="请先同意") as exc_info:
             service.create_child(user.id, data)
+        assert exc_info.value.error_code == "consent_required"
 
     def test_create_child_with_consent_201(self, db, user):
         consent_svc = ConsentService(db)
@@ -171,8 +172,9 @@ class TestChildConsentInterceptor:
 
         child_svc = ChildService(db)
         data = ChildCreate(name="缺同意孩子", age=6, grade="大班")
-        with pytest.raises(ForbiddenError, match="请先同意"):
+        with pytest.raises(ForbiddenError, match="请先同意") as exc_info:
             child_svc.create_child(user.id, data)
+        assert exc_info.value.error_code == "consent_required"
 
 
 # ── 拦截器测试：语音同意 ──
@@ -187,3 +189,69 @@ class TestVoiceConsentInterceptor:
         service = ConsentService(db)
         service.grant_consent(user.id, "voice_recording")
         assert service.has_valid_consent(user.id, "voice_recording")
+
+    def test_save_recording_without_voice_consent_403(self, db, user, child):
+        """无 voice_recording 同意 → save_recording 403 + voice_consent_required"""
+        from backend.domain.reading.schemas import SaveRecordingRequest
+        from backend.domain.reading.service import ReadingService
+
+        service = ReadingService(db)
+        data = SaveRecordingRequest(
+            child_id=child.id,
+            book_id=1,
+            text="hello world",
+            audio_url="/uploads/voice/test.mp3",
+            duration=5,
+        )
+        with pytest.raises(ForbiddenError, match="请先同意语音") as exc_info:
+            service.save_recording(data)
+        assert exc_info.value.error_code == "voice_consent_required"
+
+    def test_save_recording_with_voice_consent_201(self, db, user, child):
+        """有 voice_recording 同意 → save_recording 正常保存"""
+        from backend.domain.reading.schemas import SaveRecordingRequest
+        from backend.domain.reading.service import ReadingService
+
+        ConsentService(db).grant_consent(user.id, "voice_recording")
+        service = ReadingService(db)
+        data = SaveRecordingRequest(
+            child_id=child.id,
+            book_id=1,
+            text="hello world",
+            audio_url="/uploads/voice/test.mp3",
+            duration=5,
+        )
+        resp = service.save_recording(data)
+        assert resp.audio_url == "/uploads/voice/test.mp3"
+        assert resp.duration_seconds == 5
+
+
+# ── 异常处理器 error_code 响应结构 ──
+
+
+class TestErrorCodeResponse:
+    def test_error_code_in_json_response(self):
+        """ForbiddenError 带 error_code 时响应 JSON 含 error_code 字段"""
+        import asyncio
+        import json
+
+        from backend.common.exceptions import business_exception_handler
+
+        exc = ForbiddenError("请先同意儿童信息收集政策", error_code="consent_required")
+        resp = asyncio.run(business_exception_handler(None, exc))
+        body = json.loads(resp.body)
+        assert resp.status_code == 403
+        assert body["detail"] == "请先同意儿童信息收集政策"
+        assert body["error_code"] == "consent_required"
+
+    def test_no_error_code_key_when_unset(self):
+        """不带 error_code 的异常响应不出现 error_code 键（向后兼容）"""
+        import asyncio
+        import json
+
+        from backend.common.exceptions import business_exception_handler
+
+        resp = asyncio.run(business_exception_handler(None, ForbiddenError("无权")))
+        body = json.loads(resp.body)
+        assert resp.status_code == 403
+        assert "error_code" not in body
