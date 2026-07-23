@@ -25,7 +25,7 @@ settings = get_settings()
 security = HTTPBearer()
 
 
-def create_admin_token(admin_id: int, role: int) -> str:
+def create_admin_token(admin_id: int, role: int, token_generation: int = 0) -> str:
     from backend.common.config_service import ConfigService
     from backend.database import get_session
 
@@ -44,6 +44,7 @@ def create_admin_token(admin_id: int, role: int) -> str:
         "exp": expire,
         "type": "admin",
         "jti": str(uuid.uuid4()),
+        "gen": token_generation,
     }
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
@@ -78,5 +79,10 @@ async def get_current_admin(
     )
     if not admin:
         raise UnauthorizedError("管理员不存在或已禁用")
+
+    # S-03: 校验 token_generation，改密码后旧 Token 立即失效
+    token_gen = payload.get("gen", 0)
+    if int(token_gen) != admin.token_generation:
+        raise UnauthorizedError("Token已失效，请重新登录")
 
     return admin

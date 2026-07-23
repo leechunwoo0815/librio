@@ -91,7 +91,7 @@ def admin_login(
     # 登录成功，清除失败记录
     _login_failures.pop(key, None)
 
-    token = create_admin_token(admin.id, admin.role)
+    token = create_admin_token(admin.id, admin.role, admin.token_generation)
     logger.info(f"Admin login: {admin.username} (id={admin.id})")
 
     permissions = list(admin_service.get_permission_codes(admin))

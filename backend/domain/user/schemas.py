@@ -28,6 +28,7 @@ class UserResponse(BaseSchema):
     phone: str | None = None
     avatar: str | None = None
     current_child_id: int | None = None
+    status: int = 1
     create_time: datetime
 
 

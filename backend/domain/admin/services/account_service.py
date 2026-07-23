@@ -306,13 +306,19 @@ class AdminAccountService:
         if data.password:
             target.password_hash = hash_password(data.password)
 
+        # 禁用或改密码时递增 token_generation，使旧 Token 立即失效
+        if (
+            data.status is not None and data.status == Admin.STATUS_DISABLED
+        ) or data.password:
+            target.token_generation = (target.token_generation or 0) + 1
+
         self.db.commit()
         return {"success": True, "message": "管理员更新成功"}
 
     def change_password(
         self, admin_id: int, old_password: str, new_password: str, current_admin_id: int
     ) -> dict:
-        """修改管理员密码 — 校验旧密码"""
+        """修改管理员密码 — 校验旧密码，递增 token_generation 使旧 Token 失效"""
         if admin_id != current_admin_id:
             raise ForbiddenError("只能修改自己的密码")
 
@@ -328,8 +334,9 @@ class AdminAccountService:
             raise ValidationError("旧密码错误")
 
         target.password_hash = hash_password(new_password)
+        target.token_generation = (target.token_generation or 0) + 1
         self.db.commit()
-        return {"success": True, "message": "密码修改成功"}
+        return {"success": True, "message": "密码修改成功，请重新登录"}
 
     def get_permission_codes(self, admin: Admin) -> set[str]:
         if self.is_super_admin(admin):

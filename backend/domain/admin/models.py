@@ -1,7 +1,15 @@
 # backend/domain/admin/models.py
 """管理域模型 — 管理员(RBAC) + 操作日志 + 系统配置 + 老师/排班 + 场馆"""
 
-from sqlalchemy import BigInteger, Column, ForeignKey, SmallInteger, String, Text
+from sqlalchemy import (
+    BigInteger,
+    Column,
+    ForeignKey,
+    Integer,
+    SmallInteger,
+    String,
+    Text,
+)
 from sqlalchemy.orm import relationship
 
 from backend.common.base_model import BaseModel
@@ -29,6 +37,13 @@ class Admin(BaseModel):
     venue_id = Column(BigInteger, nullable=True, comment="所属场馆ID")
     phone = Column(String(11), nullable=True, comment="手机号")
     status = Column(SmallInteger, default=STATUS_ACTIVE, comment="1=启用 0=禁用")
+    token_generation = Column(
+        Integer,
+        nullable=False,
+        default=0,
+        server_default="0",
+        comment="Token版本号，改密码/禁用时+1使旧Token失效",
+    )
 
     # RBAC 扩展字段（Phase 1）
     admin_role_id = Column(

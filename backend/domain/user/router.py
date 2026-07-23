@@ -49,7 +49,7 @@ async def wx_login(
         if phone:
             user = user_service.update_user_phone(user.id, phone)
 
-    token = create_access_token({"sub": str(user.id)})
+    token = create_access_token({"sub": str(user.id), "gen": user.token_generation})
     return WxLoginResponse(token=token, user=user)
 
 
@@ -133,5 +133,5 @@ async def phone_login(
 
     user_response = UR.model_validate(user)
 
-    token = create_access_token({"sub": str(user.id)})
+    token = create_access_token({"sub": str(user.id), "gen": user.token_generation})
     return WxLoginResponse(token=token, user=user_response)

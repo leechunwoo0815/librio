@@ -16,6 +16,7 @@ from jose import JWTError, jwt
 from backend.common.exceptions import UnauthorizedError
 from backend.config import get_settings
 from backend.database import get_db
+from backend.domain.user.models import User
 from backend.domain.user.repository import UserRepository
 from backend.domain.user.schemas import UserResponse
 
@@ -29,7 +30,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
     """
     [What] 创建JWT Access Token
     [Why] 用户登录后需要生成Token
-    [How] 使用python-jose编码JWT
+    [How] 使用python-jose编码JWT，payload 包含 token_generation 版本号
     """
     to_encode = data.copy()
     from datetime import timezone
@@ -72,6 +73,7 @@ async def get_current_user(
     [What] 获取当前登录用户（依赖注入）
     [Why] 需要登录的API需要获取用户信息
     [How] 从Header中提取Token，验证并查询用户
+    [Security] 校验 token_generation 确保改密码/禁用后旧 Token 立即失效
     """
     token = credentials.credentials
 
@@ -96,6 +98,15 @@ async def get_current_user(
     user = user_repo.get_by_id(int(user_id))
     if user is None:
         raise UnauthorizedError("用户不存在")
+
+    # S-05: 校验用户状态
+    if user.status != User.STATUS_ACTIVE:
+        raise UnauthorizedError("账号已被禁用")
+
+    # S-03: 校验 token_generation，改密码后旧 Token 立即失效
+    token_gen = payload.get("gen", 0)
+    if int(token_gen) != user.token_generation:
+        raise UnauthorizedError("Token已失效，请重新登录")
 
     return UserResponse.model_validate(user)
 
@@ -137,4 +148,16 @@ async def get_current_user_optional(
 
     user_repo = UserRepository(db)
     user = user_repo.get_by_id(int(user_id))
-    return UserResponse.model_validate(user) if user else None
+    if not user:
+        return None
+
+    # S-05: 校验用户状态
+    if user.status != User.STATUS_ACTIVE:
+        raise UnauthorizedError("账号已被禁用")
+
+    # S-03: 校验 token_generation
+    token_gen = payload.get("gen", 0)
+    if int(token_gen) != user.token_generation:
+        raise UnauthorizedError("Token已失效，请重新登录")
+
+    return UserResponse.model_validate(user)

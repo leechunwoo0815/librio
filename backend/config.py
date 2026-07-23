@@ -8,6 +8,7 @@
 import os
 from functools import lru_cache
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -99,6 +100,15 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
+    @model_validator(mode="after")
+    def _validate_test_token_safety(self) -> "Settings":
+        """S-08: 生产环境禁止开启测试 Token 后门 + 禁止默认 SECRET_KEY"""
+        if not self.DEBUG and self.ENABLE_TEST_TOKEN:
+            raise RuntimeError("ENABLE_TEST_TOKEN 仅允许在 DEBUG 模式下使用")
+        if not self.DEBUG and self.SECRET_KEY == "your-secret-key-change-in-production":
+            raise RuntimeError("SECRET_KEY 必须通过环境变量设置，禁止使用默认值")
+        return self
+
 
 @lru_cache
 def get_settings() -> Settings:
@@ -107,7 +117,4 @@ def get_settings() -> Settings:
     [Why] 避免重复读取环境变量
     [How] 使用lru_cache装饰器缓存配置实例
     """
-    s = Settings()
-    if not s.DEBUG and s.SECRET_KEY == "your-secret-key-change-in-production":
-        raise RuntimeError("SECRET_KEY 必须通过环境变量设置，禁止使用默认值")
-    return s
+    return Settings()
