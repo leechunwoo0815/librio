@@ -1,13 +1,7 @@
 # tests/unit/test_consent.py
 """同意记录（三段式监护人同意）单元测试"""
 
-import os
 import uuid
-
-os.environ["DATABASE_URL"] = "sqlite:///:memory:"
-os.environ["MOCK_PAYMENT"] = "true"
-os.environ["MOCK_SMS"] = "true"
-os.environ["ENABLE_TEST_TOKEN"] = "true"
 
 import pytest
 from sqlalchemy import create_engine
