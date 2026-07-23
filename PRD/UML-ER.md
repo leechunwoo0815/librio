@@ -869,3 +869,22 @@ graph TD
 
 > **V3.1 重新引入的表**：`borrow_record`、`reservation`、`deposit_record` 在 V3.1 中以新结构回归。
 > **V3.1 新增的表**：`observation_evaluation`、`parent_course_time`、`config_audit_log`、`dead_letter_event`、`book_page`。
+
+---
+
+## 附录：V3.8 之后新增表（2026-07-23 补登）
+
+> 本文档 ER 图覆盖至 V3.8（49 表，2026-07-15 时点）。以下新表未绘制 ER 图，字段定义以 `PRD/表结构.md` §17 为准：
+
+| 表 | 模块 | 关联 | 说明 |
+|----|------|------|------|
+| consent_record | 隐私合规 | user_id → user | P0-1 三段式监护人同意记录（永不物理删除） |
+| message_read_status | 消息 | message_id → system_message, user_id → user | 共享消息已读追踪（V2.4 消息改造） |
+| teacher_message | 消息 | teacher_id → teacher | 老师端消息 |
+| assessment | 评估 | child_id/teacher_id/venue_id | AR 评估安排与结果 |
+| audio_file | 音频 | book_id → book | 图书音频文件（全文/分页） |
+| role / permission / role_permission | RBAC | admin.admin_role_id → role | 角色权限体系（R4 角色生命周期） |
+| book_damage_report | 图书 | child_id/book_id/book_copy_id | T3.6a 损坏三级定责（申诉/冲正） |
+| child.deletion_requested_at | 用户 | — | P0-3 删除权 24h 冷静期标记 |
+
+完整 ER 重绘列入 P2 backlog。
