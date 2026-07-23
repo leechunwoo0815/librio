@@ -1,6 +1,8 @@
 # DmkWords 完整需求文档（V3.5 OMO 模式）
 
-> **版本**: V3.15 | **日期**: 2026-07-21
+> **版本**: V3.16 | **日期**: 2026-07-23
+
+> **本次更新（V3.16, 2026-07-23）**：隐私合规 Phase 1 落地 — 附录M 三段式监护人同意（consent_record 表 + 同意 API + 错误码 + 前端弹窗）。
 
 > **本次更新（V3.7, 2026-07-09）**：全量终审通过。P0(8)+P1(13)+P2(8) 共 35 项修复。前后端代码已对齐，所有测试通过。
 > **本次更新（V3.8, 2026-07-15）**：新增权益转让、个人名片QR码、生词高亮、季度/半年会员。
@@ -1532,3 +1534,58 @@ def reconcile_stock():
 | 409 | 操作冲突，请刷新后重试 |
 | 422 | 展示后端返回的 detail 业务文案 |
 | 500/网络超时 | 网络异常，请稍后重试（附重试按钮） |
+
+---
+
+## 附录M：隐私合规（三段式监护人同意）
+
+> 依据《儿童个人信息网络保护规定》第 8 条：收集、使用儿童个人信息，应当以显著、清晰的方式告知监护人，并取得监护人同意。
+
+### M.1 consent_record 表
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | BIGINT PK | 主键 |
+| user_id | BIGINT | 监护人用户 ID |
+| consent_type | VARCHAR(50) | privacy_policy / child_data / voice_recording |
+| consent_text_hash | VARCHAR(64) | 同意文案 SHA-256（追溯当时版本） |
+| consent_version | VARCHAR(20) | 隐私政策版本号（当前 v1.0） |
+| ip_address | VARCHAR(45) | 同意时 IP |
+| user_agent | VARCHAR(500) | User-Agent |
+| create_time | DATETIME | 同意时间 |
+| withdrawn_at | DATETIME NULL | 撤回时间（NULL=有效） |
+
+合规证据表，永不物理删除。文案唯一来源 `backend/common/consent_texts.py`，前端弹窗文案经 `GET /user/consent/texts`（公开）获取，禁止前后端各写一份。
+
+### M.2 三段式同意流程
+
+| 段 | 时机 | 前端 | 后端拦截 |
+|----|------|------|----------|
+| 1 隐私政策 | 登录页勾选 → 登录成功后 | `login.js _proceedAfterLogin()` → `consent.ensure('privacy_policy')` | 不拦截登录，登录后补记录 |
+| 2 儿童信息 | 添加孩子 | `child-manage.js` 提交前 `consent.ensure('child_data')` | `POST /child` 无同意 → 403 `consent_required` |
+| 3 语音数据 | 首次录音 | 录音功能上线时接入（consent util 已就绪） | `POST /reading/voice/record` 无同意 → 403 `voice_consent_required` |
+
+前端统一入口 `frontend/utils/consent.js`：`ensure(type)` 查记录→无则弹窗→同意则 `POST /user/consent`；`ensureForError(err, type)` 处理后端 403 errorCode 再弹窗。
+
+### M.3 API 清单
+
+| 端点 | 说明 |
+|------|------|
+| `POST /user/consent` | 提交同意（type 枚举白名单，记录 hash/IP/UA） |
+| `GET /user/consent` | 返回每类最新一条有效记录 |
+| `POST /user/consent/withdraw` | 撤回（本轮仅 privacy_policy / voice_recording；child_data 返回"即将上线"，级联删除见 P0-3） |
+| `GET /user/consent/texts` | 公开，返回版本号+三类文案 |
+
+### M.4 错误码
+
+`BusinessException.error_code` 可选字段，响应 JSON 仅在设置时携带：
+
+| error_code | 触发 | 前端行为 |
+|-----------|------|----------|
+| `consent_required` | 无 child_data 同意创建孩子 | 弹儿童信息收集同意弹窗 |
+| `voice_consent_required` | 无 voice_recording 同意保存录音 | 弹语音数据收集同意弹窗 |
+
+### M.5 撤回与版本管理
+
+- 撤回标记 `withdrawn_at`，对应功能立即停止（如撤回 voice_recording 后录音 403）
+- 文案更新 → `CONSENT_VERSION` 递增 → 历史同意的 hash 可追溯到当时文案版本；老版本用户重新征求同意机制列入 backlog P1
