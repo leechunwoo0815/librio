@@ -75,6 +75,20 @@ class TestConsentTexts:
     def test_version_defined(self):
         assert CONSENT_VERSION == "v1.0"
 
+    def test_texts_endpoint_returns_all_types(self):
+        """GET /user/consent/texts 返回版本号与三类文案（前端弹窗唯一来源）"""
+        from backend.domain.user.consent_router import get_consent_texts
+
+        res = get_consent_texts()
+        assert res["version"] == CONSENT_VERSION
+        assert set(res["texts"].keys()) == {
+            "privacy_policy",
+            "child_data",
+            "voice_recording",
+        }
+        for text in res["texts"].values():
+            assert len(text) > 20
+
 
 # ── consent service 测试 ──
 

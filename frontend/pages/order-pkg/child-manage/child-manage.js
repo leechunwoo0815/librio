@@ -2,6 +2,7 @@
 const api = require('../../utils/api')
 const auth = require('../../utils/auth')
 const security = require('../../utils/security')
+const consent = require('../../utils/consent')
 
 const gradeOptions = [
   '幼儿园小班', '幼儿园中班', '幼儿园大班',
@@ -156,6 +157,11 @@ Page({
           grade,
         })
       } else {
+        const consentOk = await consent.ensure('child_data')
+        if (!consentOk) {
+          wx.hideLoading()
+          return
+        }
         await api.createChild({
           name: formName.trim(),
           age,
@@ -168,6 +174,11 @@ Page({
       await this.loadChildren()
     } catch (e) {
       wx.hideLoading()
+      if (e && e.errorCode === 'consent_required') {
+        const ok = await consent.ensureForError(e, 'child_data')
+        if (ok) wx.showToast({ title: '已同意，请重新提交', icon: 'none' })
+        return
+      }
       wx.showToast({ title: e.message || (editingChild ? '更新失败' : '添加失败'), icon: 'none' })
     }
   },

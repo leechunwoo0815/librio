@@ -21,6 +21,14 @@ def get_consent_service(db: Session = Depends(get_db)) -> ConsentService:
     return ConsentService(db)
 
 
+@router.get("/texts")
+def get_consent_texts():
+    """获取当前版本同意文案（公开接口，前端弹窗文案唯一来源）"""
+    from backend.common.consent_texts import CONSENT_TEXTS, CONSENT_VERSION
+
+    return {"version": CONSENT_VERSION, "texts": CONSENT_TEXTS}
+
+
 @router.post("", response_model=ConsentResponse, status_code=201)
 def grant_consent(
     data: ConsentCreateRequest,

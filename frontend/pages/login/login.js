@@ -51,13 +51,7 @@ Page({
             wx.setStorageSync('token', res.token)
             wx.setStorageSync('userInfo', res.user)
             self.setData({ loading: false, retryCount: 0 })
-            const targetUrl = self.data.redirect || '/pages/index/index'
-            const tabBarPages = ['/pages/index/index', '/pages/books/books', '/pages/shelf/shelf', '/pages/member/member']
-            if (tabBarPages.includes(targetUrl)) {
-              wx.switchTab({ url: targetUrl })
-            } else {
-              wx.redirectTo({ url: targetUrl })
-            }
+            self._proceedAfterLogin()
           })
           .catch(err => {
             const retryCount = self.data.retryCount + 1
@@ -164,13 +158,7 @@ Page({
             wx.setStorageSync('token', res.token)
             wx.setStorageSync('userInfo', res.user)
             self.setData({ loading: false, retryCount: 0 })
-            const targetUrl = self.data.redirect || '/pages/index/index'
-            const tabBarPages = ['/pages/index/index', '/pages/books/books', '/pages/shelf/shelf', '/pages/member/member']
-            if (tabBarPages.includes(targetUrl)) {
-              wx.switchTab({ url: targetUrl })
-            } else {
-              wx.redirectTo({ url: targetUrl })
-            }
+            self._proceedAfterLogin()
           })
           .catch(err => {
             const retryCount = self.data.retryCount + 1
@@ -194,6 +182,25 @@ Page({
 
   onTapPrivacy() {
     wx.navigateTo({ url: '/pages/agreement/privacy-policy/privacy-policy' })
+  },
+
+  // 登录成功后：先确保隐私政策同意已记录，再跳转
+  _proceedAfterLogin() {
+    const self = this
+    const consent = require('../../utils/consent')
+    consent.ensure('privacy_policy').then(ok => {
+      if (!ok) {
+        self.setData({ error: '需要同意隐私政策后才能使用' })
+        return
+      }
+      const targetUrl = self.data.redirect || '/pages/index/index'
+      const tabBarPages = ['/pages/index/index', '/pages/books/books', '/pages/shelf/shelf', '/pages/member/member']
+      if (tabBarPages.includes(targetUrl)) {
+        wx.switchTab({ url: targetUrl })
+      } else {
+        wx.redirectTo({ url: targetUrl })
+      }
+    })
   },
 
   onLoad(options) {

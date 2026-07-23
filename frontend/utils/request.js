@@ -74,8 +74,15 @@ function doRequest(app, method, url, data, options, showLoading, resolve, reject
       }
 
       if (res.statusCode === 403) {
-        wx.showToast({ title: '无权限执行此操作', icon: 'none' })
-        reject(new Error('无权限'))
+        // 带 error_code 的 403（如 consent_required）交给调用方处理 UX，不弹通用提示
+        const errCode = (res.data && res.data.error_code) || null
+        if (!errCode) {
+          wx.showToast({ title: '无权限执行此操作', icon: 'none' })
+        }
+        const err403 = new Error((res.data && res.data.detail) || '无权限')
+        err403.errorCode = errCode
+        err403.statusCode = 403
+        reject(err403)
         return
       }
 
