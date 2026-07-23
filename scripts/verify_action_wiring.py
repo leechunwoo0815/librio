@@ -176,9 +176,10 @@ def main() -> int:
         for h in sorted(global_handlers):
             print(f"  · {h} (全局池)")
 
-    # ── 加载所有 pages/*.js 的 handler 和 render ──
+    # ── 加载所有 pages/*.js 的 handler、render、和豁免 ──
     page_js_handlers: dict[str, set[str]] = {}  # "teachers.js" → {actions}
     page_js_renders: dict[str, set[str]] = {}  # "teachers.js" → {actions rendered}
+    page_js_exemptions: dict[str, set[str]] = {}  # "teachers.js" → {exempted actions}
 
     for js_file in sorted(JS_PAGES.glob("*.js")):
         fname = js_file.name
@@ -188,6 +189,9 @@ def main() -> int:
         renders = extract_js_render_actions(js_file)
         if renders:
             page_js_renders[fname] = renders
+        exemptions = extract_js_wiring_exemptions(js_file)
+        if exemptions:
+            page_js_exemptions[fname] = exemptions
 
     print(f"\n[INFO] pages/*.js handler 文件: {len(page_js_handlers)} 个")
     print(f"[INFO] pages/*.js render 文件: {len(page_js_renders)} 个")
