@@ -42,6 +42,7 @@ import backend.domain.assessment.models  # noqa: F401
 import backend.domain.audio.models  # noqa: F401
 import backend.common.dead_letter_model  # noqa: F401
 import backend.common.config_audit_model  # noqa: F401
+import backend.domain.user.consent_model  # noqa: F401
 
 errors = []
 

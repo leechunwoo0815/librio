@@ -67,6 +67,7 @@ from backend.domain.assessment.models import Assessment  # noqa: F401
 from backend.domain.audio.models import AudioFile  # noqa: F401
 from backend.common.dead_letter_model import DeadLetterEvent  # noqa: F401
 from backend.common.config_audit_model import ConfigAuditLog  # noqa: F401
+from backend.domain.user.consent_model import ConsentRecord  # noqa: F401
 
 # this is the Alembic Config object
 config = context.config

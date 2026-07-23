@@ -58,6 +58,7 @@ os.environ["DATABASE_URL"] = f"sqlite:///{DB_PATH}"
 
 # Import ALL model modules so their tables register with Base.metadata
 import backend.domain.user.models  # noqa: E402, F401
+import backend.domain.user.consent_model  # noqa: E402, F401
 import backend.domain.child.models  # noqa: E402, F401
 import backend.domain.child.benefit_transfer_model  # noqa: E402, F401
 import backend.domain.book.models  # noqa: E402, F401

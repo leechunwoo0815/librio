@@ -68,3 +68,42 @@ class WxLoginResponse(BaseSchema):
 
     token: str = Field(..., description="JWT token")
     user: UserResponse
+
+
+# ── 同意记录 ──
+
+
+class ConsentCreateRequest(BaseSchema):
+    """提交同意请求"""
+
+    consent_type: str = Field(
+        ...,
+        description="同意类型: privacy_policy / child_data / voice_recording",
+        pattern="^(privacy_policy|child_data|voice_recording)$",
+    )
+
+
+class ConsentWithdrawRequest(BaseSchema):
+    """撤回同意请求"""
+
+    consent_type: str = Field(
+        ...,
+        description="同意类型: privacy_policy / voice_recording（child_data 暂不支持）",
+        pattern="^(privacy_policy|voice_recording)$",
+    )
+
+
+class ConsentResponse(BaseSchema):
+    """同意记录响应"""
+
+    id: int
+    consent_type: str
+    consent_version: str
+    create_time: datetime
+    withdrawn_at: datetime | None = None
+
+
+class ConsentListResponse(BaseSchema):
+    """同意记录列表响应"""
+
+    consents: list[ConsentResponse]
