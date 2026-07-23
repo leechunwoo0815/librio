@@ -147,12 +147,13 @@
         '<td><span class="role-badge ' + roleClass + '">' + roleName + '</span></td>' +
         '<td>' + venueCell + '</td>' +
         '<td><div class="table-actions">' +
-          '<span class="action-link" onclick="usersPage.showDetail(' + u.id + ')">查看</span>' +
-          '<span class="action-link" data-action="edit-user" data-user-id="' + u.id + '" data-parent-name="' + escapeAttr(u.parent_name || '') + '" data-phone="' + escapeAttr(u.phone || '') + '" data-status="' + status + '" data-child-id="' + childId + '">编辑</span>' +
-          '<span class="action-link" data-action="toggle-user-status" data-user-id="' + u.id + '" data-status="' + (u.status != null ? u.status : 1) + '" data-name="' + escapeAttr(u.parent_name || '') + '">' + (u.status === 0 ? '启用' : '禁用') + '</span>' +
+          '<span class="action-link" data-perm="user.view" onclick="usersPage.showDetail(' + u.id + ')">查看</span>' +
+          '<span class="action-link" data-perm="user.edit" data-action="edit-user" data-user-id="' + u.id + '" data-parent-name="' + escapeAttr(u.parent_name || '') + '" data-phone="' + escapeAttr(u.phone || '') + '" data-status="' + status + '" data-child-id="' + childId + '">编辑</span>' +
+          '<span class="action-link" data-perm="user.edit" data-action="toggle-user-status" data-user-id="' + u.id + '" data-status="' + (u.status != null ? u.status : 1) + '" data-name="' + escapeAttr(u.parent_name || '') + '">' + (u.status === 0 ? '启用' : '禁用') + '</span>' +
         '</div></td>' +
         '</tr>';
     }).join('');
+    if (typeof reapplyPermissions === 'function') reapplyPermissions();
   }
 
   function pageUi(total, page, pageSize) {
@@ -212,7 +213,7 @@
         html += '<div class="table-wrap"><table><thead><tr class="text-muted"><th>姓名</th><th>年龄</th><th>年级</th><th>场馆</th><th>状态</th><th>AR等级</th><th>阅读分钟</th><th>读完本数</th><th>连续打卡</th><th>会员到期</th><th>操作</th></tr></thead><tbody>';
         d.children.forEach(c => {
           html += '<tr><td><strong>' + escapeHtml(c.name) + '</strong>' + (c.english_name ? ' ('+escapeHtml(c.english_name)+')' : '') + '</td><td>' + c.age + '</td><td>' + escapeHtml(c.grade||'-') + '</td><td>' + escapeHtml(c.venue_name||'-') + '</td><td>' + (statusMap[c.status]||c.status) + '</td><td>' + (c.ar_level||'-') + '</td><td>' + (c.total_reading_minutes||0) + '</td><td>' + (c.total_books_finished||0) + '</td><td>' + (c.current_streak_days||0) + '天</td><td>' + (c.member_expire_time?formatDate(c.member_expire_time):'-') + '</td><td><div class="table-actions">' +
-            '<span class="action-link" data-action="edit-child" data-child-id="' + c.id + '" data-name="' + escapeAttr(c.name||'') + '" data-english-name="' + escapeAttr(c.english_name||'') + '" data-age="' + (c.age||0) + '" data-grade="' + escapeAttr(c.grade||'') + '">编辑</span>' +
+            '<span class="action-link" data-perm="user.edit" data-action="edit-child" data-child-id="' + c.id + '" data-name="' + escapeAttr(c.name||'') + '" data-english-name="' + escapeAttr(c.english_name||'') + '" data-age="' + (c.age||0) + '" data-grade="' + escapeAttr(c.grade||'') + '">编辑</span>' +
             '<span class="action-link text-error" onclick="usersPage.deleteChild(' + c.id + ')">删除</span>' +
           '</div></td></tr>';
         });

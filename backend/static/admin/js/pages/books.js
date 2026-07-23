@@ -125,14 +125,15 @@
         '<td style="font-family:var(--font-mono);font-size:12px;">' + escapeHtml(barcode) + '</td>' +
         '<td>' + totalStock + ' / ' + availStock + '</td>' +
         '<td><div class="ops">' +
-          '<a href="#" onclick="window.booksPage.viewBook(\'' + b.id + '\')">查看</a>' +
+          '<a href="#" data-perm="book.view" onclick="window.booksPage.viewBook(\'' + b.id + '\')">查看</a>' +
           '<span class="sep">|</span>' +
-          '<a href="#" onclick="window.booksPage.togglePublish(\'' + b.id + '\',\'' + jsEscape(b.title) + '\',' + totalStock + ',' + availStock + ')">' + publishAction + '</a>' +
+          '<a href="#" data-perm="book.edit" onclick="window.booksPage.togglePublish(\'' + b.id + '\',\'' + jsEscape(b.title) + '\',' + totalStock + ',' + availStock + ')">' + publishAction + '</a>' +
           '<span class="sep">|</span>' +
-          '<a href="#" style="color:var(--error)" onclick="window.booksPage.deleteBook(\'' + b.id + '\')">删除</a>' +
+          '<a href="#" data-perm="book.delete" style="color:var(--error)" onclick="window.booksPage.deleteBook(\'' + b.id + '\')">删除</a>' +
         '</div></td>' +
       '</tr>';
     }).join('');
+  if (typeof reapplyPermissions === 'function') reapplyPermissions();
 
     // 重新绑定批量选择事件
     BatchSelect.init('#booksTable', (ids) => {

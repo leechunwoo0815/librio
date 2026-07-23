@@ -57,11 +57,12 @@ async function loadWords() {
         '<td>' + escapeHtml(w.pos || '-') + '</td>' +
         '<td><span class="tag ' + getTagClass(w.ar_level) + '">' + getTagLabel(w.ar_level) + '</span></td>' +
         '<td>' +
-          '<button class="action-sm" data-action="edit-word" data-id="' + w.id + '">编辑</button> ' +
-          '<button class="action-sm" data-action="delete-word" data-id="' + w.id + '">删除</button>' +
+          '<button class="action-sm" data-perm="dictionary.edit" data-action="edit-word" data-id="' + w.id + '">编辑</button> ' +
+          '<button class="action-sm" data-perm="dictionary.delete" data-action="delete-word" data-id="' + w.id + '">删除</button>' +
         '</td>' +
       '</tr>';
     }).join('');
+  if (typeof reapplyPermissions === 'function') reapplyPermissions();
     var total = r.total || items.length;
     setText('paginationInfo', Math.min((currentPage - 1) * pageSize + 1, total) + '-' + Math.min(currentPage * pageSize, total) + ' / ' + total);
     pageUi(total, pageSize);

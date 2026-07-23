@@ -63,11 +63,12 @@
       return;
     }
     grid.innerHTML = pages.map(function(p) {
-      return '<div class="page-card p-16" data-action="edit-page" data-page="' + p.page_number + '">' +
+      return '<div class="page-card p-16" data-perm="content.edit" data-action="edit-page" data-page="' + p.page_number + '">' +
         '<div class="page-num">P' + p.page_number + '</div>' +
         '<div class="page-status text-sm text-muted">' + (p.text_content ? '有文本' : '无文本') + ' · ' + (p.image_url ? '有图片' : '无图片') + ' · ' + (p.audio_url ? '有音频' : '无音频') + '</div>' +
       '</div>';
     }).join('');
+  if (typeof reapplyPermissions === 'function') reapplyPermissions();
   }
 
   async function loadAudios(bookId, bookTitle) {
@@ -95,13 +96,13 @@
     }
     body.innerHTML = audios.map(function(a) {
       return '<tr>' +
-        '<td><button class="action-sm" data-action="play-audio" data-url="' + jsEscape(a.file_url || '') + '">▶</button></td>' +
+        '<td><button class="action-sm" data-perm="content.list" data-action="play-audio" data-url="' + jsEscape(a.file_url || '') + '">▶</button></td>' +
         '<td>' + escapeHtml(a.filename || '-') + '</td>' +
         '<td>' + escapeHtml(a.duration || '-') + '</td>' +
         '<td>' + escapeHtml(a.page_label || '全文') + '</td>' +
         '<td>' + (a.file_size || '-') + '</td>' +
         '<td class="text-sm text-muted">' + (a.create_time ? a.create_time.slice(0, 10) : '-') + '</td>' +
-        '<td><button class="action-sm" data-action="delete-audio" data-id="' + a.id + '">删除</button></td>' +
+        '<td><button class="action-sm" data-perm="content.edit" data-action="delete-audio" data-id="' + a.id + '">删除</button></td>' +
       '</tr>';
     }).join('');
   }
