@@ -43,7 +43,9 @@ def _disable_locks(monkeypatch):
             @functools.wraps(func)
             def wrapper(*a, **kw):
                 return func(*a, **kw)
+
             return wrapper
+
         return deco
 
     monkeypatch.setattr(scheduler, "distributed_lock", _noop)
@@ -100,8 +102,13 @@ class TestReconcileChildStats:
         user = _make_user(db)
         book = _make_book(db, word_count=500)
         child = _make_child(
-            db, user, total_words_read=500, total_reading_minutes=0,
-            total_books_finished=0, current_streak_days=0, longest_streak_days=0,
+            db,
+            user,
+            total_words_read=500,
+            total_reading_minutes=0,
+            total_books_finished=0,
+            current_streak_days=0,
+            longest_streak_days=0,
         )
         _pass_quiz(db, child.id, book.id)
         db.commit()
@@ -128,18 +135,20 @@ class TestReconcileChildStats:
 
     def test_minutes_and_books_fixed(self, db):
         user = _make_user(db)
-        child = _make_child(
-            db, user, total_reading_minutes=0, total_books_finished=0
-        )
+        child = _make_child(db, user, total_reading_minutes=0, total_books_finished=0)
         db.add(
             ReadingSession(
-                child_id=child.id, book_id=1, start_time=datetime.now(),
+                child_id=child.id,
+                book_id=1,
+                start_time=datetime.now(),
                 duration_seconds=1800,
             )
         )
         db.add(
             ReadingSession(
-                child_id=child.id, book_id=2, start_time=datetime.now(),
+                child_id=child.id,
+                book_id=2,
+                start_time=datetime.now(),
                 duration_seconds=900,
             )
         )
@@ -154,24 +163,28 @@ class TestReconcileChildStats:
     def test_streak_current_and_longest(self, db):
         """streak：今天起连续 3 天；历史最长 5 天段"""
         user = _make_user(db)
-        child = _make_child(
-            db, user, current_streak_days=0, longest_streak_days=0
-        )
+        child = _make_child(db, user, current_streak_days=0, longest_streak_days=0)
         today = date.today()
         # 近 3 天连续
         for i in range(3):
             db.add(
                 CheckIn(
-                    child_id=child.id, check_type=1,
-                    check_date=datetime.combine(today - timedelta(days=i), datetime.min.time()),
+                    child_id=child.id,
+                    check_type=1,
+                    check_date=datetime.combine(
+                        today - timedelta(days=i), datetime.min.time()
+                    ),
                 )
             )
         # 上周 5 天连续（与近 3 天间隔 2 天）
         for i in range(7, 12):
             db.add(
                 CheckIn(
-                    child_id=child.id, check_type=1,
-                    check_date=datetime.combine(today - timedelta(days=i), datetime.min.time()),
+                    child_id=child.id,
+                    check_type=1,
+                    check_date=datetime.combine(
+                        today - timedelta(days=i), datetime.min.time()
+                    ),
                 )
             )
         db.commit()
@@ -187,7 +200,8 @@ class TestReconcileChildStats:
         child = _make_child(db, user, current_streak_days=7)
         db.add(
             CheckIn(
-                child_id=child.id, check_type=1,
+                child_id=child.id,
+                check_type=1,
                 check_date=datetime.now() - timedelta(days=5),
             )
         )
@@ -207,8 +221,11 @@ class TestReconcileChildStats:
         for i in range(2):
             db.add(
                 CheckIn(
-                    child_id=child.id, check_type=1,
-                    check_date=datetime.combine(today - timedelta(days=i), datetime.min.time()),
+                    child_id=child.id,
+                    check_type=1,
+                    check_date=datetime.combine(
+                        today - timedelta(days=i), datetime.min.time()
+                    ),
                 )
             )
         db.commit()
