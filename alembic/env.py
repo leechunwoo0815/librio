@@ -20,14 +20,14 @@ from backend.domain.child.benefit_transfer_model import BenefitTransferApplicati
 from backend.domain.book.models import Book, BookCopy  # noqa: F401
 from backend.domain.book.damage_model import BookDamageReport  # noqa: F401
 from backend.domain.bookshelf.models import Bookshelf, Favorites  # noqa: F401
-from backend.domain.reading.models import (
+from backend.domain.reading.models import (  # noqa: F401
     BookPage,
     ReadingProgress,
     ReadingSession,
     CheckIn,
-)  # noqa: F401
+)
 from backend.domain.vocabulary.models import DictionaryWord, UserVocabulary  # noqa: F401
-from backend.domain.advancement.models import (
+from backend.domain.advancement.models import (  # noqa: F401
     Level,
     ChildLevel,
     ReadingSubmission,
@@ -36,7 +36,7 @@ from backend.domain.advancement.models import (
     QuizAnswer,
     Achievement,
     ChildAchievement,
-)  # noqa: F401
+)
 from backend.domain.order.models import Order  # noqa: F401
 from backend.domain.refund.models import RefundApplication  # noqa: F401
 from backend.domain.borrow.models import BorrowRecord  # noqa: F401
@@ -45,20 +45,20 @@ from backend.domain.reservation.models import Reservation  # noqa: F401
 from backend.domain.report.models import ObservationReport, LearningReport  # noqa: F401
 from backend.domain.certificate.models import LevelCertificate  # noqa: F401
 from backend.domain.activity.models import Activity, ActivityEnrollment  # noqa: F401
-from backend.domain.admin.models import (
+from backend.domain.admin.models import (  # noqa: F401
     Admin,
     OperationLog,
     SystemConfig,
     Teacher,
     TeacherSchedule,
     Venue,
-)  # noqa: F401
+)
 from backend.domain.admin.rbac_models import Role, Permission, RolePermission  # noqa: F401
-from backend.domain.evaluation.models import (
+from backend.domain.evaluation.models import (  # noqa: F401
     AREvaluation,
     GuidanceRecord,
     ObservationEvaluation,
-)  # noqa: F401
+)
 from backend.domain.message.models import SystemMessage  # noqa: F401
 from backend.domain.parent_course_time.models import ParentCourseTime  # noqa: F401
 from backend.domain.quiz_question.models import QuizQuestion  # noqa: F401

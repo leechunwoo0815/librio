@@ -59,3 +59,6 @@ node_modules
 # Reports (generated artifacts)
 reports/
 !reports/*.md
+
+# Backup files (local only)
+backups/

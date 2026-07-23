@@ -136,23 +136,6 @@ class BookBorrowedEvent(DomainEvent):
 
 
 @dataclass
-class BookOverdueEvent(DomainEvent):
-    """图书逾期事件
-
-    发布者：定时任务 borrow_overdue.check()
-    订阅者：
-      - notification: 发送逾期提醒
-      - child: 更新 outstanding_fines
-    """
-
-    event_type: str = "book.overdue"
-    child_id: int = 0
-    book_id: int = 0
-    borrow_record_id: int | None = None
-    overdue_days: int = 0
-
-
-@dataclass
 class LevelAdvancedEvent(DomainEvent):
     """晋级事件
 
@@ -332,7 +315,6 @@ class EventBus:
       event_bus.publish(QuizPassedEvent(child_id=1, book_id=2), db=self.db)
 
       # 发布（在定时任务中，独立事务）
-      event_bus.publish(BookOverdueEvent(child_id=1, ...))
     """
 
     def __init__(self):

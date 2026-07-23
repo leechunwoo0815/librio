@@ -222,9 +222,17 @@ class BorrowService:
         return BorrowRecordResponse.model_validate(record)
 
     def mark_quiz_passed(self, child_id: int, book_id: int) -> None:
-        """标记借阅记录的测评通过标记（事件处理器调用）"""
-        record = self.borrow_repo.get_by_child_and_book(
-            child_id, book_id, BorrowStatus.BORROWING
+        """标记借阅记录的测评通过标记（事件处理器调用，加行锁防并发）"""
+        record = (
+            self.db.query(BorrowRecord)
+            .filter(
+                BorrowRecord.child_id == child_id,
+                BorrowRecord.book_id == book_id,
+                BorrowRecord.status == BorrowStatus.BORROWING,
+                BorrowRecord.is_deleted == 0,
+            )
+            .with_for_update()
+            .first()
         )
         if record:
             record.quiz_passed = 1
