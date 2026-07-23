@@ -163,8 +163,16 @@ def init_scheduler(app):
         replace_existing=True,
     )
 
+    # 每天凌晨3点45：统计字段对账
+    scheduler.add_job(
+        reconcile_child_stats,
+        CronTrigger(hour=3, minute=45),
+        id="reconcile_child_stats",
+        replace_existing=True,
+    )
+
     scheduler.start()
-    logger.info("Scheduler started with 16 jobs")
+    logger.info("Scheduler started with 17 jobs")
 
 
 def stop_scheduler():
@@ -301,6 +309,170 @@ def execute_child_deletions(db: Session | None = None):
             )
     except Exception as e:
         logger.error(f"Child deletion job failed: {e}")
+        db.rollback()
+    finally:
+        if own_session:
+            db.close()
+
+
+@distributed_lock("job:reconcile_child_stats", timeout=600)
+def reconcile_child_stats(db: Session | None = None):
+    """每日统计字段对账：child 统计字段与源表重算对齐
+
+    对账口径：
+      - total_words_read = 通过测验（score >= quiz_pass_rate×100，同一 child+book 只计一次）
+        的图书 word_count 之和
+      - total_reading_minutes = reading_session.duration_seconds 之和 // 60
+      - total_books_finished = check_in(check_type=2 读完图书) 条数
+      - current_streak_days = 从今天（或昨天）向前连续打卡天数
+      - longest_streak_days = max(现存值, 全量打卡日期最长连续段)（只升不降，保护历史）
+    偏差修正并记录 operation_log。
+    """
+    from datetime import date, timedelta
+
+    from backend.common.config_service import ConfigService
+    from backend.domain.advancement.models import Quiz
+    from backend.domain.book.models import Book
+    from backend.domain.child.models import Child
+    from backend.domain.reading.models import CheckIn, ReadingSession
+
+    own_session = db is None
+    if own_session:
+        db = _get_db_session()
+    try:
+        pass_rate = ConfigService.get_decimal(db, "quiz_pass_rate", Decimal("0.80"))
+        pass_score = float(pass_rate) * 100
+
+        # words：通过测验的去重 (child, book) × word_count
+        pairs = (
+            db.query(Quiz.child_id, Quiz.book_id)
+            .filter(
+                Quiz.status == Quiz.STATUS_COMPLETED,
+                Quiz.score >= pass_score,
+                Quiz.is_deleted == 0,
+            )
+            .distinct()
+            .subquery()
+        )
+        words_map = dict(
+            db.query(pairs.c.child_id, sql_func.sum(Book.word_count))
+            .join(Book, Book.id == pairs.c.book_id)
+            .group_by(pairs.c.child_id)
+            .all()
+        )
+
+        # minutes：阅读会话总秒数 // 60
+        minutes_map = {
+            cid: int((secs or 0) // 60)
+            for cid, secs in db.query(
+                ReadingSession.child_id, sql_func.sum(ReadingSession.duration_seconds)
+            )
+            .filter(ReadingSession.is_deleted == 0)
+            .group_by(ReadingSession.child_id)
+            .all()
+        }
+
+        # books：读完图书打卡条数
+        books_map = dict(
+            db.query(CheckIn.child_id, sql_func.count(CheckIn.id))
+            .filter(
+                CheckIn.check_type == CheckIn.TYPE_FINISH_BOOK,
+                CheckIn.is_deleted == 0,
+            )
+            .group_by(CheckIn.child_id)
+            .all()
+        )
+
+        # streak：全量打卡日期（去重）→ current / longest
+        date_rows = (
+            db.query(CheckIn.child_id, sql_func.date(CheckIn.check_date))
+            .filter(CheckIn.is_deleted == 0)
+            .distinct()
+            .all()
+        )
+        dates_by_child: dict[int, set] = {}
+        for cid, d in date_rows:
+            if d is None:
+                continue
+            if isinstance(d, str):
+                d = date.fromisoformat(d)
+            elif isinstance(d, datetime):
+                d = d.date()
+            dates_by_child.setdefault(cid, set()).add(d)
+
+        def _streaks(dates: set) -> tuple[int, int]:
+            if not dates:
+                return 0, 0
+            today = date.today()
+            current = 0
+            cursor = today if today in dates else (today - timedelta(days=1))
+            if cursor in dates:
+                while cursor in dates:
+                    current += 1
+                    cursor -= timedelta(days=1)
+            longest = run = 1
+            prev = None
+            for d in sorted(dates):
+                if prev is not None and (d - prev).days == 1:
+                    run += 1
+                    longest = max(longest, run)
+                else:
+                    run = 1
+                prev = d
+            return current, longest
+
+        fixed = 0
+        children = db.query(Child).filter(Child.is_deleted == 0).all()
+        for child in children:
+            expected_words = int(words_map.get(child.id) or 0)
+            expected_minutes = minutes_map.get(child.id, 0)
+            expected_books = int(books_map.get(child.id) or 0)
+            cur_streak, longest_run = _streaks(dates_by_child.get(child.id, set()))
+
+            deviations = []
+            if (child.total_words_read or 0) != expected_words:
+                deviations.append(
+                    f"words {child.total_words_read or 0}→{expected_words}"
+                )
+                child.total_words_read = expected_words
+            if (child.total_reading_minutes or 0) != expected_minutes:
+                deviations.append(
+                    f"minutes {child.total_reading_minutes or 0}→{expected_minutes}"
+                )
+                child.total_reading_minutes = expected_minutes
+            if (child.total_books_finished or 0) != expected_books:
+                deviations.append(
+                    f"books {child.total_books_finished or 0}→{expected_books}"
+                )
+                child.total_books_finished = expected_books
+            if (child.current_streak_days or 0) != cur_streak:
+                deviations.append(
+                    f"streak {child.current_streak_days or 0}→{cur_streak}"
+                )
+                child.current_streak_days = cur_streak
+            if longest_run > (child.longest_streak_days or 0):
+                deviations.append(
+                    f"longest {child.longest_streak_days or 0}→{longest_run}"
+                )
+                child.longest_streak_days = longest_run
+
+            if deviations:
+                from backend.domain.admin.models import OperationLog
+
+                db.add(
+                    OperationLog(
+                        admin_id=0,
+                        module="child",
+                        operation="stats_reconciliation",
+                        content=f"child={child.id} " + ", ".join(deviations),
+                    )
+                )
+                fixed += 1
+
+        db.commit()
+        logger.info(f"Child stats reconciliation: {fixed} children fixed")
+    except Exception as e:
+        logger.error(f"Child stats reconciliation failed: {e}")
         db.rollback()
     finally:
         if own_session:
