@@ -209,27 +209,31 @@ def reconcile_stock(db: Session | None = None):
     if own_session:
         db = _get_db_session()
     try:
+        # 一次查询所有图书的副本计数（避免 N+1）
+        total_counts = dict(
+            db.query(BookCopy.book_id, sql_func.count(BookCopy.id))
+            .filter(
+                BookCopy.is_deleted == 0,
+                BookCopy.status.in_(valid_statuses),
+            )
+            .group_by(BookCopy.book_id)
+            .all()
+        )
+        avail_counts = dict(
+            db.query(BookCopy.book_id, sql_func.count(BookCopy.id))
+            .filter(
+                BookCopy.is_deleted == 0,
+                BookCopy.status == BookCopyStatus.AVAILABLE,
+            )
+            .group_by(BookCopy.book_id)
+            .all()
+        )
+
         books = db.query(Book).filter(Book.is_deleted == 0).all()
         fixed = 0
         for book in books:
-            total_count = (
-                db.query(BookCopy.id)
-                .filter(
-                    BookCopy.book_id == book.id,
-                    BookCopy.is_deleted == 0,
-                    BookCopy.status.in_(valid_statuses),
-                )
-                .count()
-            )
-            avail_count = (
-                db.query(BookCopy.id)
-                .filter(
-                    BookCopy.book_id == book.id,
-                    BookCopy.is_deleted == 0,
-                    BookCopy.status == BookCopyStatus.AVAILABLE,
-                )
-                .count()
-            )
+            total_count = total_counts.get(book.id, 0)
+            avail_count = avail_counts.get(book.id, 0)
             if book.total_stock != total_count or book.available_stock != avail_count:
                 detail = json.dumps(
                     {
@@ -275,9 +279,10 @@ def check_member_expiry():
     """
     [What] 会员到期提醒
     [Why] 正式会员到期前提醒续费
-    [How] 查询即将到期的正式会员，写入消息表
+    [How] 一次查询即将到期的正式会员，按到期日分组写入消息表
     """
     from backend.domain.child.models import Child
+    from collections import defaultdict
 
     db = _get_db_session()
     try:
@@ -288,20 +293,36 @@ def check_member_expiry():
             db, "member_expire_remind_days", [30, 15, 7, 3, 2, 1, 0]
         )
 
+        if not notify_days:
+            return
+
+        # 一次查询所有到期日在提醒范围内的孩子（避免 N 次循环查询）
+        max_days = max(notify_days)
+        min_days = min(notify_days)
+        date_upper = today + timedelta(days=max_days)
+        date_lower = today + timedelta(days=min_days)
+
+        children = (
+            db.query(Child)
+            .filter(
+                Child.status == MemberStatus.OFFICIAL,
+                Child.member_expire_time.isnot(None),
+                sql_func.date(Child.member_expire_time) >= date_lower,
+                sql_func.date(Child.member_expire_time) <= date_upper,
+                Child.is_deleted == 0,
+            )
+            .all()
+        )
+
+        # 按到期日期分组
+        children_by_date: dict[date, list] = defaultdict(list)
+        for child in children:
+            expire_date = child.member_expire_time.date()
+            children_by_date[expire_date].append(child)
+
         for days in notify_days:
             target_date = today + timedelta(days=days)
-            children = (
-                db.query(Child)
-                .filter(
-                    Child.status == MemberStatus.OFFICIAL,
-                    Child.member_expire_time.isnot(None),
-                    sql_func.date(Child.member_expire_time) == target_date,
-                    Child.is_deleted == 0,
-                )
-                .all()
-            )
-
-            for child in children:
+            for child in children_by_date.get(target_date, []):
                 _create_message(
                     db,
                     user_id=child.user_id,
@@ -795,42 +816,54 @@ def check_due_date_reminders():
         today = date.today()
         remind_days = ConfigService.get_int_list(db, "due_remind_days", [5, 3, 1, 0])
 
+        # 一次查询所有即将到期的记录（避免 4 × 全表遍历）
+        # 加 due_date 上界过滤，防生产全量加载
+        max_remind_days = max(remind_days) if remind_days else 0
+        due_date_upper = today + timedelta(days=max_remind_days)
+        # 使用 JOIN 一次查询，避免 N+1
+        records = (
+            db.query(BorrowRecord, Child, Book)
+            .join(Child, BorrowRecord.child_id == Child.id)
+            .outerjoin(Book, BorrowRecord.book_id == Book.id)
+            .filter(
+                BorrowRecord.status == BorrowStatus.BORROWING,
+                BorrowRecord.is_deleted == 0,
+                BorrowRecord.due_date.isnot(None),
+                BorrowRecord.due_date <= due_date_upper,
+            )
+            .all()
+        )
+
+        # 按到期日期分组
+        from collections import defaultdict
+
+        records_by_date: dict[date, list] = defaultdict(list)
+        for record, child, book in records:
+            if record.due_date:
+                records_by_date[record.due_date.date()].append((record, child, book))
+
         for days in remind_days:
             target_date = today + timedelta(days=days)
-            # 使用 JOIN 一次查询，避免 N+1
-            records = (
-                db.query(BorrowRecord, Child, Book)
-                .join(Child, BorrowRecord.child_id == Child.id)
-                .outerjoin(Book, BorrowRecord.book_id == Book.id)
-                .filter(
-                    BorrowRecord.status == BorrowStatus.BORROWING,
-                    BorrowRecord.is_deleted == 0,
-                    BorrowRecord.due_date.isnot(None),
+            for record, child, book in records_by_date.get(target_date, []):
+                if not child:
+                    continue
+                book_name = book.title if book else "图书"
+                if days == 0:
+                    msg = f"您借阅的《{book_name}》今天到期，请尽快归还"
+                elif days == 1:
+                    msg = f"您借阅的《{book_name}》将于明天到期"
+                else:
+                    msg = f"您借阅的《{book_name}》将于{days}天后到期"
+                _create_message(
+                    db,
+                    user_id=child.user_id,
+                    title="借阅到期提醒",
+                    content=msg,
+                    msg_type=5,
                 )
-                .all()
-            )
-
-            for record, child, book in records:
-                if record.due_date and record.due_date.date() == target_date:
-                    if not child:
-                        continue
-                    book_name = book.title if book else "图书"
-                    if days == 0:
-                        msg = f"您借阅的《{book_name}》今天到期，请尽快归还"
-                    elif days == 1:
-                        msg = f"您借阅的《{book_name}》将于明天到期"
-                    else:
-                        msg = f"您借阅的《{book_name}》将于{days}天后到期"
-                    _create_message(
-                        db,
-                        user_id=child.user_id,
-                        title="借阅到期提醒",
-                        content=msg,
-                        msg_type=5,
-                    )
-                    logger.info(
-                        f"DUE_REMIND: child={child.id}, book={record.book_id}, days={days}"
-                    )
+                logger.info(
+                    f"DUE_REMIND: child={child.id}, book={record.book_id}, days={days}"
+                )
         db.commit()
     except Exception as e:
         db.rollback()
@@ -936,23 +969,35 @@ def mark_overdue_books():
                 record.overdue_days = current_days
                 record.fine_amount = Decimal(str(current_days)) * daily_fine
 
-        # 按孩子汇总 outstanding_fines（覆盖模式，避免双写分叉）
-        affected_child_ids = set()
-        for record in new_overdue + existing_overdue:
-            affected_child_ids.add(record.child_id)
+        # 按孩子汇总 outstanding_fines（用 GROUP BY 一次查询，避免 N+1 + O(N²)）
 
-        for child_id in affected_child_ids:
-            total_fine = Decimal("0")
-            for record in new_overdue + existing_overdue:
-                if record.child_id == child_id:
-                    total_fine += record.fine_amount or Decimal("0")
-            child = (
-                db.query(Child)
-                .filter(Child.id == child_id, Child.is_deleted == 0)
-                .first()
+        all_overdue = new_overdue + existing_overdue
+        if all_overdue:
+            # 一次查询每个孩子的总罚款
+            fine_rows = (
+                db.query(
+                    BorrowRecord.child_id,
+                    sql_func.coalesce(sql_func.sum(BorrowRecord.fine_amount), 0),
+                )
+                .filter(
+                    BorrowRecord.child_id.in_({r.child_id for r in all_overdue}),
+                    BorrowRecord.status == BorrowStatus.OVERDUE,
+                    BorrowRecord.is_deleted == 0,
+                )
+                .group_by(BorrowRecord.child_id)
+                .all()
             )
-            if child:
-                child.outstanding_fines = total_fine
+            fine_map = {cid: total for cid, total in fine_rows}
+
+            # 批量查 Child
+            child_ids = list(fine_map.keys())
+            children = (
+                db.query(Child)
+                .filter(Child.id.in_(child_ids), Child.is_deleted == 0)
+                .all()
+            )
+            for child in children:
+                child.outstanding_fines = fine_map.get(child.id, Decimal("0"))
 
         total = len(new_overdue) + len(existing_overdue)
         if total:
@@ -1082,8 +1127,11 @@ def check_activity_reminders():
         target_start = now + timedelta(days=3)
         target_end = now + timedelta(days=4)
 
-        activities = (
-            db.query(Activity)
+        # 一次 JOIN 查询 activity → enrollment → child（避免 N+1 × N+1）
+        rows = (
+            db.query(Activity, ActivityEnrollment, Child)
+            .join(ActivityEnrollment, Activity.id == ActivityEnrollment.activity_id)
+            .join(Child, ActivityEnrollment.child_id == Child.id)
             .filter(
                 Activity.start_time >= target_start,
                 Activity.start_time < target_end,
@@ -1091,35 +1139,24 @@ def check_activity_reminders():
                     [Activity.STATUS_ENROLLING, Activity.STATUS_ENROLL_CLOSED]
                 ),
                 Activity.is_deleted == 0,
+                ActivityEnrollment.status == ActivityEnrollment.STATUS_APPROVED,
+                ActivityEnrollment.is_deleted == 0,
             )
             .all()
         )
 
-        for activity in activities:
-            enrollments = (
-                db.query(ActivityEnrollment)
-                .filter(
-                    ActivityEnrollment.activity_id == activity.id,
-                    ActivityEnrollment.status == ActivityEnrollment.STATUS_APPROVED,
-                    ActivityEnrollment.is_deleted == 0,
-                )
-                .all()
+        for activity, enrollment, child in rows:
+            if not child:
+                continue
+            _create_message(
+                db,
+                user_id=child.user_id,
+                title="活动开始提醒",
+                content=f"您报名的活动「{activity.title}」将于 3 天后（{activity.start_time.strftime('%m月%d日 %H:%M')}）开始，请做好准备！",
+                msg_type=5,
+                priority=0,
             )
-            for e in enrollments:
-                child = db.query(Child).filter(Child.id == e.child_id).first()
-                if not child:
-                    continue
-                _create_message(
-                    db,
-                    user_id=child.user_id,
-                    title="活动开始提醒",
-                    content=f"您报名的活动「{activity.title}」将于 3 天后（{activity.start_time.strftime('%m月%d日 %H:%M')}）开始，请做好准备！",
-                    msg_type=5,
-                    priority=0,
-                )
-                logger.info(
-                    f"ACTIVITY_REMIND: child={child.id}, activity={activity.id}"
-                )
+            logger.info(f"ACTIVITY_REMIND: child={child.id}, activity={activity.id}")
 
         db.commit()
     except Exception as e:

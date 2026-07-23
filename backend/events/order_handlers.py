@@ -15,8 +15,13 @@ def handle_order_paid_for_child(event, db: Session):
     from backend.common.base_repo import BaseRepository
     from backend.common.config_service import ConfigService
 
+    child = (
+        db.query(Child)
+        .filter(Child.id == event.child_id, Child.is_deleted == 0)
+        .with_for_update()
+        .first()
+    )
     child_repo = BaseRepository(db, Child)
-    child = child_repo.get_by_id(event.child_id)
     if not child:
         logger.warning(f"OrderPaidEvent: child_id={event.child_id} not found")
         return
@@ -101,7 +106,12 @@ def handle_deposit_paid_for_child(event, db: Session):
     from backend.common.base_repo import BaseRepository
 
     child_repo = BaseRepository(db, Child)
-    child = child_repo.get_by_id(event.child_id)
+    child = (
+        db.query(Child)
+        .filter(Child.id == event.child_id, Child.is_deleted == 0)
+        .with_for_update()
+        .first()
+    )
     if child:
         child.deposit_status = DepositStatus.PAID
         child_repo.update(child)

@@ -138,12 +138,12 @@ class ActivityService:
         enrollment.status = ActivityEnrollment.STATUS_CANCELLED
         self.enrollment_repo.update(enrollment)
 
-        # 释放名额
+        # 释放名额（原子更新，避免并发竞争）
         if activity:
-            activity.current_participants = max(
-                0, (activity.current_participants or 0) - 1
-            )
-            self.activity_repo.update(activity)
+            self.db.query(Activity).filter(
+                Activity.id == enrollment.activity_id,
+                Activity.current_participants > 0,
+            ).update({Activity.current_participants: Activity.current_participants - 1})
 
         self.db.commit()
         logger.info(f"Enrollment cancelled: id={enrollment_id}")
@@ -329,6 +329,7 @@ class ActivityService:
                 ),
                 ActivityEnrollment.is_deleted == 0,
             )
+            .with_for_update()
             .all()
         )
 

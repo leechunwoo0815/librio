@@ -202,17 +202,18 @@ class ChildService:
         from backend.domain.borrow.models import BorrowRecord
         from backend.common.types import BorrowStatus
 
-        active_borrows = (
-            self.db.query(BorrowRecord)
+        active_borrow = (
+            self.db.query(BorrowRecord.id)
             .filter(
                 BorrowRecord.child_id == source_id,
                 BorrowRecord.status.in_([BorrowStatus.BORROWING, BorrowStatus.OVERDUE]),
                 BorrowRecord.is_deleted == 0,
             )
-            .count()
+            .with_for_update()
+            .first()
         )
-        if active_borrows > 0:
-            raise ValidationError(f"源孩子有 {active_borrows} 本未还书，请先归还")
+        if active_borrow:
+            raise ValidationError("源孩子有未还书，请先归还")
 
         if source.outstanding_fines and source.outstanding_fines > 0:
             raise ValidationError(
@@ -220,17 +221,18 @@ class ChildService:
             )
 
         # 目标孩子校验：无活跃借阅 + 无未缴罚款
-        target_active_borrows = (
-            self.db.query(BorrowRecord)
+        target_active_borrow = (
+            self.db.query(BorrowRecord.id)
             .filter(
                 BorrowRecord.child_id == target_id,
                 BorrowRecord.status.in_([BorrowStatus.BORROWING, BorrowStatus.OVERDUE]),
                 BorrowRecord.is_deleted == 0,
             )
-            .count()
+            .with_for_update()
+            .first()
         )
-        if target_active_borrows > 0:
-            raise ValidationError(f"目标孩子有 {target_active_borrows} 本未还书")
+        if target_active_borrow:
+            raise ValidationError("目标孩子有未还书")
 
         if target.outstanding_fines and target.outstanding_fines > 0:
             raise ValidationError(f"目标孩子有未缴罚款 {target.outstanding_fines} 元")
@@ -355,8 +357,13 @@ class ChildService:
     def update_reading_stats(
         self, child_id: int, words: int = 0, minutes: int = 0, books: int = 0
     ) -> None:
-        """更新阅读统计（事件处理器调用）"""
-        child = self.child_repo.get_by_id(child_id)
+        """更新阅读统计（事件处理器调用，加行锁防并发）"""
+        child = (
+            self.db.query(Child)
+            .filter(Child.id == child_id, Child.is_deleted == 0)
+            .with_for_update()
+            .first()
+        )
         if not child:
             return
         if words:
@@ -369,8 +376,13 @@ class ChildService:
         # 不 commit，由调用方控制事务
 
     def update_streak(self, child_id: int, streak_days: int) -> None:
-        """更新连续打卡天数（事件处理器调用）"""
-        child = self.child_repo.get_by_id(child_id)
+        """更新连续打卡天数（事件处理器调用，加行锁防并发）"""
+        child = (
+            self.db.query(Child)
+            .filter(Child.id == child_id, Child.is_deleted == 0)
+            .with_for_update()
+            .first()
+        )
         if not child:
             return
         child.current_streak_days = streak_days

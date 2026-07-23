@@ -386,14 +386,32 @@ class AdvancementService:
 
     def increment_quizzes_passed(self, child_id: int) -> None:
         """增加当前级别的测验通过数"""
-        current = self.child_level_repo.get_current(child_id)
+        current = (
+            self.db.query(ChildLevel)
+            .filter(
+                ChildLevel.child_id == child_id,
+                ChildLevel.is_current,
+                ChildLevel.is_deleted == 0,
+            )
+            .with_for_update()
+            .first()
+        )
         if current:
             current.quizzes_passed_at_level = (current.quizzes_passed_at_level or 0) + 1
             self.child_level_repo.update(current)
 
     def increment_books_read(self, child_id: int) -> None:
         """增加当前级别的读完书数"""
-        current = self.child_level_repo.get_current(child_id)
+        current = (
+            self.db.query(ChildLevel)
+            .filter(
+                ChildLevel.child_id == child_id,
+                ChildLevel.is_current,
+                ChildLevel.is_deleted == 0,
+            )
+            .with_for_update()
+            .first()
+        )
         if current:
             current.books_read_at_level = (current.books_read_at_level or 0) + 1
             self.child_level_repo.update(current)

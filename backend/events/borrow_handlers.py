@@ -15,7 +15,12 @@ def handle_book_borrowed_for_copy_status(event, db: Session):
     """借书 → 更新 BookCopy 状态"""
     if event.book_copy_id:
         copy_repo = BaseRepository(db, BookCopy)
-        copy = copy_repo.get_by_id(event.book_copy_id)
+        copy = (
+            db.query(BookCopy)
+            .filter(BookCopy.id == event.book_copy_id, BookCopy.is_deleted == 0)
+            .with_for_update()
+            .first()
+        )
         if copy:
             copy.status = BookCopyStatus.BORROWED
             copy_repo.update(copy)
@@ -25,15 +30,20 @@ def handle_book_returned_for_copy_status(event, db: Session):
     """还书 → 更新 BookCopy 状态 + 释放库存（单次 flush 保证原子性）"""
     try:
         if event.book_copy_id:
-            copy_repo = BaseRepository(db, BookCopy)
-            copy = copy_repo.get_by_id(event.book_copy_id)
+            copy = (
+                db.query(BookCopy)
+                .filter(BookCopy.id == event.book_copy_id, BookCopy.is_deleted == 0)
+                .with_for_update()
+                .first()
+            )
             if copy:
                 copy.status = BookCopyStatus.AVAILABLE
 
-        book_repo = BaseRepository(db, Book)
-        book = book_repo.get_by_id(event.book_id)
-        if book:
-            book.available_stock = (book.available_stock or 0) + 1
+        if event.book_id:
+            # 原子 SQL UPDATE 避免 read-modify-write 丢失更新
+            db.query(Book).filter(
+                Book.id == event.book_id, Book.is_deleted == 0
+            ).update({Book.available_stock: Book.available_stock + 1})
 
         # 单次 flush 确保两个更新在同一事务中
         db.flush()

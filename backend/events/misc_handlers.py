@@ -22,7 +22,12 @@ def handle_checkin_for_child_streak(event, db: Session):
     from backend.domain.child.models import Child
 
     child_repo = BaseRepository(db, Child)
-    child = child_repo.get_by_id(event.child_id)
+    child = (
+        db.query(Child)
+        .filter(Child.id == event.child_id, Child.is_deleted == 0)
+        .with_for_update()
+        .first()
+    )
     if child:
         child.current_streak_days = (child.current_streak_days or 0) + 1
         if child.current_streak_days > (child.longest_streak_days or 0):

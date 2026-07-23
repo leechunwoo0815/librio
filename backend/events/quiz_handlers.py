@@ -50,6 +50,7 @@ def handle_quiz_passed_for_bookshelf(event, db: Session):
                 Bookshelf.book_id == event.book_id,
                 Bookshelf.is_deleted == 0,
             )
+            .with_for_update()
             .first()
         )
         if entry:
