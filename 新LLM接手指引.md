@@ -245,7 +245,6 @@ document.querySelector('#admin-root')?.addEventListener('click', function(e) {
 |------|------|
 | `CLAUDE.md` | 项目最高宪法（红线 + CI 九关 + 开发流程） |
 | `HANDOFF.md` | 完整交接文档（本总文档） |
-| `HANDOFF_XSS.md` | XSS 专用交接文档 |
 | `ARCHITECTURE.md` | 完整架构（606 行，27 域 + 路由清单） |
 | `.ai/context/CONTEXT.md` | 领域语言与业务规则（308 行） |
 | `.github/workflows/ci.yml` | CI 配置 |
