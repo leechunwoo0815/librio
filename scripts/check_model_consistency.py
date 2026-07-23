@@ -18,6 +18,7 @@ import backend.domain.user.models  # noqa: F401
 import backend.domain.child.models  # noqa: F401
 import backend.domain.child.benefit_transfer_model  # noqa: F401
 import backend.domain.book.models  # noqa: F401
+import backend.domain.book.damage_model  # noqa: F401
 import backend.domain.bookshelf.models  # noqa: F401
 import backend.domain.reading.models  # noqa: F401
 import backend.domain.vocabulary.models  # noqa: F401
