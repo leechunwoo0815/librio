@@ -21,6 +21,7 @@ from backend.domain.admin.admin_schemas import (
     UpdateBookRequest,
     BulkImportBookItem,
     CreateBookCopyRequest,
+    UpdateBookCopyStatusRequest,
     SaveBookPageRequest,
 )
 from backend.domain.admin.services.book_service import AdminBookService
@@ -229,6 +230,28 @@ def create_book_copy(
         module="bookcopy",
         operation="create",
         content=f"为图书 #{book_id} 创建副本",
+    )
+    return result
+
+
+@router.patch("/bookcopy/{copy_id}/status", response_model=AdminActionResponse)
+def set_book_copy_status(
+    copy_id: int,
+    data: UpdateBookCopyStatusRequest,
+    admin=Depends(require_perm("bookcopy.edit")),
+    db: Session = Depends(get_db),
+):
+    """副本维修/报废流转（D02）— 状态变更后按对账口径重算库存"""
+    service = AdminBookService(db)
+    result = service.set_copy_status(copy_id, data.status)
+    from backend.domain.admin.services.system_service import AdminSystemService
+
+    system_service = AdminSystemService(db)
+    system_service.write_operation_log(
+        admin_id=admin.id,
+        module="bookcopy",
+        operation="set_status",
+        content=f"副本 #{copy_id} 流转为状态 {data.status}",
     )
     return result
 

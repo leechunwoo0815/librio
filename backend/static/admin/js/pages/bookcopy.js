@@ -1,9 +1,9 @@
 (function() {
 'use strict';
 
-const STATUS_MAP = {0:'可借',1:'已借出',2:'维修中',3:'已丢失'};
-const STATUS_CLASS = {0:'status-available',1:'status-borrowed',2:'status-damaged',3:'status-lost'};
-const STATUS_TEXT = {0:'在馆',1:'借出',2:'损坏',3:'丢失'};
+const STATUS_MAP = {0:'可借',1:'已借出',2:'维修中',3:'已报废',4:'损坏',5:'已丢失'};
+const STATUS_CLASS = {0:'status-available',1:'status-borrowed',2:'status-maintenance',3:'status-scrapped',4:'status-damaged',5:'status-lost'};
+const STATUS_TEXT = {0:'在馆',1:'借出',2:'维修中',3:'已报废',4:'损坏',5:'丢失'};
 let allData = [];
 
 function localEscapeHtml(str) {
@@ -65,7 +65,13 @@ function renderTable(data) {
       '<td' + (!c.borrower_name ? ' style="color:var(--muted);"' : '') + '>' + escapeHtml(c.borrower_name || '--') + '</td>' +
       '<td><span class="action-link" data-action="view-detail" data-id="' + c.id + '">详情</span>' +
       (statusKey === 1 ? ' · <span class="action-link" data-action="do-return" data-id="' + c.id + '">归还</span>' : '') +
-      (statusKey === 0 ? ' · <span class="action-link" data-action="edit-copy" data-id="' + c.id + '">编辑</span>' : '') +
+      (statusKey === 0 ? ' · <span class="action-link" data-action="edit-copy" data-id="' + c.id + '">编辑</span>' +
+        ' · <span class="action-link" data-action="set-status" data-id="' + c.id + '" data-status="2">维修</span>' +
+        ' · <span class="action-link" data-action="set-status" data-id="' + c.id + '" data-status="3">报废</span>' : '') +
+      (statusKey === 2 ? ' · <span class="action-link" data-action="set-status" data-id="' + c.id + '" data-status="0">完成维修</span>' +
+        ' · <span class="action-link" data-action="set-status" data-id="' + c.id + '" data-status="3">报废</span>' : '') +
+      (statusKey === 4 ? ' · <span class="action-link" data-action="set-status" data-id="' + c.id + '" data-status="2">维修</span>' +
+        ' · <span class="action-link" data-action="set-status" data-id="' + c.id + '" data-status="3">报废</span>' : '') +
       '</td>' +
     '</tr>';
   }).join('');
@@ -75,7 +81,7 @@ function filterTable() {
   const q = document.getElementById('searchInput').value.toLowerCase();
   const statusVal = document.getElementById('statusFilter').value;
   const venueVal = document.getElementById('venueFilter').value;
-  const statusRev = {'在馆':0,'借出':1,'丢失':3,'损坏':2};
+  const statusRev = {'在馆':0,'借出':1,'维修中':2,'已报废':3,'损坏':4,'丢失':5};
   renderTable(allData.filter(c => {
     var matchSearch = !q || (c.barcode||'').toLowerCase().includes(q) || (c.book_title||'').toLowerCase().includes(q) || (c.isbn||'').toLowerCase().includes(q) || String(c.book_id).includes(q);
     var matchStatus = statusVal === '全部状态' || c.status === statusRev[statusVal];
@@ -190,7 +196,22 @@ document.addEventListener('DOMContentLoaded', function() {
     else if (action === 'view-detail' && id) viewDetail(id);
     else if (action === 'do-return' && id) doReturn(id);
     else if (action === 'edit-copy' && id) editCopy(id);
+    else if (action === 'set-status' && id) setCopyStatus(parseInt(id), parseInt(target.getAttribute('data-status')));
   });
+
+  async function setCopyStatus(copyId, newStatus) {
+    var NAMES = {0: '在馆', 2: '维修中', 3: '报废'};
+    var copy = (allData || []).find(function(c) { return c.id === copyId; });
+    var label = copy && copy.barcode ? '副本「' + copy.barcode + '」' : '该副本';
+    if (!confirm('确定将' + label + '流转为「' + (NAMES[newStatus] || newStatus) + '」吗？')) return;
+    try {
+      await api.request('PATCH', '/admin/api/bookcopy/' + copyId + '/status', { status: newStatus });
+      showToast('已流转为「' + (NAMES[newStatus] || newStatus) + '」', 'success');
+      loadData();
+    } catch (e) {
+      showToast(e.message || '操作失败', 'error');
+    }
+  }
   document.addEventListener('submit', function(e) {
     var target = e.target.closest('[data-action="add-item"]');
     if (target) addItem(e);

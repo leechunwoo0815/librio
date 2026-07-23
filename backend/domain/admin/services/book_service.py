@@ -4,7 +4,7 @@
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
-from backend.common.exceptions import NotFoundError
+from backend.common.exceptions import NotFoundError, ValidationError
 from backend.domain.advancement.models import QuestionBank
 from backend.domain.admin.schemas import (
     BulkImportBookItem,
@@ -305,4 +305,76 @@ class AdminBookService:
             "total": count,
             "success": ok_count,
             "results": results,
+        }
+
+    # 副本状态允许的管理端流转（D02 维修/报废入口）
+    _COPY_TRANSITIONS = {
+        0: (2, 3),  # 在馆 → 维修中/报废
+        2: (0, 3),  # 维修中 → 在馆/报废
+        4: (2, 3),  # 损坏 → 维修中/报废
+    }
+
+    def set_copy_status(self, copy_id: int, new_status: int) -> dict:
+        """维修/报废流转（D02）：状态变更后按对账口径重算该书库存"""
+        from backend.common.types import BookCopyStatus
+        from backend.domain.book.models import Book, BookCopy
+
+        if new_status not in (
+            BookCopyStatus.AVAILABLE,
+            BookCopyStatus.MAINTENANCE,
+            BookCopyStatus.SCRAPPED,
+        ):
+            raise ValidationError("仅支持流转到 在馆/维修中/报废")
+
+        copy = (
+            self.db.query(BookCopy)
+            .filter(BookCopy.id == copy_id, BookCopy.is_deleted == 0)
+            .first()
+        )
+        if not copy:
+            raise NotFoundError("副本不存在")
+
+        allowed = self._COPY_TRANSITIONS.get(copy.status, ())
+        if new_status not in allowed:
+            raise ValidationError(
+                f"当前状态（{copy.status}）不允许流转到目标状态（{new_status}）；"
+                "借出副本请先归还，丢失/报废为终态"
+            )
+
+        copy.status = new_status
+        self.db.flush()
+
+        # 按每日对账同口径重算库存（total 排除报废/丢失，available 仅在馆）
+        book = self.db.query(Book).filter(Book.id == copy.book_id).first()
+        if book:
+            valid = (
+                BookCopyStatus.AVAILABLE,
+                BookCopyStatus.BORROWED,
+                BookCopyStatus.MAINTENANCE,
+                BookCopyStatus.DAMAGED,
+            )
+            book.total_stock = (
+                self.db.query(BookCopy)
+                .filter(
+                    BookCopy.book_id == book.id,
+                    BookCopy.is_deleted == 0,
+                    BookCopy.status.in_(valid),
+                )
+                .count()
+            )
+            book.available_stock = (
+                self.db.query(BookCopy)
+                .filter(
+                    BookCopy.book_id == book.id,
+                    BookCopy.is_deleted == 0,
+                    BookCopy.status == BookCopyStatus.AVAILABLE,
+                )
+                .count()
+            )
+
+        self.db.commit()
+        status_names = {0: "在馆", 2: "维修中", 3: "报废"}
+        return {
+            "success": True,
+            "message": f"副本已流转为「{status_names.get(new_status, new_status)}」",
         }

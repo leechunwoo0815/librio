@@ -108,6 +108,14 @@ class UpdateUserStatusRequest(BaseModel):
     status: int = Field(..., ge=0, le=1, description="0=禁用 1=启用")
 
 
+class UpdateBookCopyStatusRequest(BaseModel):
+    """副本维修/报废流转请求（D02）"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    status: int = Field(..., ge=0, le=5, description="0=在馆 2=维修中 3=报废")
+
+
 class UserListResponse(BaseModel):
     """用户列表响应"""
 
