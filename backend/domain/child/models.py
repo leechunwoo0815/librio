@@ -68,6 +68,11 @@ class Child(BaseModel):
     current_level_id = Column(
         BigInteger, nullable=True, comment="当前级别ID（冗余，避免join查询）"
     )
+    deletion_requested_at = Column(
+        DateTime,
+        nullable=True,
+        comment="数据删除请求时间（24h冷静期，NULL=无进行中请求）",
+    )
 
     user = relationship("User", back_populates="children", foreign_keys=[user_id])
 

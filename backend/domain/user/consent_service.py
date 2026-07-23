@@ -65,9 +65,45 @@ class ConsentService:
         return ConsentListResponse(consents=latest)
 
     def withdraw_consent(self, user_id: int, consent_type: str) -> ConsentResponse:
-        """撤回同意"""
+        """撤回同意
+
+        child_data 撤回 = 对该用户所有孩子发起级联删除（P0-3）：
+        先全量前置校验（任一孩子阻塞则整体拒绝），再标记撤回并逐个发起删除请求。
+        """
         if consent_type == "child_data":
-            raise ValidationError("儿童信息同意撤回功能即将上线，暂不支持")
+            from backend.domain.child.deletion_service import ChildDeletionService
+            from backend.domain.child.models import Child
+
+            record = self.repo.get_latest_valid(user_id, consent_type)
+            if record is None:
+                raise NotFoundError(f"未找到有效的 {consent_type} 同意记录")
+
+            children = (
+                self.db.query(Child)
+                .filter(Child.user_id == user_id, Child.is_deleted == 0)
+                .all()
+            )
+            svc = ChildDeletionService(self.db)
+            all_blockers: list[str] = []
+            for c in children:
+                all_blockers.extend(svc.check_deletion_blockers(c.id))
+            if all_blockers:
+                raise ValidationError(
+                    "撤回失败，请先处理以下事项：" + "；".join(all_blockers)
+                )
+
+            record.withdrawn_at = datetime.now()
+            self.repo.update(record)
+            self.db.commit()
+
+            for c in children:
+                svc.request_deletion(user_id, c.id)
+
+            logger.info(
+                f"Consent withdrawn with cascade deletion: user_id={user_id}, "
+                f"children={len(children)}"
+            )
+            return ConsentResponse.model_validate(record)
 
         record = self.repo.get_latest_valid(user_id, consent_type)
         if record is None:

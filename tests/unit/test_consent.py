@@ -73,7 +73,7 @@ class TestConsentTexts:
             get_consent_hash("nonexistent")
 
     def test_version_defined(self):
-        assert CONSENT_VERSION == "v1.0"
+        assert CONSENT_VERSION == "v1.1"
 
     def test_texts_endpoint_returns_all_types(self):
         """GET /user/consent/texts 返回版本号与三类文案（前端弹窗唯一来源）"""
@@ -121,11 +121,13 @@ class TestConsentService:
         assert resp.withdrawn_at is not None
         assert not service.has_valid_consent(user.id, "privacy_policy")
 
-    def test_withdraw_child_data_rejected(self, db, user):
+    def test_withdraw_child_data_without_children(self, db, user):
+        """child_data 撤回（无孩子）：直接标记撤回，不触发级联删除（P0-3 已接通）"""
         service = ConsentService(db)
         service.grant_consent(user.id, "child_data")
-        with pytest.raises(ValidationError, match="即将上线"):
-            service.withdraw_consent(user.id, "child_data")
+        resp = service.withdraw_consent(user.id, "child_data")
+        assert resp.withdrawn_at is not None
+        assert not service.has_valid_consent(user.id, "child_data")
 
     def test_withdraw_nonexistent_raises(self, db, user):
         service = ConsentService(db)

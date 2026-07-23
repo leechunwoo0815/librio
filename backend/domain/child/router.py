@@ -108,6 +108,30 @@ def delete_child(
     return child_service.delete_child(child_id, current_user.id)
 
 
+@router.post("/{child_id}/deletion-request", response_model=dict)
+def request_data_deletion(
+    child=Depends(GetOwnedChild()),
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """申请删除孩子数据（P0-3 删除权：24h 冷静期，前置校验活跃借阅/押金/退款）"""
+    from backend.domain.child.deletion_service import ChildDeletionService
+
+    return ChildDeletionService(db).request_deletion(current_user.id, child.id)
+
+
+@router.post("/{child_id}/deletion-cancel", response_model=dict)
+def cancel_data_deletion(
+    child=Depends(GetOwnedChild()),
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """冷静期内取消数据删除请求"""
+    from backend.domain.child.deletion_service import ChildDeletionService
+
+    return ChildDeletionService(db).cancel_deletion(current_user.id, child.id)
+
+
 @router.get("/{child_id}/can-borrow", response_model=BorrowPermissionResponse)
 def check_borrow_permission(
     child=Depends(GetOwnedChild()),

@@ -155,8 +155,16 @@ def init_scheduler(app):
         replace_existing=True,
     )
 
+    # 每天凌晨3点半：执行冷静期已过的儿童数据级联删除
+    scheduler.add_job(
+        execute_child_deletions,
+        CronTrigger(hour=3, minute=30),
+        id="execute_child_deletions",
+        replace_existing=True,
+    )
+
     scheduler.start()
-    logger.info("Scheduler started with 15 jobs")
+    logger.info("Scheduler started with 16 jobs")
 
 
 def stop_scheduler():
@@ -268,6 +276,31 @@ def reconcile_stock(db: Session | None = None):
             logger.info("Stock reconciliation: all consistent")
     except Exception as e:
         logger.error(f"Stock reconciliation failed: {e}")
+        db.rollback()
+    finally:
+        if own_session:
+            db.close()
+
+
+@distributed_lock("job:execute_child_deletions", timeout=600)
+def execute_child_deletions(db: Session | None = None):
+    """每天凌晨3:30：执行冷静期（24h）已过的儿童数据级联删除（P0-3 删除权）
+
+    参数 db：可选的 session 注入（测试用），不传则自行创建。
+    """
+    from backend.domain.child.deletion_service import ChildDeletionService
+
+    own_session = db is None
+    if own_session:
+        db = _get_db_session()
+    try:
+        result = ChildDeletionService(db).execute_due_deletions()
+        if result["due"]:
+            logger.info(
+                f"Child deletions executed: {result['executed']}/{result['due']}"
+            )
+    except Exception as e:
+        logger.error(f"Child deletion job failed: {e}")
         db.rollback()
     finally:
         if own_session:
