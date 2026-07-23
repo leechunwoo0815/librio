@@ -250,7 +250,7 @@ POST /reading/voice (保存录音)
 | 4 | `check_in` | `child_id=123` | 打卡记录 | 物理删除 |
 | 5 | `voice_recording` | `child_id=123` | 语音录音 | 物理删除 DB + 删除 uploads/voice/ 文件 |
 | 6 | `user_vocabulary` | `child_id=123` | 生词本 | 物理删除 |
-| 7 | `quiz_answer` | `child_id=123` | 测验答案 | 物理删除 |
+| 7 | `quiz_answer` | 经 `quiz_id` 级联 | 测验答案 | 物理删除（见 26b 勘误） |
 | 8 | `reading_submission` | `child_id=123` | 阅读提交 | 物理删除 |
 | 9 | `child_level` | `child_id=123` | 级别记录 | 物理删除 |
 | 10 | `child_achievement` | `child_id=123` | 成就记录 | 物理删除 |
@@ -269,7 +269,9 @@ POST /reading/voice (保存录音)
 | 23 | `observation_evaluation` | `child_id=123` | 观察期评估 | 物理删除 |
 | 24 | `guidance_record` | `child_id=123` | 指导记录 | 物理删除 |
 | 25 | `book_damage_report` | `child_id=123` | 损坏报告 | **保留 2 年**（财务凭证） |
-| 26 | `parent_course_time` | `child_id=123` | 亲子课时间 | 物理删除 |
+| 26 | ~~`parent_course_time`~~ | — | ~~亲子课时间~~ | **勘误（2026-07-23）**：该表为场馆排期表（venue_id 关联），无 child_id，不属于儿童数据，已从删除清单移除 |
+| 26a | `quiz` | `child_id=123` | 测验记录 | 物理删除（原清单遗漏，代码已补） |
+| 26b | `quiz_answer` | 经 `quiz_id` 级联 | 测验答案 | 物理删除（无 child_id，经 quiz 关联） |
 | 27 | `benefit_transfer_application` | `source_child_id=123 OR target_child_id=123` | 权益转移 | **保留至审核完成后 1 年** |
 | 28 | `message_read_status` | 通过 `message_id` 关联 | 消息已读 | 物理删除（通过 user_id） |
 

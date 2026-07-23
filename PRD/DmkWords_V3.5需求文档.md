@@ -1549,7 +1549,7 @@ def reconcile_stock():
 | user_id | BIGINT | 监护人用户 ID |
 | consent_type | VARCHAR(50) | privacy_policy / child_data / voice_recording |
 | consent_text_hash | VARCHAR(64) | 同意文案 SHA-256（追溯当时版本） |
-| consent_version | VARCHAR(20) | 隐私政策版本号（当前 v1.0） |
+| consent_version | VARCHAR(20) | 隐私政策版本号（当前 v1.1） |
 | ip_address | VARCHAR(45) | 同意时 IP |
 | user_agent | VARCHAR(500) | User-Agent |
 | create_time | DATETIME | 同意时间 |
@@ -1588,4 +1588,8 @@ def reconcile_stock():
 ### M.5 撤回与版本管理
 
 - 撤回标记 `withdrawn_at`，对应功能立即停止（如撤回 voice_recording 后录音 403）
+- **撤回 child_data = 级联删除（P0-3 已实现）**：先全量前置校验（无活跃借阅 BORROWING/OVERDUE、无在持押金 PAID/PENDING/REFUNDING、无进行中退款 STATUS_PENDING），任一阻塞则整体 422 拒绝；通过后对全部孩子发起删除请求（软删除 + `deletion_requested_at` 24h 冷静期）
+- 冷静期内可取消（`POST /child/{id}/deletion-cancel` 恢复）；过期由每日 03:30 定时任务 `execute_child_deletions` 执行：备份 CSV → 物理删除非财务表（19 张 child_id 直联 + quiz_answer 经 quiz_id 级联 + message_read_status 经 user_id）→ 删除语音文件 → operation_log + SystemMessage 通知
+- 财务数据法定保留：order / deposit_record / refund_application / borrow_record / book_damage_report / benefit_transfer_application，由既有 purge 机制按保留期清理
+- 用户端入口：我的 → 隐私与数据（查看同意记录/撤回语音同意/删除孩子数据）；单孩子删除 API（`POST /child/{id}/deletion-request`）已就绪，前端入口列 P2
 - 文案更新 → `CONSENT_VERSION` 递增 → 历史同意的 hash 可追溯到当时文案版本；老版本用户重新征求同意机制列入 backlog P1

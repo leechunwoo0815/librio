@@ -157,6 +157,13 @@
 
   <!-- Bottom Links -->
   <view class="bottom-links">
+    <view class="link-item" bindtap="onOpenPrivacy">
+      <view class="lk-left">
+        <text class="lk-icon"><text class="icon icon-lock">🔒</text></text>
+        <text class="lk-text">隐私与数据</text>
+      </view>
+      <text class="lk-arrow">›</text>
+    </view>
     <button class="link-item" open-type="contact" session-from="member-page" style="background:none;padding:0;margin:0;line-height:inherit;text-align:left;border:none;font-size:inherit">
       <view class="lk-left">
         <text class="lk-icon"><text class="icon icon-chat">💬</text></text>
