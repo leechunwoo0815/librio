@@ -28,6 +28,7 @@ from backend.domain.admin.admin_schemas import (
     ConfigResponse,
     UserListResponse,
     UpdateUserRequest,
+    UpdateUserStatusRequest,
     AdminCreateUserRequest,
     OrderListResponse,
     OperationLogResponse,
@@ -262,6 +263,25 @@ def update_user(
         module="user",
         operation="update",
         content=f"更新用户: {user_id}",
+    )
+    return result
+
+
+@router.patch("/users/{user_id}/status", response_model=AdminActionResponse)
+def set_user_status(
+    user_id: int,
+    data: UpdateUserStatusRequest,
+    service: AdminUserService = Depends(get_admin_user_service),
+    admin=Depends(require_perm("user.edit")),
+):
+    """禁用/启用用户（S-05）— 禁用后旧 Token 立即失效"""
+    result = service.set_user_status(user_id, data.status)
+    system_service = AdminSystemService(service.db)
+    system_service.write_operation_log(
+        admin_id=admin.id,
+        module="user",
+        operation="disable" if data.status == 0 else "enable",
+        content=f"{'禁用' if data.status == 0 else '启用'}用户: {user_id}",
     )
     return result
 

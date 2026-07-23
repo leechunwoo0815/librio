@@ -1,6 +1,7 @@
 # backend/domain/admin/services/user_service.py
 """管理端用户 Service — 从 AdminService 拆分出来的独立域服务。"""
 
+import logging
 import secrets
 from decimal import Decimal
 
@@ -17,6 +18,8 @@ from backend.domain.child.schemas import ChildCreate, ChildUpdate
 from backend.domain.order.models import Order
 from backend.domain.admin.models import Venue
 from backend.domain.user.models import User
+
+logger = logging.getLogger(__name__)
 
 
 class AdminUserService:
@@ -81,6 +84,7 @@ class AdminUserService:
                     "phone": u.phone,
                     "parent_name": u.parent_name or "未设置",
                     "avatar": u.avatar,
+                    "status": u.status if u.status is not None else 1,
                     "create_time": u.create_time.isoformat() if u.create_time else None,
                     "children_count": len(children),
                     "children": [
@@ -556,3 +560,25 @@ class AdminUserService:
             "child_id": child_id,
             "default_password": raw_password,
         }
+
+    def set_user_status(self, user_id: int, status: int) -> dict:
+        """禁用/启用用户（S-05）：status 0=禁用 1=启用
+
+        禁用后该用户所有已签发 Token 立即失效（status 校验 + token_generation 递增双保险）。
+        """
+        if status not in (0, 1):
+            raise ValidationError("status 只能为 0（禁用）或 1（启用）")
+
+        user = (
+            self.db.query(User).filter(User.id == user_id, User.is_deleted == 0).first()
+        )
+        if not user:
+            raise NotFoundError("用户不存在")
+
+        user.status = status
+        user.token_generation = (user.token_generation or 0) + 1
+        self.db.commit()
+
+        action = "禁用" if status == 0 else "启用"
+        logger.info(f"User {action}: user_id={user_id}")
+        return {"success": True, "message": f"用户已{action}"}

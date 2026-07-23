@@ -100,6 +100,14 @@ class UpdateUserRequest(BaseModel):
     )
 
 
+class UpdateUserStatusRequest(BaseModel):
+    """禁用/启用用户请求（S-05）"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    status: int = Field(..., ge=0, le=1, description="0=禁用 1=启用")
+
+
 class UserListResponse(BaseModel):
     """用户列表响应"""
 

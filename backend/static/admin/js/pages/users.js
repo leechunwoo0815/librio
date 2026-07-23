@@ -38,8 +38,25 @@
         window.usersPage.editUser(parseInt(el.dataset.userId), el.dataset.parentName, el.dataset.phone, parseInt(el.dataset.status), parseInt(el.dataset.childId));
       } else if (action === 'edit-child') {
         window.usersPage.showEditChild(parseInt(el.dataset.childId), el.dataset.name, el.dataset.englishName, parseInt(el.dataset.age), el.dataset.grade);
+      } else if (action === 'toggle-user-status') {
+        toggleUserStatus(parseInt(el.dataset.userId), parseInt(el.dataset.status), el.dataset.name || '');
       }
     });
+
+    async function toggleUserStatus(userId, currentStatus, name) {
+      var disabling = currentStatus !== 0;
+      var msg = disabling
+        ? '确定禁用用户「' + name + '」吗？禁用后其登录态立即失效。'
+        : '确定启用用户「' + name + '」吗？';
+      if (!confirm(msg)) return;
+      try {
+        await api.request('PATCH', '/admin/api/users/' + userId + '/status', { status: disabling ? 0 : 1 });
+        showToast(disabling ? '已禁用' : '已启用', 'success');
+        loadUsers(currentPage);
+      } catch (e) {
+        showToast(e.message || '操作失败', 'error');
+      }
+    }
     populateAgeSelects();
     populateGradeSelects();
     loadVenues();
@@ -132,6 +149,7 @@
         '<td><div class="table-actions">' +
           '<span class="action-link" onclick="usersPage.showDetail(' + u.id + ')">查看</span>' +
           '<span class="action-link" data-action="edit-user" data-user-id="' + u.id + '" data-parent-name="' + escapeAttr(u.parent_name || '') + '" data-phone="' + escapeAttr(u.phone || '') + '" data-status="' + status + '" data-child-id="' + childId + '">编辑</span>' +
+          '<span class="action-link" data-action="toggle-user-status" data-user-id="' + u.id + '" data-status="' + (u.status != null ? u.status : 1) + '" data-name="' + escapeAttr(u.parent_name || '') + '">' + (u.status === 0 ? '启用' : '禁用') + '</span>' +
         '</div></td>' +
         '</tr>';
     }).join('');
