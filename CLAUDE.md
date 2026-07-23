@@ -214,10 +214,10 @@ Router (参数校验、HTTP状态码、依赖注入，🚫不含 try/except，�
 | **词典** | ECDICT 本地 338 万词条 + Free Dictionary API 兜底 |
 | **环境变量** | ENABLE_TEST_TOKEN（测试令牌守卫）, DEBUG（双重守卫）, MOCK_PAYMENT（Mock 支付网关开关）, MOCK_SMS（Mock 短信网关开关）|
 
-### ⌨️ 核心运行命令 — CI 同构九关（CLI 自动调用）
+### ⌨️ 核心运行命令 — CI 同构十关（CLI 自动调用）
 ```bash
 # ┌─────────────────────────────────────────────────────────────┐
-# │  CI 同构九关 — 每条命令与 .github/workflows/ci.yml 逐字一致 │
+# │  CI 同构十关 — 每条命令与 .github/workflows/ci.yml 逐字一致 │
 # │  后续 CI 加关，此处必须同步加                               │
 # └─────────────────────────────────────────────────────────────┘
 
@@ -233,6 +233,9 @@ venv/bin/python -m scripts.verify_api_contract
 
 # ── model-check job ──
 venv/bin/python -m scripts.check_model_consistency
+
+# ── Gate 10: data-action wiring check ──
+venv/bin/python -m scripts.verify_action_wiring --strict
 
 # ── regression extras（CI 外补充，但已加入交付标准）──
 MOCK_PAYMENT=true MOCK_SMS=true DEBUG=true venv/bin/python scripts/integration_test.py
@@ -341,7 +344,7 @@ grep -rn '#4f46e5\|#6b5ce7\|#7c5ce7' backend/ frontend/ --include="*.css" --incl
 echo "--- Token 重定义 ---"
 grep -rn '\-\-accent:' frontend/pages/ --include="*.wxss" | grep -v 'app.wxss' | wc -l
 
-# 6. 测试（CI 同构九关）
+# 6. 测试（CI 同构十关）
 venv/bin/python -m pytest tests/ -x -q --tb=short 2>&1 | tail -3
 venv/bin/python -m behave features/ --no-capture -q 2>&1 | tail -3
 venv/bin/ruff check backend/ tests/ 2>&1 | tail -3
@@ -349,6 +352,7 @@ venv/bin/ruff check features/ scripts/ 2>&1 | tail -3
 venv/bin/ruff format --check . 2>&1 | tail -3
 venv/bin/python -m scripts.verify_api_contract 2>&1 | tail -3
 venv/bin/python -m scripts.check_model_consistency 2>&1 | tail -3
+venv/bin/python -m scripts.verify_action_wiring --strict 2>&1 | tail -3
 
 echo "===== 自检完成 ====="
 ```
