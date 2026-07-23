@@ -165,6 +165,7 @@ app.add_middleware(RequestLogMiddleware)
 
 # 核心域
 from backend.domain.user.router import router as user_router  # noqa: E402
+from backend.domain.user.consent_router import router as consent_router  # noqa: E402
 from backend.domain.child.router import router as child_router  # noqa: E402
 from backend.domain.book.router import router as book_router  # noqa: E402
 from backend.domain.bookshelf.router import (  # noqa: E402
@@ -202,6 +203,7 @@ from backend.domain.security.router import router as security_router  # noqa: E4
 from backend.domain.wechat.router import router as wechat_router  # noqa: E402
 
 app.include_router(user_router)
+app.include_router(consent_router)
 app.include_router(child_router)
 app.include_router(book_router)
 app.include_router(bookshelf_router)
