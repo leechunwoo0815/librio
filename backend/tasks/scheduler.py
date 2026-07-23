@@ -480,16 +480,20 @@ def reconcile_child_stats(db: Session | None = None):
 
 
 @distributed_lock("job:check_member_expiry", timeout=600)
-def check_member_expiry():
+def check_member_expiry(db: Session | None = None):
     """
     [What] 会员到期提醒
     [Why] 正式会员到期前提醒续费
     [How] 一次查询即将到期的正式会员，按到期日分组写入消息表
+
+    参数 db：可选的 session 注入（测试用），不传则自行创建。
     """
     from backend.domain.child.models import Child
     from collections import defaultdict
 
-    db = _get_db_session()
+    own_session = db is None
+    if own_session:
+        db = _get_db_session()
     try:
         from backend.common.config_service import ConfigService
 
@@ -545,7 +549,8 @@ def check_member_expiry():
         db.rollback()
         logger.error(f"check_member_expiry failed: {e}", exc_info=True)
     finally:
-        db.close()
+        if own_session:
+            db.close()
 
 
 @distributed_lock("job:check_grace_period_shutdown", timeout=600)
@@ -1218,16 +1223,20 @@ def mark_overdue_books():
 
 
 @distributed_lock("job:check_observation_expiry", timeout=600)
-def check_observation_expiry():
+def check_observation_expiry(db: Session | None = None):
     """
     [What] 观察期到期检查 + 自动生成评估报告
     [Why] 观察期到期后自动设置为 EXPIRED，并生成报告引导转化
     [How] 1. 生成观察期报告 2. 状态变更 OBSERVATION→EXPIRED
+
+    参数 db：可选的 session 注入（测试用），不传则自行创建。
     """
     from backend.domain.child.models import Child
     from backend.common.types import MemberStatus
 
-    db = _get_db_session()
+    own_session = db is None
+    if own_session:
+        db = _get_db_session()
     try:
         now = datetime.now()
         expired = (
@@ -1266,20 +1275,25 @@ def check_observation_expiry():
         db.rollback()
         logger.error(f"check_observation_expiry failed: {e}", exc_info=True)
     finally:
-        db.close()
+        if own_session:
+            db.close()
 
 
 @distributed_lock("job:check_observation_reminders", timeout=600)
-def check_observation_reminders():
+def check_observation_reminders(db: Session | None = None):
     """
     [What] 观察期到期提醒
     [Why] 观察期到期前发送提醒，引导转化
     [How] 查询即将到期的观察期用户，写入消息表
+
+    参数 db：可选的 session 注入（测试用），不传则自行创建。
     """
     from backend.domain.child.models import Child
     from backend.common.config_service import ConfigService
 
-    db = _get_db_session()
+    own_session = db is None
+    if own_session:
+        db = _get_db_session()
     try:
         today = date.today()
         remind_days = ConfigService.get_int_list(
@@ -1317,7 +1331,8 @@ def check_observation_reminders():
         db.rollback()
         logger.error(f"check_observation_reminders failed: {e}", exc_info=True)
     finally:
-        db.close()
+        if own_session:
+            db.close()
 
 
 @distributed_lock("job:check_activity_reminders", timeout=120)
