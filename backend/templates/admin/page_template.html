@@ -40,14 +40,14 @@
 <div class="toolbar">
   <input type="text" class="search-input" id="searchInput"
     placeholder="搜索关键字" />
-  <select class="filter-select" id="statusFilter" onchange="loadData(1)">
+  <select class="filter-select" id="statusFilter" data-action="load-data">
     <option value="">全部状态</option>
     <option value="1">选项一</option>
     <option value="2">选项二</option>
   </select>
   <div class="toolbar-spacer"></div>
-  <button class="btn btn-primary" onclick="loadData(1)">搜索</button>
-  <button class="btn btn-primary" onclick="openCreateModal()">新增</button>
+  <button class="btn btn-primary" data-action="load-data">搜索</button>
+  <button class="btn btn-primary" data-action="open-create-modal">新增</button>
 </div>
 
 {#
@@ -120,8 +120,8 @@
     </div>
   </form>
 {{ m.modal_actions() }}
-  <button class="btn btn-secondary" onclick="closeModal('createModal')">取消</button>
-  <button class="btn btn-primary" onclick="submitCreate()">保存</button>
+  <button class="btn btn-secondary" data-action="close-modal" data-modal="createModal">取消</button>
+  <button class="btn btn-primary" data-action="submit-create">保存</button>
 {{ m.modal_end() }}
 
 {# --- 5b. 详情弹窗 --- #}
@@ -130,15 +130,15 @@
     <p class="text-muted">加载中...</p>
   </div>
 {{ m.modal_actions() }}
-  <button class="btn btn-secondary" onclick="closeModal('detailModal')">关闭</button>
+  <button class="btn btn-secondary" data-action="close-modal" data-modal="detailModal">关闭</button>
 {{ m.modal_end() }}
 
 {# --- 5c. 确认弹窗 --- #}
 {{ m.modal_overlay("confirmModal", "确认操作", "sm") }}
   <p id="confirmMsg" class="m-0">确定要执行此操作吗？</p>
 {{ m.modal_actions() }}
-  <button class="btn btn-secondary" onclick="closeModal('confirmModal')">取消</button>
-  <button class="btn btn-primary" id="confirmBtn" onclick="confirmAction()">确定</button>
+  <button class="btn btn-secondary" data-action="close-modal" data-modal="confirmModal">取消</button>
+  <button class="btn btn-primary" id="confirmBtn">确定</button>
 {{ m.modal_end() }}
 
 {% endblock %}

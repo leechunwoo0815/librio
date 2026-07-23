@@ -30,7 +30,7 @@
         <div class="panel-title" id="selectedBookTitle">选择一本书</div>
         <div class="panel-meta" id="selectedBookMeta">请从左侧列表选择</div>
       </div>
-      <button class="btn btn-primary" onclick="showModal('addQModal')">+ 新增题目</button>
+      <button class="btn btn-primary" data-action="show-modal" data-modal="addQModal">+ 新增题目</button>
     </div>
     <div id="questionsList" class="flex-col gap-12">
       <div class="text-center p-24 text-muted">请从左侧选择一本书查看题目</div>
@@ -55,7 +55,7 @@
   <div class="form-group"><label>难度 (1-5)</label><input class="form-input" type="number" id="fDiff" value="1" min="1" max="5" /></div>
   <div class="form-group"><label>解析（选填）</label><textarea class="form-textarea" id="fExplanation" placeholder="为什么这是正确答案…"></textarea></div>
 {{ m.modal_actions() }}
-  <button class="btn btn-secondary" onclick="closeModal('addQModal')">取消</button>
+  <button class="btn btn-secondary" data-action="close-modal" data-modal="addQModal">取消</button>
   <button class="btn btn-primary" id="addQBtn">保存</button>
 {{ m.modal_end() }}
 
@@ -71,14 +71,14 @@
   <div class="form-group"><label>难度 (1-5)</label><input class="form-input" type="number" id="editDiff" min="1" max="5" /></div>
   <div class="form-group"><label>解析</label><input class="form-input" id="editExplanation" /></div>
 {{ m.modal_actions() }}
-  <button class="btn btn-secondary" onclick="closeModal('editQModal')">取消</button>
+  <button class="btn btn-secondary" data-action="close-modal" data-modal="editQModal">取消</button>
   <button class="btn btn-primary" id="saveEditBtn">保存</button>
 {{ m.modal_end() }}
 
 {{ m.modal_overlay("confirmDialog", "确认操作") }}
   <p id="confirmMsg" class="confirm-msg"></p>
 {{ m.modal_actions() }}
-  <button type="button" class="btn btn-secondary" onclick="closeModal('confirmDialog')">取消</button>
+  <button type="button" class="btn btn-secondary" data-action="close-modal" data-modal="confirmDialog">取消</button>
   <button type="button" class="btn btn-primary" id="confirmBtn">确认</button>
 {{ m.modal_end() }}
 {% endblock %}

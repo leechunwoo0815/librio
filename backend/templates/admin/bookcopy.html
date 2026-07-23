@@ -9,36 +9,36 @@
 <!-- Toolbar -->
 <div class="toolbar">
   <input class="scan-input" type="text" id="barcodeInput" placeholder="扫描或输入条码..." />
-  <button class="btn btn-primary" onclick="scanBarcode()">&#x1F4F7; 扫码</button>
-  <input class="search-input" type="text" id="searchInput" placeholder="搜索书名 / ISBN" oninput="filterTable()" />
-  <select class="filter-select" id="statusFilter" onchange="filterTable()">
+  <button class="btn btn-primary" data-action="scan-barcode">📷 扫码</button>
+  <input class="search-input" type="text" id="searchInput" placeholder="搜索书名 / ISBN" data-action="filter-search" />
+  <select class="filter-select" id="statusFilter" data-action="filter-select">
     <option>全部状态</option>
     <option>在馆</option>
     <option>借出</option>
     <option>丢失</option>
     <option>损坏</option>
   </select>
-  <select class="filter-select" id="venueFilter" onchange="filterTable()">
+  <select class="filter-select" id="venueFilter" data-action="filter-select">
     <option>全部场馆</option>
     <option>人广馆</option>
     <option>徐汇馆</option>
     <option>浦东馆</option>
   </select>
   <div class="toolbar-spacer"></div>
-  <button class="btn btn-outline btn-sm" onclick="exportExcel()">导出 Excel</button>
+  <button class="btn btn-outline btn-sm" data-action="export-excel">导出 Excel</button>
 </div>
 
 <!-- Add Form (hidden) -->
 <div class="card card-add" id="addForm">
   <h3>新增副本</h3>
-  <form onsubmit="addItem(event);return false">
+  <form data-action="add-item">
     <label>图书ID <input type="number" id="fBookId" required class="form-input"></label>
     <label>条码 <input type="text" id="fBarcode" required class="form-input"></label>
     <label>位置 <input type="text" id="fLocation" class="form-input" placeholder="如：1号书架A层"></label>
     <label>备注 <input type="text" id="fNote" class="form-input"></label>
     <div class="mt-12">
       <button type="submit" class="btn btn-primary">入库</button>
-      <button type="button" class="btn btn-outline btn-sm" onclick="toggleForm('addForm')">取消</button>
+      <button type="button" class="btn btn-outline btn-sm" data-action="toggle-form" data-form="addForm">取消</button>
     </div>
   </form>
 </div>

@@ -122,8 +122,20 @@ class UserService:
         return UserResponse.model_validate(user)
 
     def set_current_child(self, user_id: int, child_id: int) -> UserResponse:
-        """设置当前选中的孩子"""
+        """设置当前选中的孩子 — 校验归属"""
+        from backend.domain.child.models import Child
+        from backend.common.exceptions import ForbiddenError, NotFoundError
+
         user = self.user_repo.get_by_id_or_raise(user_id)
+        child = (
+            self.db.query(Child)
+            .filter(Child.id == child_id, Child.is_deleted == 0)
+            .first()
+        )
+        if not child:
+            raise NotFoundError("孩子不存在")
+        if child.user_id != user_id:
+            raise ForbiddenError("无权操作该孩子")
         user.current_child_id = child_id
         self.user_repo.update(user)
         self.db.commit()

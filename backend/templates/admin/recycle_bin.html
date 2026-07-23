@@ -14,14 +14,14 @@
 
 <!-- Filter bar -->
 <div class="filter-bar">
-  <select id="moduleFilter" onchange="loadRecycle(1)">
+  <select id="moduleFilter" data-action="load-recycle">
     <option value="">全部模块</option>
     <option value="book">图书</option>
     <option value="activity">活动</option>
     <option value="teacher">老师</option>
     <option value="venue">场馆</option>
   </select>
-  <button class="btn btn-primary" onclick="loadRecycle(1)">查询</button>
+  <button class="btn btn-primary" data-action="load-recycle">查询</button>
 </div>
 
 <!-- Table -->
@@ -44,14 +44,14 @@
   <p>您即将永久删除 <span class="item-name" id="deleteItemName"></span></p>
   <p class="mt-8 text-error">此操作不可撤销，删除后数据将无法恢复。请确认是否继续？</p>
 {{ m.modal_actions() }}
-  <button class="btn btn-secondary" onclick="hideDeleteModal()">取消</button>
-  <button class="btn btn-danger" onclick="confirmDelete()">确认永久删除</button>
+  <button class="btn btn-secondary" data-action="hide-delete-modal">取消</button>
+  <button class="btn btn-danger" data-action="confirm-delete">确认永久删除</button>
 {{ m.modal_end() }}
 
 {{ m.modal_overlay("confirmDialog", "确认操作") }}
   <p id="confirmMsg" class="confirm-msg"></p>
 {{ m.modal_actions() }}
-  <button type="button" class="btn btn-secondary" onclick="closeModal('confirmDialog')">取消</button>
+  <button type="button" class="btn btn-secondary" data-action="close-modal" data-modal="confirmDialog">取消</button>
   <button type="button" class="btn btn-primary" id="confirmBtn">确认</button>
 {{ m.modal_end() }}
 {% endblock %}

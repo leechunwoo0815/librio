@@ -28,7 +28,7 @@ module.exports = {
   removeFavorite(bookId, childId) { return req.del(`/favorites/${bookId}`, null, { params: { child_id: childId } }) },
 
   // 阅读
-  getBookPages(bookId) { return req.get(`/reading/pages/${bookId}`) },
+  getBookPages(bookId, childId) { return req.get(`/reading/pages/${bookId}`, null, { params: { child_id: childId } }) },
   getProgress(bookId, childId) { return req.get(`/reading/progress/${childId}/${bookId}`) },
   saveProgress(childId, bookId, page, total) { return req.post('/reading/progress', { child_id: childId, book_id: bookId, current_page: page, total_pages: total }) },
   startSession(childId, bookId) { return req.post('/reading/session/start', { book_id: bookId, child_id: childId }) },

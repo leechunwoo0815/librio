@@ -9,15 +9,15 @@
 {% block page_title %}成就管理{% endblock %}
 {% block content %}
 <div class="tab-bar" id="achTabBar">
-  <button class="tab-item active" onclick="switchAchTab('badges', this)">徽章管理</button>
-  <button class="tab-item" onclick="switchAchTab('records', this)">授予记录</button>
+  <button class="tab-item active" data-action="switch-ach-tab" data-tab="badges">徽章管理</button>
+  <button class="tab-item" data-action="switch-ach-tab" data-tab="records">授予记录</button>
 </div>
 
 <!-- Badge Management Panel -->
 <div id="panel-badges">
   <div class="flex-between mb-16">
     <div class="text-muted" id="badgeCount">加载中...</div>
-    <button class="btn btn-primary btn-sm" onclick="openBadgeModal()">+ 新增徽章</button>
+    <button class="btn btn-primary btn-sm" data-action="open-badge-modal">+ 新增徽章</button>
   </div>
 
   <div class="table-card" id="badgeTableCard">
@@ -74,7 +74,7 @@
 
 <!-- Add/Edit Badge Modal -->
 {{ m.modal_overlay('badgeModal', '新增 / 编辑徽章', title_id='modalTitle') }}
-  <form id="badgeForm" onsubmit="submitBadge(event);return false">
+  <form id="badgeForm" data-action="submit-badge">
     <input type="hidden" id="editId" value="" />
     <div class="modal-grid-2col">
       <div class="form-group"><label>徽章 Emoji</label><input class="form-input" name="badge_emoji" placeholder="例如：⚡" /></div>
@@ -100,14 +100,14 @@
     </div>
   </form>
 {{ m.modal_actions() }}
-  <button type="button" class="btn btn-secondary" onclick="closeBadgeModal()">取消</button>
+  <button type="button" class="btn btn-secondary" data-action="close-badge-modal">取消</button>
   <button type="submit" class="btn btn-primary btn-sm" id="submitBtn" form="badgeForm">保存</button>
 {{ m.modal_end() }}
 
 {{ m.modal_overlay("confirmDialog", "确认操作") }}
   <p id="confirmMsg" class="confirm-msg"></p>
 {{ m.modal_actions() }}
-  <button type="button" class="btn btn-secondary" onclick="closeModal('confirmDialog')">取消</button>
+  <button type="button" class="btn btn-secondary" data-action="close-modal" data-modal="confirmDialog">取消</button>
   <button type="button" class="btn btn-primary" id="confirmBtn">确认</button>
 {{ m.modal_end() }}
 {% endblock %}

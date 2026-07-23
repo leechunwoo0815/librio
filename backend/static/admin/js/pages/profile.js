@@ -4,6 +4,10 @@
 document.addEventListener('DOMContentLoaded', function() {
   loadProfile();
   loadRecentLogs();
+
+  document.getElementById('passwordForm').addEventListener('submit', function(e) {
+    changePassword(e);
+  });
 });
 
 async function loadProfile() {
@@ -86,13 +90,6 @@ function formatDateTime(isoStr) {
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
 }
 
-function escapeHtml(str) {
-  if (!str) return '';
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}
 
   window.profilePage = { loadProfile, loadRecentLogs, changePassword };
-  for (var k in window.profilePage) window[k] = window.profilePage[k];
 })();

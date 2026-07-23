@@ -8,6 +8,14 @@
     loadTrends();
   });
 
+  // Data-action delegation for period tabs
+  // wiring-exempt: load-data (uses .period-tabs click + data-period, not data-action pattern)
+  document.querySelector('.period-tabs')?.addEventListener('click', function(e) {
+    var btn = e.target.closest('button');
+    if (!btn) return;
+    loadData(btn.getAttribute('data-period'), btn);
+  });
+
   async function loadData(period, btn) {
     currentPeriod = period;
     if (btn) {
@@ -76,12 +84,6 @@
     }
   }
 
-  function escapeHtml(str) {
-    var div = document.createElement('div');
-    div.textContent = str || '';
-    return div.innerHTML;
-  }
 
   window.readingDataPage = { currentPeriod, loadData, loadTrends };
-  for (var k in window.readingDataPage) window[k] = window.readingDataPage[k];
 })();

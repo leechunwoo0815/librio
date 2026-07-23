@@ -3,6 +3,7 @@
 
 var currentPage = 1;
 var pageSize = 15;
+var _wordMap = {};
 
 function safeEl(id) { return document.getElementById(id); }
 function setText(id, val) { var el = safeEl(id); if (el) el.textContent = val; }
@@ -48,6 +49,7 @@ async function loadWords() {
       return;
     }
     tbody.innerHTML = items.map(function(w) {
+      _wordMap[w.id] = w;
       return '<tr>' +
         '<td class="fw-600">' + escapeHtml(w.word) + '</td>' +
         '<td class="font-mono text-sm">' + escapeHtml(w.phonetic || '-') + '</td>' +
@@ -55,8 +57,8 @@ async function loadWords() {
         '<td>' + escapeHtml(w.pos || '-') + '</td>' +
         '<td><span class="tag ' + getTagClass(w.ar_level) + '">' + getTagLabel(w.ar_level) + '</span></td>' +
         '<td>' +
-          '<button class="action-sm" onclick="editWord(' + w.id + ', \'' + jsEscape(w.word) + '\', \'' + jsEscape(w.phonetic || '') + '\', \'' + jsEscape(w.cn_definition || '') + '\', \'' + jsEscape(w.pos || '') + '\', ' + (w.ar_level || 0) + ')">编辑</button> ' +
-          '<button class="action-sm" onclick="deleteWord(' + w.id + ')">删除</button>' +
+          '<button class="action-sm" data-action="edit-word" data-id="' + w.id + '">编辑</button> ' +
+          '<button class="action-sm" data-action="delete-word" data-id="' + w.id + '">删除</button>' +
         '</td>' +
       '</tr>';
     }).join('');
@@ -71,16 +73,16 @@ async function loadWords() {
 
 function pageUi(total, pageSize) {
   var pages = Math.ceil(total / pageSize) || 1;
-  var html = '<div class="flex-center gap-8"><span class="text-muted">共 ' + total + ' 条</span><span class="text-xs text-muted">每页</span><select class="page-size-select" onchange="changePageSize(this.value)"><option value="15"'+(pageSize===15?' selected':'')+'>15</option><option value="30"'+(pageSize===30?' selected':'')+'>30</option><option value="50"'+(pageSize===50?' selected':'')+'>50</option><option value="100"'+(pageSize===100?' selected':'')+'>100</option></select><span class="text-xs text-muted">条</span></div>';
-  html += '<button class="action-sm" ' + (currentPage <= 1 ? 'disabled' : 'onclick="goPage(1)"') + '>首页</button>';
-  html += '<button class="action-sm" ' + (currentPage <= 1 ? 'disabled' : 'onclick="goPage(' + (currentPage - 1) + ')"') + '>上一页</button>';
+  var html = '<div class="flex-center gap-8"><span class="text-muted">共 ' + total + ' 条</span><span class="text-xs text-muted">每页</span><select class="page-size-select" data-action="change-page-size"><option value="15"'+(pageSize===15?' selected':'')+'>15</option><option value="30"'+(pageSize===30?' selected':'')+'>30</option><option value="50"'+(pageSize===50?' selected':'')+'>50</option><option value="100"'+(pageSize===100?' selected':'')+'>100</option></select><span class="text-xs text-muted">条</span></div>';
+  html += '<button class="action-sm" ' + (currentPage <= 1 ? 'disabled' : '') + ' data-action="go-page" data-page="1">首页</button>';
+  html += '<button class="action-sm" ' + (currentPage <= 1 ? 'disabled' : '') + ' data-action="go-page" data-page="' + (currentPage - 1) + '">上一页</button>';
   var start = Math.max(1, currentPage - 2);
   var end = Math.min(pages, currentPage + 2);
   for (var p = start; p <= end; p++) {
-    html += '<button class="action-sm" ' + (p === currentPage ? 'disabled class="fw-600"' : 'onclick="goPage(' + p + ')"') + '>' + p + '</button>';
+    html += '<button class="action-sm' + (p === currentPage ? ' fw-600' : '') + '" data-action="go-page" data-page="' + p + '"' + (p === currentPage ? ' disabled' : '') + '>' + p + '</button>';
   }
-  html += '<button class="action-sm" ' + (currentPage >= pages ? 'disabled' : 'onclick="goPage(' + (currentPage + 1) + ')"') + '>下一页</button>';
-  html += '<button class="action-sm" ' + (currentPage >= pages ? 'disabled' : 'onclick="goPage(' + pages + ')"') + '>末页</button>';
+  html += '<button class="action-sm" ' + (currentPage >= pages ? 'disabled' : '') + ' data-action="go-page" data-page="' + (currentPage + 1) + '">下一页</button>';
+  html += '<button class="action-sm" ' + (currentPage >= pages ? 'disabled' : '') + ' data-action="go-page" data-page="' + pages + '">末页</button>';
   setHtml('paginationBtns', html);
 }
 
@@ -100,7 +102,7 @@ function changePageSize(newSize) {
     setOnClick('confirmBtn', function() {
       closeModal('confirmDialog');
       onConfirm();
-    };
+    });
     showModal('confirmDialog');
   }
 
@@ -108,7 +110,35 @@ function changePageSize(newSize) {
     showConfirmDialog('删除单词', '确定删除该单词？', function() {
       api.del('/admin/api/dictionary/' + id).then(function() {
         showToast('删除成功');
-        loadWords();
+loadWords();
+
+document.addEventListener('click', function(e) {
+  var target = e.target.closest('[data-action]');
+  if (!target) return;
+  var action = target.getAttribute('data-action');
+  var id = target.getAttribute('data-id');
+  var page = target.getAttribute('data-page');
+  if (action === 'open-add-modal') openAddModal();
+  else if (action === 'edit-word' && id) editWord(Number(id));
+  else if (action === 'delete-word' && id) deleteWord(Number(id));
+  else if (action === 'go-page' && page) goPage(Number(page));
+  else if (action === 'close-modal') hideModal(target.getAttribute('data-modal'));
+});
+document.addEventListener('change', function(e) {
+  var target = e.target.closest('[data-action]');
+  if (!target) return;
+  var action = target.getAttribute('data-action');
+  if (action === 'filter-level') { currentPage = 1; loadWords(); }
+  else if (action === 'change-page-size') changePageSize(target.value);
+});
+document.addEventListener('keyup', function(e) {
+  var target = e.target.closest('[data-action="search-word"]');
+  if (target && e.key === 'Enter') { currentPage = 1; loadWords(); }
+});
+document.addEventListener('submit', function(e) {
+  var target = e.target.closest('[data-action="submit-word"]');
+  if (target) submitWord(e);
+});
       }).catch(function(e) {
         showToast('删除失败: ' + e.message, 'error');
       });
@@ -123,17 +153,19 @@ function openAddModal() {
   showModal('wordModal');
 }
 
-function editWord(id, word, phonetic, cnDef, pos, arLevel) {
+function editWord(id) {
+  var w = _wordMap[id];
+  if (!w) return;
   setVal('editId', id);
   setText('modalTitle', '编辑单词');
   setText('submitBtn', '保存修改');
   var form = safeEl('wordForm');
   if (form) {
-    form.elements['word'].value = word;
-    form.elements['phonetic'].value = phonetic;
-    form.elements['cn_definition'].value = cnDef;
-    form.elements['pos'].value = pos;
-    form.elements['ar_level'].value = arLevel || '';
+    form.elements['word'].value = w.word;
+    form.elements['phonetic'].value = w.phonetic || '';
+    form.elements['cn_definition'].value = w.cn_definition || '';
+    form.elements['pos'].value = w.pos || '';
+    form.elements['ar_level'].value = w.ar_level || '';
   }
   showModal('wordModal');
 }
@@ -176,6 +208,5 @@ async function submitWord(e) {
 loadWords();
 
   window.dictionaryPage = { currentPage, pageSize, safeEl, setText, setVal, setHtml, hideModal, setOnClick, getTagClass, getTagLabel, loadWords, pageUi, goPage, changePageSize, showConfirmDialog, deleteWord, openAddModal, editWord, closeWordModal, submitWord };
-  for (var k in window.dictionaryPage) window[k] = window.dictionaryPage[k];
 
 })();

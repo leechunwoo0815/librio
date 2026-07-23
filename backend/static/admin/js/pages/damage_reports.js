@@ -6,7 +6,26 @@
   var currentPage = 1;
   var pageSize = 20;
 
-  document.addEventListener('DOMContentLoaded', function() { loadReports(); });
+  document.addEventListener('DOMContentLoaded', function() {
+    loadReports();
+    document.addEventListener('click', function(e) {
+      var target = e.target.closest('[data-action]');
+      if (!target) return;
+      var action = target.getAttribute('data-action');
+      var id = target.getAttribute('data-id');
+      var modal = target.getAttribute('data-modal');
+      if (action === 'filter-tab') filterTab(target, target.getAttribute('data-filter'));
+      else if (action === 'show-create-dialog') showCreateDialog();
+      else if (action === 'confirm-create') confirmCreate();
+      else if (action === 'show-appeal-dialog' && id) showAppealDialog(Number(id));
+      else if (action === 'confirm-review') confirmReview();
+      else if (action === 'close-modal') closeModal(modal);
+    });
+    document.addEventListener('change', function(e) {
+      var target = e.target.closest('[data-action="toggle-override-fields"]');
+      if (target) toggleOverrideFields();
+    });
+  });
 
   async function loadReports() {
     try {
@@ -64,7 +83,7 @@
       var actions = '';
 
       if (r.status === 2) {
-        actions = '<a href="javascript:void(0)" onclick="showAppealDialog(' + r.id + ')" class="action-link">审核</a>';
+        actions = '<a href="javascript:void(0)" data-action="show-appeal-dialog" data-id="' + r.id + '" class="action-link">审核</a>';
       } else if (r.status === 0) {
         actions = '<span class="text-muted">申诉期</span>';
       } else {

@@ -16,11 +16,11 @@
 
 <!-- Filter Tabs -->
 <div class="tabs">
-  <div class="tab active" onclick="filterTab(this,'')">全部</div>
-  <div class="tab" onclick="filterTab(this,'PAID')">已缴纳</div>
-  <div class="tab" onclick="filterTab(this,'REFUNDING')">退款中</div>
-  <div class="tab" onclick="filterTab(this,'REFUNDED')">已退</div>
-  <div class="tab" onclick="filterTab(this,'DEDUCTED')">已扣</div>
+  <div class="tab active" data-action="filter-tab" data-filter="">全部</div>
+  <div class="tab" data-action="filter-tab" data-filter="PAID">已缴纳</div>
+  <div class="tab" data-action="filter-tab" data-filter="REFUNDING">退款中</div>
+  <div class="tab" data-action="filter-tab" data-filter="REFUNDED">已退</div>
+  <div class="tab" data-action="filter-tab" data-filter="DEDUCTED">已扣</div>
 </div>
 
 <!-- Table -->
@@ -38,7 +38,7 @@
 {{ m.modal_overlay("confirmDialog", "确认操作") }}
   <p id="confirmMsg" class="confirm-msg"></p>
 {{ m.modal_actions() }}
-  <button type="button" class="btn btn-secondary" onclick="closeModal('confirmDialog')">取消</button>
+  <button type="button" class="btn btn-secondary" data-action="close-modal" data-modal="confirmDialog">取消</button>
   <button type="button" class="btn btn-primary" id="confirmBtn">确认</button>
 {{ m.modal_end() }}
 
@@ -52,8 +52,8 @@
     <input type="number" id="deductAmount" class="form-input" placeholder="请输入扣除金额" value="100" min="0.01" step="0.01" />
   </div>
 {{ m.modal_actions() }}
-  <button type="button" class="btn btn-secondary" onclick="closeModal('deductDialog')">取消</button>
-  <button type="button" class="btn btn-primary" onclick="confirmDeduct()">确认扣除</button>
+  <button type="button" class="btn btn-secondary" data-action="close-modal" data-modal="deductDialog">取消</button>
+  <button type="button" class="btn btn-primary" data-action="confirm-deduct">确认扣除</button>
 {{ m.modal_end() }}
 
 {% endblock %}

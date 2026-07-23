@@ -14,10 +14,10 @@
 
 <!-- Filter Tabs -->
 <div class="tabs">
-  <div class="tab active" onclick="filterTab(this,'')">全部</div>
-  <div class="tab" onclick="filterTab(this,'ACTIVE')">有效</div>
-  <div class="tab" onclick="filterTab(this,'EXPIRED')">已过期</div>
-  <div class="tab" onclick="filterTab(this,'PICKED')">已取书</div>
+  <div class="tab active" data-action="filter-tab" data-filter="">全部</div>
+  <div class="tab" data-action="filter-tab" data-filter="ACTIVE">有效</div>
+  <div class="tab" data-action="filter-tab" data-filter="EXPIRED">已过期</div>
+  <div class="tab" data-action="filter-tab" data-filter="PICKED">已取书</div>
 </div>
 
 <!-- Table -->
@@ -36,7 +36,7 @@
 {{ m.modal_overlay("confirmDialog", "确认操作") }}
   <p id="confirmMsg" class="confirm-msg"></p>
 {{ m.modal_actions() }}
-  <button type="button" class="btn btn-secondary" onclick="closeModal('confirmDialog')">取消</button>
+  <button type="button" class="btn btn-secondary" data-action="close-modal" data-modal="confirmDialog">取消</button>
   <button type="button" class="btn btn-primary" id="confirmBtn">确认</button>
 {{ m.modal_end() }}
 {% endblock %}

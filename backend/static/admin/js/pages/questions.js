@@ -3,12 +3,7 @@
 
 let isSubmitting = false;
 let selectedBookId = null;
-
-function escapeHtml(str) {
-  var div = document.createElement('div');
-  div.textContent = str || '';
-  return div.innerHTML;
-}
+var _questionsData = [];
 
 function jsEscape(str) {
   return (str || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
@@ -35,7 +30,7 @@ async function searchBooks() {
       return;
     }
     el.innerHTML = items.map(function(b) {
-      return '<div class="book-item" onclick="selectBook(' + b.id + ',\'' + jsEscape(b.title) + '\',' + (b.ar_value||0) + ')">' +
+      return '<div class="book-item" data-action="select-book" data-id="' + b.id + '" data-title="' + jsEscape(b.title) + '" data-ar="' + (b.ar_value||0) + '">' +
         '<div class="book-title">' + escapeHtml(b.title) + '</div>' +
         '<div class="book-meta">AR ' + (b.ar_value||'-') + '</div>' +
       '</div>';
@@ -65,6 +60,7 @@ function renderQuestions(items) {
     el.innerHTML = '<div class="text-center p-24 text-muted">暂无题目</div>';
     return;
   }
+  _questionsData = items;
   el.innerHTML = items.map(function(q, i) {
     var options = [
       { key: 'A', val: q.option_a },
@@ -85,8 +81,8 @@ function renderQuestions(items) {
           '<div class="question-answer">✓ 正确答案：' + q.correct_answer + '</div>' +
         '</div>' +
         '<div class="question-actions">' +
-          '<button class="btn btn-outline btn-sm" onclick=\'editQuestion(' + JSON.stringify(q).replace(/'/g, "&#39;") + ')\'>编辑</button>' +
-          '<button class="btn btn-danger btn-sm" onclick="deleteQuestion(' + q.id + ')">删除</button>' +
+          '<button class="btn btn-outline btn-sm" data-action="edit-question" data-idx="' + i + '">编辑</button>' +
+          '<button class="btn btn-danger btn-sm" data-action="delete-question" data-id="' + q.id + '">删除</button>' +
         '</div>' +
       '</div>' +
     '</div>';
@@ -115,8 +111,7 @@ function renderQuestions(items) {
           return;
         }
         resultsEl.innerHTML = items.map(function(b) {
-          return '<div class="book-search-result-item" ' +
-            'onclick="selectAddBook(' + b.id + ', \'' + jsEscape(b.title) + '\')">' +
+          return '<div class="book-search-result-item" data-action="select-add-book" data-id="' + b.id + '" data-title="' + jsEscape(b.title) + '">' +
             escapeHtml(b.title) + ' <span class="text-muted">ISBN: ' + escapeHtml(b.isbn || '-') + '</span>' +
           '</div>';
         }).join('');
@@ -182,7 +177,9 @@ document.getElementById('addQBtn').addEventListener('click', async function() {
 });
 
 // Edit question
-function editQuestion(q) {
+function editQuestion(idx) {
+  var q = _questionsData[idx];
+  if (!q) return;
   document.getElementById('editId').value = q.id;
   document.getElementById('editQuestion').value = q.question_text || '';
   document.getElementById('editA').value = q.option_a || '';
@@ -246,7 +243,25 @@ async function deleteQuestion(id) {
   });
 }
 
+  document.addEventListener('click', function(e) {
+    var target = e.target.closest('[data-action]');
+    if (!target) return;
+    var action = target.getAttribute('data-action');
+    if (action === 'select-book') {
+      selectBook(parseInt(target.getAttribute('data-id')), target.getAttribute('data-title'), parseFloat(target.getAttribute('data-ar') || '0'));
+    } else if (action === 'edit-question') {
+      editQuestion(parseInt(target.getAttribute('data-idx')));
+    } else if (action === 'delete-question') {
+      deleteQuestion(parseInt(target.getAttribute('data-id')));
+    } else if (action === 'select-add-book') {
+      selectAddBook(parseInt(target.getAttribute('data-id')), target.getAttribute('data-title'));
+    } else if (action === 'show-modal') {
+      showModal(target.getAttribute('data-modal'));
+    } else if (action === 'close-modal') {
+      closeModal(target.getAttribute('data-modal'));
+    }
+  });
+
   window.questionsPage = { isSubmitting, selectedBookId, searchBooks, selectBook, renderQuestions, editQuestion, showConfirmDialog, deleteQuestion, selectAddBook };
-  for (var k in window.questionsPage) window[k] = window.questionsPage[k];
 
 })();

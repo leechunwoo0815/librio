@@ -15,7 +15,10 @@ from backend.common.events import (
     ReadingSessionCompletedEvent,
     event_bus,
 )
+from backend.common.exceptions import ForbiddenError
 from backend.common.config_service import ConfigService
+from backend.common.types import BorrowStatus
+from backend.domain.borrow.models import BorrowRecord
 from backend.domain.child.models import Child
 from backend.domain.reading.models import (
     CheckIn,
@@ -68,11 +71,29 @@ class ReadingService:
 
     # ==================== 图书内容 ====================
 
-    def get_book_pages(self, book_id: int) -> list[BookPageResponse]:
+    def get_book_pages(
+        self, book_id: int, child_id: int | None = None
+    ) -> list[BookPageResponse]:
+        if child_id:
+            self._check_overdue_audio(child_id)
         return [
             BookPageResponse.model_validate(p)
             for p in self.page_repo.get_by_book(book_id)
         ]
+
+    def _check_overdue_audio(self, child_id: int):
+        """逾期音频锁定 — 孩子有任意 OVERDUE 借阅即全锁"""
+        overdue_count = (
+            self.db.query(BorrowRecord)
+            .filter(
+                BorrowRecord.child_id == child_id,
+                BorrowRecord.status == BorrowStatus.OVERDUE,
+                BorrowRecord.is_deleted == 0,
+            )
+            .count()
+        )
+        if overdue_count > 0:
+            raise ForbiddenError("借阅已逾期，请先归还图书")
 
     def get_book_page(self, book_id: int, page_number: int) -> BookPageResponse | None:
         page = self.page_repo.get_page(book_id, page_number)
@@ -352,7 +373,8 @@ class ReadingService:
     # ==================== 语音朗读 ====================
 
     def save_recording(self, data: SaveRecordingRequest) -> VoiceRecordingResponse:
-        """保存语音录音"""
+        """保存语音录音 — 逾期用户禁止录音"""
+        self._check_overdue_audio(data.child_id)
         recording = VoiceRecording(
             child_id=data.child_id,
             book_id=data.book_id,
@@ -412,7 +434,8 @@ class ReadingService:
         page: int = 1,
         page_size: int = 20,
     ) -> list[VoiceRecordingDetailResponse]:
-        """获取语音录音列表"""
+        """获取语音录音列表 — 逾期用户禁止访问"""
+        self._check_overdue_audio(child_id)
         recordings = self.voice_repo.get_by_child_and_book(
             child_id, book_id, page=page, page_size=page_size
         )

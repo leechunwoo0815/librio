@@ -3,9 +3,35 @@
 
 loadAssessments();
 
-
-
-  async function loadAssessments() {
+document.addEventListener('click', function(e) {
+  var target = e.target.closest('[data-action]');
+  if (!target) return;
+  var action = target.getAttribute('data-action');
+  var id = target.getAttribute('data-id');
+  var modal = target.getAttribute('data-modal');
+  if (action === 'open-new-assessment') openNewAssessment();
+  else if (action === 'view-report' && id) viewReport(Number(id));
+  else if (action === 'schedule-assessment' && id) scheduleAssessment(Number(id));
+  else if (action === 'edit-assessment' && id) editAssessment(Number(id));
+  else if (action === 'view-detail' && id) viewDetail(Number(id));
+  else if (action === 'search-child-for-assessment') searchChildForAssessment();
+  else if (action === 'close-modal' && modal) closeModal(modal);
+});
+document.addEventListener('change', function(e) {
+  var target = e.target.closest('[data-action]');
+  if (!target) return;
+  var action = target.getAttribute('data-action');
+  if (action === 'filter-table') filterTable();
+  else if (action === 'on-child-selected') onChildSelected(target);
+});
+document.addEventListener('input', function(e) {
+  var target = e.target.closest('[data-action="filter-table"]');
+  if (target) filterTable();
+});
+document.addEventListener('submit', function(e) {
+  var target = e.target.closest('[data-action="submit-assessment"]');
+  if (target) submitAssessment(e);
+});  async function loadAssessments() {
     try {
       var resp = await api.get('/admin/api/assessment/list');
       var list = resp.items || resp || [];
@@ -73,13 +99,13 @@ loadAssessments();
   function buildActions(item) {
     var html = '';
     if (item.status === 'completed') {
-      html += '<button class="action-btn" onclick="viewReport(' + item.id + ')">报告</button>';
+      html += '<button class="action-btn" data-action="view-report" data-id="' + item.id + '">报告</button>';
     } else if (item.status === 'pending') {
-      html += '<button class="action-btn" onclick="scheduleAssessment(' + item.id + ')">安排</button>';
+      html += '<button class="action-btn" data-action="schedule-assessment" data-id="' + item.id + '">安排</button>';
     } else if (item.status === 'scheduled') {
-      html += '<button class="action-btn" onclick="editAssessment(' + item.id + ')">编辑</button>';
+      html += '<button class="action-btn" data-action="edit-assessment" data-id="' + item.id + '">编辑</button>';
     }
-    html += '<button class="action-btn" onclick="viewDetail(' + item.id + ')">详情</button>';
+    html += '<button class="action-btn" data-action="view-detail" data-id="' + item.id + '">详情</button>';
     return html;
   }
 
@@ -321,13 +347,7 @@ loadAssessments();
     });
   }
 
-  function escapeHtml(str) {
-    var div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  }
 
   window.assessmentsPage = { loadAssessments, renderStats, avatarColors, getAvatarClass, renderTable, buildActions, populateVenues, filterTable, viewReport, viewDetail, toDateTimeLocalValue, scheduleAssessment, editAssessment, searchChildForAssessment, onChildSelected, openNewAssessment, closeAssessModal, submitAssessment, showConfirmDialog, deleteAssessment };
-  for (var k in window.assessmentsPage) window[k] = window.assessmentsPage[k];
 
 })();

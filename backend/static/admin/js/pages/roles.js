@@ -5,6 +5,28 @@
 
   document.addEventListener('DOMContentLoaded', function() {
     loadRolesPage();
+    document.addEventListener('click', function(e) {
+      var target = e.target.closest('[data-action]');
+      if (!target) return;
+      var action = target.getAttribute('data-action');
+      var id = target.getAttribute('data-id');
+      var name = target.getAttribute('data-name');
+      var desc = target.getAttribute('data-desc');
+      var modal = target.getAttribute('data-modal');
+      if (action === 'create-role') createRole();
+      else if (action === 'open-perm-modal' && id) openPermModal(Number(id));
+      else if (action === 'save-permissions') savePermissions();
+      else if (action === 'confirm-create-role') confirmCreateRole();
+      else if (action === 'rename-role' && id) renameRole(Number(id), name || '', desc || '');
+      else if (action === 'confirm-rename-role') confirmRenameRole();
+      else if (action === 'delete-role' && id) deleteRole(Number(id), name || '');
+      else if (action === 'confirm-delete-role') confirmDeleteRole();
+      else if (action === 'close-modal' && modal) closeModal(modal);
+    });
+    document.addEventListener('change', function(e) {
+      var target = e.target.closest('[data-action="toggle-group"]');
+      if (target) toggleGroup(target, target.getAttribute('data-group'));
+    });
   });
 
   var _deleteRoleId = null;
@@ -18,12 +40,12 @@
         var canEdit = document.body.dataset.canEditRole === 'true';
         var actions = '';
         if (canEdit) {
-          actions += '<button class="action-btn-edit" onclick="openPermModal(' + r.id + ')">编辑权限</button>';
+          actions += '<button class="action-btn-edit" data-action="open-perm-modal" data-id="' + r.id + '">编辑权限</button>';
           if (!r.is_system) {
-            actions += '<button class="action-btn-edit" onclick="deleteRole(' + r.id + ', \'' + jsEscape(r.name) + '\')" style="color:var(--danger)">删除</button>';
+            actions += '<button class="action-btn-edit" data-action="delete-role" data-id="' + r.id + '" data-name="' + jsEscape(r.name) + '" style="color:var(--danger)">删除</button>';
           }
         }
-        var renameIcon = canEdit ? '<span class="rename-icon" onclick="renameRole(' + r.id + ', \'' + jsEscape(r.name) + '\', \'' + jsEscape(r.description || '') + '\')" style="cursor:pointer;margin-left:6px;font-size:13px;color:var(--text-muted)">&#9998;</span>' : '';
+        var renameIcon = canEdit ? '<span class="rename-icon" data-action="rename-role" data-id="' + r.id + '" data-name="' + jsEscape(r.name) + '" data-desc="' + jsEscape(r.description || '') + '" style="cursor:pointer;margin-left:6px;font-size:13px;color:var(--text-muted)">&#9998;</span>' : '';
         return '<div class="role-card">' +
           '<div class="role-card-info">' +
             '<div class="role-card-name">' + escapeHtml(r.name) + renameIcon + ' <span class="role-badge role-editor">' + escapeHtml(r.code) + '</span>' + (r.is_system ? ' <span class="system-badge">系统</span>' : '') + '</div>' +
@@ -52,7 +74,7 @@
         var allChecked = g.permissions.every(function(p) { return p.is_assigned; });
         html += '<div class="perm-group">' +
           '<div class="perm-group-title">' + escapeHtml(g.group_name) + '</div>' +
-          '<div class="select-all-row"><label><input type="checkbox" onchange="toggleGroup(this, \'' + jsEscape(g.group_name) + '\')" ' + (allChecked ? 'checked' : '') + ' /> 全选</label></div>' +
+          '<div class="select-all-row"><label><input type="checkbox" data-action="toggle-group" data-group="' + jsEscape(g.group_name) + '" ' + (allChecked ? 'checked' : '') + ' /> 全选</label></div>' +
           '<div class="perm-grid" data-group="' + escapeHtml(g.group_name) + '">';
         g.permissions.forEach(function(p) {
           html += '<label><input type="checkbox" class="perm-cb" value="' + escapeHtml(p.code) + '" data-group="' + escapeHtml(g.group_name) + '" ' + (p.is_assigned ? 'checked' : '') + ' /> <span>' + escapeHtml(p.name) + '</span></label>';
@@ -190,5 +212,4 @@
   }
 
   window.rolesPage = { _currentRoleId, loadRolesPage, openPermModal, toggleGroup, savePermissions, createRole, confirmCreateRole, deleteRole, confirmDeleteRole, renameRole, confirmRenameRole };
-  for (var k in window.rolesPage) window[k] = window.rolesPage[k];
 })();

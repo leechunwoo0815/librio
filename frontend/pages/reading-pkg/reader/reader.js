@@ -107,7 +107,7 @@ Page({
       // 加载文本页 + 生词
       try {
         const [pages, learningWords] = await Promise.all([
-          api.getBookPages(bookId),
+          api.getBookPages(bookId, child.id),
           api.getLearningWords(child.id),
         ])
         const vocabMap = {}

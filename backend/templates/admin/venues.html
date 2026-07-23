@@ -40,7 +40,7 @@
       <option value="inactive">已关闭</option>
     </select>
   </div>
-  <button class="btn btn-primary" onclick="openAddModal()">
+  <button class="btn btn-primary" data-action="open-add-modal">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
     新建场馆
   </button>
@@ -68,7 +68,7 @@
 <div class="pagination" id="venuePagination"></div>
 
 {{ m.modal_overlay("venueModal", "新建场馆", "md") }}
-  <form id="addForm" onsubmit="submitVenue(event)">
+  <form id="addForm" data-action="submit-venue">
     <input type="hidden" id="editId" value="" />
     <div class="form-group">
       <label>场馆名称</label>
@@ -104,7 +104,7 @@
     </div>
   </form>
 {{ m.modal_actions() }}
-  <button type="button" class="btn btn-secondary" onclick="closeModal('venueModal')">取消</button>
+  <button type="button" class="btn btn-secondary" data-action="close-modal" data-modal="venueModal">取消</button>
   <button type="submit" class="btn btn-primary" id="submitBtn" form="addForm">确认创建</button>
 {{ m.modal_end() }}
 {% endblock %}

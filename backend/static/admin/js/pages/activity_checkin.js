@@ -56,7 +56,7 @@
       var phone = e.parent_phone ? e.parent_phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2') : '--';
       var actions = isChecked
         ? '<span class="action-link text-muted">--</span>'
-        : '<span class="action-link" onclick="manualSignIn(' + JSON.stringify(e.ticket_code || '').replace(/"/g, '&quot;') + ')">手动签到</span>';
+        : '<span class="action-link" data-action="manual-sign-in" data-ticket-code="' + escapeHtml(e.ticket_code || '') + '">手动签到</span>';
       return '<tr>' +
         '<td>' + escapeHtml(e.child_name || e.child_id || '--') + '</td>' +
         '<td>' + statusBadge + '</td>' +
@@ -91,18 +91,19 @@
     }
   }
 
-  function escapeHtml(str) {
-    if (!str) return '';
-    var div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  }
 
   // Enter key on scan input
   document.getElementById('scanInput').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') doSignIn();
   });
 
+  // Data-action event listeners
+  document.querySelector('[data-action="load-attendees"]')?.addEventListener('change', function() { loadAttendees(); });
+  document.querySelector('[data-action="do-sign-in"]')?.addEventListener('click', function() { doSignIn(); });
+  document.getElementById('attendeeBody').addEventListener('click', function(e) {
+    var target = e.target.closest('[data-action="manual-sign-in"]');
+    if (target) manualSignIn(target.dataset.ticketCode);
+  });
+
   window.activityCheckinPage = { loadActivities, loadAttendees, updateProgress, renderAttendees, doSignIn, manualSignIn, escapeHtml };
-  for (var k in window.activityCheckinPage) window[k] = window.activityCheckinPage[k];
 })();

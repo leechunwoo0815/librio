@@ -17,14 +17,14 @@
 
 <!-- Tab Bar -->
 <div class="tab-bar">
-  <button class="tab-item active" onclick="switchTab(this,'pending')">待审核</button>
-  <button class="tab-item" onclick="switchTab(this,'reviewed')">已审核</button>
-  <button class="tab-item" onclick="switchTab(this,'all')">全部</button>
+  <button class="tab-item active" data-action="switch-tab" data-tab="pending">待审核</button>
+  <button class="tab-item" data-action="switch-tab" data-tab="reviewed">已审核</button>
+  <button class="tab-item" data-action="switch-tab" data-tab="all">全部</button>
 </div>
 
 <!-- Search -->
 <div class="search-bar">
-  <input class="search-input" placeholder="搜索孩子姓名或书名…" id="searchInput" oninput="loadSubmissions()" />
+  <input class="search-input" placeholder="搜索孩子姓名或书名…" id="searchInput" data-action="load-submissions" />
 </div>
 
 <!-- Table -->
@@ -52,9 +52,9 @@
     <textarea class="form-textarea" id="reviewComment" placeholder="填写评语…"></textarea>
   </div>
 {{ m.modal_actions() }}
-  <button class="btn btn-secondary" onclick="closeModal('reviewModal')">取消</button>
-  <button class="btn btn-danger" onclick="doReview(2)">打回</button>
-  <button class="btn btn-primary" onclick="doReview(1)">通过</button>
+  <button class="btn btn-secondary" data-action="close-modal" data-modal="reviewModal">取消</button>
+  <button class="btn btn-danger" data-action="do-review" data-status="2">打回</button>
+  <button class="btn btn-primary" data-action="do-review" data-status="1">通过</button>
 {{ m.modal_end() }}
 {% endblock %}
 

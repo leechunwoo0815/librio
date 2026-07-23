@@ -11,18 +11,18 @@
 {% block content %}
 <div class="toolbar">
   <div class="left">
-    <select id="levelFilter" class="filter-select" onchange="currentPage=1;loadWords()">
+    <select id="levelFilter" class="filter-select" data-action="filter-level">
       <option value="">全部等级</option>
       <option value="0-2">AR 0-2 (入门)</option>
       <option value="2-4">AR 2-4 (初级)</option>
       <option value="4-6">AR 4-6 (中级)</option>
       <option value="6+">AR 6+ (高级)</option>
     </select>
-    <input type="text" id="searchInput" class="search-input" placeholder="搜索单词..." onkeyup="if(event.key==='Enter'){currentPage=1;loadWords()}" />
+    <input type="text" id="searchInput" class="search-input" placeholder="搜索单词..." data-action="search-word" />
   </div>
   <div class="right">
     <span class="text-sm text-muted" id="totalCount">共 0 个词条</span>
-    <button class="btn btn-primary ml-12" onclick="openAddModal()">+ 添加单词</button>
+    <button class="btn btn-primary ml-12" data-action="open-add-modal">+ 添加单词</button>
   </div>
 </div>
 
@@ -44,13 +44,13 @@
 {{ m.modal_overlay("confirmDialog", "确认操作") }}
   <p id="confirmMsg" class="confirm-msg"></p>
 {{ m.modal_actions() }}
-  <button type="button" class="btn btn-secondary" onclick="closeModal('confirmDialog')">取消</button>
+  <button type="button" class="btn btn-secondary" data-action="close-modal" data-modal="confirmDialog">取消</button>
   <button type="button" class="btn btn-primary" id="confirmBtn">确认</button>
 {{ m.modal_end() }}
 
 <!-- word modal -->
 {{ m.modal_overlay("wordModal", "添加单词", "md", "modalTitle") }}
-  <form id="wordForm" onsubmit="submitWord(event)">
+  <form id="wordForm" data-action="submit-word">
     <input type="hidden" id="editId" value="" />
     <div class="form-group">
       <label>单词 <span class="text-error">*</span></label>
@@ -82,7 +82,7 @@
     </div>
   </form>
 {{ m.modal_actions() }}
-  <button class="btn btn-secondary" onclick="closeModal('wordModal')">取消</button>
+  <button class="btn btn-secondary" data-action="close-modal" data-modal="wordModal">取消</button>
   <button type="submit" class="btn btn-primary" id="submitBtn" form="wordForm">保存</button>
 {{ m.modal_end() }}
 {% endblock %}

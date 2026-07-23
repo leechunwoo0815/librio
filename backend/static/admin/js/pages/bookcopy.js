@@ -63,9 +63,9 @@ function renderTable(data) {
       '<td><span class="status-badge ' + statusCls + '">' + escapeHtml(statusText) + '</span></td>' +
       '<td>' + escapeHtml(c.location || '-') + '</td>' +
       '<td' + (!c.borrower_name ? ' style="color:var(--muted);"' : '') + '>' + escapeHtml(c.borrower_name || '--') + '</td>' +
-      '<td><span class="action-link" onclick="viewDetail(\'' + c.id + '\')">详情</span>' +
-      (statusKey === 1 ? ' · <span class="action-link" onclick="doReturn(\'' + c.id + '\')">归还</span>' : '') +
-      (statusKey === 0 ? ' · <span class="action-link" onclick="editCopy(\'' + c.id + '\')">编辑</span>' : '') +
+      '<td><span class="action-link" data-action="view-detail" data-id="' + c.id + '">详情</span>' +
+      (statusKey === 1 ? ' · <span class="action-link" data-action="do-return" data-id="' + c.id + '">归还</span>' : '') +
+      (statusKey === 0 ? ' · <span class="action-link" data-action="edit-copy" data-id="' + c.id + '">编辑</span>' : '') +
       '</td>' +
     '</tr>';
   }).join('');
@@ -178,9 +178,33 @@ document.addEventListener('DOMContentLoaded', function() {
     if (e.key === 'Enter') scanBarcode();
   });
   loadData();
+  document.addEventListener('click', function(e) {
+    var target = e.target.closest('[data-action]');
+    if (!target) return;
+    var action = target.getAttribute('data-action');
+    var id = target.getAttribute('data-id');
+    var formId = target.getAttribute('data-form');
+    if (action === 'scan-barcode') scanBarcode();
+    else if (action === 'export-excel') exportExcel();
+    else if (action === 'toggle-form' && formId) toggleForm(formId);
+    else if (action === 'view-detail' && id) viewDetail(id);
+    else if (action === 'do-return' && id) doReturn(id);
+    else if (action === 'edit-copy' && id) editCopy(id);
+  });
+  document.addEventListener('submit', function(e) {
+    var target = e.target.closest('[data-action="add-item"]');
+    if (target) addItem(e);
+  });
+  document.addEventListener('input', function(e) {
+    var target = e.target.closest('[data-action="filter-search"]');
+    if (target) filterTable();
+  });
+  document.addEventListener('change', function(e) {
+    var target = e.target.closest('[data-action="filter-select"]');
+    if (target) filterTable();
+  });
 });
 
 
   window.bookcopyPage = { STATUS_MAP, STATUS_CLASS, STATUS_TEXT, allData, localEscapeHtml, localExportCSV, toggleForm, loadData, renderTable, filterTable, scanBarcode, viewDetail, editCopy, doReturn, exportExcel, addItem };
-  for (var k in window.bookcopyPage) window[k] = window.bookcopyPage[k];
 })();

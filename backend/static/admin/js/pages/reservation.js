@@ -55,7 +55,7 @@
       var s = statusMap[r.status] || { cls: '', text: r.status };
       var actions = '';
       if (r.status === 0) {
-        actions = '<span class="action-link" onclick="fulfill(' + r.id + ',' + r.child_id + ')">确认取书</span> · <span class="action-link danger" onclick="cancelReservation(' + r.id + ')">取消预约</span>';
+        actions = '<span class="action-link" data-action="fulfill" data-id="' + r.id + '" data-child="' + r.child_id + '">确认取书</span> · <span class="action-link danger" data-action="cancel-reservation" data-id="' + r.id + '">取消预约</span>';
       } else if (r.status === 3) {
         actions = '<span class="action-link text-muted cursor-default">已取消</span>';
       } else {
@@ -104,14 +104,20 @@
     });
   }
 
-  function escapeHtml(str) {
-    if (!str) return '';
-    var div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  }
+
+  // Data-action delegation for migrated inline handlers
+  document.querySelector('.tabs')?.addEventListener('click', function(e) {
+    var tab = e.target.closest('[data-action="filter-tab"]');
+    if (tab) filterTab(tab, tab.getAttribute('data-filter'));
+  });
+  document.querySelector('[data-action="close-modal"]')?.addEventListener('click', function() { closeModal('confirmDialog'); });
+  document.getElementById('reservationBody').addEventListener('click', function(e) {
+    var el = e.target.closest('[data-action]');
+    if (!el) return;
+    if (el.getAttribute('data-action') === 'fulfill') fulfill(parseInt(el.dataset.id), parseInt(el.dataset.child));
+    if (el.getAttribute('data-action') === 'cancel-reservation') cancelReservation(parseInt(el.dataset.id));
+  });
 
   window.reservationPage = { allReservations, currentFilter, loadReservations, updateStats, filterTab, renderReservations, showConfirmDialog, fulfill, cancelReservation };
-  for (var k in window.reservationPage) window[k] = window.reservationPage[k];
 
 })();

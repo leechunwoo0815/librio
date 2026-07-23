@@ -26,8 +26,8 @@
 
 <!-- tabs -->
 <div class="tab-bar" id="tabBar">
-  <button class="tab-item active" onclick="switchTab('pages', this)">页面管理</button>
-  <button class="tab-item" onclick="switchTab('audio', this)">音频管理</button>
+  <button class="tab-item active" data-action="switch-tab" data-tab="pages">页面管理</button>
+  <button class="tab-item" data-action="switch-tab" data-tab="audio">音频管理</button>
 </div>
 
 <!-- Page Management Panel -->
@@ -37,8 +37,8 @@
       <span class="text-muted" id="pageCount">共 0 页</span>
     </div>
     <div class="flex gap-8">
-      <button class="btn btn-outline" onclick="openUploadModal()">上传 PDF 自动切页</button>
-      <button class="btn btn-primary" onclick="openPageModal()">+ 新增页面</button>
+      <button class="btn btn-outline" data-action="open-upload-modal">上传 PDF 自动切页</button>
+      <button class="btn btn-primary" data-action="open-page-modal">+ 新增页面</button>
     </div>
   </div>
 
@@ -54,7 +54,7 @@
       <span class="text-muted" id="audioCount">共 0 个音频文件</span>
     </div>
     <div class="flex gap-8">
-      <button class="btn btn-primary" onclick="openAudioModal()">上传音频</button>
+      <button class="btn btn-primary" data-action="open-audio-modal">上传音频</button>
     </div>
   </div>
 
@@ -78,7 +78,7 @@
 
 <!-- Upload PDF Modal -->
 {{ m.modal_overlay("uploadModal", "上传 PDF 自动切页", "md") }}
-  <div class="upload-zone" onclick="document.getElementById('pdfFileInput').click()">
+  <div class="upload-zone" data-action="click-pdf-input">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
     <div>点击或拖拽上传 PDF 文件</div>
     <div class="text-sm mt-4">支持 PDF 格式，上传后自动识别页面并切割</div>
@@ -86,8 +86,8 @@
   <input type="file" id="pdfFileInput" accept=".pdf" class="hidden" />
   <div class="form-group"><label>选择图书</label><select id="uploadBookSelect" class="form-input"><option value="">-- 请选择图书 --</option></select></div>
 {{ m.modal_actions() }}
-  <button class="btn btn-secondary" onclick="closeModal('uploadModal')">取消</button>
-  <button class="btn btn-primary" onclick="startUploadPdf()">开始处理</button>
+  <button class="btn btn-secondary" data-action="close-modal" data-modal="uploadModal">取消</button>
+  <button class="btn btn-primary" data-action="start-upload-pdf">开始处理</button>
 {{ m.modal_end() }}
 
 <!-- Edit Page Modal -->
@@ -100,8 +100,8 @@
   <div class="form-group"><label>页面音频 URL</label><input type="text" id="pageEditAudioUrl" class="form-input" placeholder="https://..." /></div>
   <div class="form-group"><label>文本内容 (支持 Markdown)</label><textarea id="pageEditText" class="form-textarea"></textarea></div>
 {{ m.modal_actions() }}
-  <button class="btn btn-secondary" onclick="closeModal('pageModal')">取消</button>
-  <button class="btn btn-primary" onclick="savePage()">保存</button>
+  <button class="btn btn-secondary" data-action="close-modal" data-modal="pageModal">取消</button>
+  <button class="btn btn-primary" data-action="save-page">保存</button>
 {{ m.modal_end() }}
 
 <!-- Upload Audio Modal -->
@@ -112,14 +112,14 @@
   <div class="form-group"><label>时长（如 3:45）</label><input type="text" id="audioDuration" class="form-input" placeholder="3:45" /></div>
   <div class="form-group"><label>绑定页码</label><input type="number" id="audioPageNumber" class="form-input" placeholder="留空表示全文" /></div>
 {{ m.modal_actions() }}
-  <button class="btn btn-secondary" onclick="closeModal('audioModal')">取消</button>
-  <button class="btn btn-primary" onclick="saveAudio()">保存</button>
+  <button class="btn btn-secondary" data-action="close-modal" data-modal="audioModal">取消</button>
+  <button class="btn btn-primary" data-action="save-audio">保存</button>
 {{ m.modal_end() }}
 
 {{ m.modal_overlay("confirmDialog", "确认操作") }}
   <p id="confirmMsg" class="confirm-msg"></p>
 {{ m.modal_actions() }}
-  <button type="button" class="btn btn-secondary" onclick="closeModal('confirmDialog')">取消</button>
+  <button type="button" class="btn btn-secondary" data-action="close-modal" data-modal="confirmDialog">取消</button>
   <button type="button" class="btn btn-primary" id="confirmBtn">确认</button>
 {{ m.modal_end() }}
 

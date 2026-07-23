@@ -37,8 +37,8 @@
     body.innerHTML = list.map(function(item) {
       var statusCls = item.status === 'linked' ? 'tag-done' : 'tag-pending';
       var statusText = item.status === 'linked' ? '已关联' : '待关联';
-      var actions = '<button class="action-sm" onclick="playAudio(\'' + escapeAttr(item.file_url || '') + '\',\'' + escapeAttr(item.filename || '') + '\')">播放</button>';
-      actions += '<button class="action-sm" onclick="deleteAudio(' + item.id + ')">删除</button>';
+      var actions = '<button class="action-sm" data-action="play-audio" data-url="' + escapeAttr(item.file_url || '') + '" data-name="' + escapeAttr(item.filename || '') + '">播放</button>';
+      actions += '<button class="action-sm" data-action="delete-audio" data-id="' + item.id + '">删除</button>';
       return '<tr>' +
         '<td>' + escapeHtml(item.filename || '-') + '</td>' +
         '<td>' + escapeHtml(item.book_title || '-') + '</td>' +
@@ -115,16 +115,22 @@
     document.getElementById('audioPlayerBar').style.display = 'none';
   }
 
-  function escapeHtml(str) {
-    var div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  }
   function escapeAttr(str) {
     return str.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
+  // Data-action delegation
+  document.querySelector('[data-action="filter-table"]')?.addEventListener('change', function() { filterTable(); });
+  document.querySelector('[data-action="filter-table"]')?.addEventListener('input', function() { filterTable(); });
+  document.querySelector('[data-action="close-player"]')?.addEventListener('click', function() { closePlayer(); });
+  document.querySelector('[data-action="close-modal"]')?.addEventListener('click', function() { closeModal('confirmDialog'); });
+  document.getElementById('audioBody').addEventListener('click', function(e) {
+    var el = e.target.closest('[data-action]');
+    if (!el) return;
+    if (el.getAttribute('data-action') === 'play-audio') playAudio(el.dataset.url, el.dataset.name);
+    if (el.getAttribute('data-action') === 'delete-audio') deleteAudio(parseInt(el.dataset.id));
+  });
+
   window.audioPage = { audioData, loadAudios, renderStats, renderTable, populateReaders, filterTable, showConfirmDialog, deleteAudio, playAudio, closePlayer, escapeAttr };
-  for (var k in window.audioPage) window[k] = window.audioPage[k];
 
 })();

@@ -22,13 +22,13 @@
 
 <div class="toolbar">
   <div class="toolbar-left">
-    <select class="filter-select" id="readerFilter" onchange="filterTable()">
+    <select class="filter-select" id="readerFilter" data-action="filter-table">
       <option value="">全部朗读者</option>
     </select>
   </div>
   <div class="search-box">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-    <input type="text" id="searchInput" placeholder="搜索音频文件名..." oninput="filterTable()" />
+    <input type="text" id="searchInput" placeholder="搜索音频文件名..." data-action="filter-table" />
   </div>
 </div>
 
@@ -52,7 +52,7 @@
 <div class="audio-player-bar hidden" id="audioPlayerBar">
   <span id="playerFileName"></span>
   <audio id="audioPreview" controls class="audio-preview"></audio>
-  <button class="btn btn-outline btn-sm" onclick="closePlayer()">关闭</button>
+  <button class="btn btn-outline btn-sm" data-action="close-player">关闭</button>
 
 </div>
 
@@ -60,7 +60,7 @@
 {{ m.modal_overlay("confirmDialog", "确认操作") }}
   <p id="confirmMsg" class="confirm-msg"></p>
 {{ m.modal_actions() }}
-  <button type="button" class="btn btn-secondary" onclick="closeModal('confirmDialog')">取消</button>
+  <button type="button" class="btn btn-secondary" data-action="close-modal" data-modal="confirmDialog">取消</button>
   <button type="button" class="btn btn-primary" id="confirmBtn">确认</button>
 {{ m.modal_end() }}
 {% endblock %}

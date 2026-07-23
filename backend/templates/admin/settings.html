@@ -116,19 +116,19 @@
       </div>
       <div class="setting-item">
         <div class="setting-label"><div class="label-text">新书入库通知</div><div class="label-desc">新书入库时向匹配用户推送</div></div>
-        <div class="setting-control"><div class="toggle-wrap"><div class="toggle on" onclick="this.classList.toggle('on')"></div><span class="toggle-label">已开启</span></div></div>
+        <div class="setting-control"><div class="toggle-wrap"><div class="toggle on" data-action="toggle-switch"></div><span class="toggle-label">已开启</span></div></div>
       </div>
       <div class="setting-item">
         <div class="setting-label"><div class="label-text">活动报名通知</div><div class="label-desc">活动开始前自动提醒报名用户</div></div>
-        <div class="setting-control"><div class="toggle-wrap"><div class="toggle on" onclick="this.classList.toggle('on')"></div><span class="toggle-label">已开启</span></div></div>
+        <div class="setting-control"><div class="toggle-wrap"><div class="toggle on" data-action="toggle-switch"></div><span class="toggle-label">已开启</span></div></div>
       </div>
     </div>
   </div>
 
   <!-- save actions -->
   <div class="settings-actions">
-    <button class="btn btn-secondary" onclick="loadConfigs()">重置默认</button>
-    <button class="btn btn-primary" onclick="saveAllSettings()">保存设置</button>
+    <button class="btn btn-secondary" data-action="reset-settings">重置默认</button>
+    <button class="btn btn-primary" data-action="save-settings">保存设置</button>
   </div>
 
   <!-- admin accounts -->
@@ -142,7 +142,7 @@
         </tbody>
       </table>
       {% if user_can("admin.create") %}
-      <button class="btn btn-primary mt-12" onclick="openAddAdminModal()">+ 添加管理员</button>
+      <button class="btn btn-primary mt-12" data-action="open-add-admin-modal">+ 添加管理员</button>
       {% endif %}
     </div>
   </div>
@@ -150,7 +150,7 @@
 
 <!-- admin modal -->
 {{ m.modal_overlay("adminModal", "添加管理员", "md") }}
-  <form id="adminForm" onsubmit="submitAdmin(event)">
+  <form id="adminForm" data-action="submit-admin">
     <input type="hidden" id="adminEditId" value="" />
     <div class="form-group">
       <label>用户名 <span class="text-error">*</span></label>
@@ -167,7 +167,7 @@
     </div>
     <div class="form-group">
       <label>角色</label>
-      <select class="form-input" name="admin_role_id" id="adminRoleSelect" onchange="onRoleChange(this)">
+      <select class="form-input" name="admin_role_id" id="adminRoleSelect" data-action="on-role-change">
         <option value="">加载中...</option>
       </select>
     </div>
@@ -179,7 +179,7 @@
     </div>
   </form>
 {{ m.modal_actions() }}
-  <button type="button" class="btn btn-secondary" onclick="closeModal('adminModal')">取消</button>
+  <button type="button" class="btn btn-secondary" data-action="close-modal" data-modal="adminModal">取消</button>
   <button type="submit" class="btn btn-primary" id="adminSubmitBtn" form="adminForm">保存</button>
 {{ m.modal_end() }}
 {% endblock %}

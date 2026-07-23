@@ -38,10 +38,11 @@ router = APIRouter(prefix="/reading", tags=["阅读"])
 def get_book_pages(
     book_id: int,
     service: ReadingService = Depends(get_reading_service),
-    current_user=Depends(get_current_user),
+    child=Depends(GetOwnedChildFromQuery()),
+    db: Session = Depends(get_db),
 ):
-    """获取图书所有页面"""
-    return service.get_book_pages(book_id)
+    """获取图书所有页面 — 需校验逾期状态"""
+    return service.get_book_pages(book_id, child.id)
 
 
 @router.get("/progress/{child_id}/{book_id}", response_model=ProgressResponse | None)

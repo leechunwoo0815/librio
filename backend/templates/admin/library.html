@@ -34,9 +34,9 @@
   <div class="toolbar-left">
     <div class="search-box">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-      <input type="text" id="searchInput" placeholder="搜索书名、ISBN、作者…" onkeyup="if(event.key==='Enter')loadBooks()" />
+      <input type="text" id="searchInput" placeholder="搜索书名、ISBN、作者…" data-action="search-book" />
     </div>
-    <select class="filter-select" id="arFilter" onchange="loadBooks()">
+    <select class="filter-select" id="arFilter" data-action="load-books">
       <option value="">全部 AR 级别</option>
       <option value="0.5-1.0">AR 0.5-1.0</option>
       <option value="1.0-2.0">AR 1.0-2.0</option>
@@ -45,7 +45,7 @@
       <option value="5.0-8.0">AR 5.0-8.0</option>
       <option value="8.0+">AR 8.0+</option>
     </select>
-    <select class="filter-select" id="statusFilter" onchange="loadBooks()">
+    <select class="filter-select" id="statusFilter" data-action="load-books">
       <option value="">全部状态</option>
       <option value="available">在馆可借</option>
       <option value="borrowed">已借出</option>
@@ -53,11 +53,11 @@
     </select>
   </div>
   <div class="flex gap-8">
-    <button class="btn btn-primary" onclick="toggleModal()">
+    <button class="btn btn-primary" data-action="toggle-modal">
       <svg class="icon-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
        新增图书
     </button>
-    <button class="btn btn-outline" onclick="showToast('批量导入 Excel/CSV', 'error')">
+    <button class="btn btn-outline" data-action="batch-import">
       <svg class="icon-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
        批量导入图书
     </button>
@@ -130,8 +130,8 @@
     </div>
   </div>
 {{ m.modal_actions() }}
-  <button class="btn btn-secondary" onclick="closeModal('bookModal')">取消</button>
-  <button class="btn btn-primary" onclick="addBook()">确认入库</button>
+  <button class="btn btn-secondary" data-action="close-modal" data-modal="bookModal">取消</button>
+  <button class="btn btn-primary" data-action="add-book">确认入库</button>
 {{ m.modal_end() }}
 {% endblock %}
 

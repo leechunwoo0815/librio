@@ -5,6 +5,7 @@
   const searchInput = document.getElementById('searchInput');
   const venueFilter = document.getElementById('venueFilter');
   const statusFilter = document.getElementById('statusFilter');
+  var _teacherMap = {};
 
   document.addEventListener('DOMContentLoaded', () => {
     loadTeachers();
@@ -83,6 +84,7 @@
       return;
     }
     teacherGrid.innerHTML = teachers.map((t, i) => {
+      _teacherMap[t.id] = t;
       const st = getStatusInfo(t);
       const venue = getVenueName(t);
       const role = t.title || t.expertise || '阅读顾问';
@@ -108,13 +110,13 @@
           </div>
           <div class="teacher-admin-row" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:13px;display:flex;align-items:center;justify-content:space-between;">
             <span>管理员：${t.admin_role_name ? escapeHtml(t.admin_role_name) : '<span class="text-muted">未创建</span>'}</span>
-            <button class="action-btn btn-sm" onclick="openAdminAccountModal(${t.id}, ${t.admin_id || 0}, '${jsEscape(t.phone || '')}')">${t.admin_id ? '编辑' : '创建'}</button>
+            <button class="action-btn btn-sm" data-action="open-admin-account-modal" data-id="${t.id}" data-admin-id="${t.admin_id || 0}" data-phone="${jsEscape(t.phone || '')}">${t.admin_id ? '编辑' : '创建'}</button>
           </div>
           <div class="teacher-actions">
-            <button class="action-btn" onclick="editTeacher(${t.id}, '${jsEscape(t.name || '')}', '${jsEscape(t.english_name || '')}', '${jsEscape(t.phone || '')}', ${t.venue_id || 0}, '${jsEscape(t.title || '')}', '${jsEscape(t.introduction || '')}', '${jsEscape(t.expertise || '')}', '${jsEscape(t.status || 'online')}')">编辑</button>
-            <button class="action-btn" onclick="viewSchedule(${t.id}, '${jsEscape(t.name || '')}')">课表</button>
-            <button class="action-btn" onclick="viewStudents(${t.id}, '${jsEscape(t.name || '')}')">学员</button>
-            <button class="action-btn action-btn-danger" onclick="deleteTeacher(${t.id}, '${jsEscape(t.name || '')}')">删除</button>
+            <button class="action-btn" data-action="edit-teacher" data-id="${t.id}">编辑</button>
+            <button class="action-btn" data-action="view-schedule" data-id="${t.id}" data-name="${jsEscape(t.name || '')}">课表</button>
+            <button class="action-btn" data-action="view-students" data-id="${t.id}" data-name="${jsEscape(t.name || '')}">学员</button>
+            <button class="action-btn action-btn-danger" data-action="delete-teacher" data-id="${t.id}" data-name="${jsEscape(t.name || '')}">删除</button>
           </div>
         </div>`;
     }).join('');
@@ -162,19 +164,21 @@
     }
   }
 
-  function editTeacher(id, name, englishName, phone, venueId, title, introduction, expertise, status) {
+  function editTeacher(id) {
+    var t = _teacherMap[id];
+    if (!t) return;
     document.getElementById('editId').value = id;
     document.querySelector('#addModal h2').textContent = '编辑老师';
     document.getElementById('submitBtn').textContent = '保存修改';
     const form = document.getElementById('addForm');
-    form.elements['name'].value = name;
-    form.elements['english_name'].value = englishName;
-    form.elements['phone'].value = phone;
-    form.elements['venue_id'].value = venueId;
-    form.elements['title'].value = title || '';
-    form.elements['introduction'].value = introduction;
-    form.elements['expertise'].value = expertise;
-    form.elements['status'].value = status || 'online';
+    form.elements['name'].value = t.name || '';
+    form.elements['english_name'].value = t.english_name || '';
+    form.elements['phone'].value = t.phone || '';
+    form.elements['venue_id'].value = t.venue_id || 0;
+    form.elements['title'].value = t.title || '';
+    form.elements['introduction'].value = t.introduction || '';
+    form.elements['expertise'].value = t.expertise || '';
+    form.elements['status'].value = t.status || 'online';
     showModal('addModal');
   }
 
@@ -198,7 +202,7 @@
       let html = '<div class="p-20">';
       html += '<div class="flex-between mb-16">';
       html += '<h3 class="m-0">' + escapeHtml(teacherName) + ' 的课表</h3>';
-      html += '<button class="btn-primary btn-sm" onclick="addSchedulePrompt(' + teacherId + ', \'' + jsEscape(teacherName) + '\')">+ 添加排班</button>';
+      html += '<button class="btn-primary btn-sm" data-action="add-schedule-prompt" data-teacher-id="' + teacherId + '" data-teacher-name="' + jsEscape(teacherName) + '">+ 添加排班</button>';
       html += '</div>';
       if (schedules.length === 0) {
         html += '<p class="text-muted text-center p-20">暂无排班</p>';
@@ -210,7 +214,7 @@
           html += '<tr><td>' + (weekdays[s.weekday] || s.weekday) + '</td>';
           html += '<td>' + escapeHtml(s.start_time || '-') + '</td>';
           html += '<td>' + escapeHtml(s.end_time || '-') + '</td>';
-          html += '<td><button class="action-btn action-btn-danger btn-sm" onclick="deleteScheduleItem(' + s.id + ', ' + teacherId + ', \'' + jsEscape(teacherName) + '\')">删除</button></td></tr>';
+          html += '<td><button class="action-btn action-btn-danger btn-sm" data-action="delete-schedule-item" data-id="' + s.id + '" data-teacher-id="' + teacherId + '" data-teacher-name="' + jsEscape(teacherName) + '">删除</button></td></tr>';
         });
         html += '</tbody></table>';
       }
@@ -286,7 +290,7 @@
       } else {
         html += '<table class="schedule-table"><thead><tr><th>姓名</th><th>年龄</th><th>状态</th></tr></thead><tbody>';
         children.forEach(function(c) {
-          html += '<tr><td><span class="action-link" onclick="showChildDetail(' + c.id + ')">' + escapeHtml(c.name || '-') + '</span></td>';
+          html += '<tr><td><span class="action-link" data-action="show-child-detail" data-id="' + c.id + '">' + escapeHtml(c.name || '-') + '</span></td>';
           html += '<td>' + (c.age != null ? c.age + ' 岁' : '-') + '</td>';
           html += '<td>' + (c.status != null ? c.status : '-') + '</td></tr>';
         });
@@ -398,13 +402,47 @@
     }
   }
 
-  function escapeHtml(str) {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  }
+
+  document.addEventListener('click', function(e) {
+    var target = e.target.closest('[data-action]');
+    if (!target) return;
+    var action = target.getAttribute('data-action');
+    if (action === 'edit-teacher') {
+      editTeacher(parseInt(target.getAttribute('data-id')));
+    } else if (action === 'view-schedule') {
+      viewSchedule(parseInt(target.getAttribute('data-id')), target.getAttribute('data-name') || '');
+    } else if (action === 'view-students') {
+      viewStudents(parseInt(target.getAttribute('data-id')), target.getAttribute('data-name') || '');
+    } else if (action === 'delete-teacher') {
+      deleteTeacher(parseInt(target.getAttribute('data-id')), target.getAttribute('data-name') || '');
+    } else if (action === 'open-admin-account-modal') {
+      openAdminAccountModal(parseInt(target.getAttribute('data-id')), parseInt(target.getAttribute('data-admin-id') || '0'), target.getAttribute('data-phone') || '');
+    } else if (action === 'add-schedule-prompt') {
+      addSchedulePrompt(parseInt(target.getAttribute('data-teacher-id')), target.getAttribute('data-teacher-name') || '');
+    } else if (action === 'delete-schedule-item') {
+      deleteScheduleItem(parseInt(target.getAttribute('data-id')), parseInt(target.getAttribute('data-teacher-id')), target.getAttribute('data-teacher-name') || '');
+    } else if (action === 'show-child-detail') {
+      showChildDetail(parseInt(target.getAttribute('data-id')));
+    } else if (action === 'open-add-modal') {
+      openAddModal();
+    } else if (action === 'close-modal') {
+      closeModal(target.getAttribute('data-modal'));
+    } else if (action === 'confirm-add-schedule') {
+      confirmAddSchedule();
+    }
+  });
+
+  document.addEventListener('submit', function(e) {
+    var target = e.target.closest('[data-action]');
+    if (!target) return;
+    var action = target.getAttribute('data-action');
+    if (action === 'submit-teacher') {
+      submitTeacher(e);
+    } else if (action === 'submit-admin-account') {
+      submitAdminAccount(e);
+    }
+  });
 
   window.teachersPage = { teacherGrid, searchInput, venueFilter, statusFilter, loadVenues, loadTeachers, getAvatarClass, getInitial, getVenueName, getStatusInfo, renderTeachers, openAddModal, closeAddModal, submitTeacher, editTeacher, deleteTeacher, viewSchedule, schedPromptData, showConfirmModal, addSchedulePrompt, confirmAddSchedule, deleteScheduleItem, viewStudents, showChildDetail, openAdminAccountModal, submitAdminAccount };
-  for (var k in window.teachersPage) window[k] = window.teachersPage[k];
 
 })();

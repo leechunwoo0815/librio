@@ -143,4 +143,12 @@
 
   // Initial load
   loadMessages();
+
+  document.getElementById('msgForm').addEventListener('submit', function(e) {
+    sendMessage(e);
+  });
+
+  document.getElementById('msgTarget').addEventListener('change', function() {
+    toggleTargetUser();
+  });
 })();

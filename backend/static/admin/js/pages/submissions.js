@@ -132,23 +132,29 @@
     }
   }
 
-  function escapeHtml(str) {
-    if (!str) return '';
-    var div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  }
 
   document.addEventListener('DOMContentLoaded', loadSubmissions);
   document.addEventListener('DOMContentLoaded', function() {
-    document.body.addEventListener('click', function(e) {
-      var el = e.target.closest('[data-action="open-review"]');
-      if (!el) return;
-      e.preventDefault();
-      openReview(parseInt(el.dataset.id), el.dataset.child, el.dataset.book, el.dataset.time, el.dataset.readonly === 'true');
+    document.addEventListener('click', function(e) {
+      var target = e.target.closest('[data-action]');
+      if (!target) return;
+      var action = target.getAttribute('data-action');
+      if (action === 'open-review') {
+        e.preventDefault();
+        openReview(parseInt(target.getAttribute('data-id')), target.getAttribute('data-child'), target.getAttribute('data-book'), target.getAttribute('data-time'), target.getAttribute('data-readonly') === 'true');
+      } else if (action === 'switch-tab') {
+        switchTab(target, target.getAttribute('data-tab'));
+      } else if (action === 'do-review') {
+        doReview(parseInt(target.getAttribute('data-status')));
+      } else if (action === 'close-modal') {
+        closeModal(target.getAttribute('data-modal'));
+      }
+    });
+    document.addEventListener('input', function(e) {
+      var target = e.target.closest('[data-action="load-submissions"]');
+      if (target) loadSubmissions();
     });
   });
 
   window.submissionsPage = { currentReviewId, currentTab, currentPage, pageSize, totalItems, searchKeyword, getStatusParam, switchTab, loadSubmissions, goToPage, onPageSizeChange, updateStats, renderSubmissions, openReview, doReview };
-  for (var k in window.submissionsPage) window[k] = window.submissionsPage[k];
 })();

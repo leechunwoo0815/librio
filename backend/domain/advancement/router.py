@@ -2,11 +2,17 @@
 """晋级域 API 路由 — 级别/测验/成就"""
 
 from fastapi import APIRouter, Depends, Query
+from sqlalchemy.orm import Session
 
 from backend.common.exceptions import ValidationError
 from backend.common.dependencies import get_advancement_service, get_leaderboard_service
-from backend.middleware.ownership import GetOwnedChild, GetOwnedQuiz
+from backend.middleware.ownership import (
+    GetOwnedChild,
+    GetOwnedQuiz,
+    verify_child_ownership,
+)
 from backend.middleware.auth import get_current_user
+from backend.database import get_db
 from backend.domain.advancement.schemas import (
     LevelResponse,
     ChildLevelResponse,
@@ -55,12 +61,14 @@ def start_quiz(
     child_id: int | None = None,
     service: AdvancementService = Depends(get_advancement_service),
     current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     """开始测验"""
     # 优先使用 query 参数 child_id，其次 current_child_id
     cid = child_id or getattr(current_user, "current_child_id", None)
     if not cid:
         raise ValidationError("请先选择孩子")
+    verify_child_ownership(cid, current_user, db)
     return service.start_quiz(cid, data)
 
 

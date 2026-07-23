@@ -8,8 +8,8 @@
 {% block content %}
 <!-- Tab bar -->
 <div class="filter-bar">
-  <button class="btn {{ 'btn-primary' if active_tab == 'pending' else 'btn-outline' }}" onclick="switchTab('pending')">待审核</button>
-  <button class="btn {{ 'btn-primary' if active_tab == 'history' else 'btn-outline' }}" onclick="switchTab('history')">审核记录</button>
+  <button class="btn {{ 'btn-primary' if active_tab == 'pending' else 'btn-outline' }}" data-action="switch-tab" data-tab="pending">待审核</button>
+  <button class="btn {{ 'btn-primary' if active_tab == 'history' else 'btn-outline' }}" data-action="switch-tab" data-tab="history">审核记录</button>
   <div class="flex-1"></div>
 </div>
 
@@ -48,8 +48,8 @@
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-danger" onclick="doReject()">拒绝</button>
-      <button class="btn btn-primary" onclick="doApprove()">通过</button>
+      <button class="btn btn-danger" data-action="do-reject">拒绝</button>
+      <button class="btn btn-primary" data-action="do-approve">通过</button>
       <button class="btn btn-outline" data-close-modal="reviewModal">取消</button>
     </div>
   </div>

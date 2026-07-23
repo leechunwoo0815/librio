@@ -27,6 +27,23 @@
       typeSel.addEventListener('change', updateTriggerHint);
       updateTriggerHint();
     }
+    document.addEventListener('click', function(e) {
+      var target = e.target.closest('[data-action]');
+      if (!target) return;
+      var action = target.getAttribute('data-action');
+      var id = target.getAttribute('data-id');
+      var tab = target.getAttribute('data-tab');
+      if (action === 'switch-ach-tab' && tab) switchAchTab(tab, target);
+      else if (action === 'open-badge-modal') openBadgeModal();
+      else if (action === 'close-badge-modal') closeBadgeModal();
+      else if (action === 'edit-badge' && id) editBadge(Number(id));
+      else if (action === 'delete-badge' && id) deleteBadge(Number(id));
+      else if (action === 'close-modal') closeModal(target.getAttribute('data-modal'));
+    });
+    document.addEventListener('submit', function(e) {
+      var target = e.target.closest('[data-action="submit-badge"]');
+      if (target) submitBadge(e);
+    });
   });
 
   function updateTriggerHint() {
@@ -119,8 +136,8 @@
         <td>${a.award_count != null ? a.award_count : '-'}</td>
         <td>
           <div class="table-actions">
-            <button class="btn btn-outline btn-sm" onclick="editBadge(${a.id})">编辑</button>
-            <button class="btn btn-danger btn-sm" onclick="deleteBadge(${a.id})">删除</button>
+            <button class="btn btn-outline btn-sm" data-action="edit-badge" data-id="${a.id}">编辑</button>
+            <button class="btn btn-danger btn-sm" data-action="delete-badge" data-id="${a.id}">删除</button>
           </div>
         </td>
       </tr>
@@ -254,13 +271,7 @@
     });
   }
 
-  function escapeHtml(str) {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  }
 
   window.achievementsPage = { TYPE_MAP, TYPE_KEY_MAP, TYPE_BADGE_CLS, TRIGGER_HINTS, updateTriggerHint, explainTrigger, loadAchievements, loadRecords, getTypeBadge, getTypeLabel, renderBadges, updateBadgeFilter, renderRecords, switchAchTab, openBadgeModal, closeBadgeModal, submitBadge, editBadge, showConfirmDialog, deleteBadge };
-  for (var k in window.achievementsPage) window[k] = window.achievementsPage[k];
 
 })();

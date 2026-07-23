@@ -46,7 +46,7 @@
       var statusHtml = statusMap[app.status] || '<span class="badge badge-muted">未知</span>';
       var actions = '';
       if (app.status === 0) {
-        actions = '<button class="btn btn-sm btn-primary" onclick="openReview(' + app.id + ')">审核</button>';
+        actions = '<button class="btn btn-sm btn-primary" data-action="open-review" data-id="' + app.id + '">审核</button>';
       }
       return '<tr>' +
         '<td>' + app.id + '</td>' +
@@ -105,13 +105,13 @@
     var html = '<div class="flex-center gap-8"><span class="text-muted">共 ' + total + ' 条</span></div>';
     html += '<div class="pagination-info">第 ' + page + '/' + totalPages + ' 页</div>';
     html += '<div class="pagination-pages">';
-    if (page > 1) html += '<a href="javascript:void(0)" onclick="loadTransfers(' + (page-1) + ')">&lt;</a>';
+    if (page > 1) html += '<a href="javascript:void(0)" data-action="page" data-page="' + (page-1) + '">&lt;</a>';
     var start = Math.max(1, page - 2);
     var end = Math.min(totalPages, page + 2);
     for (var i = start; i <= end; i++) {
-      html += '<a href="javascript:void(0)" class="' + (i === page ? 'active' : '') + '" onclick="loadTransfers(' + i + ')">' + i + '</a>';
+      html += '<a href="javascript:void(0)" class="' + (i === page ? 'active' : '') + '" data-action="page" data-page="' + i + '">' + i + '</a>';
     }
-    if (page < totalPages) html += '<a href="javascript:void(0)" onclick="loadTransfers(' + (page+1) + ')">&gt;</a>';
+    if (page < totalPages) html += '<a href="javascript:void(0)" data-action="page" data-page="' + (page+1) + '">&gt;</a>';
     html += '</div>';
     el.innerHTML = html;
   }
@@ -120,12 +120,6 @@
     loadTransfers(1);
   });
 
-  function escapeHtml(str) {
-    if (!str) return '';
-    var div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  }
 
   function showToast(msg) {
     var el = document.createElement('div');
@@ -140,7 +134,22 @@
     try { return new Date(val).toLocaleString('zh-CN'); } catch(e) { return val; }
   }
 
+  // Data-action delegation
+  document.querySelector('.filter-bar')?.addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-action="switch-tab"]');
+    if (btn) switchTab(btn.getAttribute('data-tab'));
+  });
+  document.querySelector('[data-action="do-reject"]')?.addEventListener('click', function() { doReject(); });
+  document.querySelector('[data-action="do-approve"]')?.addEventListener('click', function() { doApprove(); });
+  document.getElementById('transferTable').addEventListener('click', function(e) {
+    var el = e.target.closest('[data-action="open-review"]');
+    if (el) openReview(parseInt(el.dataset.id));
+  });
+  document.getElementById('pagination').addEventListener('click', function(e) {
+    var el = e.target.closest('[data-action="page"]');
+    if (el) loadTransfers(parseInt(el.dataset.page));
+  });
+
   window.benefitTransfersPage = { currentPage, pageSize, currentTab, currentAppId, switchTab, loadTransfers, renderTable, openReview, doApprove, doReject, pageUi };
-  for (var k in window.benefitTransfersPage) window[k] = window.benefitTransfersPage[k];
 
 })();

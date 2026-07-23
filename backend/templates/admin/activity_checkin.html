@@ -9,7 +9,7 @@
 <!-- Activity Selector -->
 <div class="activity-selector">
   <label>选择活动：</label>
-  <select class="filter-select" id="activitySelect" onchange="loadAttendees()">
+  <select class="filter-select" id="activitySelect" data-action="load-attendees">
     <option value="">请选择活动...</option>
   </select>
 </div>
@@ -17,7 +17,7 @@
 <!-- QR Scan -->
 <div class="scan-area">
   <input class="scan-input" id="scanInput" type="text" placeholder="扫描或输入签到码..." />
-  <button class="btn btn-primary" onclick="doSignIn()">确认签到</button>
+  <button class="btn btn-primary" data-action="do-sign-in">确认签到</button>
 </div>
 <p class="text-sm text-muted scan-hint">
    签到码说明：请扫描用户报名后生成的电子门票二维码（/activity/enroll 返回的 ticket_no），不是会员二维码。

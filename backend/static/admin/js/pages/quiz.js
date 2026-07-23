@@ -4,6 +4,18 @@
 document.addEventListener('DOMContentLoaded', function() {
   loadStats();
   loadRecentQuizzes();
+
+  document.body.addEventListener('click', function(e) {
+    var el = e.target.closest('[data-action]');
+    if (!el) return;
+    e.preventDefault();
+    var action = el.getAttribute('data-action');
+    if (action === 'generate-quiz') {
+      generateQuiz();
+    } else if (action === 'export-quiz-results') {
+      exportQuizResults();
+    }
+  });
 });
 
 async function loadStats() {
@@ -116,5 +128,4 @@ function formatDateTime(isoStr) {
 }
 
   window.quizPage = { loadStats, loadRecentQuizzes, generateQuiz, exportQuizResults };
-  for (var k in window.quizPage) window[k] = window.quizPage[k];
 })();

@@ -35,19 +35,19 @@
   <div class="toolbar-left">
     <div class="search-box">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-      <input type="text" id="searchInput" placeholder="搜索学员姓名..." oninput="filterTable()" />
+      <input type="text" id="searchInput" placeholder="搜索学员姓名..." data-action="filter-table" />
     </div>
-    <select class="filter-select" id="statusFilter" onchange="filterTable()">
+    <select class="filter-select" id="statusFilter" data-action="filter-table">
       <option value="">全部状态</option>
       <option value="completed">已完成</option>
       <option value="pending">待评估</option>
       <option value="scheduled">已安排</option>
     </select>
-    <select class="filter-select" id="venueFilter" onchange="filterTable()">
+    <select class="filter-select" id="venueFilter" data-action="filter-table">
       <option value="">全部场馆</option>
     </select>
   </div>
-  <button class="btn btn-primary" onclick="openNewAssessment()">
+  <button class="btn btn-primary" data-action="open-new-assessment">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
     新建评估
   </button>
@@ -76,7 +76,7 @@
 <div class="pagination" id="paginationBar"></div>
 
 {{ m.modal_overlay("assessModal", "新建评估", "md") }}
-  <form id="assessForm" onsubmit="submitAssessment(event)">
+  <form id="assessForm" data-action="submit-assessment">
     <input type="hidden" id="editId" value="" />
     <input type="hidden" id="selectedChildId" name="child_id" value="" />
 
@@ -85,9 +85,9 @@
       <label>选择孩子 <span class="required">*</span></label>
       <div class="flex gap-8">
         <input type="text" class="form-input flex-1" id="childKeyword" placeholder="输入姓名/英文名/手机号" />
-        <button type="button" class="btn btn-outline btn-sm" onclick="searchChildForAssessment()">搜索</button>
+        <button type="button" class="btn btn-outline btn-sm" data-action="search-child-for-assessment">搜索</button>
       </div>
-      <select class="form-input mt-8" id="childSelect" onchange="onChildSelected(this)">
+      <select class="form-input mt-8" id="childSelect" data-action="on-child-selected">
         <option value="">请选择孩子</option>
       </select>
       <div id="childSearchError" class="text-error text-sm mt-4"></div>
@@ -144,14 +144,14 @@
     </div>
   </form>
 {{ m.modal_actions() }}
-  <button type="button" class="btn btn-secondary" onclick="closeModal('assessModal')">取消</button>
+  <button type="button" class="btn btn-secondary" data-action="close-modal" data-modal="assessModal">取消</button>
   <button type="submit" class="btn btn-primary" id="submitBtn" form="assessForm">保存</button>
 {{ m.modal_end() }}
 
 {{ m.modal_overlay("confirmDialog", "确认操作") }}
   <p id="confirmMsg" class="confirm-msg"></p>
 {{ m.modal_actions() }}
-  <button type="button" class="btn btn-secondary" onclick="closeModal('confirmDialog')">取消</button>
+  <button type="button" class="btn btn-secondary" data-action="close-modal" data-modal="confirmDialog">取消</button>
   <button type="button" class="btn btn-primary" id="confirmBtn">确认</button>
 {{ m.modal_end() }}
 {% endblock %}

@@ -9,6 +9,29 @@
     loadConfigs();
     loadAdmins();
     loadRoles();
+    document.addEventListener('click', function(e) {
+      var target = e.target.closest('[data-action]');
+      if (!target) return;
+      var action = target.getAttribute('data-action');
+      var id = target.getAttribute('data-id');
+      var name = target.getAttribute('data-name');
+      var modal = target.getAttribute('data-modal');
+      if (action === 'toggle-switch') { target.classList.toggle('on'); }
+      else if (action === 'reset-settings') loadConfigs();
+      else if (action === 'save-settings') saveAllSettings();
+      else if (action === 'open-add-admin-modal') openAddAdminModal();
+      else if (action === 'edit-admin' && id) editAdmin(Number(id));
+      else if (action === 'delete-admin' && id) deleteAdmin(Number(id), name || '');
+      else if (action === 'close-modal' && modal) closeModal(modal);
+    });
+    document.addEventListener('change', function(e) {
+      var target = e.target.closest('[data-action="on-role-change"]');
+      if (target) onRoleChange(target);
+    });
+    document.addEventListener('submit', function(e) {
+      var target = e.target.closest('[data-action="submit-admin"]');
+      if (target) submitAdmin(e);
+    });
   });
 
   async function loadRoles() {
@@ -79,8 +102,8 @@
           '<td><span class="role-badge ' + badge + '">' + escapeHtml(a.role_name || '--') + '</span></td>' +
           '<td>' + (a.last_login ? formatDateTime(a.last_login) : '--') + '</td>' +
           '<td>' +
-            '<button class="action-btn-edit" data-perm="admin.edit" onclick="editAdmin(' + a.id + ')">编辑</button>' +
-            '<button class="action-btn-danger" data-perm="admin.delete" onclick="deleteAdmin(' + a.id + ', \'' + jsEscape(a.name || a.username) + '\')">删除</button>' +
+            '<button class="action-btn-edit" data-perm="admin.edit" data-action="edit-admin" data-id="' + a.id + '">编辑</button>' +
+            '<button class="action-btn-danger" data-perm="admin.delete" data-action="delete-admin" data-id="' + a.id + '" data-name="' + jsEscape(a.name || a.username) + '">删除</button>' +
           '</td>' +
         '</tr>';
       }).join('');
@@ -212,13 +235,6 @@
     showToast('保存完成：成功 ' + saved + ' 项' + (failed ? '，失败 ' + failed + ' 项' : ''));
   }
 
-  function escapeHtml(str) {
-    if (!str) return '';
-    var div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  }
 
   window.settingsPage = { allConfigs, _roles, _teachers, loadRoles, loadTeachers, onRoleChange, loadConfigs, loadAdmins, editAdmin, openAddAdminModal, closeAdminModal, submitAdmin, deleteAdmin, saveAllSettings };
-  for (var k in window.settingsPage) window[k] = window.settingsPage[k];
 })();

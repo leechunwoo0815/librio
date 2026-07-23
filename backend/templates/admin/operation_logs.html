@@ -13,9 +13,9 @@
   <input type="date" id="dateFrom" class="search-input" />
   <span class="date-sep">至</span>
   <input type="date" id="dateTo" class="search-input" />
-  <button class="btn btn-primary" onclick="loadLogs(1)">查询</button>
+  <button class="btn btn-primary" data-action="load-logs" data-page="1">查询</button>
   <div class="flex-1"></div>
-  <button class="btn btn-secondary" onclick="exportLogs()">导出日志</button>
+  <button class="btn btn-secondary" data-action="export-logs">导出日志</button>
 </div>
 
 <!-- Table -->

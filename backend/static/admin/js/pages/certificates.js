@@ -62,7 +62,7 @@
         '<td>' + escapeHtml((cert.issued_at || '-').slice(0,10)) + '</td>' +
         '<td>' + escapeHtml((cert.create_time || '-').slice(0,10)) + '</td>' +
         '<td>' +
-        '<button class="btn btn-primary btn-sm" onclick="openCert(' + idx + ')">查看</button>' +
+        '<button class="btn btn-primary btn-sm" data-action="open-cert" data-idx="' + idx + '">查看</button>' +
         '<button class="btn btn-outline btn-sm ml-4" data-action="regenerate-cert" data-id="' + cert.id + '" data-name="' + escapeAttr(cert.child_name || '') + '">重新生成</button>' +
         '</td>' +
         '</tr>';
@@ -173,25 +173,34 @@
     });
   }
 
-  function escapeHtml(str) {
-    var div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  }
   function escapeAttr(str) {
     return str.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
   document.addEventListener('DOMContentLoaded', function() {
-    document.body.addEventListener('click', function(e) {
-      var el = e.target.closest('[data-action="regenerate-cert"]');
-      if (!el) return;
-      e.preventDefault();
-      regenerate(el.dataset.name, parseInt(el.dataset.id));
+    document.addEventListener('click', function(e) {
+      var target = e.target.closest('[data-action]');
+      if (!target) return;
+      var action = target.getAttribute('data-action');
+      if (action === 'regenerate-cert') {
+        e.preventDefault();
+        regenerate(target.getAttribute('data-name'), parseInt(target.getAttribute('data-id')));
+      } else if (action === 'open-cert') {
+        openCert(parseInt(target.getAttribute('data-idx')));
+      } else if (action === 'close-modal') {
+        closeModal(target.getAttribute('data-modal'));
+      }
+    });
+    document.addEventListener('input', function(e) {
+      var target = e.target.closest('[data-action="filter-table"]');
+      if (target) filterTable();
+    });
+    document.addEventListener('change', function(e) {
+      var target = e.target.closest('[data-action="filter-table"]');
+      if (target) filterTable();
     });
   });
 
   window.certificatesPage = { certsData, loadCertificates, renderStats, formatPeriod, renderTable, populateFilters, openCert, closeCert, showConfirmDialog, regenerate, filterTable, escapeAttr };
-  for (var k in window.certificatesPage) window[k] = window.certificatesPage[k];
 
 })();

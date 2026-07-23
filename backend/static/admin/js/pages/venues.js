@@ -13,6 +13,17 @@
     statusFilter.addEventListener('change', () => loadData());
   });
 
+  // Data-action delegation for migrated inline handlers
+  document.querySelector('[data-action="open-add-modal"]')?.addEventListener('click', function() { openAddModal(); });
+  document.querySelector('[data-action="submit-venue"]')?.addEventListener('submit', function(e) { submitVenue(e); });
+  document.querySelector('[data-action="close-modal"]')?.addEventListener('click', function() { closeModal('venueModal'); });
+  dataBody.addEventListener('click', function(e) {
+    var el = e.target.closest('[data-action]');
+    if (!el) return;
+    if (el.getAttribute('data-action') === 'edit-venue') editVenue(parseInt(el.dataset.id), el.dataset.name, el.dataset.address, el.dataset.phone, el.dataset.status, parseInt(el.dataset.capacity), el.dataset.hours);
+    if (el.getAttribute('data-action') === 'delete-venue') deleteVenue(parseInt(el.dataset.id), el.dataset.name);
+  });
+
   async function loadData() {
     try {
       const result = await api.get('/admin/api/venues');
@@ -84,8 +95,8 @@
         <td>${getStatusBadge(v.status)}</td>
         <td>
           <div class="action-btns">
-            <button class="action-btn" onclick="editVenue(${v.id}, '${jsEscape(v.name || '')}', '${jsEscape(v.address || '')}', '${jsEscape(v.phone || '')}', '${jsEscape(v.status || 'active')}', ${v.capacity || 0}, '${jsEscape(v.business_hours || '')}')">编辑</button>
-            <button class="action-btn action-btn-danger" onclick="deleteVenue(${v.id}, '${jsEscape(v.name || '')}')">删除</button>
+            <button class="action-btn" data-action="edit-venue" data-id="${v.id}" data-name="${escapeHtml(v.name || '')}" data-address="${escapeHtml(v.address || '')}" data-phone="${escapeHtml(v.phone || '')}" data-status="${escapeHtml(v.status || 'active')}" data-capacity="${v.capacity || 0}" data-hours="${escapeHtml(v.business_hours || '')}">编辑</button>
+            <button class="action-btn action-btn-danger" data-action="delete-venue" data-id="${v.id}" data-name="${escapeHtml(v.name || '')}">删除</button>
           </div>
         </td>
       </tr>
@@ -167,12 +178,6 @@
     });
   }
 
-  function escapeHtml(str) {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  }
 
   window.venuesPage = { dataBody, searchInput, statusFilter, loadData, updateStats, getStatusBadge, renderVenues, openAddModal, editVenue, closeAddModal, submitVenue, deleteVenue };
-  for (var k in window.venuesPage) window[k] = window.venuesPage[k];
 })();

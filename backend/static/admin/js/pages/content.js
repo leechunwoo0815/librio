@@ -63,7 +63,7 @@
       return;
     }
     grid.innerHTML = pages.map(function(p) {
-      return '<div class="page-card p-16" onclick="editPage(' + p.page_number + ')">' +
+      return '<div class="page-card p-16" data-action="edit-page" data-page="' + p.page_number + '">' +
         '<div class="page-num">P' + p.page_number + '</div>' +
         '<div class="page-status text-sm text-muted">' + (p.text_content ? '有文本' : '无文本') + ' · ' + (p.image_url ? '有图片' : '无图片') + ' · ' + (p.audio_url ? '有音频' : '无音频') + '</div>' +
       '</div>';
@@ -95,13 +95,13 @@
     }
     body.innerHTML = audios.map(function(a) {
       return '<tr>' +
-        '<td><button class="action-sm" onclick="playAudioContent(\'' + jsEscape(a.file_url || '') + '\')">▶</button></td>' +
+        '<td><button class="action-sm" data-action="play-audio" data-url="' + jsEscape(a.file_url || '') + '">▶</button></td>' +
         '<td>' + escapeHtml(a.filename || '-') + '</td>' +
         '<td>' + escapeHtml(a.duration || '-') + '</td>' +
         '<td>' + escapeHtml(a.page_label || '全文') + '</td>' +
         '<td>' + (a.file_size || '-') + '</td>' +
         '<td class="text-sm text-muted">' + (a.create_time ? a.create_time.slice(0, 10) : '-') + '</td>' +
-        '<td><button class="action-sm" onclick="deleteAudioContent(' + a.id + ')">删除</button></td>' +
+        '<td><button class="action-sm" data-action="delete-audio" data-id="' + a.id + '">删除</button></td>' +
       '</tr>';
     }).join('');
   }
@@ -245,6 +245,27 @@
 
   document.addEventListener('DOMContentLoaded', function() {
     loadBooks();
+    document.addEventListener('click', function(e) {
+      var target = e.target.closest('[data-action]');
+      if (!target) return;
+      var action = target.getAttribute('data-action');
+      var id = target.getAttribute('data-id');
+      var page = target.getAttribute('data-page');
+      var url = target.getAttribute('data-url');
+      var modal = target.getAttribute('data-modal');
+      if (action === 'switch-tab') switchTab(target.getAttribute('data-tab'), target);
+      else if (action === 'open-upload-modal') openUploadModal();
+      else if (action === 'open-page-modal') openPageModal();
+      else if (action === 'open-audio-modal') openAudioModal();
+      else if (action === 'click-pdf-input') document.getElementById('pdfFileInput').click();
+      else if (action === 'start-upload-pdf') startUploadPdf();
+      else if (action === 'edit-page' && page) editPage(Number(page));
+      else if (action === 'save-page') savePage();
+      else if (action === 'save-audio') saveAudio();
+      else if (action === 'play-audio' && url) playAudioContent(url);
+      else if (action === 'delete-audio' && id) deleteAudioContent(Number(id));
+      else if (action === 'close-modal' && modal) closeModal(modal);
+    });
   });
 
   window.openUploadModal = openUploadModal;

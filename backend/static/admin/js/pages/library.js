@@ -71,7 +71,7 @@ async function loadBooks() {
         '<td>' + (b.total_stock || 0) + '</td>' +
         '<td><span class="' + getContentStatusClass(contentStatus) + '">' + getContentStatusLabel(contentStatus) + '</span></td>' +
         '<td>' + (b.available_stock || 0) + '</td>' +
-        '<td><div class="action-btns"><button class="action-btn" onclick="editBook(' + b.id + ')">编辑</button><button class="action-btn" onclick="viewBook(' + b.id + ')">详情</button></div></td>' +
+        '<td><div class="action-btns"><button class="action-btn" data-action="edit-book" data-id="' + b.id + '">编辑</button><button class="action-btn" data-action="view-book" data-id="' + b.id + '">详情</button></div></td>' +
       '</tr>';
     }).join('');
 
@@ -79,9 +79,9 @@ async function loadBooks() {
     var totalPages = Math.ceil(total / pageSize);
     var btnHtml = '';
     for (var p = 1; p <= Math.min(totalPages, 5); p++) {
-      btnHtml += '<button class="page-btn ' + (p === currentPage ? 'active' : '') + '" onclick="goPage(' + p + ')">' + p + '</button>';
+      btnHtml += '<button class="page-btn ' + (p === currentPage ? 'active' : '') + '" data-action="go-page" data-page="' + p + '">' + p + '</button>';
     }
-    if (totalPages > 5) btnHtml += '<button class="page-btn">...</button><button class="page-btn" onclick="goPage(' + totalPages + ')">' + totalPages + '</button>';
+    if (totalPages > 5) btnHtml += '<button class="page-btn">...</button><button class="page-btn" data-action="go-page" data-page="' + totalPages + '">' + totalPages + '</button>';
     document.getElementById('paginationBtns').innerHTML = btnHtml;
   } catch (e) {
     tbody.innerHTML = '<tr><td colspan="12" class="text-center text-error p-32">加载失败: ' + escapeHtml(e.message) + '</td></tr>';
@@ -112,7 +112,39 @@ async function addBook() {
     });
     toggleModal();
     showToast('图书添加成功');
+loadBooks();
+
+document.addEventListener('click', function(e) {
+  var target = e.target.closest('[data-action]');
+  if (!target) return;
+  var action = target.getAttribute('data-action');
+  if (action === 'edit-book') {
+    editBook(parseInt(target.getAttribute('data-id')));
+  } else if (action === 'view-book') {
+    viewBook(parseInt(target.getAttribute('data-id')));
+  } else if (action === 'go-page') {
+    goPage(parseInt(target.getAttribute('data-page')));
+  } else if (action === 'toggle-modal') {
+    toggleModal();
+  } else if (action === 'close-modal') {
+    closeModal(target.getAttribute('data-modal'));
+  } else if (action === 'add-book') {
+    addBook();
+  } else if (action === 'load-books') {
     loadBooks();
+  } else if (action === 'batch-import') {
+    showToast('批量导入功能开发中', 'info');
+  }
+});
+
+document.addEventListener('keydown', function(e) {
+  var target = e.target.closest('[data-action]');
+  if (!target) return;
+  if (e.key === 'Enter' && target.getAttribute('data-action') === 'search-book') {
+    currentPage = 1;
+    loadBooks();
+  }
+});
   } catch (e) {
     showToast('添加失败: ' + e.message, 'error');
   }
@@ -121,5 +153,4 @@ async function addBook() {
 loadBooks();
 
   window.libraryPage = { currentPage, pageSize, coverColors, toggleModal, getContentStatusClass, getContentStatusLabel, getDifficultyLabel, getInitials, loadBooks, goPage, editBook, viewBook, addBook };
-  for (var k in window.libraryPage) window[k] = window.libraryPage[k];
 })();

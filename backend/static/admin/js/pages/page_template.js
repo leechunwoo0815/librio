@@ -15,6 +15,24 @@ document.addEventListener('DOMContentLoaded', function() {
       ['createModal','detailModal','confirmModal'].forEach(closeModal);
     }
   });
+  document.addEventListener('click', function(e) {
+    var target = e.target.closest('[data-action]');
+    if (!target) return;
+    var action = target.getAttribute('data-action');
+    var id = target.getAttribute('data-id');
+    var modal = target.getAttribute('data-modal');
+    if (action === 'load-data') loadData(1);
+    else if (action === 'open-create-modal') openCreateModal();
+    else if (action === 'submit-create') submitCreate();
+    else if (action === 'show-detail' && id) showDetail(Number(id));
+    else if (action === 'edit-item' && id) editItem(Number(id));
+    else if (action === 'delete-item' && id) deleteItem(Number(id));
+    else if (action === 'close-modal' && modal) closeModal(modal);
+  });
+  document.addEventListener('change', function(e) {
+    var target = e.target.closest('[data-action="load-data"]');
+    if (target) loadData(1);
+  });
 });
 
 // ── 加载列表数据 ──────────────────────────────────────────
@@ -67,9 +85,9 @@ function renderTable(items) {
       '<td>' + escapeHtml(item.field2) + '</td>' +
       '<td>' + escapeHtml(item.field3) + '</td>' +
       '<td><div class="table-actions">' +
-        '<button class="action-link" onclick="showDetail(' + item.id + ')">详情</button>' +
-        '<button class="action-link" onclick="editItem(' + item.id + ')">编辑</button>' +
-        '<button class="action-link text-error" onclick="deleteItem(' + item.id + ')">删除</button>' +
+        '<button class="action-link" data-action="show-detail" data-id="' + item.id + '">详情</button>' +
+        '<button class="action-link" data-action="edit-item" data-id="' + item.id + '">编辑</button>' +
+        '<button class="action-link text-error" data-action="delete-item" data-id="' + item.id + '">删除</button>' +
       '</div></td>';
     tbody.appendChild(tr);
   });
@@ -190,6 +208,5 @@ function confirmAction() {
 }
 
   window.pageTemplatePage = { currentPage, pageSize, total, loadData, renderTable, openCreateModal, submitCreate, showDetail, editItem, submitEdit, deleteTargetId, deleteItem, confirmDelete, confirmAction };
-  for (var k in window.pageTemplatePage) window[k] = window.pageTemplatePage[k];
 
 })();

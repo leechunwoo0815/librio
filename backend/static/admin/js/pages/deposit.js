@@ -4,7 +4,24 @@
   var allDeposits = [];
   var currentFilter = '';
 
-  document.addEventListener('DOMContentLoaded', function() { loadDeposits(); });
+  document.addEventListener('DOMContentLoaded', function() {
+    loadDeposits();
+    document.addEventListener('click', function(e) {
+      var target = e.target.closest('[data-action]');
+      if (!target) return;
+      var action = target.getAttribute('data-action');
+      var id = target.getAttribute('data-id');
+      var filter = target.getAttribute('data-filter');
+      if (action === 'filter-tab' && filter !== null) filterTab(target, filter);
+      else if (action === 'request-refund' && id) requestRefund(Number(id));
+      else if (action === 'deduct-deposit' && id) deductDeposit(Number(id));
+      else if (action === 'pay-deposit' && id) payDeposit(Number(id));
+      else if (action === 'mark-refunded' && id) markRefunded(Number(id));
+      else if (action === 'cancel-refund' && id) cancelRefund(Number(id));
+      else if (action === 'confirm-deduct') confirmDeduct();
+      else if (action === 'close-modal') closeModal(target.getAttribute('data-modal'));
+    });
+  });
 
   async function loadDeposits() {
     try {
@@ -59,15 +76,15 @@
       var s = statusMap[statusKey] || { cls: '', text: d.status };
       var actions = [];
       if (statusKey === 'PAID') {
-        actions.push('<span class="action-link" onclick="requestRefund(' + d.child_id + ')">退款</span>');
-        actions.push('<span class="action-link" onclick="deductDeposit(' + d.child_id + ')">扣除</span>');
+        actions.push('<span class="action-link" data-action="request-refund" data-id="' + d.child_id + '">退款</span>');
+        actions.push('<span class="action-link" data-action="deduct-deposit" data-id="' + d.child_id + '">扣除</span>');
       } else if (statusKey === 'UNPAID') {
-        actions.push('<span class="action-link" onclick="payDeposit(' + d.child_id + ')">代缴</span>');
+        actions.push('<span class="action-link" data-action="pay-deposit" data-id="' + d.child_id + '">代缴</span>');
       } else if (statusKey === 'REFUNDING') {
-        actions.push('<span class="action-link" onclick="markRefunded(' + d.child_id + ')">标记到账</span>');
-        actions.push('<span class="action-link" onclick="cancelRefund(' + d.child_id + ')">取消退款</span>');
+        actions.push('<span class="action-link" data-action="mark-refunded" data-id="' + d.child_id + '">标记到账</span>');
+        actions.push('<span class="action-link" data-action="cancel-refund" data-id="' + d.child_id + '">取消退款</span>');
       } else if (statusKey === 'DEDUCTED' || statusKey === 'REFUNDED') {
-        actions.push('<span class="action-link" onclick="payDeposit(' + d.child_id + ')">重新缴纳</span>');
+        actions.push('<span class="action-link" data-action="pay-deposit" data-id="' + d.child_id + '">重新缴纳</span>');
       }
       var actionHtml = actions.length ? actions.join(' · ') : '<span class="action-link text-muted cursor-default">--</span>';
       return '<tr>' +
@@ -167,14 +184,7 @@
     });
   }
 
-  function escapeHtml(str) {
-    if (!str) return '';
-    var div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  }
 
   window.depositPage = { allDeposits, currentFilter, loadDeposits, updateStats, filterTab, renderDeposits, deductChildId, showConfirmDialog, requestRefund, cancelRefund, markRefunded, payDeposit, deductDeposit, confirmDeduct };
-  for (var k in window.depositPage) window[k] = window.depositPage[k];
 
 })();

@@ -11,6 +11,31 @@
     document.getElementById('dateTo').value = now.toISOString().slice(0, 10);
     document.getElementById('dateFrom').value = from.toISOString().slice(0, 10);
     loadLogs(1);
+
+    document.body.addEventListener('click', function(e) {
+      var el = e.target.closest('[data-action]');
+      if (!el) return;
+      e.preventDefault();
+      var action = el.getAttribute('data-action');
+      if (action === 'load-logs') {
+        var page = parseInt(el.getAttribute('data-page')) || 1;
+        loadLogs(page);
+      } else if (action === 'export-logs') {
+        exportLogs();
+      } else if (action === 'change-page-size') {
+        var select = el.closest('select');
+        if (select) changePageSize(select.value);
+      }
+    });
+
+    document.body.addEventListener('change', function(e) {
+      var el = e.target.closest('[data-action]');
+      if (!el) return;
+      var action = el.getAttribute('data-action');
+      if (action === 'change-page-size') {
+        changePageSize(el.value);
+      }
+    });
   });
 
   async function loadLogs(page) {
@@ -73,16 +98,16 @@
     var el = document.getElementById('pagination');
     var totalPages = Math.ceil(total / pageSize);
     if (totalPages <= 1) { el.innerHTML = ''; return; }
-    var html = '<div class="flex-center gap-8"><span class="text-muted">共 ' + total + ' 条</span><span class="text-xs text-muted">每页</span><select class="page-size-select" onchange="changePageSize(this.value)"><option value="15"'+(pageSize===15?' selected':'')+'>15</option><option value="30"'+(pageSize===30?' selected':'')+'>30</option><option value="50"'+(pageSize===50?' selected':'')+'>50</option><option value="100"'+(pageSize===100?' selected':'')+'>100</option></select><span class="text-xs text-muted">条</span></div>';
+    var html = '<div class="flex-center gap-8"><span class="text-muted">共 ' + total + ' 条</span><span class="text-xs text-muted">每页</span><select class="page-size-select" data-action="change-page-size"><option value="15"'+(pageSize===15?' selected':'')+'>15</option><option value="30"'+(pageSize===30?' selected':'')+'>30</option><option value="50"'+(pageSize===50?' selected':'')+'>50</option><option value="100"'+(pageSize===100?' selected':'')+'>100</option></select><span class="text-xs text-muted">条</span></div>';
     html += '<div class="pagination-info">第 ' + page + '/' + totalPages + ' 页</div>';
     html += '<div class="pagination-pages">';
-    if (page > 1) html += '<a href="javascript:void(0)" onclick="loadLogs(' + (page-1) + ')">&lt;</a>';
+    if (page > 1) html += '<a href="javascript:void(0)" data-action="load-logs" data-page="' + (page-1) + '">&lt;</a>';
     var start = Math.max(1, page - 2);
     var end = Math.min(totalPages, page + 2);
     for (var i = start; i <= end; i++) {
-      html += '<a href="javascript:void(0)" class="' + (i === page ? 'active' : '') + '" onclick="loadLogs(' + i + ')">' + i + '</a>';
+      html += '<a href="javascript:void(0)" class="' + (i === page ? 'active' : '') + '" data-action="load-logs" data-page="' + i + '">' + i + '</a>';
     }
-    if (page < totalPages) html += '<a href="javascript:void(0)" onclick="loadLogs(' + (page+1) + ')">&gt;</a>';
+    if (page < totalPages) html += '<a href="javascript:void(0)" data-action="load-logs" data-page="' + (page+1) + '">&gt;</a>';
     html += '</div>';
     el.innerHTML = html;
   }
@@ -96,13 +121,6 @@
     window.location.href = '/admin/export/operation-logs';
   }
 
-  function escapeHtml(str) {
-    if (!str) return '';
-    var div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  }
 
   window.operationLogsPage = { currentPage, pageSize, loadLogs, renderTable, guessModule, pageUi, changePageSize, exportLogs };
-  for (var k in window.operationLogsPage) window[k] = window.operationLogsPage[k];
 })();

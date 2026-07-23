@@ -8,7 +8,30 @@
   var MODULE_LABELS = { book: '图书', activity: '活动', teacher: '老师', venue: '场馆' };
   var MODULE_BADGE = { book: 'badge-accent', activity: 'badge-success', teacher: 'badge-warning', venue: 'badge-muted' };
 
-  document.addEventListener('DOMContentLoaded', function() { loadRecycle(1); });
+  document.addEventListener('DOMContentLoaded', function() {
+    loadRecycle(1);
+    document.addEventListener('click', function(e) {
+      var target = e.target.closest('[data-action]');
+      if (!target) return;
+      var action = target.getAttribute('data-action');
+      var id = target.getAttribute('data-id');
+      var mod = target.getAttribute('data-module');
+      var name = target.getAttribute('data-name');
+      var page = target.getAttribute('data-page');
+      var modal = target.getAttribute('data-modal');
+      if (action === 'load-recycle') loadRecycle(1);
+      else if (action === 'load-recycle-page' && page) loadRecycle(Number(page));
+      else if (action === 'restore-item' && mod && id) restoreItem(mod, Number(id));
+      else if (action === 'show-delete-modal' && mod && id) showDeleteModal(name || '', mod, Number(id));
+      else if (action === 'hide-delete-modal') hideDeleteModal();
+      else if (action === 'confirm-delete') confirmDelete();
+      else if (action === 'close-modal' && modal) closeModal(modal);
+    });
+    document.addEventListener('change', function(e) {
+      var target = e.target.closest('[data-action="change-page-size"]');
+      if (target) changePageSize(target.value);
+    });
+  });
 
   async function loadRecycle(page) {
     currentPage = page;
@@ -47,8 +70,8 @@
         '<td>' + escapeHtml(item.deleted_by || '--') + '</td>' +
         '<td class="text-sm text-muted">' + formatDateTime(item.deleted_at) + '</td>' +
         '<td>' +
-          '<button class="btn btn-success" onclick="restoreItem(\'' + mod + '\', ' + item.id + ')">恢复</button> ' +
-          '<button class="btn btn-danger" onclick="showDeleteModal(\'' + jsEscape(item.name||'') + '\',\'' + mod + '\',' + item.id + ')">永久删除</button>' +
+          '<button class="btn btn-success" data-action="restore-item" data-module="' + mod + '" data-id="' + item.id + '">恢复</button> ' +
+          '<button class="btn btn-danger" data-action="show-delete-modal" data-name="' + jsEscape(item.name||'') + '" data-module="' + mod + '" data-id="' + item.id + '">永久删除</button>' +
         '</td>' +
       '</tr>';
     }).join('');
@@ -103,16 +126,16 @@
     var el = document.getElementById('pagination');
     var totalPages = Math.ceil(total / pageSize);
     if (totalPages <= 1) { el.innerHTML = ''; return; }
-    var html = '<div class="flex-center gap-8"><span class="text-muted">共 ' + total + ' 条</span><span class="text-xs text-muted">每页</span><select class="page-size-select" onchange="changePageSize(this.value)"><option value="15"'+(pageSize===15?' selected':'')+'>15</option><option value="30"'+(pageSize===30?' selected':'')+'>30</option><option value="50"'+(pageSize===50?' selected':'')+'>50</option><option value="100"'+(pageSize===100?' selected':'')+'>100</option></select><span class="text-xs text-muted">条</span></div>';
+    var html = '<div class="flex-center gap-8"><span class="text-muted">共 ' + total + ' 条</span><span class="text-xs text-muted">每页</span><select class="page-size-select" data-action="change-page-size"><option value="15"'+(pageSize===15?' selected':'')+'>15</option><option value="30"'+(pageSize===30?' selected':'')+'>30</option><option value="50"'+(pageSize===50?' selected':'')+'>50</option><option value="100"'+(pageSize===100?' selected':'')+'>100</option></select><span class="text-xs text-muted">条</span></div>';
     html += '<div class="pagination-info">第 ' + page + '/' + totalPages + ' 页</div>';
     html += '<div class="pagination-pages">';
-    if (page > 1) html += '<a href="javascript:void(0)" onclick="loadRecycle(' + (page-1) + ')">&lt;</a>';
+    if (page > 1) html += '<a href="javascript:void(0)" data-action="load-recycle-page" data-page="' + (page-1) + '">&lt;</a>';
     var start = Math.max(1, page - 2);
     var end = Math.min(totalPages, page + 2);
     for (var i = start; i <= end; i++) {
-      html += '<a href="javascript:void(0)" class="' + (i === page ? 'active' : '') + '" onclick="loadRecycle(' + i + ')">' + i + '</a>';
+      html += '<a href="javascript:void(0)" class="' + (i === page ? 'active' : '') + '" data-action="load-recycle-page" data-page="' + i + '">' + i + '</a>';
     }
-    if (page < totalPages) html += '<a href="javascript:void(0)" onclick="loadRecycle(' + (page+1) + ')">&gt;</a>';
+    if (page < totalPages) html += '<a href="javascript:void(0)" data-action="load-recycle-page" data-page="' + (page+1) + '">&gt;</a>';
     html += '</div>';
     el.innerHTML = html;
   }
@@ -122,13 +145,6 @@
     loadRecycle(1);
   }
 
-  function escapeHtml(str) {
-    if (!str) return '';
-    var div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  }
 
   window.recycleBinPage = { currentPage, pageSize, deleteTarget, MODULE_LABELS, MODULE_BADGE, loadRecycle, renderTable, showConfirmDialog, restoreItem, showDeleteModal, hideDeleteModal, confirmDelete, pageUi, changePageSize };
-  for (var k in window.recycleBinPage) window[k] = window.recycleBinPage[k];
 })();

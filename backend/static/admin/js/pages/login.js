@@ -98,8 +98,19 @@
           doLogin();
         }
       });
+
+      document.body.addEventListener('click', function(e) {
+        var el = e.target.closest('[data-action]');
+        if (!el) return;
+        e.preventDefault();
+        var action = el.getAttribute('data-action');
+        if (action === 'toggle-password') {
+          togglePassword();
+        } else if (action === 'do-login') {
+          doLogin();
+        }
+      });
     });
 
   window.loginPage = { togglePassword, doLogin };
-  for (var k in window.loginPage) window[k] = window.loginPage[k];
 })();

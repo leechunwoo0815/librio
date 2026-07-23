@@ -35,7 +35,7 @@
     </div>
     <div class="setting-body">
       <div class="mb-16">
-        <button type="button" class="btn btn-primary" id="createRoleBtn" onclick="createRole()">+ 创建角色</button>
+        <button type="button" class="btn btn-primary" id="createRoleBtn" data-action="create-role">+ 创建角色</button>
       </div>
       <div id="roleList">
         <div class="text-center p-20 text-muted">加载中...</div>
@@ -49,8 +49,8 @@
     <div class="text-center p-20 text-muted">加载中...</div>
   </div>
 {{ m.modal_actions() }}
-  <button type="button" class="btn btn-secondary" onclick="closeModal('permModal')">取消</button>
-  <button type="button" class="btn btn-primary" id="savePermBtn" onclick="savePermissions()">保存权限</button>
+  <button type="button" class="btn btn-secondary" data-action="close-modal" data-modal="permModal">取消</button>
+  <button type="button" class="btn btn-primary" id="savePermBtn" data-action="save-permissions">保存权限</button>
 {{ m.modal_end() }}
 
 {{ m.modal_overlay("createRoleModal", "创建角色") }}
@@ -72,8 +72,8 @@
     </select>
   </div>
 {{ m.modal_actions() }}
-  <button type="button" class="btn btn-secondary" onclick="closeModal('createRoleModal')">取消</button>
-  <button type="button" class="btn btn-primary" id="confirmCreateRoleBtn" onclick="confirmCreateRole()">创建</button>
+  <button type="button" class="btn btn-secondary" data-action="close-modal" data-modal="createRoleModal">取消</button>
+  <button type="button" class="btn btn-primary" id="confirmCreateRoleBtn" data-action="confirm-create-role">创建</button>
 {{ m.modal_end() }}
 
 {{ m.modal_overlay("renameRoleModal", "重命名角色") }}
@@ -86,15 +86,15 @@
     <input type="text" id="renameRoleDesc" class="form-control" maxlength="255" />
   </div>
 {{ m.modal_actions() }}
-  <button type="button" class="btn btn-secondary" onclick="closeModal('renameRoleModal')">取消</button>
-  <button type="button" class="btn btn-primary" id="confirmRenameRoleBtn" onclick="confirmRenameRole()">保存</button>
+  <button type="button" class="btn btn-secondary" data-action="close-modal" data-modal="renameRoleModal">取消</button>
+  <button type="button" class="btn btn-primary" id="confirmRenameRoleBtn" data-action="confirm-rename-role">保存</button>
 {{ m.modal_end() }}
 
 {{ m.modal_overlay("deleteRoleModal", "确认删除") }}
   <p id="deleteRoleConfirmText">确定删除该角色？</p>
 {{ m.modal_actions() }}
-  <button type="button" class="btn btn-secondary" onclick="closeModal('deleteRoleModal')">取消</button>
-  <button type="button" class="btn btn-danger" id="confirmDeleteRoleBtn" onclick="confirmDeleteRole()">删除</button>
+  <button type="button" class="btn btn-secondary" data-action="close-modal" data-modal="deleteRoleModal">取消</button>
+  <button type="button" class="btn btn-danger" id="confirmDeleteRoleBtn" data-action="confirm-delete-role">删除</button>
 {{ m.modal_end() }}
 {% endblock %}
 

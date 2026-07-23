@@ -2,10 +2,12 @@
 """书架域 API 路由 — 想读清单 + 收藏夹"""
 
 from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
 from backend.common.dependencies import get_bookshelf_service
-from backend.middleware.ownership import GetOwnedChildFromQuery
+from backend.middleware.ownership import GetOwnedChildFromQuery, verify_child_ownership
 from backend.middleware.auth import get_current_user
+from backend.database import get_db
 from backend.domain.bookshelf.schemas import (
     BookshelfAddRequest,
     BookshelfResponse,
@@ -29,6 +31,7 @@ def add_to_shelf(
     child_id: int | None = None,
     service: BookshelfService = Depends(get_bookshelf_service),
     current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     """加入想读清单"""
     # FIX: current_child_id 为 NULL 时 cid=None 直接传入会导致 MySQL IntegrityError (1048, Column 'child_id' cannot be null)
@@ -37,6 +40,7 @@ def add_to_shelf(
         from backend.common.exceptions import ValidationError
 
         raise ValidationError("请先选择孩子")
+    verify_child_ownership(cid, current_user, db)
     return service.add_to_shelf(cid, req.book_id)
 
 
@@ -80,6 +84,7 @@ def add_favorite(
     child_id: int | None = None,
     service: BookshelfService = Depends(get_bookshelf_service),
     current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     """收藏图书"""
     # 优先使用 query 参数 child_id，其次 current_child_id
@@ -88,6 +93,7 @@ def add_favorite(
         from backend.common.exceptions import ValidationError
 
         raise ValidationError("请先选择孩子")
+    verify_child_ownership(cid, current_user, db)
     return service.add_favorite(cid, req.book_id)
 
 

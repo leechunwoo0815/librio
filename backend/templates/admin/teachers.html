@@ -22,7 +22,7 @@
       <option value="leave">休假中</option>
     </select>
   </div>
-  <button class="btn btn-primary" onclick="openAddModal()">
+  <button class="btn btn-primary" data-action="open-add-modal">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
     添加老师
   </button>
@@ -33,7 +33,7 @@
 </div>
 
 {{ m.modal_overlay("addModal", "添加老师", "md") }}
-  <form id="addForm" onsubmit="submitTeacher(event)">
+  <form id="addForm" data-action="submit-teacher">
     <input type="hidden" id="editId" value="" />
     <div class="form-row">
       <div class="form-group">
@@ -86,14 +86,14 @@
     </div>
   </form>
 {{ m.modal_actions() }}
-  <button type="button" class="btn btn-secondary" onclick="closeModal('addModal')">取消</button>
+  <button type="button" class="btn btn-secondary" data-action="close-modal" data-modal="addModal">取消</button>
   <button type="submit" class="btn btn-primary" id="submitBtn" form="addForm">确认添加</button>
 {{ m.modal_end() }}
 
 {{ m.modal_overlay("confirmScheduleModal", "确认操作") }}
   <p id="confirmScheduleMsg"></p>
 {{ m.modal_actions() }}
-  <button type="button" class="btn btn-secondary" onclick="closeModal('confirmScheduleModal')">取消</button>
+  <button type="button" class="btn btn-secondary" data-action="close-modal" data-modal="confirmScheduleModal">取消</button>
   <button type="button" class="btn btn-primary" id="confirmScheduleBtn">确认</button>
 {{ m.modal_end() }}
 
@@ -111,12 +111,12 @@
     <input type="text" id="schedEnd" class="form-input" placeholder="例如：18:00" />
   </div>
 {{ m.modal_actions() }}
-  <button type="button" class="btn btn-secondary" onclick="closeModal('schedulePromptModal')">取消</button>
-  <button type="button" class="btn btn-primary" onclick="confirmAddSchedule()">确认添加</button>
+  <button type="button" class="btn btn-secondary" data-action="close-modal" data-modal="schedulePromptModal">取消</button>
+  <button type="button" class="btn btn-primary" data-action="confirm-add-schedule">确认添加</button>
 {{ m.modal_end() }}
 
 {{ m.modal_overlay("adminAccountModal", "管理员账号", "sm") }}
-  <form id="adminAccountForm" onsubmit="submitAdminAccount(event)">
+  <form id="adminAccountForm" data-action="submit-admin-account">
     <input type="hidden" id="adminAccountTeacherId" value="" />
     <input type="hidden" id="adminAccountAdminId" value="" />
     <div class="form-group">
@@ -136,7 +136,7 @@
     </div>
   </form>
 {{ m.modal_actions() }}
-  <button type="button" class="btn btn-secondary" onclick="closeModal('adminAccountModal')">取消</button>
+  <button type="button" class="btn btn-secondary" data-action="close-modal" data-modal="adminAccountModal">取消</button>
   <button type="submit" class="btn btn-primary" form="adminAccountForm" id="adminAccountSubmitBtn">保存</button>
 {{ m.modal_end() }}
 
