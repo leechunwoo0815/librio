@@ -423,6 +423,7 @@ class MessageListAdminResponse(BaseModel):
     total: int
     page: int
     page_size: int
+    has_next: bool = False
 
 
 # ==================== 活动管理 ====================
