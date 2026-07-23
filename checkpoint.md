@@ -1,7 +1,7 @@
 # DmkWords (librio) 项目检查点
 
-> 更新时间：2026-07-22 GMT+8 (v9)
-> 状态：✅ V3.12 — GLM 任务书全量收口（事务锁审计 F1-F12 + N+1 性能批 F1-F4）+ 316/5 pytest + 160/1095 behave + 55/55 集成全绿 + CI 同构九关
+> 更新时间：2026-07-24 GMT+8 (v10)
+> 状态：✅ V3.16 — 隐私合规 Phase 1 全闭环（三段式同意 + 删除权级联 + 儿童专章 v1.1）+ backlog 8 项清零 + 391/5 pytest + 179/1171 behave + CI 同构十关全绿 + 项目目录清理
 
 ---
 
@@ -20,7 +20,7 @@ DmkWords 是一个儿童英语阅读管理平台：
 
 | 检查项 | 状态 |
 |--------|------|
-| pytest | ✅ 316 passed (本地) |
+| pytest | ✅ 391 passed (本地) |
 | behave | ✅ 160 scenarios / 1095 steps |
 | ruff check `backend/ tests/` | ✅ 0 errors |
 | ruff check `features/ scripts/` | ✅ 0 errors |

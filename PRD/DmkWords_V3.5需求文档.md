@@ -1,8 +1,9 @@
 # DmkWords 完整需求文档（V3.5 OMO 模式）
 
-> **版本**: V3.16 | **日期**: 2026-07-23
+> **版本**: V3.17 | **日期**: 2026-07-24
 
 > **本次更新（V3.16, 2026-07-23）**：隐私合规 Phase 1 落地 — 附录M 三段式监护人同意（consent_record 表 + 同意 API + 错误码 + 前端弹窗）。
+> **本次更新（V3.17, 2026-07-24）**：P0-3 删除权级联（附录M.5）+ P0-4 儿童专章 v1.1 + 附录H 定时任务 15→17（execute_child_deletions/reconcile_child_stats）。
 
 > **本次更新（V3.7, 2026-07-09）**：全量终审通过。P0(8)+P1(13)+P2(8) 共 35 项修复。前后端代码已对齐，所有测试通过。
 > **本次更新（V3.8, 2026-07-15）**：新增权益转让、个人名片QR码、生词高亮、季度/半年会员。
@@ -1428,6 +1429,8 @@ def reconcile_stock():
 | check_grace_period_shutdown | 每天 02:00 | 缓冲期关停检查 |
 | mark_overdue_books | 每天 02:30 | 逾期检测 + 罚款按日累计 |
 | reconcile_stock | 每天 03:00 | 库存双口径对账（T3.7 新增） |
+| execute_child_deletions | 每天 03:30 | 儿童数据删除权级联执行（P0-3，24h 冷静期到期） |
+| reconcile_child_stats | 每天 03:45 | 统计字段对账（words/minutes/books/streak 重算修正） |
 | generate_weekly_reports | 每周一 08:00 | 生成周报 |
 | generate_monthly_reports | 每月1日 08:00 | 生成月报 + 平台级月度统计 |
 | close_expired_orders | 每分钟 | 订单30分钟未支付自动关闭 |
