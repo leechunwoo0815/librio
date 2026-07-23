@@ -98,12 +98,16 @@ def main() -> int:
         )
         real_super = max(
             real_super,
-            key=lambda r: db.query(RolePermission)
-            .filter(RolePermission.role_id == r.id, RolePermission.is_deleted == 0)
-            .count(),
+            key=lambda r: (
+                db.query(RolePermission)
+                .filter(RolePermission.role_id == r.id, RolePermission.is_deleted == 0)
+                .count()
+            ),
         )
         if admin.admin_role_id != real_super.id:
-            print(f"管理员 {admin.username} 角色 {admin.admin_role_id} → {real_super.id}（真实超管）")
+            print(
+                f"管理员 {admin.username} 角色 {admin.admin_role_id} → {real_super.id}（真实超管）"
+            )
             admin.admin_role_id = real_super.id
             db.commit()
     if not admin:
