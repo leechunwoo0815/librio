@@ -23,8 +23,12 @@ def upgrade() -> None:
     """Upgrade schema."""
     op.create_table(
         "consent_record",
-        sa.Column("id", sa.BigInteger(), primary_key=True, autoincrement=True, comment="主键"),
-        sa.Column("user_id", sa.BigInteger(), nullable=False, index=True, comment="用户ID"),
+        sa.Column(
+            "id", sa.BigInteger(), primary_key=True, autoincrement=True, comment="主键"
+        ),
+        sa.Column(
+            "user_id", sa.BigInteger(), nullable=False, index=True, comment="用户ID"
+        ),
         sa.Column(
             "consent_type",
             sa.String(50),
@@ -61,7 +65,7 @@ def upgrade() -> None:
             server_default="0",
             comment="软删除标记: 0=正常 1=已删除",
         ),
-        sa.Column("withdrawn_at", sa.DateTime(), nullable=True, comment="撤回时间"),
+        sa.Column("withdrawn_at", sa.DateTime(), nullable=True, comment="撤回时间，NULL=有效"),
         sa.Index("idx_consent_user_type", "user_id", "consent_type"),
         sa.Index("idx_consent_created", "create_time"),
     )

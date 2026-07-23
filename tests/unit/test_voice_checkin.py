@@ -30,8 +30,26 @@ def reading_service(db_session):
 
 
 def _create_child(db: Session, status: int = MemberStatus.OFFICIAL) -> Child:
+    from backend.domain.user.models import User
+    from backend.domain.user.consent_model import ConsentRecord
+    from backend.common.consent_texts import CONSENT_VERSION, get_consent_hash
+
+    user = User(openid=f"voice_test_{id(db)}", phone="13800000099")
+    db.add(user)
+    db.flush()
+
+    # 同意语音数据收集
+    consent = ConsentRecord(
+        user_id=user.id,
+        consent_type=ConsentRecord.CONSENT_TYPE_VOICE,
+        consent_text_hash=get_consent_hash("voice_recording"),
+        consent_version=CONSENT_VERSION,
+    )
+    db.add(consent)
+    db.flush()
+
     child = Child(
-        user_id=1,
+        user_id=user.id,
         name="Test Child",
         age=8,
         grade="G2",

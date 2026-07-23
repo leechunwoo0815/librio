@@ -22,6 +22,12 @@ def step_user_reads_aloud(context):
 @then("系统录制朗读音频")
 @then("录音保存在云端")
 def step_audio_saved(context):
+    # 先同意语音数据收集
+    context.client.post(
+        "/user/consent",
+        json={"consent_type": "voice_recording"},
+        headers=context.headers,
+    )
     context.response = context.client.post(
         "/reading/voice/record",
         json={
@@ -39,6 +45,12 @@ def step_audio_saved(context):
 @given("用户已完成朗读")
 def step_reading_done(context):
     context.selected_text = "Test text for playback."
+    # 先同意语音数据收集
+    context.client.post(
+        "/user/consent",
+        json={"consent_type": "voice_recording"},
+        headers=context.headers,
+    )
     context.client.post(
         "/reading/voice/record",
         json={
@@ -100,6 +112,12 @@ def step_record_fields(context):
 @given("用户今日未打卡")
 @when("用户完成一次朗读练习")
 def step_complete_voice(context):
+    # 先同意语音数据收集
+    context.client.post(
+        "/user/consent",
+        json={"consent_type": "voice_recording"},
+        headers=context.headers,
+    )
     context.response = context.client.post(
         "/reading/voice/record",
         json={

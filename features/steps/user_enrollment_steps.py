@@ -53,7 +53,13 @@ def step_fill_child_grade(context, grade):
 @when('用户点击"立即支付99元"按钮')
 def step_click_pay_99(context):
     """创建孩子→创建亲子课程订单"""
-    # 先创建孩子
+    # 先同意儿童信息收集
+    context.client.post(
+        "/user/consent",
+        json={"consent_type": "child_data"},
+        headers=context.headers,
+    )
+    # 再创建孩子
     child_resp = context.client.post(
         "/child/",
         json={

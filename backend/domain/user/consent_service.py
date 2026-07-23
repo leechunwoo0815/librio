@@ -6,8 +6,8 @@ from datetime import datetime
 
 from sqlalchemy.orm import Session
 
-from backend.common.consent_texts import CONSENT_VERSION, VALID_TYPES, get_consent_hash
-from backend.common.exceptions import ForbiddenError, NotFoundError, ValidationError
+from backend.common.consent_texts import CONSENT_VERSION, get_consent_hash
+from backend.common.exceptions import NotFoundError, ValidationError
 from backend.domain.user.consent_model import ConsentRecord
 from backend.domain.user.consent_repository import ConsentRepository
 from backend.domain.user.schemas import ConsentListResponse, ConsentResponse
@@ -77,7 +77,9 @@ class ConsentService:
         self.repo.update(record)
         self.db.commit()
 
-        logger.info(f"Consent withdrawn: user_id={user_id}, type={consent_type}, id={record.id}")
+        logger.info(
+            f"Consent withdrawn: user_id={user_id}, type={consent_type}, id={record.id}"
+        )
         return ConsentResponse.model_validate(record)
 
     def has_valid_consent(self, user_id: int, consent_type: str) -> bool:

@@ -105,10 +105,15 @@ class ChildService:
         from backend.domain.user.consent_repository import ConsentRepository
 
         consent_repo = ConsentRepository(self.db)
-        if consent_repo.get_latest_valid(user_id, ConsentRecord.CONSENT_TYPE_CHILD_DATA) is None:
+        if (
+            consent_repo.get_latest_valid(
+                user_id, ConsentRecord.CONSENT_TYPE_CHILD_DATA
+            )
+            is None
+        ):
             from backend.common.exceptions import ForbiddenError
 
-            raise ForbiddenError("consent_required", "请先同意儿童信息收集政策")
+            raise ForbiddenError("请先同意儿童信息收集政策")
 
         child = Child(
             user_id=user_id,

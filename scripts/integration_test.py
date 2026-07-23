@@ -377,6 +377,14 @@ u1 = db.query(backend.domain.user.models.User).filter_by(phone=phone1).first()
 step("DB: user created", u1 is not None, f"id={u1.id if u1 else 'NONE'}")
 db.close()
 
+# ── 同意→创建孩子链路 ──
+resp_consent = client.post(
+    "/user/consent",
+    json={"consent_type": "child_data"},
+    headers={"Authorization": f"Bearer {token_u1}"},
+)
+step("grant child_data consent u1", resp_consent.status_code == 201, "")
+
 resp = client.post(
     "/child/",
     json={
@@ -408,6 +416,14 @@ resp = client.post(
     },
 )
 token_u2 = resp.json().get("token", "") if resp.status_code == 200 else ""
+
+# ── 同意→创建孩子链路 ──
+resp_consent2 = client.post(
+    "/user/consent",
+    json={"consent_type": "child_data"},
+    headers={"Authorization": f"Bearer {token_u2}"},
+)
+step("grant child_data consent u2", resp_consent2.status_code == 201, "")
 
 resp = client.post(
     "/child/",

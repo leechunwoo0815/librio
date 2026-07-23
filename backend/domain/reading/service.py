@@ -373,8 +373,29 @@ class ReadingService:
     # ==================== 语音朗读 ====================
 
     def save_recording(self, data: SaveRecordingRequest) -> VoiceRecordingResponse:
-        """保存语音录音 — 逾期用户禁止录音"""
+        """保存语音录音 — 需先获得 voice_recording 同意 + 逾期用户禁止录音"""
         self._check_overdue_audio(data.child_id)
+
+        # 检查语音同意
+        child = (
+            self.db.query(Child)
+            .filter(Child.id == data.child_id, Child.is_deleted == 0)
+            .first()
+        )
+        if child:
+            from backend.domain.user.consent_model import ConsentRecord
+            from backend.domain.user.consent_repository import ConsentRepository
+
+            consent_repo = ConsentRepository(self.db)
+            if (
+                consent_repo.get_latest_valid(
+                    child.user_id, ConsentRecord.CONSENT_TYPE_VOICE
+                )
+                is None
+            ):
+                from backend.common.exceptions import ForbiddenError
+
+                raise ForbiddenError("请先同意语音数据收集政策")
         recording = VoiceRecording(
             child_id=data.child_id,
             book_id=data.book_id,

@@ -31,6 +31,11 @@ def test_create_child(child_service, db):
     db.add(user)
     db.commit()
 
+    # 先同意儿童信息收集
+    from backend.domain.user.consent_service import ConsentService
+
+    ConsentService(db).grant_consent(user.id, "child_data")
+
     child_data = ChildCreate(name="小明", age=7, grade="二年级")
     result = child_service.create_child(user.id, child_data)
 

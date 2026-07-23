@@ -22,7 +22,9 @@ class ConsentRecord(BaseModel):
 
     user_id = Column(BigInteger, nullable=False, index=True, comment="用户ID")
     consent_type = Column(
-        String(50), nullable=False, comment="同意类型: privacy_policy/child_data/voice_recording"
+        String(50),
+        nullable=False,
+        comment="同意类型: privacy_policy/child_data/voice_recording",
     )
     consent_text_hash = Column(
         String(64), nullable=False, comment="同意文案SHA-256哈希，追溯当时版本"
