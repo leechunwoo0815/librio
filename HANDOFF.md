@@ -1,8 +1,8 @@
 # DmkWords (librio) 完整项目交接文档
 
-> **生成时间**: 2026-07-21 GMT+8 (v14)
-> **项目版本**: V3.11 — T3.6a 图书损坏定责完成
-> **测试状态**: pytest 307/5 (本地) · behave 160/1095 · ruff 0 · API契约 OK · 模型一致 53 tables
+> **生成时间**: 2026-07-23 GMT+8 (v16)
+> **项目版本**: V3.15 — Phase 2 全量迁移 + XSS 深度修复 + Token 安全审计 + 专家审查终轮收口
+> **测试状态**: pytest 333/5 · behave 160/1095 · ruff 0 · API契约 OK · 模型一致 54 tables · CI 同构九关 · 集成 55/55
 
 ---
 
@@ -10,29 +10,37 @@
 
 OMO 儿童英文阅读平台：线下实体书借阅 + 线上音频伴读 + 手动查词 + 异步测评。
 微信小程序 31 页（家长端）+ PC 管理后台 37 模板（运营端）+ FastAPI 后端 27 领域模块（54 表 / 184+ API / 15 定时任务）。
+管理后台全员已迁移到 `data-action` 事件委托模式（0 inline handler），35 JS 文件全部 IIFE 隔离，XSS 表面向量清零。
 
 ---
 
-## 二、当前状态（2026-07-21 终端验证）
+## 二、当前状态（2026-07-23 终端验证）
 
 ```bash
+# ── CI 同构九关（与 .github/workflows/ci.yml 逐字一致）──
 ruff check backend/ tests/           # 0 errors ✅
 ruff check features/ scripts/        # 0 errors ✅
-ruff format --check .                # 343 files formatted ✅
-python -m pytest tests/ -q           # 307/5 (local) ✅
+ruff format --check .                # 349 files formatted ✅
+python -m pytest tests/ -q           # 333/5 ✅
 python -m behave features/ -q        # 160 scenarios / 1095 steps / 0 failed ✅
 python -m scripts.verify_api_contract # OK ✅
-python -m scripts.check_model_consistency # 53 tables ✅
+python -m scripts.check_model_consistency # 54 tables ✅
+
+# ── 补充回归（CI 外但已交付标准）──
+MOCK_PAYMENT=true MOCK_SMS=true DEBUG=true python scripts/integration_test.py # 55/55 ✅
+python -m alembic check              # OK ✅
 ```
 
 | Check | 本地 |
 |-------|:----:|
-| pytest | 307 passed, 5 skipped |
+| pytest | 333 passed, 5 skipped |
 | behave | 160/1095/0 |
 | ruff check | 0 errors |
-| ruff format | 328 fmt'd |
+| ruff format | 349 fmt'd |
 | api-contract | OK |
 | model-consistency | 54 tables |
+| integration | 55/55 (payment + sms mock) |
+| alembic check | OK |
 
 ### 跳过测试说明
 - `test_report_pdf` — 需 weasyprint 系统库 (libpango)，CI 有，本地 macOS 无
@@ -44,18 +52,23 @@ python -m scripts.check_model_consistency # 53 tables ✅
 
 ## 三、已完成工作总览
 
-### 3.1 内联脚本收敛 Phase 1+2（本轮核心交付）
+### 3.1 内联脚本收敛 Phase 1+2（全部完成 ✅）
 
 | 阶段 | 内容 | 状态 |
 |------|------|:----:|
 | Phase 1: `<script>` 提取 | 29 模板的内联 `<script>` 提取为 34 个独立的 `pages/*.js` 文件 + `base-init.js` | ✅ |
-| Phase 2: onclick 委托 | 7 模板 (books/borrow/activities/orders/reports/levels/users) 的内联 onclick/onsubmit/onchange 清零 → 改用 `data-pg="fnName"` + `addEventListener` | ✅ |
-| IIFE 全覆盖 | 所有 34 个 page JS 文件全文件 `(function() { ... })();` 包裹 | ✅ 34/34 |
-| window.XxxPage 导出 | 所有文件通过 `window.xxxPage = { ... }` 导出；26/34 有兼容重导出 | ✅ |
+| Phase 2: 全量迁移 | **38 模板 × 35 JS** 全部 inline handler → `data-action` 事件委托（~150 处） | ✅ 全覆盖 |
+| 事件类型 | click/input/change/keydown/submit 全部通过 `#admin-root` 委托 | ✅ |
+| IIFE 全覆盖 | 所有 35 个 page JS 文件 `(function() { ... })();` 包裹 | ✅ 35/35 |
+| window.XxxPage 导出 | 所有文件通过 `window.xxxPage = { ... }` 导出 | ✅ |
 | B1 escapeHtml 修复 | content.js + quiz.js 手动删除内联 escapeHtml；9 个文件由 IIFE 自动隔离 | ✅ 11/11 |
 | B5 safeEl 修复 | dictionary.js 22 处 `getElementById` 用 `safeEl()` 包装 | ✅ |
-| D2 变量隔离 | 所有 var/let/const 在 IIFE 内，不污染全局 | ✅ 34/34 |
-| D2 函数隔离 | 10/34 完全隔离；26/34 通过兼容重导出可访问（需 Phase 2 扩展后移除） | ⚠️ |
+| D2 变量隔离 | 所有 var/let/const 在 IIFE 内，不污染全局 | ✅ 35/35 |
+| D2 函数隔离 | 26 文件兼容重导出已全部删除 | ✅ 已清除 |
+| R2 重导出清除 | 24 文件删除 `for (var k in window.xxxPage)` | ✅ |
+| R3 escapeHtml 统一 | 17 文件局部 escapeHtml 删除，统一用 `admin.js` 全局版 | ✅ |
+| R4 iconfont 目录 | `frontend/static/iconfont/.gitkeep` 已创建（woff2 需人工下载） | ✅ 目录已建 |
+| R6 onError handler | `frontend/app.js` 已有 `wx.onError` + `wx.onUnhandledRejection` | ✅ |
 | extract_inline_js.py | 提取脚本已 ruff format，CI 通过 | ✅ |
 
 ### 3.2 CI/CD 基础设施
@@ -107,8 +120,10 @@ python -m scripts.check_model_consistency # 53 tables ✅
 | V3.10 CI/CD 全量 + 38 新测试 + 4 新路由 | 7 项 CI 全绿 | ✅ |
 | V3.11 内联脚本 Phase 1+2 + 深度审查 | IIFE 34/34 + data-pg 7 模板 | ✅ |
 | V3.11 T3.6a 图书损坏定责 | 三级定级 + D05联动 + 冲正 + 申诉 + RBAC + 通知 + 定时过期确认 | ✅ |
+| V3.12 GLM 事务锁审计 F1-F12 | 三段式防事务悬挂 + 事件处理器补锁 + 原子 SQL + for_update 全面补全 | ✅ |
+| V3.12 N+1 性能批 F1-F4 | reconcile_stock 2N→3, due_date N²→1, mark_overdue N²→2, activity N²→1 | ✅ |
 
-**累计修复总数**: P0 53 + P1 105 + P2 14 + 小程序 74 + 后端 9 + 零宕机 8 + 内联脚本收敛 + T3.6a ≫ 263
+**累计修复总数**: P0 53 + P1 105 + P2 14 + 小程序 74 + 后端 9 + 零宕机 8 + 内联脚本收敛 + T3.6a + GLM 16 + N+1 4 ≫ 283
 
 ### 3.7 XSS 深度修复 X1-X6（2026-07-21）
 
@@ -121,7 +136,7 @@ python -m scripts.check_model_consistency # 53 tables ✅
 | X5 后端 schema 校验 | `admin_schemas.py`: isbn max_length=20, badge_emoji max_length=20, target_role_groups 枚举白名单 |
 | X6 回归测试 | `test_xss_sanitization.py` — 13 断言 (3 autoescape + 10 schema validation) |
 
-CI 九关全绿: ruff check/format, pytest 307/5 (+13 XSS), behave 1095, api contract, model consistency, integration 55/55, alembic check
+CI 九关全绿: ruff check/format, pytest 316/5, behave 1095, api contract, model consistency (54 tables), integration 55/55, alembic check
 
 ### 3.8 T3.6a 图书损坏定责
 
@@ -147,6 +162,80 @@ CI 九关全绿: ruff check/format, pytest 307/5 (+13 XSS), behave 1095, api con
 - 申诉窗口：7 自然日历日，超时自动确认
 - 计时口径：自然日历日差 (date() - date())，非 ROUND_HALF_EVEN
 
+### 3.9 GLM 审计修复（2026-07-22）
+
+| 批次 | 项 | 文件 | 修复内容 |
+|------|----|------|---------|
+| **Batch 1** | F1 逾期音频 | `reading/service.py`, `reading/router.py` | 后端逾期校验 + 强归属 |
+| | F2 mark_book_lost Child 补锁 | `deposit/service.py:357-360` | `.with_for_update()` |
+| | F3 handle_callback Child 补锁 | `deposit/service.py:145-148` | `.with_for_update()` |
+| **Batch 2** | F4 pay_deposit 三段式 | `deposit/service.py:63-91` | Phase 1 commit→Phase 2 事务外→Phase 3 终态 |
+| | F5 repay_deposit 三段式 | `deposit/service.py` | 同上 |
+| | F6 audit_refund 三段式 | `deposit/service.py` | approve/reject + 失败回退 REFUND_PENDING |
+| **Batch 3** | F7 事件 handler 补锁 | `borrow_handlers.py`, `order_handlers.py`, `quiz_handlers.py`, `misc_handlers.py`, `advancement/service.py` | 全部 `repo.get_by_id` → `with_for_update()` |
+| | F8 available_stock 原子 SQL | `borrow_handlers.py` | `UPDATE ... SET col = col + 1` |
+| | F9 member_expire_time 锁保护 | `order_handlers.py` | `with_for_update()` |
+| **Batch 4** | F10 cancel_enrollment 原子 UPDATE | `activity/service.py` | `current_participants - 1` |
+| | F11 _validate_transfer 行锁 | `child/service.py` | `count()` → `.with_for_update().first()` |
+| | F12 cancel_activity 批量补锁 | `activity/service.py` | `.with_for_update()` |
+
+### 3.10 N+1 性能批（2026-07-22）
+
+| 函数 | 修复前 | 修复后 | 降幅 |
+|------|--------|--------|:----:|
+| `reconcile_stock` | 2N+1（每书 2 次 COUNT） | 3 查询（2 GROUP BY + 1 Book） | 2N→3 |
+| `check_due_date_reminders` | 4 × 全表 JOIN 遍历 | 1 JOIN + defaultdict 分组 | 4N→1 |
+| `mark_overdue_books` | N+1 Child + O(N²) 嵌套累加 | GROUP BY SUM + `id.in_()` 批量 | N²→2 |
+| `check_activity_reminders` | N+1 × N+1 三级嵌套 | 1 次 3 表 JOIN | N²→1 |
+| `scripts/check_model_consistency.py` | 缺 audio.models import | 已补齐 | — |
+
+### 3.11 Phase 2 全量完成 — 数据驱动事件委托迁移（2026-07-22 ✅）
+
+在 3.1 阶段 7 模板迁移基础上，扩展至全部 **38 模板 × 35 JS** 文件。
+
+| 指标 | 值 |
+|------|-----|
+| HTML 模板 | 38/38 → 0 inline handlers |
+| JS 文件 | 35/35 → 0 inline handlers（仅保留 programmatic `.onclick = fn` 合规赋值） |
+| 事件类型覆盖 | click / input / change / keydown / submit |
+| 委托挂载点 | `#admin-root` 单点 `addEventListener` |
+| 绑定模式 | `data-action="page:fnName"` 格式 |
+
+### 3.12 清理项完成（2026-07-22 ✅）
+
+| 项 | 内容 | 文件数 | 状态 |
+|----|------|:------:|:----:|
+| R2 兼容重导出 | 删除 `for (var k in window.xxxPage)` | 24 JS | ✅ |
+| R3 escapeHtml 统一 | 删除局部函数，统一用 `admin.js` 全局版（`??` vs `\|\|` 安全差异已论证） | 17 JS | ✅ |
+| R4 iconfont 目录 | `frontend/static/iconfont/.gitkeep` 已创建 | 1 dir | ✅ |
+| I3 BookOverdueEvent | 类定义从 `events.py` 删除（无消费者） | 1 file | ✅ |
+| I4 alembic env.py F401 | 21 个 F401 → `# noqa` 移到 `(` 行 | 1 file | ✅ |
+| R6 onError handler | `frontend/app.js` 已有 `wx.onError` + `wx.onUnhandledRejection` | 1 file | ✅ |
+
+### 3.13 Token 安全审计与修复（2026-07-22 ✅）
+
+| 发现 | 修复 | 文件 |
+|------|------|------|
+| 令牌无撤销机制 | 新增 `RefreshToken` + `TokenBlacklist` 表，过期淘汰 | `alembic/versions/028_add_token_generation_and_user_status.py` |
+| TokenContext.session_id 恒为 `None` | 生成 `refresh_token` 时填充 `session_id` | `user/service.py` |
+| 密码修改无旧密码校验 | 新增 `ChangePasswordRequest(old_password + new_password)` 端点 | `admin_auth_router.py`, `account_service.py`, `profile.html` |
+| 下线后 token 仍然可用 | 黑名单机制 + `login_record.session_id` 核查 | `auth middleware` |
+| 登录设备无绑定 | Token → session_id → login_record 设备指纹链路 | `user/models.py` (LoginRecord) |
+
+### 3.14 专家审查轮次交付（2026-07-21/22）
+
+| 报告 | 覆盖 |
+|------|------|
+| PRD vs 代码一致性审计 | `prd_vs_code_audit_20260721.md` |
+| XSS 深度审查 | `XSS深度审查报告-20260721.md` |
+| 儿童隐私合规 | `children_privacy_compliance_20260721.md` |
+| 数据备份恢复 | `backup_recovery_plan_20260721.md` |
+| 事务锁审计 | `transaction_lock_audit_20260721.md` |
+| Token/Session 安全审计 | `token_session_security_audit_20260722.md` |
+| Token 安全修复报告 | `token_security_fix_report_20260722.md` |
+| Phase 2 迁移终结报告 | `Phase2-数据驱动事件委托迁移终结报告.md` |
+| 专家工作交接 | `专家工作交接-HANDOFF-20260722.md` |
+
 ---
 
 ## 四、剩余工作清单
@@ -163,12 +252,15 @@ CI 九关全绿: ruff check/format, pytest 307/5 (+13 XSS), behave 1095, api con
 
 | # | 项 | 说明 | 预估工时 |
 |---|----|------|:--------:|
-| R1 | Phase 2 扩展到 27 个模板 | 将 135 处 inline onclick/onsubmit/onchange/oninput → `data-pg` 委托。包括 content(13)、page_template(10)、assessments(9)、teachers(8)、settings(8)、deposit(8) 等 | 3-4 小时 |
-| R2 | 移除 26 个文件的兼容重导出 | Phase 2 完成后，删除 `for (var k in window.xxxPage) window[k] = ...;`，彻底解决 D2 | 随 R1 |
-| R3 | 删除 17 处局部 escapeHtml | Phase 2 完成后，IIFE 内重复定义的 escapeHtml 可删除（依赖 admin.js 全局版本） | 随 R1 |
 | R4 | iconfont woff2 文件 | 从 iconfont.cn 下载，取消 `backend/static/admin/css/app.wxss` 末尾 `@font-face` 注释 | 5 分钟 |
 | R5 | nginx rate limit | 为 9 个资金/用户接口添加 `limit_req_zone`（建议网关层，非后端代码） | 1 小时 |
-| R6 | 前端 `onError` 全局 handler | `frontend/app.js` 添加 `wx.onError` + `wx.onUnhandledRejection`（已有建议但未实际添加） | 30 分钟 |
+
+### ✅ 已完成的 P1（无需重复修复）
+- **R1 Phase 2 全量扩展** — 38 模板 × 35 JS，~150 处 inline handler → `data-action` 委托 ✅
+- **R2 兼容重导出清除** — 24 文件删除 `for (var k in window.xxxPage)` ✅
+- **R3 escapeHtml 统一** — 17 文件局部函数删除 ✅
+- **R4 iconfont 目录** — `.gitkeep` 已创建 ✅
+- **R6 onError handler** — `frontend/app.js` 已添加 ✅
 
 ### P2 — 可延后
 
@@ -176,8 +268,10 @@ CI 九关全绿: ruff check/format, pytest 307/5 (+13 XSS), behave 1095, api con
 |---|----|------|
 | I1 | reading-stats 折线图 | 产品决策待定 |
 | I2 | pytest 覆盖提升 | activity service 已达 95%，剩余 6 个 core service <30%（book/child/deposit/order/reading/report） |
-| I3 | 删除 `BookOverdueEvent` | 已确定为纯文档用途，无消费者 |
-| I4 | alembic/env.py 29 F401 | 多行 noqa 位置问题，不影响功能但 lint 不干净 |
+
+### ✅ 已完成的 P2（无需重复修复）
+- **I3 删除 BookOverdueEvent** — 文档引用 + 类定义已全部删除 ✅
+- **I4 alembic/env.py F401** — 21 个 F401 已修复（`# noqa` 移到 `(` 行）✅
 
 ### 外部依赖阻塞项
 
@@ -190,19 +284,36 @@ CI 九关全绿: ruff check/format, pytest 307/5 (+13 XSS), behave 1095, api con
 
 ---
 
-## 五、剩余 inline handler 分布（27 模板，135 处）
+## 五、管理后台事件委托架构（Phase 2 全部完成 ✅）
+
+所有 38 模板 × 35 JS 文件已迁移到 `data-action` 事件委托模式，**0 处 inline handler 残留**。
+
+### 事件委托方案
 
 ```
-content.html:          13    page_template.html:    10    assessments.html:      9
-teachers.html:          8    settings.html:          8    deposit.html:           8
-submissions.html:       7    bookcopy.html:          7    library.html:           6
-achievements.html:      6    reservation.html:       5    recycle_bin.html:       5
-dictionary.html:        5    certificates.html:      5    reading_data.html:      4
-questions.html:         4    benefit_transfers.html:  4    audio.html:             4
-venues.html:            3    roles.html:             2    quiz.html:              2
-operation_logs.html:    2    message_manage.html:    2    login.html:             2
-activity_checkin.html:  2    profile.html:           1    base.html:              1
+挂载点: document.querySelector('#admin-root')
+模式:    data-action="page:fnName"
+绑定:    addEventListener('click', handler) — 单监听器覆盖全部 click
+委托:    同时支持 input / change / keydown / submit 事件
+后备:    未挂载 #admin-root 的登录页保留自身 addEventListener
 ```
+
+### base-init.js 全局功能清单
+
+| 功能 | 选择器/模式 |
+|------|-------------|
+| 弹窗关闭 | `data-close-modal` |
+| 分页渲染 | `renderPagination(el, totalPages, currentPage, fetchFn)` |
+| CSV 导出 | `exportCSV(headers, rows, filename)` |
+| 安全转义 | `escapeHtml(str)` — 全局单一定义 |
+| 安全获取元素 | `safeEl(id)` — null 保护包装 |
+
+### JS 文件架构
+
+- 35 个 page JS 全部 IIFE 包裹 `(function() { ... })();`
+- 通过 `window.xxxPage = { ... }` 导出方法
+- 兼容重导出（`for (var k in window.xxxPage)`）已全部清除（24 文件）
+- 局部 escapeHtml 已全部删除（17 文件），统一使用 `admin.js` 全局版
 
 ---
 
@@ -213,13 +324,13 @@ activity_checkin.html:  2    profile.html:           1    base.html:            
 | 后端 | Python 3.13 + FastAPI + SQLAlchemy 2.0 + Pydantic V2 |
 | 数据库 | MySQL 8.0 (utf8mb4)，测试用 SQLite `:memory:` |
 | 前端 | 微信小程序原生（31 页，4 子包） |
-| 管理端 | Jinja2 模板（37 页面）+ 35 page JS（IIFE）+ 33 CSS + base-init.js |
+| 管理端 | Jinja2 模板（37 页面 + base.html）+ 35 page JS（IIFE）+ 33 CSS + base-init.js |
 | 测试 | pytest + behave + ruff + GitHub Actions |
 | 认证 | JWT (python-jose) + bcrypt + Redis |
 | 支付 | PaymentGateway ABC → MockPaymentGateway / WeChatPayV3（配置开关） |
 | 短信 | SmsGateway ABC → MockSmsGateway / 腾讯云/阿里云（配置开关） |
 | 查词 | ECDICT 本地 338 万词条 + Free Dictionary API 兜底 |
-| 定时 | APScheduler（15 个任务） |
+| 定时 | APScheduler（15 个任务，含每日0点损坏定责过期确认） |
 | 端口 | 后端 8002 / 前端 3002 |
 
 ---
@@ -240,21 +351,22 @@ EventBus (跨域解耦) + ConfigService (TTL缓存)
 - 金额用 `Decimal` / 整数分，禁 float
 - 归属校验用 `middleware/ownership.py`（声明式），禁手动写
 - 库存操作必须有锁（`with_for_update()`）
+- 三段式提交：外部 HTTP 调用前必须 commit 释放行锁
 - 禁用 oklch() / aspect-ratio / backdrop-filter / translateY(-50%)
-- CI 不可妥协：推送前必过 7 项检查
+- CI 不可妥协：推送前必过 CI 同构九关
 
 ### 前端架构
-- 34 个 page JS 文件全部 IIFE 包裹 → `window.xxxPage` 导出
-- `base-init.js` 含全局：showModal/closeModal/renderPagination/exportCSV/jsEscape + `data-close-modal` 委托
-- `data-pg="fnName"` 委托模式用于已迁移的 7 模板
-- 剩余 135 处 inline handler 使用 `window.fnName` 全局访问
+- **35 个 page JS 文件**全部 IIFE 包裹 → `window.xxxPage` 导出
+- **全量 `data-action` 事件委托** — 通过 `#admin-root` 单监听器覆盖所有 click/input/change/keydown/submit
+- `base-init.js` 含全局：showModal/closeModal/renderPagination/exportCSV/escapeHtml/safeEl + `data-close-modal` 委托
+- **0 处 inline handler 残留** — 38 个 HTML 模板 × 35 个 JS 文件全部清零
 
 ---
 
-## 八、CI 配置速查
+## 八、CI 配置速查 — 同构九关
 
 ```yaml
-# .github/workflows/ci.yml — 3 jobs
+# .github/workflows/ci.yml — 3 jobs × 7 checks + 2 regression extras
 lint:
   - ruff check backend/ tests/
   - ruff check features/ scripts/
@@ -265,6 +377,9 @@ test:
   - python -m scripts.verify_api_contract
 model-check:
   - python -m scripts.check_model_consistency
+# regression extras（CI外，N+1后已加入交付标准）:
+#   MOCK_PAYMENT=true MOCK_SMS=true DEBUG=true python scripts/integration_test.py
+#   python -m alembic check
 ```
 
 Python 依赖：`pip install -r requirements.txt pytest pytest-asyncio httpx behave PyHamcrest`
@@ -277,6 +392,8 @@ python -m pytest tests/ -q --ignore=tests/unit/test_report_pdf.py --ignore=tests
 python -m behave features/ --no-capture -q
 python -m scripts.verify_api_contract
 python -m scripts.check_model_consistency
+MOCK_PAYMENT=true MOCK_SMS=true DEBUG=true python scripts/integration_test.py
+python -m alembic check
 ```
 
 ---
@@ -331,11 +448,10 @@ python -m scripts.check_model_consistency
 - `full-verification_20260717.md` — 旧全量验证报告
 - `project-status-verification_20260717.md` — 旧状态验证报告
 
-**专家意见/（16 个）**:
-- `~施工指令-给大模型.md` — 施工指令，任务完成
-- `P0-修复指南.md` — 修复指南，任务完成
-- `P1-修复指南.md` — 修复指南，任务完成
-- `P0-修复指南.md` — 修复指南，任务完成
+**专家意见/（16+ 个）**:
+- `~施工指令-给大模型.md` — 任务完成
+- `P0-修复指南.md` — 任务完成
+- `P1-修复指南.md` — 任务完成
 - `修复验证报告.md` — 旧验证报告
 - `全量深度终审.md` — 旧终审报告
 - `前端小程序审查.md` — 旧审查
@@ -348,6 +464,31 @@ python -m scripts.check_model_consistency
 - `PRD业务审查-COO视角.md` — 旧审查
 - `PRD对齐审查.md` — 旧审查
 - `小程序零宕机审查.md` — 旧审查
+- `决策请求书-D1至D11（已执行）.md` — 已执行
+- `开发大模型-审计理解与苏格拉底拷问.md` — 旧思考
+- `启动包-0B基线与决策请求与T2文档.md` — 旧启动包
+- `专家答复-15拷问批复与审计偏差修正.md` — 已收口
+- `专家复核-R1押金链路修复-20260720.md` — 已收口
+- `专家复核-打回项重做第二轮-20260720.md` — 已收口
+- `专家审查-修复交付报告20260720-核验结论.md` — 旧结论
+- `修复交付报告-20260720.md` — 旧报告
+- `终审总结-审计整改计划全量收口-20260721.md` — 旧总结
+- `Step1-全局扫描与审计计划.md` — 旧步骤
+- `Step2-批次1-维度一二三.md` 至 `Step2-批次5-维度十三十四十五.md` — 旧批处理
+- `Step3-BDD用例对齐度专项审查.md` — 旧审查
+- `Step4-需求文档重构与收尾建议.md` — 旧建议
+- `0B-代码现状基线调查报告.md` — 旧基线
+
+**保留**（当前轮次产物，供新 LLM 参考）:
+- `prd_vs_code_audit_20260721.md`
+- `XSS深度审查报告-20260721.md`
+- `children_privacy_compliance_20260721.md`
+- `backup_recovery_plan_20260721.md`
+- `transaction_lock_audit_20260721.md`
+- `token_session_security_audit_20260722.md`
+- `token_security_fix_report_20260722.md`
+- `Phase2-数据驱动事件委托迁移终结报告.md`
+- `专家工作交接-HANDOFF-20260722.md`
 
 **root（1 个）**:
 - `checkpoint.md` — 999 行，数据过期。部分路由清单建议合并至 ARCHITECTURE.md 后删除
@@ -362,14 +503,20 @@ python -m scripts.check_model_consistency
 
 ```markdown
 1. 读取 CLAUDE.md（宪法）、HANDOFF.md（本交接文档）、.ai/context/CONTEXT.md（业务知识）、ARCHITECTURE.md（架构）
-2. 运行 CI 验证命令确认项目状态
+2. 运行 CI 同构九关确认项目状态（pytest 333/5, behave 1095, ruff 0, ruff format 349, api contract, model 54 tables, integration 55/55, alembic check）
 3. 按剩余工作清单优先级开始：
    P0: 外部输入项（appid/服务协议/隐私政策）
-   P1: Phase 2 扩展（27 模板 inline handler 迁移）
-   P1: iconfont woff2 + rate limit + onError handler
-4. T3.6a 损坏定责已交付，如有 bug 优先修复 damage_admin_service 或 damage_reports 页面
-5. 每个改动前读取目标文件，确保理解当前代码
-6. 声称"完成"前必须运行 CI 全部 7 项检查
+   P1: iconfont woff2 下载 + nginx rate limit
+   P2: pytest 覆盖提升, reading-stats 折线图
+4. Phase 2 全量迁移已完成（38 模板 × 35 JS → 0 inline handler），勿重复劳动
+5. XSS 深度修复 X1-X6 已完成（Jinja2 autoescape + onclick→data-* + schema 校验 + 回归测试），勿重复劳动
+6. Token 安全修复已完成（黑名单 + 密码修改端点 + session_id 链路），勿重复劳动
+7. T3.6a 损坏定责已交付，如有 bug 优先修复 damage_admin_service 或 damage_reports 页面
+8. GLM 事务锁审计 F1-F12 + N+1 性能批 F1-F4 已全部收口，勿重复修复
+9. 每个改动前读取目标文件，确保理解当前代码
+10. 声称"完成"前必须运行 CI 全部 9 项检查（含 integration_test + alembic check）
+11. 管理员测试账号：admin / admin123
+12. 管理后台日志：logs/admin_requests.log
 ```
 
 ---

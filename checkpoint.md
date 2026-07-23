@@ -1,7 +1,7 @@
 # DmkWords (librio) 项目检查点
 
-> 更新时间：2026-07-21 GMT+8 (v8)
-> 状态：✅ V3.11 — XSS深度修复 X1-X6 交付 + T3 批次 1-5 全量交付完毕，307/5 pytest（+13 XSS回归） + 160/1095 behave + 55/55 集成全绿 + CI 同构九关落地
+> 更新时间：2026-07-22 GMT+8 (v9)
+> 状态：✅ V3.12 — GLM 任务书全量收口（事务锁审计 F1-F12 + N+1 性能批 F1-F4）+ 316/5 pytest + 160/1095 behave + 55/55 集成全绿 + CI 同构九关
 
 ---
 
@@ -20,13 +20,13 @@ DmkWords 是一个儿童英语阅读管理平台：
 
 | 检查项 | 状态 |
 |--------|------|
-| pytest | ✅ 307 passed (本地) |
+| pytest | ✅ 316 passed (本地) |
 | behave | ✅ 160 scenarios / 1095 steps |
 | ruff check `backend/ tests/` | ✅ 0 errors |
 | ruff check `features/ scripts/` | ✅ 0 errors |
-| ruff format `--check .` | ✅ 342 files formatted |
+| ruff format `--check .` | ✅ 346 files formatted |
 | verify_api_contract | ✅ OK |
-| check_model_consistency | ✅ 53 tables |
+| check_model_consistency | ✅ 54 tables |
 | alembic check (MySQL only) | ✅ No new upgrade operations detected |
 | 生产模式启动 | ✅ DEBUG=false + 真实 SECRET_KEY + MOCK_SMS 警告日志 |
 
@@ -1142,12 +1142,11 @@ alembic check:                 No new upgrade operations detected ✅
 |----|-----|
 | ruff check `backend/ tests/` | 0 errors |
 | ruff check `features/ scripts/` | 0 errors |
-| ruff format `--check .` | 328 files formatted |
-| pytest (本地) | 239 passed, 4 skipped |
-| pytest (CI) | 251 passed, 5 skipped |
-| behave | 138 scenarios, 970 steps, 0 failed |
+| ruff format `--check .` | 346 files formatted |
+| pytest (本地) | 316 passed, 5 skipped |
+| behave | 160 scenarios, 1095 steps, 0 failed |
 | verify_api_contract | OK |
-| check_model_consistency | 53 tables |
+| check_model_consistency | 54 tables |
 | IIFE 覆盖 | 34/34 |
 
 ### 剩余 inline handler 分布（27 模板，135 处）
@@ -1291,3 +1290,83 @@ activity_checkin.html:  2    profile.html:           1    base.html:            
 | behave | 138 scenarios / 970 steps | 160 scenarios / 1095 steps |
 | 集成测试 | — | 55/55 全绿 |
 | ruff | 0 errors | 0 errors |
+
+---
+
+## §二十五、2026-07-22 GLM 审计修复 + N+1 性能批全量收口
+
+> GLM 任务书（5 轮交付）终极收尾：事务锁审计 F1-F12 + 反向排查 + 备份方案 + 隐私合规设计 + N+1 性能批 F1-F4。16 项修复 + 5 处修正，全部经独立核验零打回。
+
+### Batch 1 — 逾期音频 + for_update 补全（F1-F3）
+
+| 项 | 文件 | 修复 |
+|----|------|------|
+| F1 逾期音频 | `reading/service.py:78-95`, `reading/router.py:41` | `_check_overdue_audio` + `GetOwnedChildFromQuery()` 强归属校验 |
+| F2 mark_book_lost Child 补锁 | `deposit/service.py:357-360` | Child 查询加 `.with_for_update()` |
+| F3 handle_callback Child 补锁 | `deposit/service.py:145-148` | Child 查询加 `.with_for_update()` |
+
+### Batch 2 — 三段式重构防事务悬挂（F4-F6）
+
+| 项 | 文件 | 修复 |
+|----|------|------|
+| F4 pay_deposit | `deposit/service.py:63-91` | Phase 1 PENDING→commit→Phase 2 事务外调网关→Phase 3 独立事务终态 |
+| F5 repay_deposit | `deposit/service.py` | 同三段式模式 |
+| F6 audit_refund | `deposit/service.py` | approve 三段式；reject 直接 commit；失败回退 REFUND_PENDING 允许重试 |
+
+**架构模式**：三段式提交 — 先 commit 释放行锁 → 事务外调外部 API → 独立事务更新最终状态，彻底消除外部 HTTP 调用持有 DB 事务的问题。
+
+### Batch 3 — 事件处理器 for_update（F7-F9）
+
+| 项 | 文件 | 修复 |
+|----|------|------|
+| F7 7 个事件 handler 补锁 | `borrow_handlers.py`, `order_handlers.py`, `quiz_handlers.py`, `misc_handlers.py`, `advancement/service.py` | `repo.get_by_id` → `db.query.with_for_update()` |
+| F8 Book.available_stock 原子 SQL | `borrow_handlers.py` | ORM 读-改-写 → `UPDATE ... SET col = col + 1` |
+| F9 member_expire_time 锁保护 | `order_handlers.py` | `with_for_update()` 保护加法操作 |
+
+### Batch 4 — 服务层锁遗漏（F10-F12）
+
+| 项 | 文件 | 修复 |
+|----|------|------|
+| F10 cancel_enrollment 原子 UPDATE | `activity/service.py` | Python `max(0, count-1)` → `UPDATE current_participants = current_participants - 1` |
+| F11 _validate_transfer 行锁 | `child/service.py` | `count()` → `.with_for_update().first()` |
+| F12 cancel_activity 批量补锁 | `activity/service.py` | ActivityEnrollment 批量加 `.with_for_update()` |
+
+### N+1 性能批（F1-F4）
+
+| 函数 | 修复前 | 修复后 | 降幅 |
+|------|--------|--------|:----:|
+| `reconcile_stock` | 2N+1 查询 | 3 查询（2 GROUP BY + 1 Book） | 2N→3 |
+| `check_due_date_reminders` | 4 × 全表遍历 | 1 JOIN + dict 分组 | 4N→1 |
+| `mark_overdue_books` | N+1 + O(N²) 嵌套循环 | GROUP BY SUM + `Child.id.in_()` 批量 | N²→2 |
+| `check_activity_reminders` | N+1 × N+1 | 1 次 3 表 JOIN | N²→1 |
+
+### 追加修复
+
+| 项 | 文件 | 说明 |
+|----|------|------|
+| check_model_consistency import | `scripts/check_model_consistency.py:42` | 补 `backend.domain.audio.models` 导入 |
+
+### GLM 任务书最终状态
+
+| 阶段 | 状态 |
+|------|:----:|
+| 任务 1 事务锁（F1-F12） | ✅ |
+| 任务 2 反向排查 | ✅ |
+| 任务 3 备份方案 + 3 修正 | ✅ |
+| 任务 4 隐私合规设计 | ✅ |
+| N+1 性能批（F1-F4） | ✅ |
+| backlog（留档） | 锁顺序交叉监控、F2 范围过滤、事件总线异步化、PIA 报告 |
+
+### 全量验证
+
+| 检查项 | 结果 |
+|--------|:----:|
+| ruff check `backend/ tests/` | ✅ All checks passed |
+| ruff check `features/ scripts/` | ✅ All checks passed |
+| ruff format `--check .` | ✅ 346 files formatted |
+| pytest `tests/` | ✅ 316 passed, 5 skipped |
+| behave `features/` | ✅ 160 scenarios / 1095 steps |
+| verify_api_contract | ✅ OK |
+| check_model_consistency | ✅ 54 tables, PASSED |
+| alembic check | ✅ No new upgrade operations detected |
+| integration_test | ✅ 55/55 全部通过 |

@@ -7,7 +7,7 @@
 
 > ⚠️ **最高指令注入**：本文件是 DmkWords 项目的最高法律。任何代码生成、修改、重构，必须无条件服从本文件中的【零容忍铁律】与【业务红线】。
 
-> **最后更新**：2026-07-21（CI 同构九关落地 — 307/5 pytest + 1095/0 behave + XSS回归13断言 + CI 九关全绿）
+> **最后更新**：2026-07-22（GLM 任务书全量收口 — 316/5 pytest + 1095/0 behave + N+1 性能批 + CI 同构九关全绿）
 
 ## 一、 核心身份与零容忍铁律 (System Prompt)
 
@@ -206,10 +206,10 @@ Router (参数校验、HTTP状态码、依赖注入，🚫不含 try/except，�
 | **数据库** | MySQL 8.0 (utf8mb4)，测试用 SQLite `:memory:` |
 | **前端** | 微信小程序 (WXML/WXSS/JS, 31 页, 12 个通用组件) + MCP (wechat-devtools) |
 | **管理端** | PC 后台 37 个模板页面（含 base.html）+ 33 页面级 CSS + 设计系统 Token (--accent: #5560cf) |
-| **测试** | pytest (307 本地, 5 skipped, +13 XSS回归) + behave (160 场景, 1095 步骤, 0 failed) + Ruff (0 errors) |
+| **测试** | pytest (316 本地, 5 skipped) + behave (160 场景, 1095 步骤, 0 failed) + Ruff (0 errors) |
 | **API** | 184 个端点 |
 | **领域模块** | 27 个 |
-| **定时任务** | 14 个 |
+| **定时任务** | 15 个 |
 | **定时/认证** | APScheduler / JWT (python-jose) |
 | **词典** | ECDICT 本地 338 万词条 + Free Dictionary API 兜底 |
 | **环境变量** | ENABLE_TEST_TOKEN（测试令牌守卫）, DEBUG（双重守卫）, MOCK_PAYMENT（Mock 支付网关开关）, MOCK_SMS（Mock 短信网关开关）|
@@ -375,7 +375,7 @@ echo "===== 自检完成 ====="
 | `specs/architecture-refactor/` | 架构重构方案 (13个文件，1900行) |
 | `.mcp.json` / `mcp-server.js` | 微信开发者工具 MCP 服务端配置 |
 
-### 管理端页面目录（V3.11，共 37 个页面含 base.html）
+### 管理端页面目录（V3.12，共 37 个页面含 base.html）
 
 ```
 backend/templates/admin/

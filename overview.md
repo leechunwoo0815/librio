@@ -1,6 +1,6 @@
 # DmkWords (librio) — 项目概览
 
-> 最后更新：2026-07-21 | 版本：V3.11 — T3 批次全量交付完毕 + CI 同构九关落地
+> 最后更新：2026-07-22 | 版本：V3.12 — GLM 任务书全量收口（事务锁审计 + N+1 性能批）+ CI 同构九关
 
 ## 一句话
 
@@ -10,7 +10,7 @@ DmkWords 是一个 OMO（Online-Merge-Offline）儿童英语分级阅读平台�
 
 | 指标 | 数值 |
 |------|------|
-| 测试（pytest 本地/CI） | **307** passed / 5 skipped 本地 |
+| 测试（pytest 本地/CI） | **316** passed / 5 skipped 本地 |
 | BDD（behave） | 160 scenarios / 1095 steps |
 | 代码规范（ruff） | 0 errors |
 | 数据库迁移（alembic） | clean |
@@ -24,10 +24,12 @@ DmkWords 是一个 OMO（Online-Merge-Offline）儿童英语分级阅读平台�
 | 管理端 CSS 文件 | 33 |
 | 动态配置项 | 37 |
 
-## 近期交付（2026-07-21）
+## 近期交付（2026-07-22）
 
 | 交付项 | 状态 | 详情 |
 |--------|------|------|
+| **GLM 事务锁审计 F1-F12** | ✅ 全部收口 | 3 段式重构防事务悬挂（pay/repay/audit）、事件处理器补锁、原子 SQL 替代 ORM、for_update 全面补全 |
+| **N+1 性能批 F1-F4** | ✅ 全部收口 | reconcile_stock 2N→3、due_date_reminders 4N→1、mark_overdue_books N²→2、activity_reminders N²→1 |
 | T3.6a 图书损坏定责 | ✅ 交付+审核通过 | 三级定级 + D05丢失联动 + 冲正回滚 + 申诉窗口 + 定时过期确认 + RBAC + 家长通知 + 9单元测试 |
 | 安全审计修复 | ✅ 7/7 闭合 | P0 4 项 + P1 3 项 |
 | PRD 功能 | ✅ 完整 | QR 码、生词高亮、季度/半年会员、权益转让 |

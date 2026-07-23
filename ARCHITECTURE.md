@@ -1,6 +1,6 @@
 # DmkWords — 架构文档
 
-> 版本：V3.8（2026-07-15 更新）
+> 版本：V3.12（2026-07-22 更新）
 > 零粉饰，只写事实
 
 ---
@@ -44,10 +44,10 @@ Gateways → Mock支付网关 / Mock短信网关 / 真实支付网关（依赖�
 | 前端 | 微信小程序原生（31 页，4 子包） |
 | 后端 | Python 3.13 + FastAPI + SQLAlchemy 2.0 + Pydantic V2 |
 | 数据库 | MySQL 8.0 (utf8mb4)，测试用 SQLite :memory: |
-| 测试 | pytest (307 passed / 5 skipped) + behave (160 scenarios / 1095 steps) |
-| 管理端 | 36 个 PC 后台模板（含 base.html）+ 32 页面级 CSS + 34 page JS（IIFE） |
+| 测试 | pytest (316 passed / 5 skipped) + behave (160 scenarios / 1095 steps) |
+| 管理端 | 37 个 PC 后台模板（含 base.html）+ 33 页面级 CSS + 35 page JS（IIFE） |
 | 设计系统 | --accent: #5560cf + 31/31 class 对齐 ≥95% + 0 hardcoded + 0 oklch |
-| 定时 | APScheduler（14 个任务） |
+| 定时 | APScheduler（15 个任务） |
 | 认证 | JWT (python-jose) + bcrypt 密码哈希 |
 | 缓存 | Redis（access_token 缓存，带内存降级） |
 | 查词词库 | ECDICT（338 万词条，本地离线） |
@@ -120,8 +120,8 @@ backend/
 │   ├── rate_limit.py    #   速率限制
 │   ├── request_log.py   #   请求日志（输出到 logs/admin_requests.log）
 │   └── trace.py         #   请求追踪
-├── tasks/               # APScheduler 定时任务（14 个）
-├── templates/admin/     # 管理端 Jinja2 模板（36 个页面，含 base.html）
+├── tasks/               # APScheduler 定时任务（15 个）
+├── templates/admin/     # 管理端 Jinja2 模板（37 个页面，含 base.html）
 ├── static/admin/        # 管理端静态资源（CSS/JS）
 ├── seeds/               # 种子数据脚本
 └── utils/               # 工具函数
@@ -129,7 +129,7 @@ scripts/                 # CI 脚本
 ├── check_fake_assertions.py  # 禁止 assert True 假绿
 └── verify_api_contract.py    # 前后端 API 契约验证
 .github/workflows/ci.yml     # CI 配置
-features/                # BDD feature 文件（16 个，138 场景，970 步骤）
+features/                # BDD feature 文件（16 个，160 场景，1095 步骤）
 tests/unit/              # pytest 单元测试（239 个）
 scripts/integration_test.py  # 全链路集成测试（867 行，6 主流程 + 7 异常场景）
 frontend/                # 微信小程序（31 个页面，4 子包）
@@ -273,7 +273,7 @@ Mock 网关路由（仅 `MOCK_PAYMENT=True` / `MOCK_SMS=True` 时注册）：
 
 ```bash
 # pytest
-239/4 passed (local) / 251/5 passed (CI)
+316/5 passed (local)
 
 # 架构验证
 ✅ Router 层 ORM 操作：0 处
