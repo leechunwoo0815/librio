@@ -90,7 +90,7 @@ Page({
     try {
       const params = this.buildParams()
       const result = await api.searchBooks(params)
-      const newList = result.list || []
+      const newList = result.items || []
       const books = reset ? newList : [...this.data.books, ...newList]
       this.setData({
         books,

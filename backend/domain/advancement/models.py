@@ -7,8 +7,6 @@ V3.1 重构核心：QuizService 解耦
   其他域各自订阅事件自行响应
 """
 
-from datetime import datetime
-
 from sqlalchemy import (
     BigInteger,
     Boolean,
@@ -18,6 +16,7 @@ from sqlalchemy import (
     Integer,
     Numeric,
     SmallInteger,
+    func,
     String,
     Text,
 )
@@ -90,7 +89,7 @@ class ReadingSubmission(BaseModel):
     status = Column(SmallInteger, default=STATUS_PENDING, comment="审核状态")
     teacher_comment = Column(Text, nullable=True, comment="老师评语")
     submitted_at = Column(
-        DateTime, default=datetime.utcnow, nullable=True, comment="提交时间"
+        DateTime, default=func.now(), nullable=True, comment="提交时间"
     )
     word_count = Column(Integer, default=0, comment="该本书的单词数（积分用）")
     reviewed_at = Column(DateTime, nullable=True, comment="审核时间")

@@ -84,8 +84,8 @@ Page({
     try {
       // 并行获取两个列表，避免重复请求
       const [learning, mastered] = await Promise.all([
-        api.getVocabList(childId, 'learning').catch(() => []),
-        api.getVocabList(childId, 'mastered').catch(() => []),
+        api.getVocabList(childId, 0).catch(() => []),
+        api.getVocabList(childId, 1).catch(() => []),
       ])
       const learningArr = learning || []
       const masteredArr = mastered || []
@@ -140,13 +140,13 @@ Page({
     const index = e.currentTarget.dataset.index;
     const { activeTab, learning, mastered, currentList } = this.data;
     const item = currentList[index];
-    if (!item || item.status === 'mastered') return;
+    if (!item || item.status === 1) return;
 
     try {
       await api.markMastered(vocabId);
       // Move item from learning to mastered
       const newLearning = learning.filter(function (v) { return v.id !== vocabId; });
-      item.status = 'mastered';
+      item.status = 1;
       const newMastered = mastered.concat([item]);
       this.setData({
         learning: newLearning,

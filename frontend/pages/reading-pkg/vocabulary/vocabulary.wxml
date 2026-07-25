@@ -63,7 +63,7 @@
         <text class="w-phonetic" wx:if="{{item.phonetic}}">{{item.phonetic}}</text>
         <text class="w-def">{{item.part_of_speech || ''}} {{item.chinese_meaning}}</text>
       </view>
-      <text class="word-tag {{item.status === 'mastered' ? 'mastered' : 'learning'}}">{{item.status === 'mastered' ? '已掌握' : '学习中'}}</text>
+      <text class="word-tag {{item.status === 1 ? 'mastered' : 'learning'}}">{{item.status === 1 ? '已掌握' : '学习中'}}</text>
       <view class="word-actions" wx:if="{{item.status === 'learning'}}">
         <view class="action-btn" bindtap="onPlayAudio" data-word="{{item.word}}" data-audio="{{item.audio_url}}">
           <text class="action-icon"><text class="icon icon-volume-up">🔊</text></text>

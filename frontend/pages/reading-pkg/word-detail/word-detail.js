@@ -71,8 +71,8 @@ Page({
     try {
       // 并行获取两个列表
       const [learning, mastered] = await Promise.all([
-        api.getVocabList(childId, 'learning').catch(() => []),
-        api.getVocabList(childId, 'mastered').catch(() => []),
+        api.getVocabList(childId, 0).catch(() => []),
+        api.getVocabList(childId, 1).catch(() => []),
       ]);
       const allVocab = (learning || []).concat(mastered || []);
       const found = allVocab.find(function (item) {
@@ -122,9 +122,9 @@ Page({
 
     try {
       const extraData = this.data.extraData || {}
-      const bookId = wordData && wordData.book_id ? wordData.book_id : (extraData.bookId || '')
+      const bookId = wordData && wordData.book_id ? wordData.book_id : (extraData.bookId || null)
       await api.addToVocab(child.id, word, bookId);
-      this.setData({ inVocab: true, vocabStatus: 'learning' });
+      this.setData({ inVocab: true, vocabStatus: 0 });
       wx.showToast({ title: '已加入生词本', icon: 'success' });
     } catch (e) {
       console.error('add to vocab failed:', e);
@@ -138,7 +138,7 @@ Page({
 
     try {
       await api.markMastered(vocabId);
-      this.setData({ vocabStatus: 'mastered' });
+      this.setData({ vocabStatus: 1 });
       wx.showToast({ title: '已掌握', icon: 'success' });
     } catch (e) {
       console.error('mark mastered failed:', e);

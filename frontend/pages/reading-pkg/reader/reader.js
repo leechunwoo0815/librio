@@ -147,7 +147,10 @@ Page({
     this._hideTime = Date.now()
     // MP-002: 暂停音频并记录位置
     if (this.data.audioPlaying) {
-      this.setData({ pausedPosition: bgAudioManager.currentTime })
+      const pos = bgAudioManager.currentTime
+      const mm = Math.floor(pos / 60)
+      const ss = String(Math.floor(pos % 60)).padStart(2, '0')
+      this.setData({ pausedPosition: pos, pausedPositionText: mm + ':' + ss })
       bgAudioManager.pause()
     }
     // MP-004: 缓存进度到本地
@@ -461,7 +464,14 @@ Page({
   async endSession() {
     if (!this.data.sessionId) return
     const minutes = Math.round((Date.now() - this.data.startTime) / 60000)
-    const words = this.data.book.word_count || 0
+    // 按音频播放进度估算实际词数（不再整书注水）
+    const total = this.data.book.word_count || 0
+    const duration = this.data.audioDuration || 0
+    const position = this.data.audioProgress != null
+      ? this.data.audioProgress
+      : (this.data.pausedPosition || 0)
+    const ratio = duration > 0 ? Math.min(1, position / duration) : 1
+    const words = Math.round(total * ratio)
     try {
       await api.endSession(this.data.sessionId, 0, words, minutes)
     } catch (e) {

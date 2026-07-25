@@ -65,9 +65,9 @@ module.exports = {
   getCurrentLevel(childId) { return req.get(`/advancement/level/${childId}`) },
 
   // 测验
-  startQuiz(bookId) { return req.post('/advancement/quiz/start', { book_id: bookId }) },
+  startQuiz(bookId, childId) { return req.post('/advancement/quiz/start', { book_id: bookId }, { params: { child_id: childId } }) },
   getQuizQuestions(bookId) { return req.get(`/advancement/quiz/questions/${bookId}`) },
-  submitQuizAnswers(quizId, answers) { return req.post(`/advancement/quiz/${quizId}/submit`, { answers }) },
+  submitQuizAnswers(quizId, answers) { return req.post(`/advancement/quiz/${quizId}/submit`, answers) },
 
   // 成就
   getAchievements() { return req.get('/advancement/achievements') },

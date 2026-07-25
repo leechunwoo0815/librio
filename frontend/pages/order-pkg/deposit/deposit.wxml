@@ -33,34 +33,34 @@
         <view class="balance-grid">
           <view class="balance-item">
             <text class="balance-label">押金余额</text>
-            <text class="balance-value">¥{{depositInfo.balance}}</text>
+            <text class="balance-value">¥{{depositInfo.amount}}</text>
           </view>
           <view class="balance-item">
             <text class="balance-label">未结罚款</text>
-            <text class="balance-value {{depositInfo.status === 'deducted' ? 'balance-value-fine' : 'balance-value-muted'}}">¥{{depositInfo.fine}}</text>
+            <text class="balance-value {{depositInfo.status === 3 ? 'balance-value-fine' : 'balance-value-muted'}}">¥{{depositInfo.fine}}</text>
           </view>
         </view>
-        <view class="action-buttons" wx:if="{{depositInfo.status === 'paid'}}">
+        <view class="action-buttons" wx:if="{{depositInfo.status === 1}}">
           <view class="btn-outline" bindtap="onRefund">
             <text>申请退款</text>
           </view>
         </view>
-        <view class="action-buttons" wx:elif="{{depositInfo.status === 'unpaid'}}">
+        <view class="action-buttons" wx:elif="{{depositInfo.status === 0}}">
           <view class="btn-primary-full" bindtap="onPay">
-            <text>缴纳押金 ¥{{depositInfo.balance}}</text>
+            <text>缴纳押金 ¥{{depositInfo.amount}}</text>
           </view>
         </view>
-        <view class="action-buttons" wx:elif="{{depositInfo.status === 'refunding'}}">
+        <view class="action-buttons" wx:elif="{{depositInfo.status === 4}}">
           <view class="btn-outline btn-disabled">
             <text>退款处理中...</text>
           </view>
         </view>
-        <view class="action-buttons" wx:elif="{{depositInfo.status === 'refunded'}}">
+        <view class="action-buttons" wx:elif="{{depositInfo.status === 2}}">
           <view class="btn-primary-full" bindtap="onPay">
-            <text>重新缴纳押金 ¥{{depositInfo.balance}}</text>
+            <text>重新缴纳押金 ¥{{depositInfo.amount}}</text>
           </view>
         </view>
-        <view class="action-buttons" wx:elif="{{depositInfo.status === 'deducted'}}">
+        <view class="action-buttons" wx:elif="{{depositInfo.status === 3}}">
           <view class="btn-danger-full" bindtap="onTopUp">
             <text>补缴押金 ¥{{depositInfo.fine}}</text>
           </view>
@@ -71,7 +71,7 @@
     <!-- Info Banner -->
     <view class="info-banner">
       <text class="info-icon"><text class="icon icon-lightbulb">💡</text></text>
-      <text class="info-text">押金 ¥{{depositInfo.balance}} 为图书借阅保证金，退还时将原路退回支付账户，处理时间约 1-3 个工作日。</text>
+      <text class="info-text">押金 ¥{{depositInfo.amount}} 为图书借阅保证金，退还时将原路退回支付账户，处理时间约 1-3 个工作日。</text>
     </view>
 
     <!-- Record Section -->

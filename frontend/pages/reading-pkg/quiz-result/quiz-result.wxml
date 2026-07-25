@@ -4,13 +4,6 @@
   <error-view wx:if="{{loadError}}" visible="{{loadError}}" icon="<text class="icon icon-dizzy-face">😵</text>" title="加载失败" desc="数据加载出错了，请稍后重试" showRetry="{{true}}" retryText="重试" bind:onRetry="onRetry" />
   <loading-skeleton wx:elif="{{loading}}" />
   <block wx:if="{{!loadError && !loading && total > 0}}">
-  </block>
-  <view wx:elif="{{!loadError && !loading && total === 0}}" class="empty-state" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:80vh;padding:40rpx;">
-    <text style="font-size:80rpx;margin-bottom:24rpx;"><text class="icon icon-note">📝</text></text>
-    <text style="font-size:32rpx;font-weight:600;margin-bottom:12rpx;">暂无测评数据</text>
-    <text style="font-size:26rpx;color:var(--muted,#999);margin-bottom:32rpx;">请完成测评后续查看结果</text>
-    <button bindtap="goBackToShelf" class="btn-primary" style="width:300rpx;">返回书架</button>
-  </view>
   <!-- Confetti (pass only) -->
   <view class="confetti-container" wx:if="{{passed}}">
     <view class="confetti-piece" wx:for="{{confettiPieces}}" wx:key="index"
@@ -154,4 +147,10 @@
     </block>
   </view>
   </block>
+  <view wx:elif="{{!loadError && !loading && total === 0}}" class="empty-state" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:80vh;padding:40rpx;">
+    <text style="font-size:80rpx;margin-bottom:24rpx;"><text class="icon icon-note">📝</text></text>
+    <text style="font-size:32rpx;font-weight:600;margin-bottom:12rpx;">暂无测评数据</text>
+    <text style="font-size:26rpx;color:var(--muted,#999);margin-bottom:32rpx;">请完成测评后续查看结果</text>
+    <button bindtap="goBackToShelf" class="btn-primary" style="width:300rpx;">返回书架</button>
+  </view>
 </view>

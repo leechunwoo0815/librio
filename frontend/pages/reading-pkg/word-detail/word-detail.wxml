@@ -74,13 +74,13 @@
     </view>
 
     <view class="action-bar" wx:if="{{inVocab}}">
-      <view class="action-btn secondary {{vocabStatus === 'mastered' ? 'btn-disabled' : ''}}" bindtap="markMastered">
-        {{vocabStatus === 'mastered' ? '<text class="icon icon-check"><text class="icon icon-checkmark">✓</text></text> 已掌握' : '标记已掌握'}}
+      <view class="action-btn secondary {{vocabStatus === 1 ? 'btn-disabled' : ''}}" bindtap="markMastered">
+        {{vocabStatus === 1 ? '<text class="icon icon-check"><text class="icon icon-checkmark">✓</text></text> 已掌握' : '标记已掌握'}}
       </view>
-      <view class="action-btn primary" wx:if="{{vocabStatus === 'learning'}}" bindtap="addToVocab">
+      <view class="action-btn primary" wx:if="{{vocabStatus === 0}}" bindtap="addToVocab">
         已加入生词本
       </view>
-      <view class="action-btn danger" wx:if="{{vocabStatus === 'mastered'}}" bindtap="removeFromVocab">
+      <view class="action-btn danger" wx:if="{{vocabStatus === 1}}" bindtap="removeFromVocab">
         从生词本移除
       </view>
     </view>

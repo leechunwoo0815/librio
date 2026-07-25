@@ -4,6 +4,8 @@ const auth = require('../../utils/auth')
 
 const STATUS_TEXT = { borrowed: '借出', returned: '已还', overdue: '逾期', lost: '丢失' }
 const STATUS_CLASS = { borrowed: 'st-borrowed', returned: 'st-returned', overdue: 'st-overdue', lost: 'st-lost' }
+// 后端 BorrowStatus: 0=借阅中 1=已归还 2=已逾期 3=丢失
+const STATUS_INT_MAP = { 0: 'borrowed', 1: 'returned', 2: 'overdue', 3: 'lost' }
 
 Page({
   data: {
@@ -32,7 +34,7 @@ Page({
         return
       }
       const res = await api.getChildBorrows(child.id)
-      const rawList = res.list || res || []
+      const rawList = (res && res.items) || (Array.isArray(res) ? res : [])
       const records = rawList.map(r => this._formatRecord(r))
 
       const borrowing = records.filter(r => r.status === 'borrowed' || r.status === 'overdue')
@@ -60,20 +62,20 @@ Page({
   },
 
   _formatRecord(r) {
-    const status = r.status || 'borrowed'
+    const status = STATUS_INT_MAP[r.status] || 'borrowed'
     return {
       id: r.id,
       title: r.book_title || r.title || '',
       author: r.book_author || r.author || '',
       cover: r.cover || '',
-      borrowedAt: (r.borrowed_at || r.borrow_time || '').slice(0, 10),
-      dueAt: (r.due_at || r.due_time || '').slice(0, 10),
-      returnedAt: (r.returned_at || r.return_time || '').slice(0, 10),
+      borrowedAt: (r.borrow_time || '').slice(0, 10),
+      dueAt: (r.due_date || '').slice(0, 10),
+      returnedAt: (r.return_time || '').slice(0, 10),
       status,
       statusText: STATUS_TEXT[status] || '借出',
       statusClass: STATUS_CLASS[status] || 'st-borrowed',
-      testPassed: !!r.test_passed,
-      fine: r.fine || 0,
+      testPassed: !!r.quiz_passed,
+      fine: r.fine_amount || 0,
       overdueDays: r.overdue_days || 0,
     }
   },

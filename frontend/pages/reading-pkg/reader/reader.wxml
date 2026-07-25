@@ -36,11 +36,6 @@
 
   <!-- 音频播放器 -->
   <view class="audio-section player-section" wx:if="{{book.has_audio && book.audio_url}}">
-  </view>
-  <view class="no-audio" wx:elif="{{book.has_audio && !book.audio_url}}" style="padding:24rpx;text-align:center;background:var(--bg-card,#fff);border-radius:16rpx;margin:16rpx;">
-    <text style="font-size:48rpx;"><text class="icon icon-volume-up">🔊</text></text>
-    <text style="display:block;font-size:28rpx;color:var(--muted,#999);margin-top:8rpx;">该书籍音频尚未就绪</text>
-  </view>
     <!-- Progress Bar -->
     <view class="audio-progress-wrap progress-area">
       <view class="progress-times">
@@ -79,6 +74,11 @@
 
     <!-- Chapter Indicator -->
     <view class="chapter-indicator chapter-tag">Chapter {{currentChapter || 1}}</view>
+  </view>
+
+  <view class="no-audio" wx:elif="{{book.has_audio && !book.audio_url}}" style="padding:24rpx;text-align:center;background:var(--bg-card,#fff);border-radius:16rpx;margin:16rpx;">
+    <text style="font-size:48rpx;"><text class="icon icon-volume-up">🔊</text></text>
+    <text style="display:block;font-size:28rpx;color:var(--muted,#999);margin-top:8rpx;">该书籍音频尚未就绪</text>
   </view>
 
   <!-- 文本面板 -->
@@ -172,7 +172,7 @@
     <view class="resume-card">
       <text class="resume-icon"><text class="icon icon-play"><text class="icon icon-play">▶</text></text></text>
       <text class="resume-title">继续播放</text>
-      <text class="resume-desc">上次听到 {{formatTime(pausedPosition) || '开头'}}，是否继续？</text>
+      <text class="resume-desc">上次听到 {{pausedPositionText || '开头'}}，是否继续？</text>
       <view class="resume-actions">
         <button class="resume-btn secondary" bindtap="restartPlayback">从头开始</button>
         <button class="resume-btn primary" bindtap="resumePlayback">继续播放</button>

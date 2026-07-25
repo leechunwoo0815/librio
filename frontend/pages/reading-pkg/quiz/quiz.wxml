@@ -16,7 +16,7 @@
     <view class="quiz-book-name">{{bookTitle}}</view>
     <view class="quiz-timer">
       <text class="timer-icon">⏱</text>
-      <text class="timer-text">{{Math.floor(elapsedSeconds / 60)}}:{{String(elapsedSeconds % 60).padStart(2, '0')}}</text>
+      <text class="timer-text">{{elapsedText || '0:00'}}</text>
     </view>
     <view class="quiz-progress-row">
       <view class="quiz-progress-bar">

@@ -28,3 +28,5 @@ class ReservationResponse(BaseSchema):
     fulfilled_time: datetime | None = None
     borrow_record_id: int | None = None
     create_time: datetime
+    book_title: str | None = None
+    book_cover: str | None = None

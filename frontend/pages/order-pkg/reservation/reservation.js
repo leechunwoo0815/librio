@@ -44,23 +44,24 @@ Page({
         return
       }
       const res = await api.getReservations(child.id)
-      const raw = Array.isArray(res) ? res : (res.list || [])
+      const raw = Array.isArray(res) ? res : (res.items || [])
+      // ReservationStatus: 0=待取书 1=已取书 2=已过期 3=已取消
       const mapped = raw.map(r => {
-        const cd = computeCountdown(r.expiresAt)
+        const cd = r.status === 0 ? computeCountdown(r.expire_time) : null
         return {
           ...r,
-          formattedTime: formatTime(r.reservedAt),
+          formattedTime: formatTime(r.create_time),
           countdownText: cd ? cd.text : '',
           isUrgent: cd ? cd.urgent : false,
-          showCountdown: r.status === 'active' && !!cd,
-          showQueue: r.status === 'queue',
-          queueText: r.queuePosition ? '\u6392\u961F\u4E2D \u7B2C' + r.queuePosition + '\u4F4D' : '\u6392\u961F\u4E2D',
-          expiredBadgeText: r.status === 'cancelled' ? '\u5DF2\u53D6\u6D88' : '\u5DF2\u8FC7\u671F',
+          showCountdown: r.status === 0 && !!cd,
+          showQueue: false,
+          queueText: '',
+          expiredBadgeText: r.status === 3 ? '已取消' : (r.status === 1 ? '已取书' : '已过期'),
         }
       })
       this.setData({
-        activeReservations: mapped.filter(r => r.status === 'active' || r.status === 'queue'),
-        expiredReservations: mapped.filter(r => r.status === 'expired' || r.status === 'cancelled'),
+        activeReservations: mapped.filter(r => r.status === 0),
+        expiredReservations: mapped.filter(r => r.status !== 0),
       })
     } catch (e) {
       console.error('Load reservations failed:', e)

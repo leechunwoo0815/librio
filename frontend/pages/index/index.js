@@ -132,7 +132,7 @@ Page({
         })),
         todayStats,
         streak: streak.current_streak || 0,
-        featuredBooks: books.list || [],
+        featuredBooks: books.items || [],
         fabButtonText: fabText,
       })
     } catch (e) {

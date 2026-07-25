@@ -663,11 +663,30 @@ class DepositService:
 
     def get_deposit_status(self, child_id: int) -> dict:
         """查询押金状态"""
+        from backend.common.config_service import ConfigService
+        from backend.domain.child.models import Child
+
+        child = (
+            self.db.query(Child)
+            .filter(Child.id == child_id, Child.is_deleted == 0)
+            .first()
+        )
+        outstanding = str((child.outstanding_fines if child else 0) or 0)
+
         record = self.deposit_repo.get_active_by_child(child_id)
         if not record:
-            return {"status": 0, "amount": 0, "message": "未缴纳押金"}
+            amount = ConfigService.get_decimal(
+                self.db, "deposit_amount", Decimal("1200")
+            )
+            return {
+                "status": 0,
+                "amount": str(amount),
+                "fine": outstanding,
+                "message": "未缴纳押金",
+            }
         return {
             "status": record.status,
             "amount": str(record.amount or 0),
             "paid_at": record.pay_time.isoformat() if record.pay_time else None,
+            "fine": outstanding,
         }

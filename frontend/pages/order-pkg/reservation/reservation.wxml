@@ -23,12 +23,12 @@
     <view class="reservation-list" wx:if="{{activeReservations.length > 0}}">
       <view class="reservation-card" wx:for="{{activeReservations}}" wx:key="id">
         <view class="reservation-cover">
-          <image wx:if="{{item.cover && item.cover.indexOf('http') === 0}}" src="{{item.cover}}" mode="aspectFill" />
-          <text wx:else>{{item.cover || '<text class="icon icon-book">书</text>'}}</text>
+          <image wx:if="{{item.book_cover && item.book_cover.indexOf('http') === 0}}" src="{{item.book_cover}}" mode="aspectFill" />
+          <text wx:else>{{item.book_cover || '<text class="icon icon-book">书</text>'}}</text>
         </view>
         <view class="reservation-info">
-          <view class="reservation-title">{{item.title}}</view>
-          <view class="reservation-author">{{item.author}}</view>
+          <view class="reservation-title">{{item.book_title}}</view>
+          
           <view class="reservation-time"><text class="icon icon-calendar">📅</text> 预约时间：{{item.formattedTime}}</view>
           <view class="countdown-row">
             <view wx:if="{{item.showCountdown}}" class="countdown {{item.isUrgent ? 'urgent' : 'normal'}}">
@@ -40,7 +40,6 @@
             </view>
             <view wx:else></view>
             <view class="reservation-actions">
-              <button class="fulfill-btn" data-id="{{item.id}}" bindtap="fulfillReservation">立即取书</button>
               <button class="cancel-btn" data-id="{{item.id}}" bindtap="cancelReservation">取消预约</button>
             </view>
           </view>
@@ -56,12 +55,12 @@
     <view class="reservation-list" wx:if="{{expiredReservations.length > 0}}">
       <view class="reservation-card expired" wx:for="{{expiredReservations}}" wx:key="id">
         <view class="reservation-cover">
-          <image wx:if="{{item.cover && item.cover.indexOf('http') === 0}}" src="{{item.cover}}" mode="aspectFill" />
-          <text wx:else>{{item.cover || '<text class="icon icon-book">书</text>'}}</text>
+          <image wx:if="{{item.book_cover && item.book_cover.indexOf('http') === 0}}" src="{{item.book_cover}}" mode="aspectFill" />
+          <text wx:else>{{item.book_cover || '<text class="icon icon-book">书</text>'}}</text>
         </view>
         <view class="reservation-info">
-          <view class="reservation-title">{{item.title}}</view>
-          <view class="reservation-author">{{item.author}}</view>
+          <view class="reservation-title">{{item.book_title}}</view>
+          
           <view class="reservation-time"><text class="icon icon-calendar">📅</text> 预约时间：{{item.formattedTime}}</view>
           <view class="countdown-row">
             <view class="expired-badge">

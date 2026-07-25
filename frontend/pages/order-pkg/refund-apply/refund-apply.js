@@ -5,8 +5,10 @@ const storage = require('../../utils/storage')
 const security = require('../../utils/security')
 
 const orderTypeMap = {
-  observation: '观察期',
-  official: '正式会员',
+  2: '观察期',
+  3: '正式会员',
+  4: '季度会员',
+  5: '半年会员',
 }
 
 Page({
@@ -25,9 +27,12 @@ Page({
     totalDays: 30,
   },
 
-  onLoad() {
+  onLoad(options) {
     const app = getApp()
     if (!auth.requireAuth()) return
+    if (options && options.orderId) {
+      this._presetOrderId = parseInt(options.orderId)
+    }
   },
 
   async onShow() {
@@ -79,11 +84,21 @@ Page({
         return `${type} - ${o.amount}元`
       })
 
+      // 预选订单：URL orderId 优先，其次保留当前选中（草稿恢复场景）
+      let selectedIndex = 0
+      if (this._presetOrderId) {
+        const found = paidOrders.findIndex(o => o.id === this._presetOrderId)
+        if (found >= 0) selectedIndex = found
+        this._presetOrderId = null
+      } else if (this.data.selectedOrderIndex > 0 && this.data.selectedOrderIndex < paidOrders.length) {
+        selectedIndex = this.data.selectedOrderIndex
+      }
+
       this.setData({
         orders: paidOrders,
         orderNames,
-        selectedOrder: paidOrders.length > 0 ? paidOrders[0] : null,
-        selectedOrderIndex: 0,
+        selectedOrder: paidOrders.length > 0 ? paidOrders[selectedIndex] : null,
+        selectedOrderIndex: selectedIndex,
         loading: false,
       })
 

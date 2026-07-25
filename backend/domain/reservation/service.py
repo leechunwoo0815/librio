@@ -172,8 +172,30 @@ class ReservationService:
         )
 
     def get_child_reservations(self, child_id: int) -> list[ReservationResponse]:
-        records = self.reservation_repo.get_active_by_child(child_id)
-        return [ReservationResponse.model_validate(r) for r in records]
+        """孩子的全部预约（含已结束），附带图书标题/封面"""
+        from backend.domain.book.models import Book
+
+        records = (
+            self.db.query(Reservation)
+            .filter(Reservation.child_id == child_id, Reservation.is_deleted == 0)
+            .order_by(Reservation.create_time.desc())
+            .limit(50)
+            .all()
+        )
+        book_ids = {r.book_id for r in records}
+        books = {}
+        if book_ids:
+            books = {
+                b.id: b for b in self.db.query(Book).filter(Book.id.in_(book_ids)).all()
+            }
+        result = []
+        for r in records:
+            resp = ReservationResponse.model_validate(r)
+            book = books.get(r.book_id)
+            resp.book_title = book.title if book else None
+            resp.book_cover = book.cover if book else None
+            result.append(resp)
+        return result
 
     def cancel_reservation(
         self, reservation_id: int, user_id: int | None = None

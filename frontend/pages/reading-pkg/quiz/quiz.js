@@ -34,11 +34,15 @@ Page({
       return
     }
 
+    this._urlChildId = parseInt(options.childId) || null
     this.setData({ bookId })
 
     // Start timer
     this._timerInterval = setInterval(() => {
-      this.setData({ elapsedSeconds: this.data.elapsedSeconds + 1 })
+      const sec = this.data.elapsedSeconds + 1
+      const mm = Math.floor(sec / 60)
+      const ss = String(sec % 60).padStart(2, '0')
+      this.setData({ elapsedSeconds: sec, elapsedText: mm + ':' + ss })
     }, 1000)
 
     await this.loadQuestions(bookId)
@@ -47,7 +51,10 @@ Page({
   async loadQuestions(bookId) {
     wx.showLoading({ title: '加载中...' })
     try {
-      const quiz = await api.startQuiz(bookId)
+      const auth = require('../../utils/auth')
+      const currentChild = auth.getCurrentChild()
+      const childId = (currentChild && currentChild.id) || this._urlChildId || null
+      const quiz = await api.startQuiz(bookId, childId)
       const quizId = quiz.id || quiz.quiz_id || 0
 
       // Fetch book title
@@ -96,11 +103,15 @@ Page({
           cancelText: '重新开始',
           success: (res) => {
             if (res.confirm) {
+              // 题库变更时缓存索引可能越界，夹紧到有效范围
+              // 用 setData 后的净化题目（不含 correct_answer）
+              const safeQuestions = this.data.questions
+              const safeQ = Math.min(cached.currentQ || 0, safeQuestions.length - 1)
               this.setData({
                 answers: cached.answers,
-                currentQ: cached.currentQ || 0,
-                question: questions[cached.currentQ || 0],
-                selected: cached.answers[questions[cached.currentQ || 0].id] || '',
+                currentQ: safeQ,
+                question: safeQuestions[safeQ],
+                selected: cached.answers[safeQuestions[safeQ].id] || '',
               })
             }
           },
@@ -132,6 +143,7 @@ Page({
   },
 
   selectOption(e) {
+    if (this.data.selected) return  // 已作答，防连击跳题
     const ans = e.currentTarget.dataset.ans
     const questionId = this.data.questions[this.data.currentQ].id
     const correctAns = this._correctAnswers[questionId]
@@ -142,7 +154,8 @@ Page({
       resultData['result' + correctAns] = 'correct'
     }
     resultData.feedbackType = isCorrect ? 'correct' : 'wrong'
-    resultData.feedbackText = isCorrect ? '回答正确！' + this.data.question.explanation : '正确答案是 ' + correctAns + '，' + this.data.question.explanation
+    const expl = this.data.question.explanation || ''
+    resultData.feedbackText = isCorrect ? '回答正确！' + (expl ? ' ' + expl : '') : '正确答案是 ' + correctAns + (expl ? '，' + expl : '')
     this.setData(Object.assign({ selected: ans }, resultData))
     // MP-007: 每次选择后缓存进度
     this._saveProgress()
@@ -262,7 +275,7 @@ Page({
         `correct=${result.correct}`,
         `score=${result.score}`,
         `passed=${result.passed ? 1 : 0}`,
-        `wordsRead=${result.words_read || 0}`,
+        `wordsRead=${result.word_count || 0}`,
       ]
       if (this.data.bookId) {
         params.push(`bookId=${this.data.bookId}`)

@@ -1,12 +1,14 @@
 const api = require('../../utils/api')
 const auth = require('../../utils/auth')
 
+// DepositStatus: 0=未缴纳 1=已缴纳 2=已退款 3=已扣除 4=退款中 5=支付中
 const STATUS_MAP = {
-  paid: { text: '已缴纳', icon: '✅', cls: 'status-paid', badgeCls: 'badge-success' },
-  unpaid: { text: '未缴纳', icon: '⚠️', cls: 'status-unpaid', badgeCls: 'badge-warning' },
-  refunding: { text: '退款中', icon: '⏳', cls: 'status-refunding', badgeCls: 'badge-info' },
-  refunded: { text: '已退', icon: '↩️', cls: 'status-refunded', badgeCls: 'badge-info' },
-  deducted: { text: '已扣', icon: '❌', cls: 'status-deducted', badgeCls: 'badge-error' },
+  0: { text: '未缴纳', icon: '⚠️', cls: 'status-unpaid', badgeCls: 'badge-warning' },
+  1: { text: '已缴纳', icon: '✅', cls: 'status-paid', badgeCls: 'badge-success' },
+  2: { text: '已退', icon: '↩️', cls: 'status-refunded', badgeCls: 'badge-info' },
+  3: { text: '已扣', icon: '❌', cls: 'status-deducted', badgeCls: 'badge-error' },
+  4: { text: '退款中', icon: '⏳', cls: 'status-refunding', badgeCls: 'badge-info' },
+  5: { text: '支付中', icon: '⏳', cls: 'status-refunding', badgeCls: 'badge-info' },
 }
 
 Page({
@@ -39,7 +41,7 @@ Page({
         return
       }
       const info = await api.getDepositStatus(child.id)
-      const s = STATUS_MAP[info.status] || STATUS_MAP.paid
+      const s = STATUS_MAP[info.status] || STATUS_MAP[0]
       this.setData({
         depositInfo: info,
         statusText: s.text,
@@ -57,30 +59,31 @@ Page({
 
   _getActionButton(info) {
     switch (info.status) {
-      case 'paid':
+      case 1:
         return {
           type: 'outline',
           text: '申请退款',
           handler: 'onRefund',
         }
-      case 'unpaid':
+      case 0:
         return {
           type: 'primary',
-          text: `缴纳押金 ¥${info.balance || info.depositAmount || '0'}`,
+          text: `缴纳押金 ¥${info.amount || '0'}`,
           handler: 'onPay',
         }
-      case 'refunding':
+      case 4:
+      case 5:
         return null
-      case 'refunded':
+      case 2:
         return {
           type: 'primary',
-          text: `重新缴纳押金 ¥${info.balance || info.depositAmount || '0'}`,
+          text: `重新缴纳押金 ¥${info.amount || '0'}`,
           handler: 'onPay',
         }
-      case 'deducted':
+      case 3:
         return {
           type: 'danger',
-          text: `补缴押金 ¥${info.fine}`,
+          text: `补缴押金 ¥${info.fine || info.amount || '0'}`,
           handler: 'onTopUp',
         }
       default:
@@ -167,7 +170,11 @@ Page({
     if (!res.confirm) return
     this.setData({ loading: true })
     try {
-      const payParams = await api.repayDeposit(child.id)
+      const res = await api.repayDeposit(child.id)
+      const payParams = res.pay_params || res
+      if (!payParams.timeStamp || !payParams.nonceStr || !payParams.package || !payParams.signType || !payParams.paySign) {
+        throw new Error('支付参数异常，请稍后重试')
+      }
       await new Promise((resolve, reject) => {
         wx.requestPayment({
           ...payParams,
