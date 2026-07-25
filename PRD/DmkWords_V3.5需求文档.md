@@ -1,10 +1,11 @@
 # DmkWords 完整需求文档（V3.5 OMO 模式）
 
-> **版本**: V3.18 | **日期**: 2026-07-24
+> **版本**: V3.19 | **日期**: 2026-07-26
 
 > **本次更新（V3.16, 2026-07-23）**：隐私合规 Phase 1 落地 — 附录M 三段式监护人同意（consent_record 表 + 同意 API + 错误码 + 前端弹窗）。
 > **本次更新（V3.17, 2026-07-24）**：P0-3 删除权级联（附录M.5）+ P0-4 儿童专章 v1.1 + 附录H 定时任务 15→17（execute_child_deletions/reconcile_child_stats）。
 > **本次更新（V3.18, 2026-07-24）**：附录E 权限数校准（super_admin 135/staff 108/teacher 28，种子 135 权限 34 组）+ 附录H 补第 18 个任务 confirm_expired_damage_reports + 小程序端全面扫雷 40+ 修复（分页/枚举/字段对齐，另附 venues 公开端点与 activity my_enrollment）。
+> **本次更新（V3.19, 2026-07-26）**：附录F 枚举值总表四方对齐（以代码为准）：F.3 借阅加 LOST=3；F.6 活动类型重写为代码实际值（读书交流/讲座/CityWalk/郊游/大会/其他）；F.7 msg_type 重写（1系统/2活动/3借阅/4老师/5阅读提醒，与模型注释/小程序/管理端三方一致，并修复 6/7 越界与 6 处分类错位）；F.8 优先级措辞对齐（低/中/高）；F.9 支付状态 0-5 六态；F.10 押金状态 0-6 七态；F.11 预约状态 2/3 数值修正（2=已过期 3=已取消）；F.13 损坏报告状态改 4 态（待申诉/已确认/申诉中/已冲正）；F.16 测验状态改 3 态（含已过期）；F.17 报名状态改 5 态（含已拒绝/已签到）；新增 F.19 订单退款状态。
 
 > **本次更新（V3.7, 2026-07-09）**：全量终审通过。P0(8)+P1(13)+P2(8) 共 35 项修复。前后端代码已对齐，所有测试通过。
 > **本次更新（V3.8, 2026-07-15）**：新增权益转让、个人名片QR码、生词高亮、季度/半年会员。
@@ -1232,6 +1233,7 @@ def reconcile_stock():
 | 0 | BORROWING | 借阅中 |
 | 1 | RETURNED | 已归还 |
 | 2 | OVERDUE | 逾期 |
+| 3 | LOST | 丢失（丢书赔偿后转入） |
 
 ### F.4 CheckIn — 打卡类型
 
@@ -1257,30 +1259,35 @@ def reconcile_stock():
 
 | 编码 | 常量名 | 含义 |
 |:---:|--------|------|
-| 1 | TYPE_CLASS | 亲子课 |
-| 2 | TYPE_STORY | 故事会 |
-| 3 | TYPE_WORKSHOP | 工作坊 |
-| 4 | TYPE_OUTDOOR | 户外活动 |
-| 5 | TYPE_PARENTING | 家长课堂 |
+| 1 | TYPE_READING | 读书交流 |
+| 2 | TYPE_LECTURE | 讲座 |
+| 3 | TYPE_CITY_WALK | CityWalk |
+| 4 | TYPE_OUTING | 郊游 |
+| 5 | TYPE_DMKWORDS | 大会（DmkWords 品牌活动） |
 | 6 | TYPE_OTHER | 其他 |
 
 ### F.7 SystemMessage — 消息类型
 
-| 编码 | 常量名 | 含义 |
-|:---:|--------|------|
-| 1 | TYPE_SYSTEM | 系统通知 |
-| 2 | TYPE_REMINDER | 提醒消息 |
-| 3 | TYPE_ACHIEVEMENT | 成就消息 |
-| 4 | TYPE_REPORT | 报告消息 |
-| 5 | TYPE_EXPIRY | 到期提醒 |
+> 代码中未定义 IntEnum，为数值列约定（`SystemMessage.msg_type` 列注释），
+> 与小程序 messages.js、管理端 message_manage.js 映射三方一致。
+
+| 编码 | 含义 |
+|:---:|------|
+| 1 | 系统通知 |
+| 2 | 活动通知 |
+| 3 | 借阅通知 |
+| 4 | 老师消息 |
+| 5 | 阅读提醒 |
 
 ### F.8 SystemMessage — 优先级
 
-| 编码 | 常量名 | 含义 |
-|:---:|--------|------|
-| 0 | PRIORITY_NORMAL | 普通 |
-| 1 | PRIORITY_IMPORTANT | 重要 |
-| 2 | PRIORITY_URGENT | 紧急 |
+> 代码中未定义 IntEnum，为数值列约定（`SystemMessage.priority` 列注释）。
+
+| 编码 | 含义 |
+|:---:|------|
+| 0 | 低 |
+| 1 | 中 |
+| 2 | 高 |
 
 ### F.9 Order — 支付状态
 
@@ -1288,8 +1295,10 @@ def reconcile_stock():
 |:---:|--------|------|
 | 0 | PENDING | 待支付 |
 | 1 | PAID | 已支付 |
-| 2 | CLOSED | 已关闭 |
-| 3 | CANCELLED | 已取消 |
+| 2 | FAILED | 支付失败 |
+| 3 | REFUNDING | 退款中 |
+| 4 | REFUNDED | 已退款 |
+| 5 | CLOSED | 已关闭 |
 
 ### F.10 Deposit — 押金状态
 
@@ -1299,6 +1308,9 @@ def reconcile_stock():
 | 1 | PAID | 已缴纳 |
 | 2 | REFUNDED | 已退还 |
 | 3 | DEDUCTED | 已扣除 |
+| 4 | REFUNDING | 退款中（已通过审核，正在退款） |
+| 5 | PENDING | 支付中（已调起支付，等待回调确认） |
+| 6 | REFUND_PENDING | 退款待审核（V3.8 新增：用户申请退款，需管理员审批） |
 
 ### F.11 Reservation — 预约状态
 
@@ -1306,8 +1318,8 @@ def reconcile_stock():
 |:---:|--------|------|
 | 0 | PENDING | 待取书 |
 | 1 | FULFILLED | 已取书 |
-| 2 | CANCELLED | 已取消 |
-| 3 | EXPIRED | 已过期 |
+| 2 | EXPIRED | 已过期 |
+| 3 | CANCELLED | 已取消 |
 
 ### F.12 DamageReport — 损坏定级
 
@@ -1321,11 +1333,10 @@ def reconcile_stock():
 
 | 编码 | 常量名 | 含义 |
 |:---:|--------|------|
-| 0 | PENDING | 待审核 |
-| 1 | APPROVED | 已通过 |
-| 2 | REJECTED | 已驳回 |
-| 3 | APPEALING | 申诉中 |
-| 4 | CLOSED | 已结案 |
+| 0 | STATUS_PENDING | 待申诉（7 天申诉期） |
+| 1 | STATUS_CONFIRMED | 已确认（申诉期过或家长接受） |
+| 2 | STATUS_DISPUTED | 申诉中 |
+| 3 | STATUS_OVERRIDDEN | 已冲正（管理员改判） |
 
 ### F.14 UserVocabulary — 掌握状态
 
@@ -1346,8 +1357,9 @@ def reconcile_stock():
 
 | 编码 | 常量名 | 含义 |
 |:---:|--------|------|
-| 0 | STATUS_PENDING | 待完成 |
+| 0 | STATUS_IN_PROGRESS | 进行中 |
 | 1 | STATUS_COMPLETED | 已完成 |
+| 2 | STATUS_EXPIRED | 已过期 |
 
 ### F.17 ActivityEnrollment — 报名状态
 
@@ -1355,7 +1367,9 @@ def reconcile_stock():
 |:---:|--------|------|
 | 0 | STATUS_PENDING | 待审核 |
 | 1 | STATUS_APPROVED | 已通过 |
-| 2 | STATUS_CANCELLED | 已取消 |
+| 2 | STATUS_REJECTED | 已拒绝 |
+| 3 | STATUS_CANCELLED | 已取消 |
+| 4 | STATUS_SIGNED_IN | 已签到 |
 
 ### F.18 RefundApplication — 退款状态
 
@@ -1365,6 +1379,17 @@ def reconcile_stock():
 | 1 | STATUS_APPROVED | 已批准 |
 | 2 | STATUS_REJECTED | 已拒绝 |
 | 3 | STATUS_COMPLETED | 已完成 |
+
+### F.19 Order — 退款状态（refund_status）
+
+> 数值列约定（`order.refund_status` 列注释），独立于 pay_status。
+
+| 编码 | 含义 |
+|:---:|------|
+| 0 | 未退款 |
+| 1 | 退款中 |
+| 2 | 已退款 |
+| 3 | 退款失败 |
 
 ---
 
