@@ -19,6 +19,12 @@ Page({
     booksRead: [],
   },
 
+  onLoad(options) {
+    if (options && options.childId) {
+      this._presetChildId = parseInt(options.childId)
+    }
+  },
+
   async onShow() {
     if (!auth.requireAuth()) return
     await this.loadData()
@@ -29,7 +35,13 @@ Page({
       const children = await api.getChildren()
       if (!children || children.length === 0) return
 
-      const child = auth.selectChild(children)
+      // URL 指定 childId 优先（从孩子管理进入时）
+      let child = auth.selectChild(children)
+      if (this._presetChildId) {
+        const target = children.find(c => c.id === this._presetChildId)
+        if (target) child = target
+        this._presetChildId = null
+      }
       if (!child) return
       this.setData({ child })
 
@@ -78,7 +90,7 @@ Page({
       }))
       const myIdx = boardArr.findIndex(r => r.child_id === child.id)
       const myRank = myIdx >= 0 ? myIdx + 1 : null
-      const myScore = myIdx >= 0 ? boardArr[myIdx].score : null
+      const myScore = myIdx >= 0 ? boardArr[myIdx].total_words : null
 
       this.setData({
         summary,
@@ -99,7 +111,7 @@ Page({
 
   switchPeriod(e) {
     const period = e.currentTarget.dataset.period
-    const days = period === 'day' ? 1 : period === 'week' ? 7 : period === 'month' ? 30 : 365
+    const days = period === 'day' ? 1 : period === 'week' ? 7 : period === 'month' ? 30 : 90
     this.setData({ period, days })
     this.loadData()
   },

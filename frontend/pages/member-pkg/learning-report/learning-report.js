@@ -29,7 +29,7 @@ Page({
           var childId = parseInt(parts[1])
           var period = parts[2]
           if (childId && (period === 'week' || period === 'month')) {
-            this.setData({ period: period })
+            this.setData({ period: period, sceneChildId: childId })
           }
         }
       }
@@ -43,7 +43,13 @@ Page({
   async loadReport() {
     this.setData({ loading: true })
     try {
-      const child = auth.getCurrentChild()
+      // scene 分享进入时优先使用分享的孩子
+      let child = auth.getCurrentChild()
+      if (this.data.sceneChildId) {
+        const children = await api.getChildren()
+        const target = (children || []).find(c => c.id === this.data.sceneChildId)
+        if (target) child = target
+      }
       if (!child) {
         const children = await api.getChildren()
         if (!children || children.length === 0) {
@@ -67,11 +73,20 @@ Page({
     const days = period === 'week' ? 7 : 30
 
     try {
-      const [summary, trend, learningReport] = await Promise.all([
+      const [summary, trend, learningReport, checkinRecords, weeklyReport] = await Promise.all([
         api.getStatsSummary(childId).catch(() => ({})),
         api.getTrend(childId, days).catch(() => []),
         api.getLearningReport(childId).catch(() => null),
+        api.getCheckinRecords(childId).catch(() => []),
+        period === 'week' ? api.getWeeklyReport(childId).catch(() => null) : Promise.resolve(null),
       ])
+
+      // 打卡天数：统计 period 内的打卡记录数（CheckinRecordResponse.date）
+      const cutoff = Date.now() - days * 24 * 3600 * 1000
+      const checkinDays = (checkinRecords || []).filter(r => {
+        const d = new Date(r.date || r.check_date || 0).getTime()
+        return d >= cutoff
+      }).length
 
       const recentTrend = Array.isArray(trend) ? trend.slice(-7) : []
       const maxVal = Math.max(1, ...recentTrend.map(d => d.reading_minutes || d.minutes || 0))
@@ -93,20 +108,19 @@ Page({
         total_minutes: summary.total_reading_minutes || summary.total_minutes || 0,
         total_words: summary.total_words_read || summary.total_words || 0,
         books_finished: summary.total_books_read || summary.books_finished || 0,
-        checkin_days: summary.checkin_days || summary.total_checkin_days || 0,
+        checkin_days: checkinDays,
       }
       if (learningReport) {
         mergedSummary.total_minutes = learningReport.total_minutes || mergedSummary.total_minutes
         mergedSummary.total_words = learningReport.total_words || mergedSummary.total_words
         mergedSummary.books_finished = learningReport.books_finished || mergedSummary.books_finished
-        mergedSummary.checkin_days = learningReport.checkin_days || mergedSummary.checkin_days
       }
 
       this.setData({
         summary: mergedSummary,
         trendData: barData,
         maxMinutes: maxVal,
-        suggestion: summary.suggestion || '',
+        suggestion: (weeklyReport && weeklyReport.suggestion) || '',
         barLabels,
         reportTitle: period === 'week' ? '本周学习报告' : '本月学习报告',
         reportPeriod,
@@ -282,9 +296,15 @@ Page({
       const baseURL = getApp().globalData.baseURL || 'https://api.dmkwords.cn'
       const url = baseURL + '/wechat/qr-code?scene=' + scene + '&page=' + page
 
+      const token = getApp().globalData.token || wx.getStorageSync('token') || ''
       wx.downloadFile({
         url: url,
+        header: { 'Authorization': 'Bearer ' + token },
         success: function (res) {
+          if (res.statusCode !== 200) {
+            reject(new Error('QR code http ' + res.statusCode))
+            return
+          }
           var img = canvas.createImage()
           img.src = res.tempFilePath
           img.onload = function () {

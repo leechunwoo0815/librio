@@ -147,7 +147,7 @@ Page({
           name: def.name,
           badge_emoji: def.badge_emoji || '🏅',
           description: def.description || '',
-          trigger_desc: def.trigger_desc || '',
+          trigger_desc: def.trigger_condition || '',
           earned: !!earnedData,
           achieved_at: earnedData ? earnedData.achieved_at : '',
           dateStr: earnedData ? formatDate(earnedData.achieved_at) : '',
@@ -188,7 +188,7 @@ Page({
 
   _loadLeaderboard: function () {
     var that = this
-    api.getLeaderboard('total', '', 5)
+    api.getLeaderboard('total', null, 5)
       .then(function (data) {
         var list = data || []
         var myChildId = that.data.currentLevel ? that.data.currentLevel.child_id : 0

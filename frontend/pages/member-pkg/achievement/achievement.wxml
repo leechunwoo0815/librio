@@ -76,11 +76,11 @@
       </view>
       <view class="lb-avatar">{{item.avatar_emoji || '<text class="icon icon-user">👤</text>'}}</view>
       <view class="lb-info">
-        <text class="lb-name">{{item.name}}</text>
-        <text class="lb-books">{{item.level_name || 'Level ' + item.level || ''}}</text>
+        <text class="lb-name">{{item.display_name}}</text>
+        
       </view>
       <view class="lb-count">
-        <text class="lb-count-num">{{item.books_read || item.total_words || 0}}</text>
+        <text class="lb-count-num">{{item.total_books || item.total_words || 0}}</text>
         <text class="lb-count-unit">{{item.total_words ? '词' : '本'}}</text>
       </view>
     </view>

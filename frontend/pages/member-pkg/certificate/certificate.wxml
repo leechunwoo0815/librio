@@ -23,7 +23,7 @@
         <view class="cert-english-name" wx:if="{{cert.english_name}}">{{cert.english_name}}</view>
         <view class="cert-promo">成功晋级至 {{cert.level_name}}</view>
         <view class="cert-level-change">
-          <view class="cert-level from">{{cert.from_level || 'Level ?'}}</view>
+          <view class="cert-level from">晋级</view>
           <view class="cert-arrow">→</view>
           <view class="cert-level to">{{cert.level_name}}</view>
         </view>

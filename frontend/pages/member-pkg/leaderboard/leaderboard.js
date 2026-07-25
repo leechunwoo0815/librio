@@ -86,7 +86,7 @@ Page({
     var that = this
     this.setData({ loading: true })
 
-    var levelId = this.data.levelIndex > 0 ? this.data.levels[this.data.levelIndex - 1].id : ''
+    var levelId = this.data.levelIndex > 0 ? this.data.levels[this.data.levelIndex - 1].id : null
     api.getLeaderboard(this.data.period, levelId, 50)
       .then(function (data) {
         var list = data || []

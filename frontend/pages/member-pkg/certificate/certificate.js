@@ -74,12 +74,12 @@ Page({
             id: c.id,
             level_name: c.level_name,
             child_name: c.child_name,
-            english_name: c.english_name,
+            english_name: c.child_english_name,
             badge_emoji: c.badge_emoji,
-            from_level: c.from_level,
+
             certificate_no: c.certificate_no,
-            created_at: c.created_at,
-            dateStr: formatDate(c.created_at),
+            created_at: c.create_time,
+            dateStr: formatDate(c.create_time),
           }
         })
         that.setData({ certList: certs, loading: false })
@@ -108,12 +108,12 @@ Page({
             id: c.id,
             level_name: c.level_name,
             child_name: c.child_name,
-            english_name: c.english_name,
+            english_name: c.child_english_name,
             badge_emoji: c.badge_emoji,
-            from_level: c.from_level,
+
             certificate_no: c.certificate_no,
-            created_at: c.created_at,
-            dateStr: formatDate(c.created_at),
+            created_at: c.create_time,
+            dateStr: formatDate(c.create_time),
           }
         })
 

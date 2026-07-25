@@ -80,7 +80,7 @@ Page({
         ctx.fill()
 
         let y = 60
-        const avatarText = (profile.avatar_emoji || (profile.chinese_name || '?')[0])
+        const avatarText = ((profile.name || '?')[0])
         ctx.fillStyle = '#5560cf'
         ctx.beginPath()
         ctx.arc(60, y, 34, 0, Math.PI * 2)
@@ -95,7 +95,7 @@ Page({
         ctx.font = 'bold 26px sans-serif'
         ctx.textAlign = 'left'
         ctx.textBaseline = 'top'
-        ctx.fillText(profile.chinese_name || '未知', 110, y - 12)
+        ctx.fillText(profile.name || '未知', 110, y - 12)
 
         ctx.fillStyle = '#888888'
         ctx.font = '16px sans-serif'
@@ -129,9 +129,9 @@ Page({
 
         y = 230
         const stats = [
-          { val: profile.books_finished || 0, label: '读完本书' },
+          { val: profile.total_books_finished || 0, label: '读完本书' },
           { val: profile.total_words_read || 0, label: '累计词数' },
-          { val: profile.current_streak || 0, label: '连续打卡' },
+          { val: profile.current_streak_days || 0, label: '连续打卡' },
         ]
         const statWidth = (width - 80) / 3
         stats.forEach((stat) => {
@@ -156,7 +156,7 @@ Page({
             ctx.font = '16px sans-serif'
             ctx.textAlign = 'left'
             ctx.textBaseline = 'top'
-            ctx.fillText((ach.badge_emoji || '🏆') + ' ' + (ach.name || ''), 40, y)
+            ctx.fillText((ach.achievement_emoji || '🏆') + ' ' + (ach.achievement_name || ''), 40, y)
             y += 36
           })
         }
@@ -238,19 +238,25 @@ Page({
       const baseURL = getApp().globalData.baseURL || 'https://api.dmkwords.cn'
       const url = baseURL + '/wechat/qr-code?scene=' + scene + '&page=' + page
 
+      const token = getApp().globalData.token || wx.getStorageSync('token') || ''
       wx.downloadFile({
         url: url,
+        header: { 'Authorization': 'Bearer ' + token },
         success: function (res) {
+          if (res.statusCode !== 200) {
+            reject(new Error('QR code http ' + res.statusCode))
+            return
+          }
           var img = canvas.createImage()
           img.src = res.tempFilePath
           img.onload = function () {
             ctx.drawImage(img, x, y, w, h)
+            this.setData({ qrUrl: res.tempFilePath })
             resolve()
-          }
+          }.bind(this)
           img.onerror = function () {
             reject(new Error('QR image decode failed'))
           }
-          this.setData({ qrUrl: res.tempFilePath })
         }.bind(this),
         fail: function () {
           reject(new Error('QR code download failed'))
@@ -261,7 +267,7 @@ Page({
 
   onShareAppMessage() {
     const { profile } = this.data
-    const name = profile.chinese_name || '小朋友'
+    const name = profile.name || '小朋友'
     return {
       title: `${name}的学习名片 - DmkWords`,
       path: '/pages/index/index',

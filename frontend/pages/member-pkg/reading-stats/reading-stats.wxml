@@ -61,7 +61,7 @@
     </view>
     <view class="ach-item">
       <text class="ach-icon"><text class="icon icon-fire">🔥</text></text>
-      <text class="ach-val">{{summary.streak_days || 0}}</text>
+      <text class="ach-val">{{summary.current_streak || 0}}</text>
       <text class="ach-label">连续打卡</text>
     </view>
     <view class="ach-item">
@@ -88,29 +88,29 @@
       <!-- 2nd Place -->
       <view class="lb-podium-item" wx:if="{{leaderboard.length >= 2}}">
         <view class="lb-avatar rank-2">
-          <text class="lb-avatar-emoji">{{leaderboard[1].avatar || '<text class="icon icon-woman">👩</text>'}}</text>
+          <text class="lb-avatar-emoji">🥈</text>
         </view>
-        <text class="lb-name">{{leaderboard[1].child_name || '未知用户'}}</text>
-        <text class="lb-score">{{leaderboard[1].score || 0}} 词</text>
+        <text class="lb-name">{{leaderboard[1].display_name || '未知用户'}}</text>
+        <text class="lb-score">{{leaderboard[1].total_words || 0}} 词</text>
         <text class="lb-medal"><text class="icon icon-silver-medal">🥈</text></text>
       </view>
       <!-- 1st Place -->
       <view class="lb-podium-item" wx:if="{{leaderboard.length >= 1}}">
         <view class="lb-avatar rank-1">
           <text class="lb-crown"><text class="icon icon-crown">👑</text></text>
-          <text class="lb-avatar-emoji">{{leaderboard[0].avatar || '<text class="icon icon-adult">🧑</text>'}}</text>
+          <text class="lb-avatar-emoji">🥇</text>
         </view>
-        <text class="lb-name">{{leaderboard[0].child_name || '未知用户'}}</text>
-        <text class="lb-score">{{leaderboard[0].score || 0}} 词</text>
+        <text class="lb-name">{{leaderboard[0].display_name || '未知用户'}}</text>
+        <text class="lb-score">{{leaderboard[0].total_words || 0}} 词</text>
         <text class="lb-medal"><text class="icon icon-gold-medal">🥇</text></text>
       </view>
       <!-- 3rd Place -->
       <view class="lb-podium-item" wx:if="{{leaderboard.length >= 3}}">
         <view class="lb-avatar rank-3">
-          <text class="lb-avatar-emoji">{{leaderboard[2].avatar || '<text class="icon icon-boy">👦</text>'}}</text>
+          <text class="lb-avatar-emoji">🥉</text>
         </view>
-        <text class="lb-name">{{leaderboard[2].child_name || '未知用户'}}</text>
-        <text class="lb-score">{{leaderboard[2].score || 0}} 词</text>
+        <text class="lb-name">{{leaderboard[2].display_name || '未知用户'}}</text>
+        <text class="lb-score">{{leaderboard[2].total_words || 0}} 词</text>
         <text class="lb-medal"><text class="icon icon-bronze-medal">🥉</text></text>
       </view>
     </view>
@@ -119,10 +119,10 @@
       <view class="lb-list-item {{item.isMe ? 'lb-me' : ''}}" wx:for="{{restLeaderboard}}" wx:key="rank">
         <text class="lb-rank">{{item.rank}}</text>
         <view class="lb-av">
-          <text class="lb-av-emoji">{{item.avatar || '<text class="icon icon-dog">🐶</text>'}}</text>
+          <text class="lb-av-emoji">{{item.medal || '📖'}}</text>
         </view>
-        <text class="lb-user-name">{{item.isMe ? '我 (' + item.child_name + ')' : item.child_name}}</text>
-        <text class="lb-user-score">{{item.score || 0}}</text>
+        <text class="lb-user-name">{{item.isMe ? '我 (' + item.display_name + ')' : item.display_name}}</text>
+        <text class="lb-user-score">{{item.total_words || 0}}</text>
       </view>
     </view>
     <view class="lb-more">
