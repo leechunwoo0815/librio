@@ -136,6 +136,11 @@ class SystemConfig(BaseModel):
             "每级需通过测验的最少书数（默认=required_books，全部通过）",
         ),
         "require_teacher_review": ("false", "bool", "晋级是否需要老师审核"),
+        "quiz_cooldown_minutes": (
+            "60",
+            "int",
+            "测验未通过后重考冷却时间（分钟，范围5-1440，T3.4）",
+        ),
         # ── 打卡规则 ──
         "checkin_min_minutes": ("10", "int", "打卡最低阅读分钟数"),
         "checkin_min_vocab": ("5", "int", "打卡最低生词数"),
@@ -160,6 +165,16 @@ class SystemConfig(BaseModel):
         "price_official_member": ("5400", "string", "正式会员年费（元）"),
         "price_quarterly": ("1350", "string", "季度会员价格（元）"),
         "price_semi_annual": ("2700", "string", "半年会员价格（元）"),
+        "original_price_parent_course": (
+            "199",
+            "int",
+            "亲子课原价/划线价（元，展示用）",
+        ),
+        "original_price_official_member": (
+            "6000",
+            "int",
+            "正式会员原价/划线价（元，展示用）",
+        ),
         # ── 管理员 ──
         "admin_token_expire_hours": ("8", "int", "管理员 Token 有效期（小时）"),
         # ── 活动 ──

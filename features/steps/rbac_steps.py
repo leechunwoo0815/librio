@@ -569,11 +569,30 @@ def step_admin_has_permission_count(context, count):
 
 @then('数据范围限制为"{scope}"')
 def step_data_scope_limited(context, scope):
-    """验证数据范围限制"""
-    if context.admin_role == "teacher":
+    """验证数据范围限制 — 检查被创建管理员的角色与教师关联（修复假绿 assert True）"""
+    from backend.domain.admin.models import Admin
+    from backend.domain.admin.rbac_models import Role
+
+    username = getattr(context, "created_admin_username", None)
+    assert username, "场景中未创建管理员，无法验证数据范围"
+    admin = context.db.query(Admin).filter(Admin.username == username).first()
+    assert admin is not None
+    role = (
+        context.db.query(Role).filter(Role.id == admin.admin_role_id).first()
+        if admin.admin_role_id
+        else None
+    )
+    role_code = role.code if role else None
+    if role_code == "teacher":
         assert scope == "仅自己负责的孩子"
+        # 数据范围的技术实现：admin.teacher_id 非空 → 查询按 teacher_id 过滤
+        assert admin.teacher_id is not None, (
+            "教师管理员未关联 teacher_id，数据范围不生效"
+        )
     else:
-        assert True
+        raise AssertionError(
+            f"角色 {role_code} 无'仅自己负责的孩子'数据范围，不应使用该断言"
+        )
 
 
 @then('显示"关联教师"下拉框')
