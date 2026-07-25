@@ -39,14 +39,14 @@
           </view>
           <view class="meta-item">
             <text class="meta-icon"><text class="icon icon-user">👤</text></text>
-            <text>已报名 {{item.enrollment_count || 0}}/{{item.capacity || '?'}}</text>
+            <text>已报名 {{item.enrollment_count}}/{{item.capacity || '?'}}</text>
           </view>
         </view>
         <view class="activity-footer">
           <view class="activity-status {{item.statusClass}}">{{item.statusText}}</view>
-          <view class="enroll-btn {{item.status !== 'registering' ? 'disabled' : ''}}"
+          <view class="enroll-btn {{item.status !== 1 ? 'disabled' : ''}}"
                 data-id="{{item.id}}" catchtap="onEnrollActivity" wx:if="{{!item.enrolled && !item.checked_in}}">
-            <text>{{item.status === 'registering' ? '立即报名' : item.statusText}}</text>
+            <text>{{item.status === 1 ? '立即报名' : item.statusText}}</text>
           </view>
           <view class="enroll-btn checked-in" wx:elif="{{item.checked_in}}">
             <text><text class="icon icon-check"><text class="icon icon-checkmark">✓</text></text> 已签到</text>

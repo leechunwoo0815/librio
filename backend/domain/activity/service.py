@@ -25,11 +25,40 @@ class ActivityService:
         self.enrollment_repo = ActivityEnrollmentRepository(db)
 
     def list_activities(
-        self, page: int = 1, page_size: int = 20
+        self, page: int = 1, page_size: int = 20, child_id: int | None = None
     ) -> list[ActivityResponse]:
         offset = (page - 1) * page_size
         activities = self.activity_repo.list_all(limit=page_size, offset=offset)
-        return [ActivityResponse.model_validate(a) for a in activities]
+        results = [ActivityResponse.model_validate(a) for a in activities]
+        if child_id:
+            self._attach_my_enrollments(results, child_id)
+        return results
+
+    def _attach_my_enrollments(
+        self, results: list[ActivityResponse], child_id: int
+    ) -> None:
+        """为响应附加当前孩子的报名记录"""
+        from backend.domain.activity.models import ActivityEnrollment
+
+        activity_ids = [r.id for r in results]
+        if not activity_ids:
+            return
+        enrollments = (
+            self.db.query(ActivityEnrollment)
+            .filter(
+                ActivityEnrollment.activity_id.in_(activity_ids),
+                ActivityEnrollment.child_id == child_id,
+                ActivityEnrollment.is_deleted == 0,
+            )
+            .all()
+        )
+        by_activity = {e.activity_id: e for e in enrollments}
+        for r in results:
+            e = by_activity.get(r.id)
+            if e:
+                r.my_enrollment_id = e.id
+                r.my_enrollment_status = e.status
+                r.my_ticket_code = e.ticket_code
 
     def list_with_count(self, page: int = 1, page_size: int = 20) -> dict:
         items = self.list_activities(page=page, page_size=page_size)
@@ -42,10 +71,15 @@ class ActivityService:
             "has_next": (page * page_size) < total,
         }
 
-    def get_activity(self, activity_id: int) -> ActivityResponse:
-        return ActivityResponse.model_validate(
+    def get_activity(
+        self, activity_id: int, child_id: int | None = None
+    ) -> ActivityResponse:
+        resp = ActivityResponse.model_validate(
             self.activity_repo.get_by_id_or_raise(activity_id)
         )
+        if child_id:
+            self._attach_my_enrollments([resp], child_id)
+        return resp
 
     def enroll(self, data: ActivityEnrollRequest) -> dict:
         activity = self.activity_repo.get_by_id_or_raise(data.activity_id)

@@ -17,7 +17,7 @@
     <view class="hero">
       <text class="hero-tag"><text class="icon icon-fire">🔥</text> 本周热门</text>
       <text class="hero-emoji"><text class="icon icon-book">书</text></text>
-      <text class="hero-status">{{isRegistered ? '已报名' : '报名中'}}</text>
+      <text class="hero-status">{{isCheckedIn ? '已签到' : (isRegistered ? '已报名' : '报名中')}}</text>
     </view>
 
     <view class="info-card">
@@ -132,10 +132,10 @@
       <view class="action-price-label">会员专享</view>
       <view class="action-price">{{activityDetail.price_text || '免费'}}</view>
     </view>
-    <view class="action-btn {{isRegistered ? 'registered' : 'register'}}" bindtap="onRegister">
-      <text>{{isRegistered ? '已报名 <text class="icon icon-checkmark">✓</text>' : '立即报名'}}</text>
+    <view class="action-btn {{isRegistered ? 'registered' : 'register'}} {{activityDetail.status !== 1 && !isRegistered ? 'disabled' : ''}}" bindtap="onRegister">
+      <text>{{isCheckedIn ? '已签到 ✓' : (isRegistered ? '已报名 ✓' : (activityDetail.status === 1 ? '立即报名' : '报名未开放'))}}</text>
     </view>
-    <text class="cancel-link" wx:if="{{isRegistered}}" bindtap="onCancel">取消报名</text>
+    <text class="cancel-link" wx:if="{{isRegistered && !isCheckedIn}}" bindtap="onCancel">取消报名</text>
   </view>
 
   <view class="toast {{toastVisible ? 'show' : ''}}">

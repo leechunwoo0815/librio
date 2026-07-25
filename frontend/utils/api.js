@@ -102,11 +102,11 @@ module.exports = {
   transferBenefit(sourceChildId, targetChildId) { return req.post('/child/transfer', { source_child_id: sourceChildId, target_child_id: targetChildId }) },
 
   // 场馆
-  getVenues() { return req.get('/admin/api/venues') },
+  getVenues() { return req.get('/venue/list', null, { auth: false }) },
 
   // 活动
-  getActivities() { return req.get('/activity/') },
-  getActivity(id) { return req.get(`/activity/${id}`) },
+  getActivities(childId) { return req.get('/activity/', null, { params: { child_id: childId } }) },
+  getActivity(id, childId) { return req.get(`/activity/${id}`, null, { params: { child_id: childId } }) },
   enrollActivity(activityId, childId) { return req.post('/activity/enroll', { activity_id: activityId, child_id: childId }) },
   cancelEnrollment(enrollmentId) { return req.put(`/activity/enroll/${enrollmentId}/cancel`) },
   signIn(enrollmentId) { return req.put(`/activity/enroll/${enrollmentId}/sign-in`) },

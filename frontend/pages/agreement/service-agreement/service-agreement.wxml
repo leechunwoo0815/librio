@@ -6,6 +6,72 @@
     <text class="top-bar-title">服务协议</text>
   </view>
   <view class="content">
-    <text class="agreement-text">服务协议内容</text>
+    <view class="section-title">引言</view>
+    <view class="section-content">
+      本服务协议（以下简称"本协议"）由您与 DmkWords 小程序（以下简称"我们"）签订。请您在使用我们的服务前仔细阅读本协议。您勾选"我已阅读并同意"或实际使用我们的服务，即视为您已理解并接受本协议的全部内容。
+    </view>
+
+    <view class="section-title">一、服务内容</view>
+    <view class="section-content">
+      我们为 3-15 岁儿童及其监护人提供英文分级阅读服务，包括：<text>\n</text>
+      1. 线下实体图书借阅（凭有效会员资格在合作场馆借还图书，单次借阅周期 21 天）；<text>\n</text>
+      2. 线上音频伴读、图书检索与预约；<text>\n</text>
+      3. 查词、测评、阅读打卡与阅读报告；<text>\n</text>
+      4. 亲子课程、阅读活动报名；<text>\n</text>
+      5. 会员订阅、押金管理等配套交易服务。
+    </view>
+
+    <view class="section-title">二、会员与收费</view>
+    <view class="section-content">
+      1. 会员类型：亲子课（99 元）、观察期会员（500 元/30 天）、正式会员（5400 元/365 天）、季度会员（1350 元/90 天）、半年会员（2700 元/180 天）。同一用户第 2 个孩子起享受对应优惠。<text>\n</text>
+      2. 借书押金：1200 元/孩子，随借书权益开通缴纳。押金在您无未还图书且无未缴罚款时可申请全额退还，退款原路返回，处理时间约 1-3 个工作日。<text>\n</text>
+      3. 逾期与赔偿：图书逾期未还按 1 元/天累计罚款；图书损坏或丢失按定价的 0.5 倍（重度损坏）或 1.5 倍（丢失）赔偿，赔偿从押金中扣除，不足部分需补缴。<text>\n</text>
+      4. 会员到期后有 15 天缓冲期，缓冲期内续费享 9 折优惠；缓冲期结束后账号转为过期状态，数据保留。
+    </view>
+
+    <view class="section-title">三、退款规则</view>
+    <view class="section-content">
+      1. 押金退款：满足"无未还图书且无未缴罚款"条件即可申请，全额退还。<text>\n</text>
+      2. 会员退款：观察期/正式会员按未使用天数比例退款（扣除已使用天数费用），退款申请经审核通过后原路退回。<text>\n</text>
+      3. 活动报名：活动开始前可取消报名并退款；活动取消时报名费全额原路退回。
+    </view>
+
+    <view class="section-title">四、用户行为规范</view>
+    <view class="section-content">
+      您承诺：<text>\n</text>
+      1. 提供真实、准确的孩子信息；<text>\n</text>
+      2. 爱护借阅图书，按时归还；<text>\n</text>
+      3. 不利用服务从事任何违法违规活动，不上传违规内容；<text>\n</text>
+      4. 妥善保管账号，因账号保管不善造成的损失由您自行承担。
+    </view>
+
+    <view class="section-title">五、知识产权</view>
+    <view class="section-content">
+      本小程序及其内容（包括但不限于图书音频、界面设计、测评题库）的知识产权归我们或相关权利人所有。您仅获得为个人学习目的的有限使用权，不得复制、传播或用于商业用途。
+    </view>
+
+    <view class="section-title">六、服务变更与免责</view>
+    <view class="section-content">
+      1. 我们可能根据运营需要调整服务内容，调整将通过小程序内公告通知。<text>\n</text>
+      2. 因不可抗力、网络故障或第三方原因导致的服务中断，我们不承担责任，但将尽力及时恢复。<text>\n</text>
+      3. 图书内容仅供学习参考，不构成教育承诺或效果保证。
+    </view>
+
+    <view class="section-title">七、未成年人条款</view>
+    <view class="section-content">
+      本服务面向监护人及其监护的未成年人。未成年人使用本服务应取得监护人的同意并在监护人陪同下进行。监护人对未成年人在本服务中的行为承担责任。
+    </view>
+
+    <view class="section-title">八、协议变更与终止</view>
+    <view class="section-content">
+      我们可能适时修订本协议，修订后通过小程序内弹窗或公告通知。如您不同意修订内容，可停止使用我们的服务并申请账户注销；继续使用则视为接受修订后的协议。
+    </view>
+
+    <view class="section-title">九、联系我们</view>
+    <view class="section-content">
+      如您对本协议有任何疑问，请通过小程序内"联系客服"功能与我们联系。我们将在 15 个工作日内回复。<text>\n</text>
+      <text>\n</text>
+      本协议版本：v1.0（2026-07-24 生效）
+    </view>
   </view>
 </view>

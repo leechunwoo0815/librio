@@ -25,23 +25,38 @@ Page({
   async loadActivityDetail(id) {
     this.setData({ loading: true })
     try {
-      const detail = await api.getActivity(id)
-      const registered = detail.enrollment_count || detail.registered_count || 0
+      const child = auth.getCurrentChild()
+      const raw = await api.getActivity(id, child && child.id)
+      // 字段对齐 ActivityResponse：start_time/end_time/current_participants/max_participants/my_enrollment_*
+      const detail = {
+        ...raw,
+        start_date: (raw.start_time || '').slice(0, 10),
+        end_date: (raw.end_time || '').slice(0, 10),
+        enrollment_count: raw.current_participants || 0,
+        capacity: raw.max_participants || 0,
+      }
+      // 报名状态：0待审核/1已通过 视为已报名，4=已签到
+      const es = raw.my_enrollment_status
+      const enrolled = es === 0 || es === 1
+      const checkedIn = es === 4
+      const enrollmentId = raw.my_enrollment_id || null
+
+      const registered = detail.enrollment_count
       const capacity = detail.capacity || 1
       const pct = Math.min(Math.round((registered / capacity) * 100), 100)
-      const enrollmentId = detail.enrollment_id || null
 
       const now = new Date()
-      const startTime = new Date(detail.start_date)
-      const endTime = new Date(detail.end_date)
+      const startTime = new Date(raw.start_time)
+      const endTime = new Date(raw.end_time)
       const oneHourBeforeStart = new Date(startTime.getTime() - 60 * 60 * 1000)
-      const isCheckinTime = enrollmentId && now >= oneHourBeforeStart && now <= endTime
+      const isCheckinTime = enrolled && !checkedIn && now >= oneHourBeforeStart && now <= endTime
 
       this.setData({
         activityDetail: detail,
-        isRegistered: detail.is_registered || false,
+        isRegistered: enrolled,
+        isCheckedIn: checkedIn,
         capacityPercent: pct,
-        remaining: capacity - registered,
+        remaining: Math.max(0, capacity - registered),
         loading: false,
         enrollmentId,
         isCheckinTime,
@@ -61,8 +76,14 @@ Page({
   },
 
   async onRegister() {
-    const id = this.data.activityDetail?.id
+    if (this.data.isRegistered || this.data.isCheckedIn) return
+    const detail = this.data.activityDetail
+    const id = detail?.id
     if (!id) return
+    if (detail.status !== 1) {
+      wx.showToast({ title: '该活动不在报名中', icon: 'none' })
+      return
+    }
     const child = auth.getCurrentChild()
     if (!child) {
       wx.showToast({ title: '请先选择孩子', icon: 'none' })
@@ -97,8 +118,14 @@ Page({
       const scene = 'checkin_' + enrollmentId
       const page = 'pages/activity-pkg/activity-detail/activity-detail'
       const url = baseURL + '/wechat/qr-code?scene=' + scene + '&page=' + page
+      const token = app.globalData.token || wx.getStorageSync('token') || ''
       const res = await new Promise((resolve, reject) => {
-        wx.downloadFile({ url, success: (r) => resolve(r), fail: reject })
+        wx.downloadFile({
+          url,
+          header: { 'Authorization': 'Bearer ' + token },
+          success: (r) => r.statusCode === 200 ? resolve(r) : reject(new Error('http ' + r.statusCode)),
+          fail: reject,
+        })
       })
       return res.tempFilePath
     } catch (e) {

@@ -77,41 +77,34 @@ Page({
         api.getStreak(child.id).catch(() => ({ current_streak: 0 })),
         api.getCurrentLevel(child.id).catch(() => null),
         api.getChildAchievements(child.id).catch(() => []),
-        api.searchBooks({ page_size: 6 }).catch(() => ({ list: [] })),
+        api.searchBooks({ page_size: 6 }).catch(() => ({ items: [] })),
       ])
 
+      // 晋级进度：由 getCurrentLevel + getLevels 客户端组装（api.getAdvancement 不存在）
       let advancement = null
       try {
-        advancement = await api.getAdvancement(child.id)
+        if (level) {
+          const levels = await api.getLevels().catch(() => [])
+          const cur = (levels || []).find(l => l.id === level.level_id)
+          const required = cur ? (cur.required_books || 5) : 5
+          const read = level.books_read_at_level || 0
+          advancement = {
+            books_read: read,
+            books_required: required,
+            can_advance: read >= required,
+            progress: Math.min(100, Math.round(read / Math.max(required, 1) * 100)),
+          }
+        }
       } catch (e) { /* 静默降级 */ }
 
-      let students = []
-      try {
-        const studentData = await api.getStudents(child.id).catch(() => null)
-        students = (studentData && studentData.list) || []
-      } catch (e) { /* 静默降级 */ }
-      if (students.length === 0) {
-        students = [
-          { name: '小悦', age: 5, books_read: 128 },
-          { name: '子轩', age: 6, books_read: 96 },
-          { name: '雨桐', age: 5, books_read: 84 },
-          { name: '明哲', age: 7, books_read: 156 },
-          { name: '思琪', age: 6, books_read: 112 },
-        ]
-      }
+      const students = []  // 同伴数据后端未提供，展示真实数据前不显示
 
-      let faqs = []
-      try {
-        const faqData = await api.getFAQs().catch(() => null)
-        faqs = (faqData && faqData.list) || []
-      } catch (e) { /* 静默降级 */ }
-      if (faqs.length === 0) {
-        faqs = [
-          { question: '如何开始借书？', answer: '办理会员后，可在图书馆线下扫码借书，或在 App 上预约借书。' },
-          { question: '如何查看阅读进度？', answer: '在我的页面可以查看孩子的阅读统计和连续打卡天数。' },
-          { question: '图书可以借多久？', answer: '单次借阅周期为21天，逾期将锁死音频播放功能。' },
-        ]
-      }
+      // FAQ 为静态内容（后端无 FAQ 接口）
+      const faqs = [
+        { question: '如何开始借书？', answer: '办理会员后，可在图书馆线下扫码借书，或在 App 上预约借书。' },
+        { question: '如何查看阅读进度？', answer: '在我的页面可以查看孩子的阅读统计和连续打卡天数。' },
+        { question: '图书可以借多久？', answer: '单次借阅周期为21天，逾期将锁死音频播放功能。' },
+      ]
 
       const statusMap = { 0: '体验用户', 1: '观察期会员', 2: '正式会员', 3: '已过期', 4: '已退出' }
       var fabText = '立即报名 99 元亲子课'
@@ -174,8 +167,8 @@ Page({
 
       this.setData({ alerts: alerts })
       try {
-        const msgs = await api.getMessages('unread', 1)
-        this.setData({ hasUnread: msgs && msgs.list && msgs.list.length > 0 })
+        const msgs = await api.getMessages(null, 1)
+        this.setData({ hasUnread: !!(msgs && msgs.unread_count > 0) })
       } catch (e) {
         this.setData({ hasUnread: false })
       }
@@ -197,7 +190,7 @@ Page({
   goDetail(e) { wx.navigateTo({ url: `/pages/reading-pkg/book-detail/book-detail?id=${e.currentTarget.dataset.id}` }) },
   goLogin() { wx.navigateTo({ url: '/pages/login/login' }) },
   goHome() { /* already on home, do nothing or scroll to top */ },
-  goActivities() { wx.navigateTo({ url: '/pages/activity-pkg/activity-detail/activity-detail' }) },
+  goActivities() { wx.navigateTo({ url: '/pages/activity-pkg/activity-list/activity-list' }) },
   goMember() { wx.switchTab({ url: '/pages/member/member' }) },
   goMessages() { wx.navigateTo({ url: '/pages/order-pkg/messages/messages' }) },
   goAchievement() { wx.navigateTo({ url: '/pages/member-pkg/achievement/achievement' }) },

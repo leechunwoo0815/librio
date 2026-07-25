@@ -1,18 +1,32 @@
 const api = require('../../utils/api')
 const auth = require('../../utils/auth')
 
+// Activity status: 0=未发布 1=报名中 2=报名截止 3=进行中 4=已结束 5=已取消
 const statusTextMap = {
-  registering: '报名中',
-  registration_closed: '报名截止',
-  in_progress: '进行中',
-  ended: '已结束',
+  0: '未发布',
+  1: '报名中',
+  2: '报名截止',
+  3: '进行中',
+  4: '已结束',
+  5: '已取消',
 }
 
 const statusClassMap = {
-  registering: 'status-open',
-  registration_closed: 'status-full',
-  in_progress: 'status-open',
-  ended: 'status-past',
+  1: 'status-open',
+  2: 'status-full',
+  3: 'status-open',
+  4: 'status-past',
+  5: 'status-past',
+}
+
+// ActivityEnrollment status: 0=待审核 1=已通过 2=已拒绝 3=已取消 4=已签到
+function mapEnrollment(a) {
+  const es = a.my_enrollment_status
+  return {
+    enrolled: es === 0 || es === 1,
+    checked_in: es === 4,
+    enrollment_id: a.my_enrollment_id || null,
+  }
 }
 
 Page({
@@ -34,13 +48,26 @@ Page({
   async loadActivities() {
     this.setData({ loading: true })
     try {
-      const res = await api.getActivities()
-      const activities = (Array.isArray(res) ? res : (res.items || res.data || [])).map(a => ({
-        ...a,
-        statusText: statusTextMap[a.status] || a.status,
-        statusClass: statusClassMap[a.status] || '',
-        bannerText: a.title || '',
-      }))
+      const child = auth.getCurrentChild()
+      const res = await api.getActivities(child && child.id)
+      const fmt = (t) => (t || '').slice(0, 10)
+      const activities = (Array.isArray(res) ? res : (res.items || res.data || []))
+        .filter(a => a.status !== 0 && a.status !== 5)  // 用户端不显示未发布/已取消
+        .map(a => {
+          const enr = mapEnrollment(a)
+          return {
+            ...a,
+            start_date: fmt(a.start_time),
+            end_date: fmt(a.end_time),
+            enrollment_count: a.current_participants || 0,
+            capacity: a.max_participants || 0,
+            activity_started: a.status === 3,
+            ...enr,
+            statusText: statusTextMap[a.status] || a.status,
+            statusClass: statusClassMap[a.status] || '',
+            bannerText: a.title || '',
+          }
+        })
       this.setData({ activities, loading: false })
       this.applyFilter()
     } catch (e) {
@@ -59,9 +86,9 @@ Page({
     const { activities, filterTab } = this.data
     let filtered
     if (filterTab === 'upcoming') {
-      filtered = activities.filter(a => a.status !== 'ended')
+      filtered = activities.filter(a => a.status !== 4)
     } else {
-      filtered = activities.filter(a => a.status === 'ended')
+      filtered = activities.filter(a => a.status === 4)
     }
     this.setData({ filteredActivities: filtered })
   },

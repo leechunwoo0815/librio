@@ -21,19 +21,21 @@ router = APIRouter(prefix="/activity", tags=["活动"])
 def list_activities(
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=100, description="每页数量"),
+    child_id: int | None = Query(None, description="孩子ID（返回其报名状态）"),
     service: ActivityService = Depends(get_activity_service),
     current_user=Depends(get_current_user),
 ):
-    return service.list_activities(page, page_size)
+    return service.list_activities(page, page_size, child_id=child_id)
 
 
 @router.get("/{activity_id}", response_model=ActivityResponse)
 def get_activity(
     activity_id: int,
+    child_id: int | None = Query(None, description="孩子ID（返回其报名状态）"),
     service: ActivityService = Depends(get_activity_service),
     current_user=Depends(get_current_user),
 ):
-    return service.get_activity(activity_id)
+    return service.get_activity(activity_id, child_id=child_id)
 
 
 @router.post("/enroll", status_code=201)

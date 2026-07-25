@@ -24,6 +24,10 @@ class ActivityResponse(BaseSchema):
     max_participants: int = 0
     current_participants: int = 0
     create_time: datetime
+    # 当前孩子的报名记录（child_id 查询参数提供时填充）
+    my_enrollment_id: int | None = None
+    my_enrollment_status: int | None = None
+    my_ticket_code: str | None = None
 
 
 class BatchCheckinRequest(BaseSchema):
