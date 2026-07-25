@@ -43,7 +43,9 @@ class Order(BaseModel):
     )
 
     type = Column(
-        SmallInteger, nullable=False, comment="订单类型: 1=亲子课 2=观察期 3=正式会员"
+        SmallInteger,
+        nullable=False,
+        comment="订单类型: 1=亲子课 2=观察期 3=正式会员 4=季度会员 5=半年会员",
     )
     amount = Column(Numeric(10, 2), nullable=False, comment="订单金额(元)")
 
