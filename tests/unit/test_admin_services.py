@@ -218,7 +218,7 @@ def test_admin_list_children_borrow_counts(db):
     db.flush()
     from datetime import datetime
 
-    now = datetime.utcnow()
+    now = datetime.now()
     db.add(
         BorrowRecord(
             child_id=children[0].id,
@@ -297,7 +297,7 @@ def test_overdue_reminders_batch_loading(db):
     db.flush()
     from datetime import datetime, timedelta
 
-    now = datetime.utcnow()
+    now = datetime.now()
     db.add(
         BorrowRecord(
             child_id=child.id,

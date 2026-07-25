@@ -1,6 +1,6 @@
 # DmkWords (librio) — 项目概览
 
-> 最后更新：2026-07-22 | 版本：V3.12 — GLM 任务书全量收口（事务锁审计 + N+1 性能批）+ CI 同构九关
+> 最后更新：2026-07-23 | 版本：V3.16 — 全量终审修订（391/5 pytest + 179/1171 behave + CI 同构十关全绿 + 全数字实测校准）
 
 ## 一句话
 
@@ -10,17 +10,17 @@ DmkWords 是一个 OMO（Online-Merge-Offline）儿童英语分级阅读平台�
 
 | 指标 | 数值 |
 |------|------|
-| 测试（pytest 本地/CI） | **316** passed / 5 skipped 本地 |
-| BDD（behave） | 160 scenarios / 1095 steps |
+| 测试（pytest 本地/CI） | **391** passed / 5 skipped 本地 |
+| BDD（behave） | 179 scenarios / 1171 steps |
 | 代码规范（ruff） | 0 errors |
 | 数据库迁移（alembic） | clean |
 | DB 表 | 54 |
-| 后端 API 端点 | 184+ |
+| 后端 API 端点 | 313+ |
 | 后端领域模块 | 27 |
-| 定时任务 | 15 |
+| 定时任务 | 18 |
 | 小程序页面 | 31 |
 | 小程序组件 | 12 |
-| PC 管理端模板 | 37（含 base.html） |
+| PC 管理端模板 | 38（含 base.html） |
 | 管理端 CSS 文件 | 33 |
 | 动态配置项 | 37 |
 

@@ -9,7 +9,7 @@
 
 DmkWords 是一个儿童英语阅读管理平台：
 - **微信小程序**：家长端，31 页，12 通用组件
-- **PC 管理后台**：37 模板页面（含 base.html），184+ API 端点
+- **PC 管理后台**：38 模板页面（含 base.html），313+ API 端点
 - **后端 API**：FastAPI + SQLAlchemy + MySQL，27 领域模块
 
 ---
@@ -21,7 +21,7 @@ DmkWords 是一个儿童英语阅读管理平台：
 | 检查项 | 状态 |
 |--------|------|
 | pytest | ✅ 391 passed (本地) |
-| behave | ✅ 160 scenarios / 1095 steps |
+| behave | ✅ 179 scenarios / 1171 steps |
 | ruff check `backend/ tests/` | ✅ 0 errors |
 | ruff check `features/ scripts/` | ✅ 0 errors |
 | ruff format `--check .` | ✅ 346 files formatted |

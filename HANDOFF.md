@@ -9,7 +9,7 @@
 ## 一、项目一句话
 
 OMO 儿童英文阅读平台：线下实体书借阅 + 线上音频伴读 + 手动查词 + 异步测评。
-微信小程序 31 页（家长端）+ PC 管理后台 38 模板（运营端）+ FastAPI 后端 27 领域模块（55 表 / 184+ API / 17 定时任务）。
+微信小程序 31 页（家长端）+ PC 管理后台 38 模板（运营端）+ FastAPI 后端 27 领域模块（55 表 / 313+ API / 18 定时任务）。
 管理后台全员已迁移到 `data-action` 事件委托模式（0 inline handler），35 JS 文件全部 IIFE 隔离，XSS 表面向量清零。
 
 ---
@@ -17,12 +17,12 @@ OMO 儿童英文阅读平台：线下实体书借阅 + 线上音频伴读 + 手�
 ## 二、当前状态（2026-07-23 终端验证）
 
 ```bash
-# ── CI 同构九关（与 .github/workflows/ci.yml 逐字一致）──
+# ── CI 同构十关（与 .github/workflows/ci.yml 逐字一致）──
 ruff check backend/ tests/           # 0 errors ✅
 ruff check features/ scripts/        # 0 errors ✅
 ruff format --check .                # 349 files formatted ✅
 python -m pytest tests/ -q           # 391/5 ✅
-python -m behave features/ -q        # 160 scenarios / 1095 steps / 0 failed ✅
+python -m behave features/ -q        # 179 scenarios / 1171 steps / 0 failed ✅
 python -m scripts.verify_api_contract # OK ✅
 python -m scripts.check_model_consistency # 54 tables ✅
 
@@ -34,7 +34,7 @@ python -m alembic check              # OK ✅
 | Check | 本地 |
 |-------|:----:|
 | pytest | 391 passed, 5 skipped |
-| behave | 160/1095/0 |
+| behave | 179/1171/0 |
 | ruff check | 0 errors |
 | ruff format | 349 fmt'd |
 | api-contract | OK |

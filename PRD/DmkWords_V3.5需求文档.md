@@ -1431,6 +1431,7 @@ def reconcile_stock():
 | reconcile_stock | 每天 03:00 | 库存双口径对账（T3.7 新增） |
 | execute_child_deletions | 每天 03:30 | 儿童数据删除权级联执行（P0-3，24h 冷静期到期） |
 | reconcile_child_stats | 每天 03:45 | 统计字段对账（words/minutes/books/streak 重算修正） |
+| confirm_expired_damage_reports | 每天 00:00 | 损坏定级 7 天申诉期满自动确认（T3.6a） |
 | generate_weekly_reports | 每周一 08:00 | 生成周报 |
 | generate_monthly_reports | 每月1日 08:00 | 生成月报 + 平台级月度统计 |
 | close_expired_orders | 每分钟 | 订单30分钟未支付自动关闭 |

@@ -64,7 +64,10 @@ class TestVenuePublicList:
         names = [v["name"] for v in result]
         assert "人广馆" in names
         assert "关闭馆" not in names
-        assert all(set(v.keys()) == {"id", "name", "address", "phone", "business_hours"} for v in result)
+        assert all(
+            set(v.keys()) == {"id", "name", "address", "phone", "business_hours"}
+            for v in result
+        )
 
 
 class TestActivityMyEnrollment:
