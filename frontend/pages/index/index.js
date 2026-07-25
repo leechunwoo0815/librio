@@ -42,6 +42,9 @@ Page({
     const app = getApp()
     if (!app.globalData.token) { return }
 
+    // F3：隐私政策版本升级后重新征求同意（每次启动最多提示一次）
+    require('../../utils/consent').ensureOnce('privacy_policy')
+
     this.setData({ quote: QUOTES[Math.floor(Math.random() * QUOTES.length)] })
     // 从后端加载场馆数据
     try {

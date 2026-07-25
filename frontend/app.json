@@ -32,7 +32,8 @@
         "profile-card/profile-card",
         "certificate/certificate",
         "achievement/achievement",
-        "leaderboard/leaderboard"
+        "leaderboard/leaderboard",
+        "offline-guide/offline-guide"
       ]
     },
     {
@@ -63,11 +64,16 @@
   "preloadRule": {
     "pages/books/books": {
       "network": "all",
-      "packages": ["reading"]
+      "packages": [
+        "reading"
+      ]
     },
     "pages/member/member": {
       "network": "all",
-      "packages": ["member-pkg", "order"]
+      "packages": [
+        "member-pkg",
+        "order"
+      ]
     }
   },
   "window": {
@@ -114,7 +120,9 @@
       "desc": "用于保存晋级证书图片到相册"
     }
   },
-  "requiredBackgroundModes": ["audio"],
+  "requiredBackgroundModes": [
+    "audio"
+  ],
   "style": "v2",
   "sitemapLocation": "sitemap.json",
   "usingComponents": {

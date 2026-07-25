@@ -44,11 +44,17 @@ function getConsentTexts() {
 }
 
 function hasValidConsent(type) {
-  return request
-    .get('/user/consent', null, { showError: false })
-    .then(res => {
+  return Promise.all([request.get('/user/consent', null, { showError: false }), getConsentTexts()])
+    .then(([res, textsRes]) => {
       const list = (res && res.consents) || []
-      return list.some(c => c.consent_type === type && !c.withdrawn_at)
+      const currentVersion = textsRes.version
+      return list.some(
+        c =>
+          c.consent_type === type &&
+          !c.withdrawn_at &&
+          // 版本升级后旧同意失效，需重新征求（F3）
+          (!currentVersion || c.consent_version === currentVersion)
+      )
     })
     .catch(() => false) // 查询失败按无同意处理，走弹窗引导
 }
@@ -99,4 +105,13 @@ function ensureForError(err, type) {
   return Promise.resolve(false)
 }
 
-module.exports = { ensure, ensureForError, hasValidConsent }
+// 每次启动最多提示一次（防用户拒绝后每次 onShow 重复打扰）
+const _promptedThisSession = new Set()
+
+function ensureOnce(type) {
+  if (_promptedThisSession.has(type)) return Promise.resolve(false)
+  _promptedThisSession.add(type)
+  return ensure(type)
+}
+
+module.exports = { ensure, ensureOnce, ensureForError, hasValidConsent }
