@@ -204,11 +204,11 @@ Router (参数校验、HTTP状态码、依赖注入，🚫不含 try/except，�
 | :--- | :--- |
 | **后端** | Python 3.13 + FastAPI + SQLAlchemy 2.0 + Pydantic V2 |
 | **数据库** | MySQL 8.0 (utf8mb4)，测试用 SQLite `:memory:` |
-| **前端** | 微信小程序 (WXML/WXSS/JS, 31 页, 12 个通用组件) + MCP (wechat-devtools) |
+| **前端** | 微信小程序 (WXML/WXSS/JS, 34 页, 12 个通用组件) + MCP (wechat-devtools) |
 | **管理端** | PC 后台 38 个模板页面（含 base.html）+ 页面级 CSS + 设计系统 Token (--accent: #5560cf) |
-| **测试** | pytest (391 passed, 5 skipped) + behave (179 scenarios, 1171 steps, 0 failed) + Ruff (0 errors) |
+| **测试** | pytest (397 passed, 5 skipped) + behave (179 scenarios, 1171 steps, 0 failed) + Ruff (0 errors) |
 | **API** | 313 个端点（不含 mock 路由；含 mock 路由 322 个） |
-| **领域模块** | 27 个 |
+| **领域模块** | 28 个 |
 | **定时任务** | 18 个 |
 | **定时/认证** | APScheduler / JWT (python-jose) |
 | **词典** | ECDICT 本地 338 万词条 + Free Dictionary API 兜底 |

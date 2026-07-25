@@ -2,14 +2,14 @@
 
 > **生成时间**: 2026-07-24 GMT+8 (v17)
 > **项目版本**: V3.16 — 隐私合规 Phase 1（三段式同意/删除权级联/儿童专章）+ backlog 清零 + 目录清理
-> **测试状态**: pytest 391/5 · behave 179/1171 · ruff 0 · API契约 OK · 模型一致 55 tables · CI 同构十关 · 集成全绿
+> **测试状态**: pytest 397/5 · behave 179/1171 · ruff 0 · API契约 OK · 模型一致 55 tables · CI 同构十关 · 集成全绿
 
 ---
 
 ## 一、项目一句话
 
 OMO 儿童英文阅读平台：线下实体书借阅 + 线上音频伴读 + 手动查词 + 异步测评。
-微信小程序 31 页（家长端）+ PC 管理后台 38 模板（运营端）+ FastAPI 后端 27 领域模块（55 表 / 313+ API / 18 定时任务）。
+微信小程序 34 页（家长端）+ PC 管理后台 38 模板（运营端）+ FastAPI 后端 28 领域模块（55 表 / 313+ API / 18 定时任务）。
 管理后台全员已迁移到 `data-action` 事件委托模式（0 inline handler），35 JS 文件全部 IIFE 隔离，XSS 表面向量清零。
 
 ---
@@ -33,7 +33,7 @@ python -m alembic check              # OK ✅
 
 | Check | 本地 |
 |-------|:----:|
-| pytest | 391 passed, 5 skipped |
+| pytest | 397 passed, 5 skipped |
 | behave | 179/1171/0 |
 | ruff check | 0 errors |
 | ruff format | 349 fmt'd |
@@ -136,7 +136,7 @@ python -m alembic check              # OK ✅
 | X5 后端 schema 校验 | `admin_schemas.py`: isbn max_length=20, badge_emoji max_length=20, target_role_groups 枚举白名单 |
 | X6 回归测试 | `test_xss_sanitization.py` — 13 断言 (3 autoescape + 10 schema validation) |
 
-CI 九关全绿: ruff check/format, pytest 316/5, behave 1095, api contract, model consistency (54 tables), integration 55/55, alembic check
+CI 十关全绿: ruff check/format, pytest 397/5, behave 179/1171, api contract, model consistency (55 tables), integration 全绿, alembic check, action wiring --strict
 
 ### 3.8 T3.6a 图书损坏定责
 
@@ -323,7 +323,7 @@ CI 九关全绿: ruff check/format, pytest 316/5, behave 1095, api contract, mod
 |----|------|
 | 后端 | Python 3.13 + FastAPI + SQLAlchemy 2.0 + Pydantic V2 |
 | 数据库 | MySQL 8.0 (utf8mb4)，测试用 SQLite `:memory:` |
-| 前端 | 微信小程序原生（31 页，4 子包） |
+| 前端 | 微信小程序原生（34 页，4 子包） |
 | 管理端 | Jinja2 模板（37 页面 + base.html）+ 35 page JS（IIFE）+ 33 CSS + base-init.js |
 | 测试 | pytest + behave + ruff + GitHub Actions |
 | 认证 | JWT (python-jose) + bcrypt + Redis |
@@ -353,7 +353,7 @@ EventBus (跨域解耦) + ConfigService (TTL缓存)
 - 库存操作必须有锁（`with_for_update()`）
 - 三段式提交：外部 HTTP 调用前必须 commit 释放行锁
 - 禁用 oklch() / aspect-ratio / backdrop-filter / translateY(-50%)
-- CI 不可妥协：推送前必过 CI 同构九关
+- CI 不可妥协：推送前必过 CI 同构十关
 
 ### 前端架构
 - **35 个 page JS 文件**全部 IIFE 包裹 → `window.xxxPage` 导出
@@ -363,7 +363,7 @@ EventBus (跨域解耦) + ConfigService (TTL缓存)
 
 ---
 
-## 八、CI 配置速查 — 同构九关
+## 八、CI 配置速查 — 同构十关
 
 ```yaml
 # .github/workflows/ci.yml — 3 jobs × 7 checks + 2 regression extras
@@ -503,7 +503,7 @@ python -m alembic check
 
 ```markdown
 1. 读取 CLAUDE.md（宪法）、HANDOFF.md（本交接文档）、.ai/context/CONTEXT.md（业务知识）、ARCHITECTURE.md（架构）
-2. 运行 CI 同构九关确认项目状态（pytest 333/5, behave 1095, ruff 0, ruff format 349, api contract, model 54 tables, integration 55/55, alembic check）
+2. 运行 CI 同构十关确认项目状态（pytest 397/5, behave 179/1171, ruff 0, ruff format 368, api contract, model 55 tables, integration 全绿, alembic check, action wiring --strict）
 3. 按剩余工作清单优先级开始：
    P0: 外部输入项（appid/服务协议/隐私政策）
    P1: iconfont woff2 下载 + nginx rate limit

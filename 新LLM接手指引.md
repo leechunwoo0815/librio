@@ -1,8 +1,8 @@
-# 🚀 新 LLM 接手指引 — DmkWords (librio) V3.15
+# 🚀 新 LLM 接手指引 — DmkWords (librio) V3.17
 
 > **生成时间**: 2026-07-23 GMT+8  
 > **本项目工作周期**: 2026-07-05 ~ 2026-07-23 (8234 条消息)  
-> **测试基线**: pytest 391/5 · behave 179/1171 · ruff 0 · CI 同构十关全绿 · 集成全绿  
+> **测试基线**: pytest 397/5 · behave 179/1171 · ruff 0 · CI 同构十关全绿 · 集成全绿  
 
 **你是我的继任者。** 以下内容让你在 15 分钟内理解项目全貌、当前状态、已完成的工作量、未完成的事项，以及最重要的——**如何不踩坑**。
 
@@ -11,7 +11,7 @@
 ## 一、项目一句话
 
 OMO 儿童英文阅读平台：**线下实体书借阅** + **线上音频伴读** + **手动查词** + **异步测评**。  
-微信小程序 31 页（家长端）+ PC 管理后台 38 模板（运营端）+ FastAPI 后端 27 领域模块（55 表 / 184+ API / 17 定时任务）。
+微信小程序 34 页（家长端）+ PC 管理后台 38 模板（运营端）+ FastAPI 后端 28 领域模块（55 表 / 313+ API / 18 定时任务）。
 
 ---
 
@@ -24,7 +24,7 @@ cd /Users/litianyu/cc-projects/librio
 # 2. 激活环境
 source venv/bin/activate
 
-# 3. 验证状态 — CI 同构九关（必须全绿再动代码）
+# 3. 验证状态 — CI 同构十关（必须全绿再动代码）
 ruff check backend/ tests/ && ruff check features/ scripts/ && ruff format --check . && \
 python -m pytest tests/ -x -q --tb=short && \
 python -m behave features/ --no-capture -q && \
@@ -151,7 +151,7 @@ alembic:      OK (head=028)
 ```
 后端:     Python 3.13 + FastAPI + SQLAlchemy 2.0 + Pydantic V2
 数据库:   MySQL 8.0 (utf8mb4) / 测试用 SQLite :memory:
-小程序:   微信原生 (31 页, 4 子包)
+小程序:   微信原生 (34 页, 4 子包)
 管理端:   Jinja2 模板 (37 页) + 35 page JS (IIFE) + 33 CSS + base-init.js
 CI:      GitHub Actions (3 jobs × 7 checks + 2 regression extras)
 认证:    JWT (python-jose) + bcrypt
@@ -180,7 +180,7 @@ EventBus (跨域解耦) + ConfigService (TTL缓存)
 - 归属校验用 `middleware/ownership.py`，禁手动写
 - 库存操作必须有 `with_for_update()`
 - 三段式提交：HTTP 调用前必须 commit 释放行锁
-- 变更前读文件，变更后跑 CI 同构九关
+- 变更前读文件，变更后跑 CI 同构十关
 
 ---
 
@@ -243,7 +243,7 @@ document.querySelector('#admin-root')?.addEventListener('click', function(e) {
 ### 必须读（新 LLM 必读）
 | 文件 | 内容 |
 |------|------|
-| `CLAUDE.md` | 项目最高宪法（红线 + CI 九关 + 开发流程） |
+| `CLAUDE.md` | 项目最高宪法（红线 + CI 十关 + 开发流程） |
 | `HANDOFF.md` | 完整交接文档（本总文档） |
 | `ARCHITECTURE.md` | 完整架构（606 行，27 域 + 路由清单） |
 | `.ai/context/CONTEXT.md` | 领域语言与业务规则（308 行） |
@@ -269,7 +269,7 @@ document.querySelector('#admin-root')?.addEventListener('click', function(e) {
 
 ## 十、工作方法论
 
-1. **验证先行**：每次声称"修复完成"前，必须运行 CI 同构九关
+1. **验证先行**：每次声称"修复完成"前，必须运行 CI 同构十关
 2. **读文件再改**：不用幻觉写代码，先 `Read` 再看
 3. **最小修改**：只修目标函数，不顺便重构整条链路
 4. **单点修复**：一个 bug 修一个文件，不搞跨模块清理
@@ -282,7 +282,7 @@ document.querySelector('#admin-root')?.addEventListener('click', function(e) {
 
 当前最自然的切入点：
 
-1. **运行 CI 九关**确认环境正常
+1. **运行 CI 十关**确认环境正常
 2. **读完本文件** + `CLAUDE.md` + `ARCHITECTURE.md` 前 100 行
 3. 检查 `logs/admin_requests.log` 有无异常
 4. 按剩余清单开始：P0 外部项（需运营）> P1 iconfont + rate limit > P2 pytest 覆盖

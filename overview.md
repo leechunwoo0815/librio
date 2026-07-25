@@ -10,7 +10,7 @@ DmkWords 是一个 OMO（Online-Merge-Offline）儿童英语分级阅读平台�
 
 | 指标 | 数值 |
 |------|------|
-| 测试（pytest 本地/CI） | **391** passed / 5 skipped 本地 |
+| 测试（pytest 本地/CI） | **397** passed / 5 skipped 本地 |
 | BDD（behave） | 179 scenarios / 1171 steps |
 | 代码规范（ruff） | 0 errors |
 | 数据库迁移（alembic） | clean |
