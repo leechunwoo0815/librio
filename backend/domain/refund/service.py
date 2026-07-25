@@ -237,7 +237,7 @@ class RefundService:
                     user_id=0,
                     title="退款执行失败",
                     content=f"订单 {order_no} 退款执行失败，请手动处理。错误: {str(e)[:200]}",
-                    msg_type=7,
+                    msg_type=1,  # 系统通知
                     priority=2,
                 )
                 db.add(msg)

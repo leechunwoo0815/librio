@@ -146,10 +146,10 @@ class TestCheckDueDateReminders:
         with patch.object(scheduler, "_create_message") as mock_create:
             scheduler.check_due_date_reminders()
             assert mock_create.call_count == 4
-            # 检查每条消息的 title 和 msg_type
+            # 检查每条消息的 title 和 msg_type（3=借阅通知）
             for call_args in mock_create.call_args_list:
                 assert call_args.kwargs.get("title") == "借阅到期提醒"
-                assert call_args.kwargs.get("msg_type") == 5
+                assert call_args.kwargs.get("msg_type") == 3
 
     def test_due_date_upper_bound_filter(
         self, sqlite_session, _disable_locks, _stub_config

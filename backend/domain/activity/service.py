@@ -410,7 +410,7 @@ class ActivityService:
                         user_id=child.user_id,
                         title="活动取消通知",
                         content=f"活动「{activity.title}」已被取消。{'退款将自动处理，请留意。' if not activity.is_free else ''}",
-                        msg_type=5,
+                        msg_type=2,  # 活动通知
                         priority=1,
                     )
                     self.db.add(msg)

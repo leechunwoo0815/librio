@@ -222,7 +222,7 @@ class AdminMessageService:
                 user_id=child.user_id,
                 title=title,
                 content=content,
-                msg_type=2,  # 提醒类
+                msg_type=3,  # 借阅通知
                 priority=2,  # 高优先级
             )
             self.db.add(msg)

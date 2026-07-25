@@ -537,7 +537,7 @@ def check_member_expiry(db: Session | None = None):
                     user_id=child.user_id,
                     title="会员续费提醒",
                     content=f"您的孩子 {child.name} 的正式会员将在{days}天后（{target_date}）到期，请及时续费以免影响阅读。",
-                    msg_type=5,
+                    msg_type=1,  # 系统通知
                     priority=1 if days <= 3 else 0,
                 )
                 logger.info(
@@ -994,7 +994,7 @@ def alert_stale_refunds():
                 user_id=r.user_id,
                 title="退款超时告警",
                 content=f"退款申请 #{r.id} 已审核通过超过7天仍未到账，金额 {r.refund_amount} 元",
-                msg_type=5,
+                msg_type=1,  # 系统通知
                 priority=2,
             )
         if stale:
@@ -1069,7 +1069,7 @@ def check_due_date_reminders():
                     user_id=child.user_id,
                     title="借阅到期提醒",
                     content=msg,
-                    msg_type=5,
+                    msg_type=3,  # 借阅通知
                 )
                 logger.info(
                     f"DUE_REMIND: child={child.id}, book={record.book_id}, days={days}"
@@ -1322,7 +1322,7 @@ def check_observation_reminders(db: Session | None = None):
                     user_id=child.user_id,
                     title="观察期到期提醒",
                     content=msg,
-                    msg_type=6,
+                    msg_type=1,  # 系统通知
                     priority=1 if days <= 2 else 0,
                 )
                 logger.info(f"OBSERVATION_REMIND: child={child.id}, days_left={days}")
@@ -1373,7 +1373,7 @@ def check_activity_reminders():
                 user_id=child.user_id,
                 title="活动开始提醒",
                 content=f"您报名的活动「{activity.title}」将于 3 天后（{activity.start_time.strftime('%m月%d日 %H:%M')}）开始，请做好准备！",
-                msg_type=5,
+                msg_type=2,  # 活动通知
                 priority=0,
             )
             logger.info(f"ACTIVITY_REMIND: child={child.id}, activity={activity.id}")
