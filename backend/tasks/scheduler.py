@@ -547,7 +547,7 @@ def check_member_expiry(db: Session | None = None):
         db.commit()
     except Exception as e:
         db.rollback()
-        logger.error(f"check_member_expiry failed: {e}", exc_info=True)
+        logger.exception(f"check_member_expiry failed: {e}")
     finally:
         if own_session:
             db.close()
@@ -593,7 +593,7 @@ def check_grace_period_shutdown():
             logger.info(f"Grace period shutdown: {len(expired)} children expired")
     except Exception as e:
         db.rollback()
-        logger.error(f"check_grace_period_shutdown failed: {e}", exc_info=True)
+        logger.exception(f"check_grace_period_shutdown failed: {e}")
     finally:
         db.close()
 
@@ -634,7 +634,7 @@ def generate_weekly_reports():
         logger.info(f"Weekly reports generated: {count}")
     except Exception as e:
         db.rollback()
-        logger.error(f"generate_weekly_reports failed: {e}", exc_info=True)
+        logger.exception(f"generate_weekly_reports failed: {e}")
     finally:
         db.close()
 
@@ -806,7 +806,7 @@ def generate_monthly_reports():
         logger.info(f"Monthly reports generated: {count}")
     except Exception as e:
         db.rollback()
-        logger.error(f"generate_monthly_reports failed: {e}", exc_info=True)
+        logger.exception(f"generate_monthly_reports failed: {e}")
     finally:
         db.close()
 
@@ -845,7 +845,7 @@ def close_expired_orders():
             logger.info(f"Expired orders closed: {len(expired)}")
     except Exception as e:
         db.rollback()
-        logger.error(f"close_expired_orders failed: {e}", exc_info=True)
+        logger.exception(f"close_expired_orders failed: {e}")
     finally:
         db.close()
 
@@ -912,7 +912,7 @@ def migrate_activity_status():
             logger.info(f"Activity status migrated: {migrated} changes")
     except Exception as e:
         db.rollback()
-        logger.error(f"migrate_activity_status failed: {e}", exc_info=True)
+        logger.exception(f"migrate_activity_status failed: {e}")
     finally:
         db.close()
 
@@ -958,7 +958,7 @@ def remind_pending_submissions():
             logger.info(f"Stale submissions reminder: {len(pending)}")
     except Exception as e:
         db.rollback()
-        logger.error(f"remind_pending_submissions failed: {e}", exc_info=True)
+        logger.exception(f"remind_pending_submissions failed: {e}")
     finally:
         db.close()
 
@@ -1002,7 +1002,7 @@ def alert_stale_refunds():
             logger.info(f"Stale refunds alert: {len(stale)}")
     except Exception as e:
         db.rollback()
-        logger.error(f"alert_stale_refunds failed: {e}", exc_info=True)
+        logger.exception(f"alert_stale_refunds failed: {e}")
     finally:
         db.close()
 
@@ -1077,7 +1077,7 @@ def check_due_date_reminders():
         db.commit()
     except Exception as e:
         db.rollback()
-        logger.error(f"check_due_date_reminders failed: {e}", exc_info=True)
+        logger.exception(f"check_due_date_reminders failed: {e}")
     finally:
         db.close()
 
@@ -1121,7 +1121,7 @@ def expire_reservations():
             logger.info(f"Reservations expired: {len(expired)}")
     except Exception as e:
         db.rollback()
-        logger.error(f"expire_reservations failed: {e}", exc_info=True)
+        logger.exception(f"expire_reservations failed: {e}")
     finally:
         db.close()
 
@@ -1217,7 +1217,7 @@ def mark_overdue_books():
             )
     except Exception as e:
         db.rollback()
-        logger.error(f"mark_overdue_books failed: {e}", exc_info=True)
+        logger.exception(f"mark_overdue_books failed: {e}")
     finally:
         db.close()
 
@@ -1262,7 +1262,7 @@ def check_observation_expiry(db: Session | None = None):
                 f"Observation reports generated: {len(generated)} for {len(expired)} expired children"
             )
         except Exception as e:
-            logger.error(f"Failed to generate observation reports: {e}", exc_info=True)
+            logger.exception(f"Failed to generate observation reports: {e}")
 
         # 2. 状态变更
         for child in expired:
@@ -1273,7 +1273,7 @@ def check_observation_expiry(db: Session | None = None):
         logger.info(f"Observation expiry: {len(expired)} children expired")
     except Exception as e:
         db.rollback()
-        logger.error(f"check_observation_expiry failed: {e}", exc_info=True)
+        logger.exception(f"check_observation_expiry failed: {e}")
     finally:
         if own_session:
             db.close()
@@ -1329,7 +1329,7 @@ def check_observation_reminders(db: Session | None = None):
         db.commit()
     except Exception as e:
         db.rollback()
-        logger.error(f"check_observation_reminders failed: {e}", exc_info=True)
+        logger.exception(f"check_observation_reminders failed: {e}")
     finally:
         if own_session:
             db.close()
@@ -1381,7 +1381,7 @@ def check_activity_reminders():
         db.commit()
     except Exception as e:
         db.rollback()
-        logger.error(f"check_activity_reminders failed: {e}", exc_info=True)
+        logger.exception(f"check_activity_reminders failed: {e}")
     finally:
         db.close()
 
@@ -1397,6 +1397,6 @@ def confirm_expired_damage_reports():
         if count:
             logger.info("定时任务 confirm_expired_damage_reports: 确认 %d 条", count)
     except Exception as e:
-        logger.error(f"confirm_expired_damage_reports failed: {e}", exc_info=True)
+        logger.exception(f"confirm_expired_damage_reports failed: {e}")
     finally:
         db.close()

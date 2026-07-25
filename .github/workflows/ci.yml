@@ -23,7 +23,7 @@ jobs:
         with:
           python-version: "3.13"
           cache: pip
-      - run: pip install ruff
+      - run: pip install ruff==0.15.16
       - run: ruff check backend/ tests/
       - run: ruff check features/ scripts/
       - run: ruff format --check .

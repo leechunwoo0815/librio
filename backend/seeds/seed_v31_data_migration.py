@@ -86,7 +86,7 @@ def migrate_bookshelf_to_borrow():
         )
     except Exception as e:
         db.rollback()
-        logger.error(f"Migration failed: {e}", exc_info=True)
+        logger.exception(f"Migration failed: {e}")
         raise
     finally:
         db.close()
@@ -141,7 +141,7 @@ def create_book_copies():
         logger.info(f"Created {created} book copies")
     except Exception as e:
         db.rollback()
-        logger.error(f"BookCopy creation failed: {e}", exc_info=True)
+        logger.exception(f"BookCopy creation failed: {e}")
         raise
     finally:
         db.close()
@@ -180,7 +180,7 @@ def init_child_v31_fields():
         logger.info("Child V3.1 fields initialized")
     except Exception as e:
         db.rollback()
-        logger.error(f"Child V3.1 init failed: {e}", exc_info=True)
+        logger.exception(f"Child V3.1 init failed: {e}")
         raise
     finally:
         db.close()

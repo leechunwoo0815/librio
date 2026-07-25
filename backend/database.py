@@ -75,11 +75,11 @@ def get_db():
     try:
         yield db
     except Exception:
-        logger.error("Request processing failed", exc_info=True)
+        logger.exception("Request processing failed")
         try:
             db.rollback()
         except Exception:
-            logger.error("Session rollback failed", exc_info=True)
+            logger.exception("Session rollback failed")
         raise
     finally:
         db.close()
