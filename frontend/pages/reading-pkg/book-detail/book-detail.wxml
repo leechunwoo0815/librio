@@ -11,7 +11,7 @@
   <view class="error-state" wx:if="{{loadError}}">
     <text class="error-icon"><text class="icon icon-warning"><text class="icon icon-warning">⚠</text></text></text>
     <text class="error-text">加载失败，请稍后重试</text>
-    <button class="retry-btn" bindtap="onLoad">重新加载</button>
+    <button class="retry-btn" bindtap="onRetry">重新加载</button>
   </view>
 
   <block wx:if="{{!loading && !loadError}}">
@@ -48,10 +48,10 @@
     <view class="progress-section reading-progress" wx:if="{{progress}}">
       <view class="rp-header">
         <text class="rp-title">阅读进度</text>
-        <text class="rp-pct">{{progress.percent}}%</text>
+        <text class="rp-pct">{{progress.progress_pct}}%</text>
       </view>
       <view class="rp-bar">
-        <view class="rp-fill" style="width:{{progress.percent}}%"></view>
+        <view class="rp-fill" style="width:{{progress.progress_pct}}%"></view>
       </view>
     </view>
 
@@ -199,7 +199,7 @@
         {{onFavorite ? '已收藏' : '收藏'}}
       </view>
       <navigator class="action-btn action-primary btn-primary" wx:if="{{onShelf}}" url="/pages/reading-pkg/reader/reader?bookId={{book.id}}">
-        继续阅读<text wx:if="{{progress && progress.percent}}"> · {{progress.percent}}%</text>
+        继续阅读<text wx:if="{{progress && progress.progress_pct}}"> · {{progress.progress_pct}}%</text>
       </navigator>
       <view class="action-btn action-primary btn-primary" wx:else bindtap="addToShelf" loading="{{shelfLoading}}">
         加入书架

@@ -32,13 +32,13 @@ class BookshelfRepository(BaseRepository[Bookshelf]):
         return self.count(child_id=child_id, status=BookshelfStatus.WANT_READ)
 
     def get_shelf(self, child_id: int) -> list[Bookshelf]:
-        """获取孩子书架列表"""
+        """获取孩子书架列表（想读+已读完，排除手动移除）"""
         return (
             self.db.query(Bookshelf)
             .options(joinedload(Bookshelf.book))
             .filter(
                 Bookshelf.child_id == child_id,
-                Bookshelf.status == BookshelfStatus.WANT_READ,
+                Bookshelf.status != BookshelfStatus.REMOVED,
                 Bookshelf.is_deleted == 0,
             )
             .limit(100)

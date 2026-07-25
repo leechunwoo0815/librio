@@ -65,7 +65,7 @@
         class="book-card"
         wx:key="id"
         wx:for="{{books}}"
-        data-bookid="{{item.id}}"
+        data-bookid="{{item.book_id}}"
         data-title="{{item.title}}"
         bindtap="goReader"
         bindlongpress="onShelfLongPress"
@@ -91,7 +91,7 @@
             <view class="progress-fill" style="width: {{item.progress || 0}}%; background: var(--accent)"></view>
           </view>
         </view>
-        <button class="card-btn primary" catchtap="goReader" data-bookid="{{item.id}}">继续阅读</button>
+        <button class="card-btn primary" catchtap="goReader" data-bookid="{{item.book_id}}">继续阅读</button>
       </view>
 
       <!-- Add book card -->
@@ -133,7 +133,7 @@
         </view>
         <text class="book-title">{{item.title}}</text>
         <text class="book-author">{{item.author || ''}}</text>
-        <button class="card-btn secondary" data-bookid="{{item.id}}" catchtap="addToShelfFromFav"><text class="icon icon-download">📥</text> 加入书架</button>
+        <button class="card-btn secondary" data-bookid="{{item.book_id}}" catchtap="addToShelfFromFav"><text class="icon icon-download">📥</text> 加入书架</button>
       </view>
     </view>
 
@@ -153,7 +153,7 @@
         class="book-card"
         wx:key="id"
         wx:for="{{finished}}"
-        data-bookid="{{item.id}}"
+        data-bookid="{{item.book_id}}"
         bindtap="goFinishedDetail"
       >
         <view class="book-cover cover-{{item.coverIndex || (index % 6 + 1)}}" style="background: {{item.cover_bg || ''}}">
@@ -170,7 +170,7 @@
             <text class="stat-badge quiz-fail" wx:if="{{!item.quiz_passed && item.quiz_taken}}">测验未通过</text>
           </view>
         </view>
-        <button class="card-btn success" catchtap="goReader" data-bookid="{{item.id}}"><text class="icon icon-refresh">🔄</text> 再读一遍</button>
+        <button class="card-btn success" catchtap="goReader" data-bookid="{{item.book_id}}"><text class="icon icon-refresh">🔄</text> 再读一遍</button>
       </view>
     </view>
 

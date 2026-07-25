@@ -111,6 +111,11 @@ Page({
     if (!res.confirm) return
     try {
       await api.deleteChild(childId)
+      const app = getApp()
+      if (app.globalData.currentChild && app.globalData.currentChild.id === childId) {
+        app.globalData.currentChild = null
+        wx.removeStorageSync('currentChildId')
+      }
       wx.showToast({ title: '删除成功', icon: 'success' })
       await this.loadChildren()
     } catch (e) {

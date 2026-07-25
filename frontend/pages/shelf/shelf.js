@@ -60,7 +60,7 @@ Page({
         // 已读完 — 从书架中过滤已完成状态
         const books = await api.getBookshelf(childId);
         const finished = (books || []).filter(function (item) {
-          return item.status === 'finished' || item.status === 3;
+          return item.status === 1;
         });
         this.setData({ finished: finished, loading: false });
       }

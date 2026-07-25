@@ -18,10 +18,18 @@ Page({
     relatedBooks: [],
   },
 
+  onRetry() {
+    if (this._bookId) {
+      this.setData({ loadError: false })
+      this.onLoad({ id: this._bookId })
+    }
+  },
+
   async onLoad(options) {
     const app = getApp()
     const id = parseInt(options.id) || parseInt(options.bookId);
     if (!id) return;
+    this._bookId = id;
 
     try {
       const book = await api.getBookDetail(id);

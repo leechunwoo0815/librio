@@ -73,7 +73,7 @@ Page({
         api.getCheckinRecords(child.id).catch(() => []),
       ])
 
-      const checkinArr = (calendar || []).map(d => String(d))
+      const checkinArr = (calendar || []).map(d => String(d.check_date || d).slice(0, 10))
       const checkedToday = checkinArr.indexOf(this.data.todayStr) >= 0
       const gridCells = this.buildGrid(year, month, checkinArr)
 
@@ -161,7 +161,7 @@ Page({
 
     try {
       const calendar = await api.getCheckinCalendar(child.id, year, month)
-      const checkinArr = (calendar || []).map(d => String(d))
+      const checkinArr = (calendar || []).map(d => String(d.check_date || d).slice(0, 10))
       const gridCells = this.buildGrid(year, month, checkinArr)
       this.setData({ calendar: calendar || [], checkinArr, gridCells })
     } catch (e) {

@@ -12,7 +12,6 @@
       </view>
       <view class="profile-info">
         <text class="profile-name">{{child.name || userInfo.nickname || '用户'}} {{child.english_name || ''}}</text>
-        <text class="profile-level"><text class="icon icon-seedling">🌱</text> {{child.levelName || 'A级'}}</text>
       </view>
       <view class="profile-settings"><text class="icon icon-gear">⚙</text></view>
     </view>
@@ -82,7 +81,7 @@
         <text class="tier-name">{{item.name}}</text>
         <text class="tier-price">¥{{item.price}}<text class="tier-unit">/{{item.unit}}</text></text>
         <view class="tier-features">
-          <text class="tier-feature" wx:for="{{item.features}}" wx:key="*this">{{item}}</text>
+          <text class="tier-feature" wx:for="{{item.features}}" wx:key="title">{{item.title}}</text>
         </view>
         <button class="tier-cta">{{item.cta || '立即开通'}}</button>
       </view>

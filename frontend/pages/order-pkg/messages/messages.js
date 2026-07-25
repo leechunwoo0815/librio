@@ -7,6 +7,7 @@ const CATEGORIES = [
   { key: 'system', label: '系统通知' },
   { key: 'reading', label: '阅读提醒' },
   { key: 'activity', label: '活动通知' },
+  { key: 'borrow', label: '借阅通知' },
   { key: 'teacher', label: '老师消息' },
 ]
 
@@ -14,6 +15,7 @@ const CATEGORY_ICONS = {
   system: '🔔',
   reading: '📖',
   activity: '🎉',
+  borrow: '📚',
   teacher: '👩‍🏫',
 }
 
@@ -89,7 +91,7 @@ Page({
   },
 
   _typeToCategory(type) {
-    const map = { 1: 'system', 2: 'activity', 3: 'reading', 4: 'teacher', 5: 'reading' }
+    const map = { 1: 'system', 2: 'activity', 3: 'borrow', 4: 'teacher', 5: 'reading' }
     return map[type] || 'system'
   },
 

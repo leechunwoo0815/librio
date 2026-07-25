@@ -25,7 +25,18 @@ Page({
     this.setData({ loading: true, loadError: false })
     try {
       const children = await api.getChildren()
-      if (!children || children.length === 0) return
+      if (!children || children.length === 0) {
+        this.setData({ loading: false, child: null })
+        wx.showModal({
+          title: '请先添加孩子',
+          content: '您还没有孩子档案，请先添加',
+          confirmText: '去添加',
+          success: (m) => {
+            if (m.confirm) wx.navigateTo({ url: '/pages/order-pkg/child-manage/child-manage' })
+          },
+        })
+        return
+      }
 
       const child = auth.selectChild(children)
       if (!child) return
@@ -99,12 +110,11 @@ Page({
 
   goTier(e) {
     const type = e.currentTarget.dataset.type
-    if (type === 1) {
+    // type: 1亲子课 2观察期 3正式 4季度 5半年 — 均走对应报名页
+    if (type === 1 || type === 2) {
       wx.navigateTo({ url: '/pages/order-pkg/observation/observation' })
-    } else if (type === 2) {
-      wx.navigateTo({ url: '/pages/order-pkg/observation/observation' })
-    } else if (type === 3) {
-      wx.navigateTo({ url: '/pages/order-pkg/official/official' })
+    } else {
+      wx.navigateTo({ url: '/pages/order-pkg/official/official?tierType=' + type })
     }
   },
 

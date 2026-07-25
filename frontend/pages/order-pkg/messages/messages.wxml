@@ -61,7 +61,7 @@
         <view class="msg-title-row">
           <text class="msg-title">{{item.title}}</text>
         </view>
-        <view class="msg-body">{{item.preview}}</view>
+        <view class="msg-body">{{item.content}}</view>
         <view class="msg-time">{{item.timeText}}</view>
       </view>
     </view>
@@ -86,7 +86,7 @@
           <text class="msg-title">{{item.title}}</text>
           <view class="msg-unread" wx:if="{{!item.is_read}}"></view>
         </view>
-        <view class="msg-body">{{item.preview}}</view>
+        <view class="msg-body">{{item.content}}</view>
         <view class="msg-time">{{item.timeText}}</view>
       </view>
     </view>
