@@ -175,4 +175,8 @@ class TestTestTokenSafety:
         from backend.config import Settings
 
         with pytest.raises(RuntimeError, match="SECRET_KEY"):
-            Settings(DEBUG=False, SECRET_KEY="your-secret-key-change-in-production")
+            Settings(
+                DEBUG=False,
+                ENABLE_TEST_TOKEN=False,
+                SECRET_KEY="your-secret-key-change-in-production",
+            )
