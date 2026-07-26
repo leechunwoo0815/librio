@@ -414,6 +414,16 @@ def step_try_access_official(context):
     )
 
 
+@when("用户尝试为孩子购买正式会员")
+def step_try_buy_official(context):
+    """B2 强断言改造：前置不满足的真实拦截点在订单创建（非页面访问）"""
+    context.response = context.client.post(
+        "/order/",
+        json={"child_id": context.child.id, "type": 3},  # OrderType.OFFICIAL_MEMBER
+        headers=context.headers,
+    )
+
+
 @then("解锁图书借阅权限")
 def step_unlock_borrow(context):
     resp = context.client.get(

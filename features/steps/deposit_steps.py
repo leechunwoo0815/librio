@@ -193,20 +193,37 @@ def step_no_active_borrows(context):
 def step_has_active_borrow(context):
     from backend.domain.borrow.models import BorrowRecord
     from backend.common.types import BorrowStatus
+    from backend.domain.book.models import Book
 
     # 确保有押金
     step_no_active_borrows(context)
-    # 创建借阅记录
-    if hasattr(context, "book") and context.book:
-        borrow = BorrowRecord(
-            child_id=context.child.id,
-            book_id=context.book.id,
-            status=BorrowStatus.BORROWING,
-            borrow_time=datetime.now(),
-            due_date=datetime.now() + timedelta(days=21),
+    # B2 修复假构造：无 book 时自动创建（原实现静默跳过导致校验从未生效）
+    if not getattr(context, "book", None):
+        book = Book(
+            isbn="978DEP000001",
+            title="Deposit Book",
+            author="A",
+            ar_value=2.0,
+            age_min=5,
+            age_max=9,
+            word_count=1000,
+            total_stock=1,
+            available_stock=1,
+            price=50,
         )
-        context.db.add(borrow)
+        context.db.add(book)
         context.db.commit()
+        context.db.refresh(book)
+        context.book = book
+    borrow = BorrowRecord(
+        child_id=context.child.id,
+        book_id=context.book.id,
+        status=BorrowStatus.BORROWING,
+        borrow_time=datetime.now(),
+        due_date=datetime.now() + timedelta(days=21),
+    )
+    context.db.add(borrow)
+    context.db.commit()
 
 
 @given("孩子有逾期借阅记录")

@@ -87,10 +87,15 @@ def step_apply_transfer(context, source, target, membership):
 
 @when("用户尝试申请权益转让")
 def step_try_transfer(context):
-    src = getattr(context, "source_child", context.child)
-    tgt = getattr(context, "target_child", context.child)
-    context.response = context.client.put(
-        f"/child/{tgt.id}/status", json={"status": src.status}, headers=context.headers
+    # B2 修复：原实现调管理员端点 PUT /child/{id}/status（403 被弱断言吞掉），
+    # 改为真实申请端点 POST /child/transfer（_validate_transfer 校验链）
+    children = list(context.children.values())
+    src = children[0]
+    tgt = children[1] if len(children) > 1 else children[0]
+    context.response = context.client.post(
+        "/child/transfer",
+        json={"source_child_id": src.id, "target_child_id": tgt.id},
+        headers=context.headers,
     )
 
 
