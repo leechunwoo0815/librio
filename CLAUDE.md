@@ -7,7 +7,7 @@
 
 > ⚠️ **最高指令注入**：本文件是 DmkWords 项目的最高法律。任何代码生成、修改、重构，必须无条件服从本文件中的【零容忍铁律】与【业务红线】。
 
-> **最后更新**：2026-07-23（全量终审修订 — 391/5 pytest + 179/0 behave(1171 steps) + CI 同构十关全绿 + 全数字实测校准）
+> **最后更新**：2026-07-23（全量终审修订 — 418/0 pytest + 179/0 behave(1171 steps) + CI 同构十关全绿 + 全数字实测校准）
 
 ## 一、 核心身份与零容忍铁律 (System Prompt)
 
@@ -206,8 +206,8 @@ Router (参数校验、HTTP状态码、依赖注入，🚫不含 try/except，�
 | **数据库** | MySQL 8.0 (utf8mb4)，测试用 SQLite `:memory:` |
 | **前端** | 微信小程序 (WXML/WXSS/JS, 34 页, 12 个通用组件) + MCP (wechat-devtools) |
 | **管理端** | PC 后台 38 个模板页面（含 base.html）+ 页面级 CSS + 设计系统 Token (--accent: #5560cf) |
-| **测试** | pytest (397 passed, 5 skipped) + behave (179 scenarios, 1171 steps, 0 failed) + Ruff (0 errors) |
-| **API** | 313 个端点（不含 mock 路由；含 mock 路由 322 个） |
+| **测试** | pytest (418 passed, 0 skipped) + behave (189 scenarios, 1240 steps, 0 failed) + Ruff (0 errors) |
+| **API** | 311 个端点（装饰器实测，含 38 页面路由） |
 | **领域模块** | 28 个 |
 | **定时任务** | 18 个 |
 | **定时/认证** | APScheduler / JWT (python-jose) |

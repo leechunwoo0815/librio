@@ -1,6 +1,6 @@
 # DmkWords (librio) — 项目概览
 
-> 最后更新：2026-07-23 | 版本：V3.16 — 全量终审修订（391/5 pytest + 179/1171 behave + CI 同构十关全绿 + 全数字实测校准）
+> 最后更新：2026-07-23 | 版本：V3.16 — 全量终审修订（418/0 pytest + 189/1240 behave + CI 同构十关全绿 + 全数字实测校准）
 
 ## 一句话
 
@@ -10,12 +10,12 @@ DmkWords 是一个 OMO（Online-Merge-Offline）儿童英语分级阅读平台�
 
 | 指标 | 数值 |
 |------|------|
-| 测试（pytest 本地/CI） | **397** passed / 5 skipped 本地 |
-| BDD（behave） | 179 scenarios / 1171 steps |
+| 测试（pytest 本地/CI） | **418** passed / 0 skipped 本地 |
+| BDD（behave） | 189 scenarios / 1240 steps |
 | 代码规范（ruff） | 0 errors |
 | 数据库迁移（alembic） | clean |
 | DB 表 | 54 |
-| 后端 API 端点 | 313+ |
+| 后端 API 端点 | 311（含 38 页面路由） |
 | 后端领域模块 | 27 |
 | 定时任务 | 18 |
 | 小程序页面 | 31 |

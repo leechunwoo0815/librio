@@ -1,7 +1,7 @@
 # DmkWords (librio) 项目检查点
 
 > 更新时间：2026-07-24 GMT+8 (v10)
-> 状态：✅ V3.16 — 隐私合规 Phase 1 全闭环（三段式同意 + 删除权级联 + 儿童专章 v1.1）+ backlog 8 项清零 + 小程序扫雷 40+ 修复 + 397/5 pytest + 179/1171 behave + CI 同构十关全绿 + 项目目录清理
+> 状态：✅ V3.16 — 隐私合规 Phase 1 全闭环（三段式同意 + 删除权级联 + 儿童专章 v1.1）+ backlog 8 项清零 + 小程序扫雷 40+ 修复 + 418/0 pytest + 189/1240 behave + CI 同构十关全绿 + 项目目录清理
 
 ---
 
@@ -9,7 +9,7 @@
 
 DmkWords 是一个儿童英语阅读管理平台：
 - **微信小程序**：家长端，34 页，12 通用组件
-- **PC 管理后台**：38 模板页面（含 base.html），313+ API 端点
+- **PC 管理后台**：35 业务页面（37 模板含 login/403），311 API 端点（含 38 页面路由）
 - **后端 API**：FastAPI + SQLAlchemy + MySQL，28 领域模块
 
 ---
@@ -20,8 +20,8 @@ DmkWords 是一个儿童英语阅读管理平台：
 
 | 检查项 | 状态 |
 |--------|------|
-| pytest | ✅ 397 passed (本地) |
-| behave | ✅ 179 scenarios / 1171 steps |
+| pytest | ✅ 418 passed (本地) |
+| behave | ✅ 189 scenarios / 1240 steps |
 | ruff check `backend/ tests/` | ✅ 0 errors |
 | ruff check `features/ scripts/` | ✅ 0 errors |
 | ruff format `--check .` | ✅ 346 files formatted |

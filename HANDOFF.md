@@ -2,14 +2,14 @@
 
 > **生成时间**: 2026-07-24 GMT+8 (v17)
 > **项目版本**: V3.16 — 隐私合规 Phase 1（三段式同意/删除权级联/儿童专章）+ backlog 清零 + 目录清理
-> **测试状态**: pytest 397/5 · behave 179/1171 · ruff 0 · API契约 OK · 模型一致 55 tables · CI 同构十关 · 集成全绿
+> **测试状态**: pytest 418/0 · behave 189/1240 · ruff 0 · API契约 OK · 模型一致 54 tables · CI 同构十关 · 集成全绿
 
 ---
 
 ## 一、项目一句话
 
 OMO 儿童英文阅读平台：线下实体书借阅 + 线上音频伴读 + 手动查词 + 异步测评。
-微信小程序 34 页（家长端）+ PC 管理后台 38 模板（运营端）+ FastAPI 后端 28 领域模块（55 表 / 313+ API / 18 定时任务）。
+微信小程序 34 页（家长端）+ PC 管理后台 35 业务页面（运营端）+ FastAPI 后端 28 领域模块（54 表 / 311 API（含 38 页面路由） / 18 定时任务）。
 管理后台全员已迁移到 `data-action` 事件委托模式（0 inline handler），35 JS 文件全部 IIFE 隔离，XSS 表面向量清零。
 
 ---
@@ -22,7 +22,7 @@ ruff check backend/ tests/           # 0 errors ✅
 ruff check features/ scripts/        # 0 errors ✅
 ruff format --check .                # 349 files formatted ✅
 python -m pytest tests/ -q           # 391/5 ✅
-python -m behave features/ -q        # 179 scenarios / 1171 steps / 0 failed ✅
+python -m behave features/ -q        # 189 scenarios / 1240 steps / 0 failed ✅
 python -m scripts.verify_api_contract # OK ✅
 python -m scripts.check_model_consistency # 54 tables ✅
 
@@ -33,8 +33,8 @@ python -m alembic check              # OK ✅
 
 | Check | 本地 |
 |-------|:----:|
-| pytest | 397 passed, 5 skipped |
-| behave | 179/1171/0 |
+| pytest | 418 passed, 0 skipped |
+| behave | 189/1240/0 |
 | ruff check | 0 errors |
 | ruff format | 349 fmt'd |
 | api-contract | OK |
@@ -136,7 +136,7 @@ python -m alembic check              # OK ✅
 | X5 后端 schema 校验 | `admin_schemas.py`: isbn max_length=20, badge_emoji max_length=20, target_role_groups 枚举白名单 |
 | X6 回归测试 | `test_xss_sanitization.py` — 13 断言 (3 autoescape + 10 schema validation) |
 
-CI 十关全绿: ruff check/format, pytest 397/5, behave 179/1171, api contract, model consistency (55 tables), integration 全绿, alembic check, action wiring --strict
+CI 十关全绿: ruff check/format, pytest 418/0, behave 189/1240, api contract, model consistency (54 tables), integration 全绿, alembic check, action wiring --strict
 
 ### 3.8 T3.6a 图书损坏定责
 
@@ -503,7 +503,7 @@ python -m alembic check
 
 ```markdown
 1. 读取 CLAUDE.md（宪法）、HANDOFF.md（本交接文档）、.ai/context/CONTEXT.md（业务知识）、ARCHITECTURE.md（架构）
-2. 运行 CI 同构十关确认项目状态（pytest 397/5, behave 179/1171, ruff 0, ruff format 368, api contract, model 55 tables, integration 全绿, alembic check, action wiring --strict）
+2. 运行 CI 同构十关确认项目状态（pytest 418/0, behave 189/1240, ruff 0, ruff format 368, api contract, model 54 tables, integration 全绿, alembic check, action wiring --strict）
 3. 按剩余工作清单优先级开始：
    P0: 外部输入项（appid/服务协议/隐私政策）
    P1: iconfont woff2 下载 + nginx rate limit
