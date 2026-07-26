@@ -20,7 +20,12 @@ from backend.common.exceptions import (
     NotFoundError,
     ValidationError,
 )
-from backend.common.types import BorrowStatus, DepositStatus, MemberStatus
+from backend.common.types import (
+    BookCopyStatus,
+    BorrowStatus,
+    DepositStatus,
+    MemberStatus,
+)
 from backend.domain.book.models import Book, BookCopy
 from backend.domain.child.service import assert_no_pending_transfer
 from backend.domain.borrow.models import BorrowRecord
@@ -100,6 +105,38 @@ class BorrowService:
                 )
             if existing:
                 raise ConflictError("该书已借阅，请先归还")
+
+            # 校验副本状态（§7.3：仅"在馆"副本可借；P1 补缺）
+            if data.book_copy_id:
+                copy = self.copy_repo.get_by_id(data.book_copy_id)
+                if copy and copy.status != BookCopyStatus.AVAILABLE:
+                    if copy.status == BookCopyStatus.BORROWED:
+                        active = (
+                            self.db.query(BorrowRecord)
+                            .filter(
+                                BorrowRecord.book_copy_id == copy.id,
+                                BorrowRecord.status.in_(
+                                    [BorrowStatus.BORROWING, BorrowStatus.OVERDUE]
+                                ),
+                                BorrowRecord.is_deleted == 0,
+                            )
+                            .first()
+                        )
+                        due = (
+                            active.due_date.strftime("%Y-%m-%d")
+                            if active and active.due_date
+                            else "未知"
+                        )
+                        raise ConflictError(f"该书已被借出，预计归还日期：{due}")
+                    _copy_status_msg = {
+                        BookCopyStatus.MAINTENANCE: "该书正在维修中，暂时无法借阅",
+                        BookCopyStatus.SCRAPPED: "该书已报废，无法借阅",
+                        BookCopyStatus.DAMAGED: "该书已损坏，无法借阅",
+                        BookCopyStatus.LOST: "该书已丢失，无法借阅",
+                    }
+                    raise ConflictError(
+                        _copy_status_msg.get(copy.status, "该副本状态异常，无法借阅")
+                    )
 
             # 后扣库存 — 使用 SQL 原子更新避免并发超卖
             updated = (
