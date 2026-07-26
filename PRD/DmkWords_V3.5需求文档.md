@@ -937,6 +937,8 @@
 
 ## 附录 C：API 端点索引
 
+> 全量端点 311 个（装饰器实测，含 38 个管理端页面路由）；下表为用户端核心模块索引。
+
 | 模块 | 端点数 | 说明 |
 |------|--------|------|
 | user | 2 | 微信登录、用户信息 |
@@ -956,7 +958,7 @@
 | certificate | 4 | 生成/详情/列表/HTML |
 | profile | 3 | 名片/编辑/分享 |
 | admin | 10 | 仪表盘/配置/老师/场馆 |
-| **合计** | **~93** | |
+| **用户端合计** | **~93** | 管理端 API + 页面路由另计（全量 311） |
 
 ---
 
@@ -1009,7 +1011,7 @@
 | D02 | 维修/报废无管理员操作入口 | 中 | MAINTENANCE(2) / SCRAPPED(3) 状态在 BookCopy 模型中已定义 4 年，但后台没有对应菜单和 API。不是本轮修复范围。 |
 | D03 | 预约创建只校验 available_stock > 0，不锁定具体副本 | 低 | 预约不锁定具体 BookCopy（取书时才分配），在预约量 < 库存量时不会超卖。但在高并发下预约数量可能短时超过库存。当前设计可接受。 |
 | D04 | `book/service.py add_copies()` 和 `borrow/service.py create_book()` 各有一套库存递增逻辑，重复 | 低 | 两个入口服务于不同场景：admin 后台 vs 扫码录入。逻辑等价，暂不合。 |
-| D05 | 丢书赔偿后 (`deposit/service.py`) 未更新 BookCopy.status → LOST | 高 | 丢书扣款后 BookCopy.status 仍为 BORROWED(1)，未标记 LOST(5)。需 T3.6a 落地后联动。 |
+| D05 | 丢书赔偿后 (`deposit/service.py`) 未更新 BookCopy.status → LOST | 高 | ✅ 已修复（T3.6a 联动）：丢失定级 → BookCopy.status=LOST + total_stock -1 + 借阅记录置 LOST |
 
 ### D.4 每日对账任务定义
 

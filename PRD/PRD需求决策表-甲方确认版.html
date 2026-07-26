@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DmkWords PRD 需求决策表（甲方确认版）V1.0</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f5f6f8; color: #2c3e50; line-height: 1.6; }
+  .container { max-width: 960px; margin: 0 auto; padding: 24px 16px 120px; }
+  header { background: linear-gradient(135deg, #2c5aa0, #3d7bd9); color: #fff; padding: 28px 24px; border-radius: 12px; margin-bottom: 24px; }
+  header h1 { font-size: 22px; margin-bottom: 8px; }
+  header p { font-size: 14px; opacity: .92; }
+  .guide { background: #fff8e6; border: 1px solid #f0d98c; border-radius: 10px; padding: 14px 18px; font-size: 13px; margin-bottom: 24px; }
+  .guide b { color: #8a6d00; }
+  .group { margin: 28px 0 12px; padding: 10px 16px; background: #2c5aa0; color: #fff; border-radius: 8px; font-size: 17px; font-weight: 600; }
+  .group span { font-weight: 400; font-size: 13px; opacity: .85; margin-left: 8px; }
+  .card { background: #fff; border: 1px solid #e3e7ec; border-radius: 10px; padding: 18px 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+  .card h3 { font-size: 15.5px; color: #1a3a6b; margin-bottom: 8px; }
+  .card h3 .qid { display: inline-block; background: #2c5aa0; color: #fff; font-size: 12px; border-radius: 4px; padding: 1px 7px; margin-right: 8px; vertical-align: 2px; }
+  .current { background: #f4f6f9; border-left: 3px solid #9db3cc; padding: 8px 12px; font-size: 13px; color: #4a5a6a; border-radius: 0 6px 6px 0; margin-bottom: 12px; }
+  .current b { color: #2c5aa0; }
+  .opts label { display: block; padding: 7px 10px; border: 1px solid #e3e7ec; border-radius: 6px; margin-bottom: 6px; font-size: 14px; cursor: pointer; transition: all .15s; }
+  .opts label:hover { border-color: #2c5aa0; background: #f0f6ff; }
+  .opts input { margin-right: 8px; }
+  .opts .rec { border-color: #2c5aa0; background: #f0f6ff; }
+  .opts .rec::after { content: " ★ 推荐"; color: #2c5aa0; font-size: 12px; font-weight: 600; }
+  .advice { margin-top: 10px; font-size: 13px; border-radius: 6px; padding: 10px 12px; }
+  .advice.k3 { background: #eaf4ea; border: 1px solid #b8dcc0; }
+  .advice.k3 b { color: #2d7a3a; }
+  .advice.exp { background: #fdf0ea; border: 1px solid #f0c8b0; margin-top: 6px; }
+  .advice.exp b { color: #b25000; }
+  textarea { width: 100%; min-height: 64px; border: 1px solid #e3e7ec; border-radius: 6px; padding: 8px 10px; font-size: 14px; font-family: inherit; }
+  .impact { font-size: 12px; color: #8a6d00; margin-top: 6px; }
+  footer { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid #dde3ea; padding: 12px 16px; display: flex; gap: 12px; justify-content: center; z-index: 10; }
+  footer button { padding: 10px 22px; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; }
+  #btnExport { background: #2c5aa0; color: #fff; }
+  #btnCheck { background: #eef1f5; color: #2c3e50; }
+  #progress { align-self: center; font-size: 13px; color: #667; }
+  #resultModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 20; }
+  #resultModal .inner { background: #fff; max-width: 860px; margin: 40px auto; border-radius: 10px; padding: 20px; max-height: 82vh; display: flex; flex-direction: column; }
+  #resultText { flex: 1; overflow: auto; white-space: pre-wrap; font-family: monospace; font-size: 12.5px; background: #f7f8fa; padding: 12px; border-radius: 6px; }
+  .modalBtns { display: flex; gap: 10px; margin-top: 12px; justify-content: flex-end; }
+  .modalBtns button { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>DmkWords PRD 需求决策表（甲方确认版）V1.0</h1>
+  <p>目的：把 PRD 中所有模棱两可、影响运营、可能被开发"乱猜"的点一次性定死。每个决策都附运营专家（10 年 3 店 2300 家庭）与产品技术团队的双视角建议。确认后开发只按你的选择执行，不再自行解读。</p>
+</header>
+
+<div class="guide">
+  <b>使用说明</b>：① 逐题选择（★ 为团队推荐项，可直接采纳也可改选）；② 问答题请尽量写具体（数字/天数/金额）；③ 全部完成后点底部「生成决策结果」，将结果文件发回开发团队；④ <b>凡未作答的题，开发将按 ★ 推荐项执行</b>。
+</div>
+
+<!-- ═══════════ A 组：商业模式与转化漏斗 ═══════════ -->
+<div class="group">A 组 · 商业模式与转化漏斗 <span>7 题 — 决定"家长愿不愿意掏钱"</span></div>
+
+<div class="card" data-q="A1">
+  <h3><span class="qid">A1</span>亲子课 99 元是否作为观察期的强制前置？</h3>
+  <div class="current"><b>现状</b>：PRD §1.2 规定必须先完成亲子课才能报观察期（代码已实现此校验，B3 刚落地）。专家测算：两步支付（99→500）会把 40% 的直接付费意愿打到 15-20%。</div>
+  <div class="opts">
+    <label><input type="radio" name="A1" value="双轨制：亲子课为推荐入口，同时开放直接报观察期（无测评报告也可报）">双轨制：亲子课为推荐入口，同时开放直接报观察期</label>
+    <label class="rec"><input type="radio" name="A1" value="双轨制+差异化：直接报观察期可报，但完成亲子课的用户赠 3 天观察期（33 天）作为漏斗激励">双轨制+差异化：直接报观察期可报，完成亲子课赠 3 天观察期（33 天）作漏斗激励</label>
+    <label><input type="radio" name="A1" value="维持强制前置（现状）">维持强制前置（现状）</label>
+  </div>
+  <div class="advice k3"><b>K3 建议（推荐第 2 项）</b>：双轨保住 40% 直接转化，赠 3 天保住亲子课价值感（成本≈0）。注意：选双轨则 B3 已实现的"强制前置校验"需改为"可选跳过+标记来源"，约 0.5 天工作量。</div>
+  <div class="advice exp"><b>运营专家</b>：亲子课的价值是"让犹豫的家长先体验"，不是"拦截所有家长"。等一周时段=热情冷却=流失。</div>
+</div>
+
+<div class="card" data-q="A2">
+  <h3><span class="qid">A2</span>押金 1200 元的金额与缴纳方式？</h3>
+  <div class="current"><b>现状</b>：押金 1200 元/孩子（可配置 deposit_amount），多孩无优惠，借书前必缴。行业普遍 200-500 元或信用免押；3 孩家庭预付 4950 元才能开始。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="A2" value="维持 1200 + 明确 SLA（退款审核通过后 24h 内发起，3-5 工作日到账）+ 前 10 本无逾期可申请减半退还 600">维持 1200 + 明确退款 SLA + 无逾期 10 本后可退 600</label>
+    <label><input type="radio" name="A2" value="分期：先缴 600 即可借书，借满 10 本无逾期再补 600">分期：先 600 借书，10 本无逾期再补 600</label>
+    <label><input type="radio" name="A2" value="降为 800（接近行业中位）">降为 800 元</label>
+    <label><input type="radio" name="A2" value="维持 1200 不变（现状）">维持 1200 不变（现状）</label>
+    <label><input type="radio" name="A2" value="其他（下方补充）">其他（下方补充）</label>
+  </div>
+  <textarea name="A2_note" placeholder="补充说明（选填）：如自定义金额/SLA 天数"></textarea>
+  <div class="advice k3"><b>K3 建议（推荐第 1 项）</b>：1200 对应的是单馆数千册实体书资产风险，金额本身合理；家长反感的是"不知道什么时候能退"。把 SLA 写死在 PRD+押金页，比降价更能消除顾虑。"10 本无逾期退 600"给家长一个明确的信任兑现路径。</div>
+  <div class="advice exp"><b>运营专家</b>："你这是不是要跑路"我每周被问 5 次。押金可分期或信用免押，至少写明退还 SLA。</div>
+</div>
+
+<div class="card" data-q="A3">
+  <h3><span class="qid">A3</span>观察期时长（当前 30 天）？</h3>
+  <div class="current"><b>现状</b>：观察期固定 30 天（observation_days 配置）。3-6 岁孩子 30 天约读 3-5 本（含反复阅读），习惯养成需 60-90 天；第 4 周家长已在纠结续费而非关注孩子阅读。</div>
+  <div class="opts">
+    <label><input type="radio" name="A3" value="30 天（现状）">30 天（现状）</label>
+    <label class="rec"><input type="radio" name="A3" value="45 天（500 元，日均 11.1 元心理账户更优，报告内容翻倍）">45 天（500 元不变，日均心理账户更优，报告内容更充实）</label>
+    <label><input type="radio" name="A3" value="60 天（800 元）">60 天（价格升至 800 元）</label>
+    <label><input type="radio" name="A3" value="30 天 + 15 天免费延续（非缓冲期，继续全量服务）">30 天 + 15 天免费延续（继续全量服务）</label>
+  </div>
+  <div class="advice k3"><b>K3 建议（推荐 45 天）</b>：45 天是转化与成本的甜点——家长能感知"孩子真的养成了习惯"，观察期报告从"读了 3 本"变"读了 8 本+连续打卡 20 天"，转化话术完全不同。改一个配置项即可，零开发量。</div>
+  <div class="advice exp"><b>运营专家</b>：30 天刚养成习惯就结束了。真正能体现价值的周期是 60-90 天。</div>
+</div>
+
+<div class="card" data-q="A4">
+  <h3><span class="qid">A4</span>退款公式（用 25 天只退 83 元的问题）？</h3>
+  <div class="current"><b>现状</b>：观察期退款=实付-(实付÷30×已用天数)；正式会员÷365；亲子课开始后不可退。家长用 25 天退 83 元 → 一条差评抵 10 条好评。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="A4" value="前 7 天无理由全退 + 第 8 天起按天扣 + 报名页显著展示公式">前 7 天无理由全退 + 第 8 天起按天扣 + 报名页显著展示公式</label>
+    <label><input type="radio" name="A4" value="前 3 天无理由全退 + 按天扣">前 3 天无理由全退 + 按天扣</label>
+    <label><input type="radio" name="A4" value="维持纯按天扣（现状），仅增加报名页公式展示">维持现状公式 + 报名页展示</label>
+    <label><input type="radio" name="A4" value="按周扣费（每满 7 天扣 1/4，不足 7 天按 7 天计）">按周扣费（每满 7 天扣 1/4）</label>
+  </div>
+  <div class="advice k3"><b>K3 建议（推荐第 1 项）</b>：7 天无理由是全国消保惯例，家长预期内；第 8 天起按天扣，用 25 天退 83 元家长也无话可说（已白嫖 7 天）。公式必须在支付前展示——"退多少"提前知道=零扯皮。亲子课建议配套：开课前 24h 全退，开始后不退但可改期一次。</div>
+  <div class="advice exp"><b>运营专家</b>：亲子课"开始后不可退"，孩子哭 10 分钟不上了，现场就会吵起来。开课前 24h 全退、开课后 30 分钟内可退 50%。</div>
+</div>
+
+<div class="card" data-q="A5">
+  <h3><span class="qid">A5</span>iOS 用户如何完成会员费支付？（多选）</h3>
+  <div class="current"><b>现状</b>：iOS 禁止小程序虚拟支付，当前提示"请前往线下门店或使用安卓设备"。65-70% 家长用 iPhone。</div>
+  <div class="opts">
+    <label class="rec"><input type="checkbox" name="A5" value="门店收款码：管理端为该孩子生成待支付订单+收款码，家长 iPhone 扫门店码支付">门店收款码：管理端生成订单+收款码，iPhone 扫码付</label>
+    <label class="rec"><input type="checkbox" name="A5" value="对公转账：家长银行转账，管理员后台手动确认到账并开通">对公转账：管理员后台手动确认到账开通</label>
+    <label><input type="checkbox" name="A5" value="H5 支付：跳转微信 H5 收银台（需评估苹果合规风险）">H5 支付：跳微信 H5 收银台（有合规风险）</label>
+    <label><input type="checkbox" name="A5" value="安卓亲属代付：生成代付链接发给家人的安卓机">亲属代付：生成代付链接转发</label>
+  </div>
+  <div class="advice k3"><b>K3 建议（勾选前 2 项）</b>：门店收款码是主力路径（iPhone 家长在店时最顺），对公转账是远程兜底。H5 支付游走在苹果规则边缘，被下架的风险远大于收益，不建议一期做。</div>
+  <div class="advice exp"><b>运营专家</b>：不能只有一句"请前往线下门店"。必须有至少一条在线替代路径。</div>
+</div>
+
+<div class="card" data-q="A6">
+  <h3><span class="qid">A6</span>观察期中途可以直接升级为正式会员吗？</h3>
+  <div class="current"><b>现状矛盾</b>：PRD §1.3 写"观察期结束后评估通过才可报正式"，但代码允许观察期中（status=1）直接购买正式会员。商业上"中途升级"其实是好事（提前锁定）。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="A6" value="允许中途升级，且按剩余天数抵扣（观察期剩余价值冲抵年费）">允许中途升级，且观察期剩余价值抵扣年费</label>
+    <label><input type="radio" name="A6" value="允许中途升级，不抵扣（现状代码行为）">允许中途升级，不抵扣（现状）</label>
+    <label><input type="radio" name="A6" value="不允许，必须观察期结束（改代码拦截）">不允许，必须观察期结束</label>
+  </div>
+  <div class="advice k3"><b>K3 建议（推荐第 1 项）</b>：家长第 15 天说"孩子很喜欢，直接报年费吧"——这是最好的转化时刻，没理由拒绝。剩余价值抵扣（如剩 15 天≈250 元）让决定更容易："现在升级不亏"。用 B3 已建的升级差价计算逻辑即可实现。</div>
+</div>
+
+<div class="card" data-q="A7">
+  <h3><span class="qid">A7</span>"观察期评估通过"如何定义？</h3>
+  <div class="current"><b>现状模糊</b>：PRD 两处引用"评估通过"，但观察期报告没有"通过/不通过"字段，代码只校验孩子状态。到底什么叫"评估通过"目前无人能说清。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="A7" value="删除该条件：观察期结束（含提前）即可报正式，评估报告仅供家长参考">删除该条件：观察期结束即可报正式，报告仅供参考</label>
+    <label><input type="radio" name="A7" value="量化定义：观察期内读完 ≥3 本且测验通过 ≥2 次=评估通过">量化：读完 ≥3 本且测验通过 ≥2 次</label>
+    <label><input type="radio" name="A7" value="老师人工标记：老师在报告上标记'建议升级/继续观察'">老师人工标记"建议升级/继续观察"</label>
+  </div>
+  <div class="advice k3"><b>K3 建议（推荐第 1 项）</b>：花了 500 元的家长，你再用"评估不通过"拦住他买 5400 的年费=把送上门的钱推出去。评估报告的作用是"转化辅助材料"（给家长看进步），不是"收费闸门"。</div>
+</div>
+
+<!-- ═══════════ B 组：门店日常运营 ═══════════ -->
+<div class="group">B 组 · 门店日常运营 <span>14 题 — 决定"店员崩不崩溃、家长排不排队"</span></div>
+
+<div class="card" data-q="B1">
+  <h3><span class="qid">B1</span>借书是否支持"批量连扫"模式？</h3>
+  <div class="current"><b>现状</b>：一次扫一本创建一条借阅。家长一次借 5 本要扫 5 次+确认 5 次，高峰期排队 10 分钟。扫码枪已购（接口规范 V1.0 已交付）。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="B1" value="批量模式：连续扫码入队，最后一键确认全部借出（默认开）">批量模式：连扫入队，一键确认（默认开）</label>
+    <label><input type="radio" name="B1" value="维持单本模式">维持单本模式</label>
+  </div>
+  <div class="advice k3"><b>K3 建议</b>：管理端借书页加"连扫队列"（扫一本入队一本实时显示，点"全部借出"一次提交）。后端复用现有 scan 端点逐本处理即可，前端约 1 天。</div>
+  <div class="advice exp"><b>运营专家</b>：一个家长一次借 5 本，要扫 5 次。能不能一次扫完？</div>
+</div>
+
+<div class="card" data-q="B2">
+  <h3><span class="qid">B2</span>扫码枪故障/条码磨损时的降级方案？（多选）</h3>
+  <div class="current"><b>现状</b>：预约页已有扫码框（自动聚焦/防误扫）；借还书依赖条码，无手动输入入口；规范文档已有"重打条码"条款。</div>
+  <div class="opts">
+    <label class="rec"><input type="checkbox" name="B2" value="借还书页加手动输入框（ISBN/书名搜索借出）">借还书页加手动输入框（ISBN/书名搜索）</label>
+    <label class="rec"><input type="checkbox" name="B2" value="门店备纸质登记本（断网/故障时手工登记，恢复后补录）——已写入规范">门店备纸质登记本（已写入规范）</label>
+    <label><input type="checkbox" name="B2" value="开发离线缓存模式（断网本地存储，恢复自动同步）——成本高">离线缓存模式（成本高，慎选）</label>
+  </div>
+  <div class="advice k3"><b>K3 建议（勾选前 2 项）</b>：手动输入框 0.5 天工作量覆盖 99% 故障场景；纸质登记本零成本兜住断网。离线缓存涉及冲突合并（断网期间书被别人借了怎么办），投入产出比低，不建议一期做。</div>
+</div>
+
+<div class="card" data-q="B3">
+  <h3><span class="qid">B3</span>是否支持家长"自助借书"（扫自己会员码+书条码，不经店员）？</h3>
+  <div class="current"><b>现状</b>：借书为管理员端点（店员操作）。家长小程序无扫码入口。</div>
+  <div class="opts">
+    <label><input type="radio" name="B3" value="一期不做，仅店员操作">一期不做，仅店员操作</label>
+    <label class="rec"><input type="radio" name="B3" value="二期做：小程序'扫一扫'自助借还（会员码核验身份，门店自助）">二期做：小程序"扫一扫"自助借还</label>
+    <label><input type="radio" name="B3" value="一期就做（排期提前）">一期就做</label>
+  </div>
+  <div class="advice k3"><b>K3 建议（二期）</b>：自助借书是高峰期解压阀（家长自己扫完就走），但涉及身份核验+防误借（家长扫了不买账怎么办）+小程序新页面，一期先保证店员流程顺滑，二期上自助。</div>
+</div>
+
+<div class="card" data-q="B4">
+  <h3><span class="qid">B4</span>预约取书时限（当前 72 小时）？</h3>
+  <div class="current"><b>现状</b>：预约 72 小时过期（reservation_expire_hours 配置）。专家说实际可取书窗口常只有周末 2-3 小时，预约取书率仅 40-50%。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="B4" value="7 天（168 小时），覆盖一个完整周末周期">7 天（168 小时）</label>
+    <label><input type="radio" name="B4" value="72 小时（现状）">72 小时（现状）</label>
+    <label><input type="radio" name="B4" value="72 小时 + 可续期 1 次（家长点'再等 3 天'）">72 小时 + 可续期 1 次</label>
+    <label><input type="radio" name="B4" value="5 天（120 小时）">5 天（120 小时）</label>
+  </div>
+  <div class="advice k3"><b>K3 建议（推荐 7 天）</b>：家长节奏是"周末去一次门店"。72h 从周三晚跨不到下个周末。7 天配合 B5 的取书提醒，取书率能从 45% 提到 65%+。改配置即可，零开发。</div>
+</div>
+
+<div class="card" data-q="B5">
+  <h3><span class="qid">B5</span>预约到期前是否发"取书提醒"？</h3>
+  <div class="current"><b>现状</b>：预约创建后无任何中途提醒，过期自动取消。一半预约是"随手点点后忘记"。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="B5" value="到期前 24 小时发提醒（定时任务新增）">到期前 24 小时发提醒</label>
+    <label><input type="radio" name="B5" value="到期前 24h + 前 2h 双提醒">前 24h + 前 2h 双提醒</label>
+    <label><input type="radio" name="B5" value="不发（现状）">不发（现状）</label>
+  </div>
+  <div class="advice k3"><b>K3 建议</b>：新增一个 scheduler 任务（复用现有消息通道，msg_type=3 借阅通知），约 0.5 天。提醒文案："您预约的《XXX》明天到期，记得来取哦～"</div>
+</div>
+
+<div class="card" data-q="B6">
+  <h3><span class="qid">B6</span>预约是否锁定库存？</h3>
+  <div class="current"><b>现状</b>：预约创建即 available_stock-1（锁定）。专家建议不锁/锁 50%（取书率低白锁库存）；但不锁的风险是家长到店书被借走=更严重客诉。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="B6" value="维持锁定（库存真实可承诺）+ B4 延长至 7 天 + B5 提醒提高取书率">维持锁定 + 7 天 + 提醒（组合方案）</label>
+    <label><input type="radio" name="B6" value="不锁库存，先到先得（到店有就有）">不锁库存，先到先得</label>
+    <label><input type="radio" name="B6" value="锁 50%（每本书最多一半副本可被预约）">锁 50% 上限</label>
+  </div>
+  <div class="advice k3"><b>K3 建议（推荐组合方案）</b>："预约了到店没书"是最伤害信任的客诉，比"约不到"严重 10 倍。锁库存本身没错，错的是 72h 太短+无提醒导致锁定空转。B4+B5 组合解决空转，锁定保留。</div>
+</div>
+
+<div class="card" data-q="B7">
+  <h3><span class="qid">B7</span>逾期罚款规则如何调整？（多选）</h3>
+  <div class="current"><b>现状</b>：逾期 1 元/天（可配置），还书时计入 outstanding_fines。月逾期率 15-20% 是常态（生病/旅游/忘在奶奶家）。</div>
+  <div class="opts">
+    <label class="rec"><input type="checkbox" name="B7" value="前 3 天宽限期免罚（第 4 天起算）">前 3 天宽限期免罚</label>
+    <label class="rec"><input type="checkbox" name="B7" value="单本罚款上限=定价 50%（罚款不超书价一半）">单本罚款上限=定价 50%</label>
+    <label class="rec"><input type="checkbox" name="B7" value="首次逾期免罚（每孩子 1 次，培养习惯优先）">首次逾期免罚（每孩子 1 次）</label>
+    <label class="rec"><input type="checkbox" name="B7" value="措辞改'逾期服务费'（不用'罚款'二字）">措辞改"逾期服务费"</label>
+    <label><input type="checkbox" name="B7" value="维持现状（逾期即罚 1 元/天无上限）">维持现状（全不选）</label>
+  </div>
+  <div class="advice k3"><b>K3 建议（前 4 项全勾）</b>：5400 元年费会员被罚 50 元的心理落差是客诉之源。宽限 3 天覆盖 80% 的"正当逾期"；上限 50% 防极端；首次免罚给教育机会；改称谓改情绪。四项合计约 1 天开发量。</div>
+  <div class="advice exp"><b>运营专家</b>：逾期是常态不是异常。首次逾期免罚，培养习惯比罚款重要。措辞决定家长情绪。</div>
+</div>
+
+<div class="card" data-q="B8">
+  <h3><span class="qid">B8</span>逾期后音频伴读如何处理？</h3>
+  <div class="current"><b>现状</b>：逾期即锁死音频（后端已校验 403）。孩子读到一半音频停了=哭，家长=打电话骂。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="B8" value="宽限期 3 天内正常听，第 4 天起锁（与 B7 宽限期一致）">第 4 天起锁（与罚款宽限期一致）</label>
+    <label><input type="radio" name="B8" value="不锁死，改为每天限听 15 分钟（给孩子缓冲）">不锁死，每天限听 15 分钟</label>
+    <label><input type="radio" name="B8" value="逾期即锁（现状）">逾期即锁（现状）</label>
+  </div>
+  <div class="advice k3"><b>K3 建议（推荐第 1 项）</b>：锁音频的本质是"催还书"，与罚款宽限期对齐即可达到目的且不伤孩子。"限听 15 分钟"体验更好但实现成本高（音频进度管控改造），二期再考虑。</div>
+  <div class="advice exp"><b>运营专家</b>：音频不要"锁死"，降速或限时，给孩子一个缓冲。</div>
+</div>
+
+<div class="card" data-q="B9">
+  <h3><span class="qid">B9</span>图书损坏定责如何防扯皮？（多选）</h3>
+  <div class="current"><b>现状</b>：三级定级（轻度免费/重度 0.5×/丢失 1.5×），管理员登记+申诉审核已实现（T3.6a）。无借书拍照、轻度/重度无量化界限。</div>
+  <div class="opts">
+    <label class="rec"><input type="checkbox" name="B9" value="借书时管理端拍照存档（封面+封底+书脊，还书对比）">借书时拍照存档（封面+封底+书脊）</label>
+    <label class="rec"><input type="checkbox" name="B9" value="量化标准写进 PRD：轻度=折角≤3 处/无撕裂/无涂画；正常磨损（泛黄/轻微磨边）不算损坏">量化标准+正常磨损豁免写进 PRD</label>
+    <label class="rec"><input type="checkbox" name="B9" value="定责双人确认（店员登记+店长复核，防一人说了算）">定责双人确认</label>
+    <label><input type="checkbox" name="B9" value="家长申诉简化为'拍照+选不同意/应属轻度'（免写小作文）">申诉简化为拍照+选项</label>
+  </div>
+  <div class="advice k3"><b>K3 建议（前 3 项全勾）</b>：没有借书照片的定责就是扯皮大赛。拍照功能管理端借书流程加一步（约 1.5 天）；量化标准是前台店员的"尚方宝剑"（不用现场跟家长辩论）；双人确认保护店员不被投诉"你乱判"。</div>
+  <div class="advice exp"><b>运营专家</b>：一本绘本被 20 个孩子轮流读，不可能保持全新。正常磨损不算损坏，必须明确。</div>
+</div>
+
+<div class="card" data-q="B10">
+  <h3><span class="qid">B10</span>丢书赔偿规则（当前定价 ×1.5）？（多选）</h3>
+  <div class="current"><b>现状</b>：丢书赔定价×1.5（可配置），标记 LOST 扣押金。进口绘本 80-150 元，1.5 倍=120-225 元；很多"丢失"其实是找不到，过几天又出现。</div>
+  <div class="opts">
+    <label class="rec"><input type="checkbox" name="B10" value="7 天寻找期：登记后 7 天内找到不算丢失（免赔）">7 天寻找期</label>
+    <label class="rec"><input type="checkbox" name="B10" value="找到回滚流程：已按丢失处理后找回，押金退回+状态恢复（PRD 补写）">找到回滚流程写进 PRD</label>
+    <label class="rec"><input type="checkbox" name="B10" value="允许'买同 ISBN 新书归还'替代赔偿">允许买新还书替代赔偿</label>
+    <label><input type="checkbox" name="B10" value="赔偿降为 定价×1.0 + 20 元处理费">赔偿降为 ×1.0 + 20 处理费</label>
+    <label><input type="checkbox" name="B10" value="维持 ×1.5（现状）">维持 ×1.5（现状）</label>
+  </div>
+  <div class="advice k3"><b>K3 建议（前 3 项全勾，赔偿倍数保留 1.5 作威慑）</b>：1.5 倍的价值是"让家长重视保管"，不该取消；该补的是"找回后路"。7 天寻找期+回滚流程消灭 90% 的丢书客诉。"买新还"给家长一个更便宜的选项（进口书淘宝买比 1.5 倍赔便宜），但对绝版书保留 1.5 倍赔。</div>
+  <div class="advice exp"><b>运营专家</b>：书常是"找不到了"，过两天又找到了。回滚流程必须写。</div>
+</div>
+
+<div class="card" data-q="B11">
+  <h3><span class="qid">B11</span>罚款（逾期费）是"立即扣押金"还是"记账后结算"？</h3>
+  <div class="current"><b>现状矛盾</b>：PRD §7.3 写"从押金余额中扣除"，但代码实际是记账累计 outstanding_fines（退押金时才结算）。两个说法必须统一。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="B11" value="记账累计 + 提供线上缴纳入口 + 退押金时抵扣（改 PRD 对齐代码）">记账累计 + 线上缴纳入口 + 退押金时抵扣（推荐）</label>
+    <label><input type="radio" name="B11" value="发生即扣押金（改代码对齐 PRD §7.3）">发生即扣押金（改代码）</label>
+  </div>
+  <div class="advice k3"><b>K3 建议（推荐第 1 项）</b>：记账制对现金流和家长情绪都更友好（钱还在家长押金池里，随时可缴清或退还时抵扣）。发生即扣会让家长觉得"我的押金天天在缩水"=焦虑。改 PRD 两句话，零代码成本。</div>
+</div>
+
+<div class="card" data-q="B12">
+  <h3><span class="qid">B12</span>未缴罚款（outstanding_fines）的缴纳入口？</h3>
+  <div class="current"><b>现状缺口</b>：罚款累计在 outstanding_fines，但全系统没有"缴罚款"入口——家长想主动缴清只能等退押金时抵扣，或线下给店员现金（无记录）。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="B12" value="小程序加'缴纳罚款'入口（微信支付，缴清后 outstanding_fines 归零）">小程序加"缴纳罚款"入口（微信支付）</label>
+    <label><input type="radio" name="B12" value="仅线下缴纳（店员收款后管理端手动清零）">仅线下缴纳（管理端手动清零）</label>
+    <label><input type="radio" name="B12" value="不做入口，仅退押金时抵扣">不做入口，仅退押金抵扣</label>
+  </div>
+  <div class="advice k3"><b>K3 建议（推荐第 1 项）</b>：没有缴纳入口=罚款永远挂着=退押金时集中爆发。线上缴纳页约 1 天（复用押金支付链路）。店员手动清零作为备用通道保留（管理端已有 clear-fines 端点）。</div>
+</div>
+
+<div class="card" data-q="B13">
+  <h3><span class="qid">B13</span>副本"维修/报废"状态的管理端入口？</h3>
+  <div class="current"><b>现状</b>：BookCopy 有维修中(2)/报废(3)状态已 4 年，但管理端无操作入口（D02 遗留）。借书拦截已生效（维修/报废副本不可借）。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="B13" value="副本管理页加状态操作（标记维修/维修完成/报废，写操作日志）">副本管理页补状态操作入口</label>
+    <label><input type="radio" name="B13" value="暂不做（维持仅定责流程联动）">暂不做</label>
+  </div>
+  <div class="advice k3"><b>K3 建议</b>：借书端已会拦"维修/报废副本"，但没有入口把副本设成维修/报废=功能断头路。副本管理页已有状态 Patch 端点（admin PATCH /bookcopy/{id}/status），只需页面加操作列，约 0.5 天。</div>
+</div>
+
+<div class="card" data-q="B14">
+  <h3><span class="qid">B14</span>每孩子同时借阅上限（当前默认 20 本）？</h3>
+  <div class="current"><b>现状</b>：borrow_limit=20（可配置）。图书馆行业惯例 5-10 本；3-6 岁孩子 20 本实体书在家=丢失风险放大器。</div>
+  <div class="opts">
+    <label><input type="radio" name="B14" value="20 本（现状）">20 本（现状）</label>
+    <label class="rec"><input type="radio" name="B14" value="10 本（兼顾多读家庭与资产风险）">10 本</label>
+    <label><input type="radio" name="B14" value="5 本（保守）">5 本（保守）</label>
+    <label><input type="radio" name="B14" value="按级别递增（A 级 5 本，每升 5 级 +1，封顶 15）">按级别递增（5 起，封顶 15）</label>
+  </div>
+  <div class="advice k3"><b>K3 建议（推荐 10 本）</b>：一个 4 岁孩子家里同时放 20 本别人的书，丢 3 本赔 450 元的场景是可以预见的。10 本对真正多读的会员（每周 2-3 本×3 周转）完全够用。改配置即可。</div>
+</div>
+
+<!-- ═══════════ C 组：孩子与家长端体验 ═══════════ -->
+<div class="group">C 组 · 孩子与家长端体验 <span>6 题 — 决定"孩子爱不爱用、家长续不续费"</span></div>
+
+<div class="card" data-q="C1">
+  <h3><span class="qid">C1</span>每日打卡次数规则？（PRD 现有自相矛盾）</h3>
+  <div class="current"><b>现状矛盾</b>：PRD §10.1 同时写"语音/生词各自每日不重复"和"每天最多打卡 1 次"——全局限 1 还是每类型限 1，无人能说清（daily_checkin_limit=1 配置）。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="C1" value="每种类型每日各 1 次（阅读/读完/朗读/生词，最多 4 次/天）">每种类型每日各 1 次（最多 4 次/天）</label>
+    <label><input type="radio" name="C1" value="全局每日 1 次（现状配置）">全局每日 1 次（现状）</label>
+    <label><input type="radio" name="C1" value="每种类型各 1 次 + 集满 4 次额外'今日全勤'奖励">各类 1 次 + 集满 4 次"今日全勤"奖</label>
+  </div>
+  <div class="advice k3"><b>K3 建议（推荐第 1 项，第 3 项更佳）</b>：打卡是 3-6 岁唯一的正反馈引擎，限制它=打击孩子。每类型 1 次保留防刷（同一天读 10 次也只记 1），"全勤奖"给凑满的孩子一个冲刺目标（推荐第 3 项，若求简先第 1 项）。</div>
+  <div class="advice exp"><b>运营专家</b>：孩子做了 4 件事只给 1 个星星，他会说"那我不读了"。</div>
+</div>
+
+<div class="card" data-q="C2">
+  <h3><span class="qid">C2</span>测验形式对 3-6 岁孩子如何适配？（多选）</h3>
+  <div class="current"><b>现状</b>：每本书 5 道文字选择题（ABCD），正确率≥80% 通过，冷却 60 分钟重考。3-4 岁不识字，家长代答=作弊。</div>
+  <div class="opts">
+    <label class="rec"><input type="checkbox" name="C2" value="A-F 级（低龄）改为 3 题图片选择（4 图选 1），答对 2 题通过">低龄改 3 题图片选择，对 2 通过</label>
+    <label class="rec"><input type="checkbox" name="C2" value="重考冷却 60 分钟 → 10 分钟（可配置 quiz_cooldown_minutes 改默认）">冷却 60 → 10 分钟</label>
+    <label class="rec"><input type="checkbox" name="C2" value="家长辅助模式：题目带语音朗读按钮（家长可播放题目给孩子听）">题目语音朗读（家长辅助模式）</label>
+    <label class="rec"><input type="checkbox" name="C2" value="未通过文案零负面：'再读一遍就能答对啦！'替代'未通过'">未通过文案零负面化</label>
+    <label><input type="checkbox" name="C2" value="维持 5 题文字 ABCD 全年龄统一（现状）">维持现状（全不选）</label>
+  </div>
+  <div class="advice k3"><b>K3 建议（前 4 项全勾）</b>：图片选择题需要题库支持图片选项（表结构 option 已是文本，加图片 URL 字段+上传入口，约 2-3 天）；语音朗读用微信同声传译插件或预录 TTS，约 1 天。低龄段体验是"一半目标用户"，值得投。</div>
+  <div class="advice exp"><b>运营专家</b>：5 题答错 2 题等 60 分钟？3 岁孩子早去玩了。允许家长辅助，测验失败不该有任何负面反馈。</div>
+</div>
+
+<div class="card" data-q="C3">
+  <h3><span class="qid">C3</span>体验用户查词上限与"自动记录生词本"？</h3>
+  <div class="current"><b>现状</b>：体验用户 10 次/天（读 2 页就用完）；且 PRD §4.3 承诺"查词结果自动记录到 user_vocabulary"，但代码需手动点"加入生词本"（承诺未实现）。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="C3" value="上限升 30 次/天 + 查词自动记录生词本（兑现 PRD 承诺）">30 次/天 + 自动记录生词本</label>
+    <label><input type="radio" name="C3" value="查词不限次，仅'加入生词本'限 10 次/天">查词不限，收藏限 10 次</label>
+    <label><input type="radio" name="C3" value="维持 10 次（现状）">维持 10 次（现状）</label>
+  </div>
+  <div class="advice k3"><b>K3 建议（推荐第 1 项）</b>：体验期的任务是"让家长看到孩子每天都在学新词"——生词本自动积累就是转化报告里最有说服力的一页（"7 天学了 47 个新词"）。自动记录约 0.5 天（查词成功即写 vocabulary，状态=学习中）。提示语同步改："今天已经学了 X 个新词，明天再来吧～"</div>
+  <div class="advice exp"><b>运营专家</b>：限制查词=限制感受价值=反转化。</div>
+</div>
+
+<div class="card" data-q="C4">
+  <h3><span class="qid">C4</span>想读清单是否限量？</h3>
+  <div class="current"><b>现状</b>：不限量（V3.5 取消 20 本限制，bookshelf_limit=0 配置预留）。孩子随手加，清单变 200 本垃圾场，下架/无库存书堆积。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="C4" value="限 100 本 + 无库存书自动标灰提示'暂不可借'">限 100 本 + 无库存标灰</label>
+    <label><input type="radio" name="C4" value="不限量 + 90 天未操作自动归档到'已遗忘'分组">不限量 + 90 天自动归档</label>
+    <label><input type="radio" name="C4" value="维持不限量（现状）">维持不限量（现状）</label>
+  </div>
+  <div class="advice k3"><b>K3 建议（推荐第 1 项）</b>：100 本对任何人都够用（真读到 100 本想读的孩子是超级会员，到时再调）。bookshelf_limit 配置已预留，设 100 即可+列表标灰（约 0.5 天）。归档方案更优雅但多一个"分组"概念，二期再做。</div>
+</div>
+
+<div class="card" data-q="C5">
+  <h3><span class="qid">C5</span>3-6 岁低龄 UI 模式做不做？</h3>
+  <div class="current"><b>现状</b>：PRD 附录 I.3 明确"本版本不做年龄差异化 UI，3-6 岁由家长辅助"。目标用户 3-15 岁，3-6 岁占一半。</div>
+  <div class="opts">
+    <label><input type="radio" name="C5" value="维持共用 UI + 家长辅助（现状 PRD 立场）">维持共用 UI（现状）</label>
+    <label class="rec"><input type="radio" name="C5" value="V1.1 做'一键听读'简化模式：大按钮/图片导航/语音提示朗读（核心 3 页面先行）">V1.1 做简化模式（核心 3 页先行）</label>
+    <label><input type="radio" name="C5" value="一期就做全量低龄模式（排期 +1-2 周）">一期做全量低龄模式</label>
+  </div>
+  <div class="advice k3"><b>K3 建议（推荐第 2 项）</b>：全量低龄 UI 是 2-3 周工程，不应阻塞上线；但"一键播放音频+大按钮打卡+语音提示"3 个高频页面改造只需 3-4 天，V1.1 快速跟上。3-6 岁独立使用是留存的关键分水岭。</div>
+  <div class="advice exp"><b>运营专家</b>：音频播放改一键，查词改长按语音，所有提示必须有语音朗读。</div>
+</div>
+
+<div class="card" data-q="C6">
+  <h3><span class="qid">C6</span>晋级体系对低龄段如何调整？（多选）</h3>
+  <div class="current"><b>现状</b>：A-Z 26 级，每级 5 本书，测验 80%。130 本全程对 3 岁孩子看不到尽头；混龄排行榜 3 岁永远垫底。</div>
+  <div class="opts">
+    <label class="rec"><input type="checkbox" name="C6" value="低龄段（A-F）每级 3 本（level.required_books 按级配置已实现）">低龄每级 3 本（配置即可）</label>
+    <label class="rec"><input type="checkbox" name="C6" value="排行榜按年龄段分组（3-6/7-9/10-12/13-15）">排行榜按年龄段分组</label>
+    <label class="rec"><input type="checkbox" name="C6" value="晋级配'到店领实体徽章'（电子证书+线下仪式感）">晋级配到店领实体徽章</label>
+    <label><input type="checkbox" name="C6" value="低龄改勋章收集制（读 1 本得 1 勋章，5 勋章换小礼物）">低龄改勋章收集制</label>
+  </div>
+  <div class="advice k3"><b>K3 建议（前 3 项先勾，第 4 项二期评估）</b>：required_books 按级配置后端已支持，只需 seed 数据把 A-F 级设 3（零开发）；年龄分组排行约 1 天；"实体徽章"是零开发运营动作（淘宝定制+到店领取流程写进 SOP）。勋章制是体系级改造，二期用数据说话再定。</div>
+  <div class="advice exp"><b>运营专家</b>：3 岁孩子理解的是"读完这本→拿贴纸"，不是"你是 A 级"。</div>
+</div>
+
+<!-- ═══════════ D 组：老师工作流 ═══════════ -->
+<div class="group">D 组 · 老师工作流 <span>6 题 — 决定"12 个老师的时间花在教学还是点按钮"</span></div>
+
+<div class="card" data-q="D1">
+  <h3><span class="qid">D1</span>老师工作台做不做？</h3>
+  <div class="current"><b>现状</b>：teacher 角色仅 28 权限（查看+审核+签到），无工作台聚合页。老师每天核心工作（1 对 1 指导课）在系统里没有任何流程支撑。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="D1" value="做：老师首页=工作台（今日课程/待审核/待出卷/负责孩子近况）">做（老师首页工作台）</label>
+    <label><input type="radio" name="D1" value="二期做，一期老师用现有页面">二期做</label>
+    <label><input type="radio" name="D1" value="不做">不做</label>
+  </div>
+  <div class="advice k3"><b>K3 建议</b>：工作台是聚合现有数据（指导课排期 teacher_schedule 已有+待审核提交+负责孩子），不需要新业务流，约 2 天。老师每天打开系统第一眼看到"今天要干什么"，与"在 8 个菜单里翻"是两种人生。</div>
+</div>
+
+<div class="card" data-q="D2">
+  <h3><span class="qid">D2</span>"老师→家长"消息通道做不做？</h3>
+  <div class="current"><b>现状</b>：teacher_message 表已存在（结构就位），无发送入口。老师给家长的反馈目前只能走微信私聊（脱离系统，无法沉淀）。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="D2" value="做：老师在指导课后发反馈（模板+自由文本），家长在消息页'老师消息'tab 查看">做（课后反馈进系统）</label>
+    <label><input type="radio" name="D2" value="二期做">二期做</label>
+    <label><input type="radio" name="D2" value="不做（继续微信私聊）">不做</label>
+  </div>
+  <div class="advice k3"><b>K3 建议</b>：表已建好，只欠发送表单+家长端列表（msg_type=4 老师消息通道已通）。约 1 天。课后一句"今天 XX 读了《XXX》，建议下次读《YYY》"是家长感知"5400 花得值"的核心触点，不该流失到私人微信里。</div>
+</div>
+
+<div class="card" data-q="D3">
+  <h3><span class="qid">D3</span>老师是否有"建议晋级"权限？</h3>
+  <div class="current"><b>现状</b>：晋级纯系统判定（书数+测验）。老师发现"这孩子理解力远超当前级"没有任何通道。</div>
+  <div class="opts">
+    <label><input type="radio" name="D3" value="加：老师发起建议，管理员确认后晋级（留痕）">加（建议→管理员确认）</label>
+    <label class="rec"><input type="radio" name="D3" value="二期加，一期维持系统判定">二期加</label>
+    <label><input type="radio" name="D3" value="不加（系统判定唯一）">不加</label>
+  </div>
+  <div class="advice k3"><b>K3 建议（二期）</b>：场景真实但频率低（每月几例），一期管理员后台手动调整级别即可覆盖（已有 child_level 数据操作能力），不必专门建流。二期与 D1 工作台一起做。</div>
+</div>
+
+<div class="card" data-q="D4">
+  <h3><span class="qid">D4</span>阅读提交审核如何给老师减负？</h3>
+  <div class="current"><b>现状</b>：读完每本书都生成待审核提交，老师 30-100 条/周。认真审=每天 5 小时点按钮；随便点=形式主义。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="D4" value="达标自动通过：阅读≥10 分钟且测验通过→系统自动 APPROVED，仅异常（时长过短/未测验）进人工队列">达标自动通过，仅异常进人工</label>
+    <label><input type="radio" name="D4" value="批量审核：列表多选一键通过">批量审核</label>
+    <label><input type="radio" name="D4" value="require_teacher_review=false：全部自动通过（配置已预留）">全部自动通过</label>
+    <label><input type="radio" name="D4" value="维持全人工（现状）">维持全人工（现状）</label>
+  </div>
+  <div class="advice k3"><b>K3 建议（推荐第 1 项）</b>：审核的价值是"抓异常"（3 分钟读完一本书=明显没读），不是"确认正常"。自动规则挡掉 90% 正常件，老师集中看 10% 异常件——审核从负担变回质量网。约 1 天（审核任务加规则引擎）。</div>
+  <div class="advice exp"><b>运营专家</b>：老师的时间应该花在指导课上，不是点按钮上。</div>
+</div>
+
+<div class="card" data-q="D5">
+  <h3><span class="qid">D5</span>测验出卷方式（PRD 与自动化矛盾）？</h3>
+  <div class="current"><b>现状矛盾</b>：PRD §11.3 写"老师为孩子出测验"，但 §11.2 读完书自动创建提交，孩子端可立即开始测验（系统自动抽题出卷）。"老师逐人出卷"在 30-100 本/周的量级不现实。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="D5" value="系统自动出卷（读完即出，从该书题库抽题），老师只维护题库（改 PRD）">系统自动出卷，老师维护题库</label>
+    <label><input type="radio" name="D5" value="老师手动出卷（按 PRD 现状，改代码配合）">老师手动出卷</label>
+  </div>
+  <div class="advice k3"><b>K3 建议</b>：代码现状（自动出卷）就是正确形态。老师价值在"建好每本书的题库"（PRD §11.3 题库管理已是老师职责），不在逐人点出卷。改 PRD 一句话。</div>
+</div>
+
+<div class="card" data-q="D6">
+  <h3><span class="qid">D6</span>观察期报告内容如何利于转化？（多选）</h3>
+  <div class="current"><b>现状</b>：报告=绝对数字（读了 2 本/测验过 1 次）。数据差时等于自曝其短（"500 块读 2 本？"）。</div>
+  <div class="opts">
+    <label class="rec"><input type="checkbox" name="D6" value="强调进步曲线（从 0 到 X 本/连续打卡 N 天/新增 X 生词）">强调进步曲线与里程碑</label>
+    <label class="rec"><input type="checkbox" name="D6" value="加同龄对比（'同龄孩子平均 3 本，XX 2 本，再加把劲'）">加同龄对比维度</label>
+    <label class="rec"><input type="checkbox" name="D6" value="结尾明确续费引导（'继续下去，3 个月后能独立读章节书'+限时优惠）">结尾续费引导+限时优惠</label>
+    <label><input type="checkbox" name="D6" value="维持纯数据罗列（现状）">维持现状（全不选）</label>
+  </div>
+  <div class="advice k3"><b>K3 建议（前 3 项全勾）</b>：观察期报告是转化率最高的一张牌（家长 30 天里最认真看的一页），文案与结构按"转化物料"标准打磨。约 1-1.5 天（模板改造+对比数据聚合）。</div>
+  <div class="advice exp"><b>运营专家</b>：报告应该强调进步而不是绝对数字，最后必须有明确的续费引导。</div>
+</div>
+
+<!-- ═══════════ E 组：管理端与审核 ═══════════ -->
+<div class="group">E 组 · 管理端与审核 <span>7 题 — 决定"晚上 10 点的申请要不要等到天亮"</span></div>
+
+<div class="card" data-q="E1">
+  <h3><span class="qid">E1</span>哪些审核可以自动化？（多选）</h3>
+  <div class="current"><b>现状</b>：退款/押金退款/权益转让/活动取消退款全部人工审核。晚上周末提交全部积压；管理员请假全卡死。</div>
+  <div class="opts">
+    <label class="rec"><input type="checkbox" name="E1" value="押金退款：无未还书+无罚款 → 自动通过">押金退款满足条件自动通过</label>
+    <label class="rec"><input type="checkbox" name="E1" value="退款 ≤500 元（观察期/亲子课）：自动通过">退款 ≤500 元自动通过</label>
+    <label class="rec"><input type="checkbox" name="E1" value="权益转让：8 项校验全过 → 自动通过">权益转让校验全过自动通过</label>
+    <label><input type="checkbox" name="E1" value="年费退款（5400 级）：维持人工审核">年费退款维持人工</label>
+    <label><input type="checkbox" name="E1" value="全部维持人工（现状）">全部维持人工（全不选）</label>
+  </div>
+  <div class="advice k3"><b>K3 建议（前 3 项勾，年费留人工）</b>：自动化的边界画在"钱多不多"：500 元以下自动（观察期/押金/亲子课全额），5400 年费退款涉及 4 位数+按天折算，留人工兜底防薅羊毛。约 1-1.5 天（审核流加自动通道+操作日志照记）。</div>
+  <div class="advice exp"><b>运营专家</b>：只有异常情况（金额大/有争议/有罚款）才需要人工审核。</div>
+</div>
+
+<div class="card" data-q="E2">
+  <h3><span class="qid">E2</span>人工审核的 SLA（超时处理机制）？</h3>
+  <div class="current"><b>现状</b>：审核无时限承诺，家长第 2 天就开始打电话催。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="E2" value="SLA 24h：超 24h 未审自动升级提醒超管（消息+标记）">SLA 24h + 超时升级提醒超管</label>
+    <label><input type="radio" name="E2" value="SLA 48h">SLA 48h</label>
+    <label><input type="radio" name="E2" value="不设 SLA（现状）">不设 SLA（现状）</label>
+  </div>
+  <div class="advice k3"><b>K3 建议</b>：配合 E1 自动化后，人工件已不多，24h 可达。超时提醒复用消息通道发超管即可（scheduler 已有 stale_refunds 同款模式），约 0.5 天。</div>
+</div>
+
+<div class="card" data-q="E3">
+  <h3><span class="qid">E3</span>40 项配置如何防运营改错？</h3>
+  <div class="current"><b>现状</b>：40 项配置全部同级可改（config 权限）。borrow_limit 改 200=库存借空；罚款改 0=逾期率爆炸；通过率改 0.5=晋级崩。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="E3" value="三级管控：锁定级（价格/押金/折扣仅超管）+ 警告级（上限/罚款/通过率改前弹确认）+ 自由级（名称/提醒天数）">三级管控（锁定/警告/自由）</label>
+    <label><input type="radio" name="E3" value="三级管控 + 敏感项次日生效">三级管控 + 敏感项次日生效</label>
+    <label><input type="radio" name="E3" value="维持现状">维持现状</label>
+  </div>
+  <div class="advice k3"><b>K3 建议（推荐第 1 项）</b>：三级管控约 1 天（配置项加 level 字段+前端分级渲染+保存拦截）。"次日生效"听起来美但会让合法紧急修改（如活动前改名额）也变慢，不建议。修改日志已有（ConfigAuditLog）。</div>
+</div>
+
+<div class="card" data-q="E4">
+  <h3><span class="qid">E4</span>活动管理是否分"轻量/正式"双模式？</h3>
+  <div class="current"><b>现状</b>：免费故事会与收费郊游同一套 8 字段流程（标题/描述/时间/地点/人数/价格/封面/类型+审核+签到+退款）。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="E4" value="双模式：轻量（免费/≤30 人：3 字段+自动通过+免签到）+ 正式（完整流程）">双模式（轻量 3 字段，正式全流程）</label>
+    <label><input type="radio" name="E4" value="统一流程（现状）">统一流程（现状）</label>
+  </div>
+  <div class="advice k3"><b>K3 建议</b>：每周 1-2 场故事会是最高频活动，3 字段（标题/时间/地点）30 秒创建 vs 8 字段 5 分钟，一年省 40 小时。轻量模式=现有模型默认值+表单简化（约 1 天）。</div>
+</div>
+
+<div class="card" data-q="E5">
+  <h3><span class="qid">E5</span>活动取消的退款要人工审核吗？</h3>
+  <div class="current"><b>现状</b>：用户主动取消（24h 前）→ 自动申请退款→人工审核；主办方取消 → 自动全额退款但退款仍需审核。取消一个 30 人活动=30 个待审退款。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="E5" value="活动退款全部自动通过（钱原路退回，无需人工）">活动退款全部自动通过</label>
+    <label><input type="radio" name="E5" value="维持人工审核（现状）">维持人工（现状）</label>
+  </div>
+  <div class="advice k3"><b>K3 建议</b>：活动退款金额=活动定价（几十到几百），且是商家主动取消或规则内取消——没有可争议的。原路退回没有任何审核价值。与 E1 合并实施。</div>
+  <div class="advice exp"><b>运营专家</b>：免费直接取消，收费自动退款不需要审核。</div>
+</div>
+
+<div class="card" data-q="E6">
+  <h3><span class="qid">E6</span>管理端 Dashboard 需要哪些运营报表？（多选）</h3>
+  <div class="current"><b>现状</b>：Dashboard 仅日活/新增/借阅量/测评通过率 4 项。运营决策需要的 10 项核心指标全部缺失。</div>
+  <div class="opts">
+    <label class="rec"><input type="checkbox" name="E6" value="今日到店/借还书量（每日必看）">今日到店/借还书量</label>
+    <label class="rec"><input type="checkbox" name="E6" value="本周新增/流失会员（每周必看）">本周新增/流失会员</label>
+    <label class="rec"><input type="checkbox" name="E6" value="逾期率（按孩子/按书）">逾期率排行</label>
+    <label class="rec"><input type="checkbox" name="E6" value="押金池总额/待退押金（财务必看）">押金池总额/待退押金</label>
+    <label class="rec"><input type="checkbox" name="E6" value="转化漏斗（亲子课→观察期→正式，最核心）">转化漏斗</label>
+    <label><input type="checkbox" name="E6" value="库存周转率（哪些书没人借）">库存周转率</label>
+    <label><input type="checkbox" name="E6" value="退款率/退款原因分布">退款率/原因分布</label>
+    <label><input type="checkbox" name="E6" value="老师工作量（审核数/指导课数）">老师工作量</label>
+    <label><input type="checkbox" name="E6" value="活动参与率">活动参与率</label>
+    <label><input type="checkbox" name="E6" value="单客 LTV（季度看）">单客 LTV</label>
+  </div>
+  <div class="advice k3"><b>K3 建议（前 5 项为一期，后 5 项二期）</b>：前 5 项是"每天开门要看"的生存指标（约 2 天，聚合 SQL+卡片）；后 5 项是"每月复盘"指标，二期加。转化漏斗尤其关键——A1-A4 的调整效果如何验证，全靠它。</div>
+</div>
+
+<div class="card" data-q="E7">
+  <h3><span class="qid">E7</span>会员费退款是否校验未缴罚款？</h3>
+  <div class="current"><b>现状缺口</b>：会员费退款（refund）只校验未还书，不校验 outstanding_fines——孩子挂着 200 元罚款也能全额退 5400。押金退款有罚款校验，会员费没有，口径不一。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="E7" value="校验：退款时先扣减未缴罚款再退余额（自动抵扣，不用先缴）">校验+自动抵扣后退余额</label>
+    <label><input type="radio" name="E7" value="校验：必须先缴清罚款才能申请退款">校验：先缴清才能退</label>
+    <label><input type="radio" name="E7" value="不校验（现状）">不校验（现状）</label>
+  </div>
+  <div class="advice k3"><b>K3 建议（推荐第 1 项）</b>："先缴清再退"给家长添一道手续=多一次扯皮；"自动抵扣"一次性结清所有账（退 5400-200=5200），家长一次到账，门店零遗漏。约 0.5 天（退款计算加扣减）。</div>
+</div>
+
+<!-- ═══════════ F 组：异常场景与账户 ═══════════ -->
+<div class="group">F 组 · 异常场景与账户 <span>5 题 — 决定"离婚/毕业/搬店时系统抓不抓瞎"</span></div>
+
+<div class="card" data-q="F1">
+  <h3><span class="qid">F1</span>换手机号/换微信/监护人变更如何处理？（多选）</h3>
+  <div class="current"><b>现状</b>：openid 即账号。换微信号=数据全丢；离婚接管无流程；换手机号无解。</div>
+  <div class="opts">
+    <label class="rec"><input type="checkbox" name="F1" value="手机号换绑：验证旧手机号→绑新号（SMS 验证）">手机号换绑</label>
+    <label class="rec"><input type="checkbox" name="F1" value="账号迁移：管理员后台操作（验证双方身份后 openid 迁移）">账号迁移（管理员操作）</label>
+    <label class="rec"><input type="checkbox" name="F1" value="监护人变更：管理员后台操作（需双方确认+操作日志）">监护人变更（管理员操作）</label>
+    <label><input type="checkbox" name="F1" value="暂不处理（出问题时人工导数据）">暂不处理</label>
+  </div>
+  <div class="advice k3"><b>K3 建议（前 3 项全勾，均为管理端操作而非自助）</b>：这三件事低频（每月个位数）但每件都是大客诉。全部做成管理端操作（管理员核实身份后执行+日志），不做自助通道（防劫持）。约 1.5 天。</div>
+  <div class="advice exp"><b>运营专家</b>：PRD 完全没有处理这些场景。</div>
+</div>
+
+<div class="card" data-q="F2">
+  <h3><span class="qid">F2</span>孩子满 15 岁"毕业"流程？</h3>
+  <div class="current"><b>现状</b>：年龄上限 15 岁，但毕业后账号/押金/未还书无任何流程。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="F2" value="毕业流程：15 岁前 90 天发提醒→到期转'校友'状态（不可借可查历史）→引导退押金">毕业提醒+校友状态+押金引导</label>
+    <label><input type="radio" name="F2" value="不做（自然流失）">不做（现状）</label>
+  </div>
+  <div class="advice k3"><b>K3 建议</b>：校友状态=MemberStatus 复用 EXPIRED 或新增状态（建议复用 EXPIRED+标记），押金退还是既有链路（主动发消息引导即可）。约 1 天（scheduler 毕业提醒任务+状态规则）。毕业是最后的口碑触点——"孩子毕业了还想着退你押金"=转介绍种子。</div>
+</div>
+
+<div class="card" data-q="F3">
+  <h3><span class="qid">F3</span>门店关闭/搬迁流程做不做？</h3>
+  <div class="current"><b>现状</b>：venue 表无状态字段，3 家店任一关闭时无系统流程（800 家庭的押金/会员/老师安排全靠人工）。</div>
+  <div class="opts">
+    <label><input type="radio" name="F3" value="做：venue 加状态+关店流程（通知家长+批量转移+费用方案）">做（完整关店流程）</label>
+    <label class="rec"><input type="radio" name="F3" value="venue 先加状态字段（营业中/暂停/关闭），关店 SOP 写文档，系统流程二期">venue 加状态+SOP 文档先行</label>
+    <label><input type="radio" name="F3" value="不做">不做</label>
+  </div>
+  <div class="advice k3"><b>K3 建议（推荐第 2 项）</b>：关店是低频高危事件（几年一次），完整系统流程（批量转移 800 家庭）投入大；先把数据模型（venue.status）和人工 SOP 备好，真到那天按 SOP 手动执行+客服介入即可。加字段+迁移约 0.5 天。</div>
+</div>
+
+<div class="card" data-q="F4">
+  <h3><span class="qid">F4</span>热门书被抢光后给家长什么出路？（多选）</h3>
+  <div class="current"><b>现状</b>：库存 0 时显示"该书暂无库存"，没有然后了。家长转身去竞品。</div>
+  <div class="opts">
+    <label class="rec"><input type="checkbox" name="F4" value="等候名单：库存 0 可'加入等候'，还回时自动通知（先到先得）">等候名单+到货自动通知</label>
+    <label><input type="checkbox" name="F4" value="同类推荐：显示'类似图书'（同主题/同 AR/同系列，related 端点已有）">同类推荐（端点已有）</label>
+    <label><input type="checkbox" name="F4" value="不做（现状）">不做（现状）</label>
+  </div>
+  <div class="advice k3"><b>K3 建议（两项全勾）</b>：同类推荐端点已存在（/book/{id}/related），前端加一卡片即可（0.5 天）；等候名单需新表+通知任务（约 1.5 天），它把"失望"变"期待"，是零成本锁客。</div>
+</div>
+
+<div class="card" data-q="F5">
+  <h3><span class="qid">F5</span>已退出（EXITED）的孩子能否重新加入？</h3>
+  <div class="current"><b>现状</b>：EXITED(4) 标记"不可恢复"。家长退会 3 个月后想回来——只能重新注册新孩子（历史数据全断）。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="F5" value="允许复活：管理员后台改回 TRIAL（历史阅读数据保留，权益清零重来）">允许管理员复活为 TRIAL（数据保留）</label>
+    <label><input type="radio" name="F5" value="不可逆（现状），重新注册">不可逆（现状）</label>
+  </div>
+  <div class="advice k3"><b>K3 建议</b>：回流家长是最高价值线索（已验证付费意愿）。复活为 TRIAL 保留阅读历史（孩子看到"我以前读过 20 本"比从零开始有归属感），权益从漏斗重走（该买课买课）。管理员操作防滥用，约 0.5 天。</div>
+</div>
+
+<!-- ═══════════ G 组：文案与措辞 ═══════════ -->
+<div class="group">G 组 · 文案与措辞 <span>3 题 — 决定"家长看提示时是平静还是上火"</span></div>
+
+<div class="card" data-q="G1">
+  <h3><span class="qid">G1</span>提示文案是否全面人性化改写？</h3>
+  <div class="current"><b>现状</b>：专家对照表（6 条）："请先缴纳押金"→"缴纳押金后即可借阅实体书哦～"；"已达最大借阅数…"→"小书架满啦！先还一本再借新的吧～"；"该书已在书架中"→"这本书已经在你的想读清单里啦～"等。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="G1" value="采纳全部 6 条改写（附录 K 同步更新）">采纳全部改写（附录 K 更新）</label>
+    <label><input type="radio" name="G1" value="部分采纳（在下方标注不采纳的条目）">部分采纳（下方注明）</label>
+    <label><input type="radio" name="G1" value="维持现有措辞">维持现状</label>
+  </div>
+  <textarea name="G1_note" placeholder="部分采纳时，注明不采纳的条目（选填）"></textarea>
+  <div class="advice k3"><b>K3 建议</b>：措辞是最便宜的体验升级（每条改一行代码/配置）。全部采纳，附录 K 文案真源同步更新，约 0.5 天。</div>
+</div>
+
+<div class="card" data-q="G2">
+  <h3><span class="qid">G2</span>错误提示是否加"人工兜底"（门店联系方式）？</h3>
+  <div class="current"><b>现状</b>：500/超时提示"网络异常，请稍后重试"——家长不知是谁的问题，也没有人工入口。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="G2" value="加：错误页/提示附门店电话+微信客服入口（按 venue 配置）">加门店电话+客服入口</label>
+    <label><input type="radio" name="G2" value="维持现状">维持现状</label>
+  </div>
+  <textarea name="G2_note" placeholder="门店联系电话/客服微信号（必填，每馆一行）"></textarea>
+  <div class="advice k3"><b>K3 建议</b>：venue 表已有 phone 字段，错误页读取展示即可（0.5 天）。"联系门店（电话：XXX）"一句话把无助感变信任感。请在上方填入各馆电话。</div>
+</div>
+
+<div class="card" data-q="G3">
+  <h3><span class="qid">G3</span>文案真源（附录 K）与后端提示不一致，以谁为准？</h3>
+  <div class="current"><b>现状矛盾</b>：K.1 声明"本表为准不得改写"，但后端两处不一致：K.1"该书暂无库存" vs 后端"库存不足，无法预约"；K.1"已达最大借阅数，请先归还部分图书" vs 后端"借阅上限 N 本，请先归还"。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="G3" value="改后端对齐 K.1（K.1 权威，后端 2 处文案调整）">改后端对齐 K.1</label>
+    <label><input type="radio" name="G3" value="改 K.1 对齐后端（后端不动，文档追认）">改 K.1 对齐后端</label>
+  </div>
+  <div class="advice k3"><b>K3 建议（推荐第 1 项）</b>：K.1 的措辞明显更友好（"暂无库存"vs"无法预约"、"已达最大借阅数"vs干巴巴的"上限 N 本"）。后端改 2 个字符串+2 个 BDD 断言，10 分钟。</div>
+</div>
+
+<!-- ═══════════ H 组：技术定义确认 ═══════════ -->
+<div class="group">H 组 · 技术定义确认 <span>3 题 — 决定"这些字段/行为到底生不生效"</span></div>
+
+<div class="card" data-q="H1">
+  <h3><span class="qid">H1</span>支付流程中"禁止切换孩子"是否已生效？</h3>
+  <div class="current"><b>现状存疑</b>：PRD 附录 I.2 写"支付流程中禁止切换孩子（防止订单归属错乱）"，并自注"前端已实现/待验证"——目前无人确认过该限制真实生效。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="H1" value="验证并补齐：支付页隐藏/禁用孩子切换（前后端双保险：后端订单创建锁定 child_id）">验证并补齐（前后端双保险）</label>
+    <label><input type="radio" name="H1" value="仅前端限制即可">仅前端限制</label>
+    <label><input type="radio" name="H1" value="不处理（概率极低）">不处理</label>
+  </div>
+  <div class="advice k3"><b>K3 建议</b>：订单归属错乱是资金级 bug（钱记到弟弟头上），前端隐藏切换+后端创建订单时以请求 child_id 为准（已如此）双保险。验证+补约 0.5 天。</div>
+</div>
+
+<div class="card" data-q="H2">
+  <h3><span class="qid">H2</span>级别字段 max_ar_level（可读 AR 上限）与 max_borrow_count（级别借阅上限）是否启用？</h3>
+  <div class="current"><b>现状</b>：Level 模型两字段存在，但图书列表不按孩子级别过滤 AR，借阅上限用全局 borrow_limit=20（级别字段闲置）。PRD §11.1/§11.5 引用了这两个能力。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="H2" value="启用 max_ar_level：图书列表对超 AR 书标'挑战'徽标（不隐藏，引导性提示）；max_borrow_count 移除（统一全局上限）">AR 超限标"挑战"徽标不隐藏；借阅上限字段移除</label>
+    <label><input type="radio" name="H2" value="全部启用：超限隐藏 + 级别借阅上限生效">全部启用（隐藏+级别上限）</label>
+    <label><input type="radio" name="H2" value="全部移除：PRD 删相关描述">全部移除</label>
+  </div>
+  <div class="advice k3"><b>K3 建议（推荐第 1 项）</b>：隐藏超 AR 书会挡住"跳级挑战"的孩子（家长也会困惑"书怎么少了"）；标"挑战"徽标既保留引导又不设墙。级别借阅上限与全局上限并存必乱（B14 已定全局口径），字段移除免后患。</div>
+</div>
+
+<div class="card" data-q="H3">
+  <h3><span class="qid">H3</span>周报/月报生成后如何触达家长？</h3>
+  <div class="current"><b>现状</b>：周/月报定时生成（scheduler 已有），但没有通知家长"报告来了"的动作——报告躺着等家长自己发现。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="H3" value="生成后发系统消息（msg_type=1，'孩子的周报来啦'）+ 消息页入口">生成后发系统消息通知</label>
+    <label><input type="radio" name="H3" value="不通知（现状）">不通知（现状）</label>
+  </div>
+  <div class="advice k3"><b>K3 建议</b>：报告是留存触点，生成时顺手发一条消息（复用 _create_message，scheduler 任务里加 5 行），0.2 天。微信订阅消息（服务通知）需模板申请，二期再评估。</div>
+</div>
+
+<div style="height:20px"></div>
+</div>
+
+<footer>
+  <span id="progress">已完成 0 / 38 题</span>
+  <button id="btnCheck">检查未答</button>
+  <button id="btnExport">生成决策结果</button>
+</footer>
+
+<div id="resultModal">
+  <div class="inner">
+    <h3 style="margin-bottom:10px;">决策结果（可复制/下载后发回开发团队）</h3>
+    <div id="resultText"></div>
+    <div class="modalBtns">
+      <button id="btnCopy" style="background:#2c5aa0;color:#fff;">复制全部</button>
+      <button id="btnDownload" style="background:#2d7a3a;color:#fff;">下载 .md</button>
+      <button id="btnClose" style="background:#eef1f5;">关闭</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var cards = document.querySelectorAll('.card[data-q]');
+  var total = cards.length;
+
+  function getAnswers() {
+    var out = {};
+    cards.forEach(function (card) {
+      var q = card.getAttribute('data-q');
+      var title = card.querySelector('h3').textContent.replace(/^\S+\s*/, '').trim();
+      var checked = card.querySelectorAll('input:checked');
+      var vals = [];
+      checked.forEach(function (c) { vals.push(c.value); });
+      var ta = card.querySelector('textarea');
+      out[q] = { title: title, answers: vals, note: ta ? ta.value.trim() : '' };
+    });
+    return out;
+  }
+
+  function answeredCount() {
+    var n = 0;
+    var ans = getAnswers();
+    Object.keys(ans).forEach(function (q) {
+      if (ans[q].answers.length > 0) n++;
+    });
+    return n;
+  }
+
+  function refreshProgress() {
+    document.getElementById('progress').textContent = '已完成 ' + answeredCount() + ' / ' + total + ' 题';
+  }
+
+  document.addEventListener('change', refreshProgress);
+  refreshProgress();
+
+  document.getElementById('btnCheck').addEventListener('click', function () {
+    var ans = getAnswers();
+    var missing = [];
+    cards.forEach(function (card) {
+      var q = card.getAttribute('data-q');
+      if (ans[q].answers.length === 0) missing.push(q);
+    });
+    if (!missing.length) { alert('全部已作答 ✅'); return; }
+    alert('未作答 ' + missing.length + ' 题：' + missing.join('、') + '\n（未作答项将按 ★ 推荐项执行）');
+    var first = document.querySelector('.card[data-q="' + missing[0] + '"]');
+    if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+
+  function buildMarkdown() {
+    var ans = getAnswers();
+    var now = new Date().toISOString().slice(0, 10);
+    var lines = [
+      '# DmkWords PRD 需求决策结果（甲方确认）',
+      '',
+      '> 确认日期：' + now + ' ｜ 决策表版本：V1.0',
+      '> 未作答项：按表单 ★ 推荐项执行',
+      ''
+    ];
+    var groups = {};
+    Object.keys(ans).forEach(function (q) {
+      var g = q.charAt(0);
+      groups[g] = groups[g] || [];
+      groups[g].push(q);
+    });
+    Object.keys(groups).sort().forEach(function (g) {
+      lines.push('## ' + g + ' 组');
+      lines.push('');
+      groups[g].forEach(function (q) {
+        var a = ans[q];
+        lines.push('### ' + q + ' ' + a.title);
+        if (a.answers.length) {
+          a.answers.forEach(function (v) { lines.push('- ✅ ' + v); });
+        } else {
+          lines.push('- （未作答 → 按推荐项执行）');
+        }
+        if (a.note) lines.push('- 备注：' + a.note);
+        lines.push('');
+      });
+    });
+    return lines.join('\n');
+  }
+
+  document.getElementById('btnExport').addEventListener('click', function () {
+    document.getElementById('resultText').textContent = buildMarkdown();
+    document.getElementById('resultModal').style.display = 'block';
+  });
+  document.getElementById('btnClose').addEventListener('click', function () {
+    document.getElementById('resultModal').style.display = 'none';
+  });
+  document.getElementById('btnCopy').addEventListener('click', function () {
+    navigator.clipboard.writeText(document.getElementById('resultText').textContent)
+      .then(function () { alert('已复制到剪贴板 ✅'); });
+  });
+  document.getElementById('btnDownload').addEventListener('click', function () {
+    var blob = new Blob([document.getElementById('resultText').textContent], { type: 'text/markdown;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'DmkWords_PRD决策结果_' + new Date().toISOString().slice(0, 10) + '.md';
+    a.click();
+  });
+})();
+</script>
+</body>
+</html>
