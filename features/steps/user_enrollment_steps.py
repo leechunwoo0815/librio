@@ -72,10 +72,13 @@ def step_click_pay_99(context):
     assert child_resp.status_code == 201, f"Create child failed: {child_resp.text}"
     context.child_id = child_resp.json()["id"]
 
-    # 创建亲子课程订单
+    # 创建亲子课程订单（B3：支持时段关联名额校验）
+    body = {"child_id": context.child_id, "type": Order.TYPE_PARENT_COURSE}
+    if getattr(context, "slot_id", None):
+        body["slot_id"] = context.slot_id
     context.response = context.client.post(
         "/order/",
-        json={"child_id": context.child_id, "type": Order.TYPE_PARENT_COURSE},
+        json=body,
         headers=context.headers,
     )
 
@@ -139,12 +142,43 @@ def step_pay_button_disabled(context):
 
 @given("用户选择的上课时间段名额已满")
 def step_slot_full(context):
+    from backend.domain.parent_course_time.models import ParentCourseTime
+
     context.parent_name = "张三"
     context.phone = "13800138000"
     context.child_name = "小明"
     context.child_age = 7
     context.child_grade = "二年级"
-    context.slot_full = True
+    # B3：构造名额已满时段（max=1 且已有 1 笔已支付订单）
+    slot = ParentCourseTime(
+        venue_id=1,
+        course_date="2099-06-07",
+        start_time="10:00",
+        end_time="11:15",
+        max_participants=1,
+        current_participants=1,
+        status=1,
+    )
+    context.db.add(slot)
+    context.db.commit()
+    context.db.refresh(slot)
+    context.slot_id = slot.id
+    taken_child = Child(user_id=context.user.id, name="占座孩", age=6, grade="一年级")
+    context.db.add(taken_child)
+    context.db.commit()
+    context.db.refresh(taken_child)
+    context.db.add(
+        Order(
+            order_no="MW_SLOT_FULL",
+            user_id=context.user.id,
+            child_id=taken_child.id,
+            type=Order.TYPE_PARENT_COURSE,
+            amount=99,
+            pay_status=Order.PAY_PAID,
+            parent_course_time_id=slot.id,
+        )
+    )
+    context.db.commit()
 
 
 # ==================== 观察期报名 ====================
@@ -250,6 +284,16 @@ def step_try_access_observation(context):
         headers=context.headers,
     )
     # 前端根据child.status判断是否可报观察期
+
+
+@when("用户尝试为孩子购买观察期")
+def step_try_buy_observation(context):
+    """B3 漏斗校验：真实下单拦截点（POST /order/ type=OBSERVATION）"""
+    context.response = context.client.post(
+        "/order/",
+        json={"child_id": context.child.id, "type": 2},  # OrderType.OBSERVATION
+        headers=context.headers,
+    )
 
 
 # ==================== 正式会员报名 ====================

@@ -20,11 +20,12 @@
 </div>
 
 <!-- Filter Tabs -->
-<div class="tabs">
+<div class="tabs" style="display:flex;align-items:center;gap:8px;">
   <div class="tab active" data-action="filter-tab" data-filter="">全部</div>
   <div class="tab" data-action="filter-tab" data-filter="ACTIVE">有效</div>
   <div class="tab" data-action="filter-tab" data-filter="EXPIRED">已过期</div>
   <div class="tab" data-action="filter-tab" data-filter="PICKED">已取书</div>
+  <button type="button" class="btn btn-primary btn-sm" id="btnNewReservation" style="margin-left:auto;">+ 新建预约</button>
 </div>
 
 <!-- Table -->
@@ -45,6 +46,24 @@
 {{ m.modal_actions() }}
   <button type="button" class="btn btn-secondary" data-action="close-modal" data-modal="confirmDialog">取消</button>
   <button type="button" class="btn btn-primary" id="confirmBtn">确认</button>
+{{ m.modal_end() }}
+
+<!-- 新建预约弹窗（代客预约） -->
+{{ m.modal_overlay("createReservationDialog", "新建预约（代客预约）") }}
+  <div class="form-group">
+    <label>孩子</label>
+    <input id="rsvChildKw" type="text" placeholder="输入孩子姓名或手机号搜索" autocomplete="off" />
+    <div id="rsvChildList" class="pick-list"></div>
+  </div>
+  <div class="form-group" style="margin-top:10px;">
+    <label>图书</label>
+    <input id="rsvBookKw" type="text" placeholder="输入书名或 ISBN 搜索" autocomplete="off" />
+    <div id="rsvBookList" class="pick-list"></div>
+  </div>
+  <div id="rsvSelected" class="text-muted" style="margin-top:10px;font-size:13px;">未选择</div>
+{{ m.modal_actions() }}
+  <button type="button" class="btn btn-secondary" data-action="close-modal" data-modal="createReservationDialog">取消</button>
+  <button type="button" class="btn btn-primary" id="rsvSubmitBtn" disabled>创建预约</button>
 {{ m.modal_end() }}
 {% endblock %}
 

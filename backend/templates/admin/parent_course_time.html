@@ -1,0 +1,69 @@
+{% extends "admin/base.html" %}
+{% block title %}亲子课时段{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="/static/admin/css/pages/parent_course_time.css" />
+{% endblock %}
+{% block page_title %}亲子课时段管理{% endblock %}
+{% block content %}
+<!-- Toolbar -->
+<div class="toolbar">
+  <select id="venueFilter" class="form-input" style="max-width:200px;">
+    <option value="">全部场馆</option>
+  </select>
+  <button type="button" class="btn btn-primary" id="btnNewSlot">+ 新建时段</button>
+</div>
+
+<!-- Table -->
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>场馆</th><th>日期</th><th>时间</th><th>名额</th><th>已报名</th><th>状态</th><th>操作</th></tr>
+    </thead>
+    <tbody id="slotBody">
+      <tr><td colspan="7" class="text-center p-40 text-muted">加载中...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+{% import "admin/macros.html" as m %}
+{{ m.modal_overlay("slotDialog", "时段编辑") }}
+  <input type="hidden" id="slotId" />
+  <div class="form-group">
+    <label>场馆</label>
+    <select id="slotVenue" class="form-input"></select>
+  </div>
+  <div class="form-group">
+    <label>日期</label>
+    <input id="slotDate" type="date" class="form-input" />
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>开始时间</label>
+      <input id="slotStart" type="time" class="form-input" />
+    </div>
+    <div class="form-group">
+      <label>结束时间</label>
+      <input id="slotEnd" type="time" class="form-input" />
+    </div>
+  </div>
+  <div class="form-group">
+    <label>最大名额</label>
+    <input id="slotMax" type="number" min="1" max="100" class="form-input" value="30" />
+  </div>
+  <div class="form-group" id="slotStatusGroup" style="display:none;">
+    <label>状态</label>
+    <select id="slotStatus" class="form-input">
+      <option value="1">可预约</option>
+      <option value="0">已满</option>
+      <option value="-1">已关闭</option>
+    </select>
+  </div>
+{{ m.modal_actions() }}
+  <button type="button" class="btn btn-secondary" data-action="close-modal" data-modal="slotDialog">取消</button>
+  <button type="button" class="btn btn-primary" id="slotSaveBtn">保存</button>
+{{ m.modal_end() }}
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/admin/js/pages/parent_course_time.js"></script>
+{% endblock %}

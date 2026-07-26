@@ -119,9 +119,3 @@ def get_my_permissions(
         "name": admin.name or admin.username,
         "data_scope": AdminAccountService(db).get_data_scope(admin),
     }
-
-
-@router.post("/logout")
-def admin_logout():
-    """管理员登出（客户端清 token）"""
-    return {"success": True}

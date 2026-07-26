@@ -5,15 +5,11 @@ from fastapi import APIRouter, Depends, Query
 
 from backend.common.dependencies import get_book_service
 from backend.domain.book.schemas import (
-    BookCreate,
     BookListResponse,
     BookResponse,
     BookSearch,
-    BookCopyCreate,
-    BookCopyResponse,
 )
 from backend.domain.book.service import BookService
-from backend.middleware.admin_rbac import require_perm
 from backend.middleware.rate_limit import rate_limit
 
 router = APIRouter(prefix="/book", tags=["图书"])
@@ -52,28 +48,6 @@ def get_book_detail(
 ):
     """获取图书详情"""
     return book_service.get_book_detail(book_id)
-
-
-@router.post("/", response_model=BookResponse, status_code=201)
-def create_book(
-    book_data: BookCreate,
-    book_service: BookService = Depends(get_book_service),
-    admin=Depends(require_perm("book.create")),
-):
-    """创建图书（管理员操作）"""
-    return book_service.create_book(book_data)
-
-
-@router.post("/{book_id}/copies", response_model=BookCopyResponse, status_code=201)
-def create_book_copy(
-    book_id: int,
-    copy_data: BookCopyCreate,
-    book_service: BookService = Depends(get_book_service),
-    admin=Depends(require_perm("bookcopy.create")),
-):
-    """创建实体书副本（V3.1，管理员操作）"""
-    copy_data.book_id = book_id
-    return book_service.create_book_copy(copy_data)
 
 
 @router.get("/{book_id}/related", response_model=list[BookResponse])

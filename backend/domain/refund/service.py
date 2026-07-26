@@ -65,32 +65,6 @@ class RefundService:
         if existing:
             raise ConflictError("该订单已有正在处理的退款申请")
 
-        # P0-5: 亲子课退款规则 — 课程开始后不可退款
-        from backend.common.types import OrderType
-
-        if order.type == OrderType.PARENT_COURSE:
-            from backend.domain.parent_course_time.models import ParentCourseTime
-            from datetime import datetime as dt
-
-            now = dt.now()
-            # 查找该用户已报名且已开始的亲子课
-            course_started = (
-                self.db.query(ParentCourseTime)
-                .filter(
-                    ParentCourseTime.is_deleted == 0,
-                    ParentCourseTime.course_date <= now.strftime("%Y-%m-%d"),
-                )
-                .first()
-            )
-            if course_started:
-                # 如果课程日期已到，且当前时间已过开始时间
-                course_start = dt.strptime(
-                    f"{course_started.course_date} {course_started.start_time}",
-                    "%Y-%m-%d %H:%M",
-                )
-                if now >= course_start:
-                    raise ValidationError("亲子课已开始，无法退款")
-
         # P2-7: 365天内同一孩子仅可退款1次（防滥用循环退款）
         from sqlalchemy import func
 
@@ -107,6 +81,21 @@ class RefundService:
         )
         if approved_count and approved_count > 0:
             raise ValidationError("同一孩子 365 天内仅可退款 1 次，已超出年度上限")
+
+        # B3 亲子课开始后不退：课程日当天及以后不可退款
+        if order.type == OrderType.PARENT_COURSE and order.parent_course_time_id:
+            from backend.domain.parent_course_time.models import ParentCourseTime
+
+            slot = (
+                self.db.query(ParentCourseTime)
+                .filter(
+                    ParentCourseTime.id == order.parent_course_time_id,
+                    ParentCourseTime.is_deleted == 0,
+                )
+                .first()
+            )
+            if slot and slot.course_date <= date.today().isoformat():
+                raise ValidationError("亲子课程已开始，不能退款")
 
         # P0 全局退出拦截网：校验是否有未归还的实体书
         from backend.domain.borrow.models import BorrowRecord

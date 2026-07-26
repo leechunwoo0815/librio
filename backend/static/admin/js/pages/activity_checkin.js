@@ -71,7 +71,8 @@
     var code = document.getElementById('scanInput').value.trim();
     if (!code) { showToast('请输入签到码', 'error'); return; }
     try {
-      await api.put('/admin/api/activities/enroll/' + encodeURIComponent(code) + '/sign-in');
+      // 票码签到端点（按 ticket_code 查询，非 enrollment_id）
+      await api.put('/admin/api/enrollments/' + encodeURIComponent(code) + '/sign-in');
       showToast('签到成功');
       document.getElementById('scanInput').value = '';
       loadAttendees();
@@ -83,7 +84,7 @@
   async function manualSignIn(ticketCode) {
     if (!ticketCode) { showToast('缺少签到码', 'error'); return; }
     try {
-      await api.put('/admin/api/activities/enroll/' + encodeURIComponent(ticketCode) + '/sign-in');
+      await api.put('/admin/api/enrollments/' + encodeURIComponent(ticketCode) + '/sign-in');
       showToast('手动签到成功');
       loadAttendees();
     } catch (e) {

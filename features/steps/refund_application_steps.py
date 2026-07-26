@@ -6,6 +6,8 @@
 """
 
 from behave import given, when, then
+from datetime import datetime, timedelta
+
 from backend.domain.child.models import Child
 from backend.domain.order.models import Order
 
@@ -57,10 +59,25 @@ def step_full_refund(context, amount):
 
 @given("用户已参加亲子课程")
 def step_attended_course(context):
+    from backend.domain.parent_course_time.models import ParentCourseTime
+
     child = Child(user_id=context.user.id, name="小明", age=7, grade="二年级")
     context.db.add(child)
     context.db.commit()
     context.child = child
+    # B3：关联已过期的上课时段（课程日开始即不可退款）
+    slot = ParentCourseTime(
+        venue_id=1,
+        course_date=(datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d"),
+        start_time="10:00",
+        end_time="11:15",
+        max_participants=30,
+        current_participants=1,
+        status=1,
+    )
+    context.db.add(slot)
+    context.db.commit()
+    context.db.refresh(slot)
     order = Order(
         order_no="MW_REF_ATTENDED",
         user_id=context.user.id,
@@ -68,6 +85,7 @@ def step_attended_course(context):
         type=Order.TYPE_PARENT_COURSE,
         amount=99,
         pay_status=Order.PAY_PAID,
+        parent_course_time_id=slot.id,
     )
     context.db.add(order)
     context.db.commit()

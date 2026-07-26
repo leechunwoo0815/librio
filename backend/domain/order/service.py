@@ -119,6 +119,37 @@ class OrderService:
             if existing_order:
                 raise ConflictError("该孩子已报名亲子课程，不可重复报名")
 
+            # B3 时段关联：名额校验（已支付订单计数口径，无需占/释放名额字段）
+            if order_data.slot_id:
+                from backend.domain.parent_course_time.models import (
+                    ParentCourseTime,
+                )
+
+                slot = (
+                    self.db.query(ParentCourseTime)
+                    .filter(
+                        ParentCourseTime.id == order_data.slot_id,
+                        ParentCourseTime.is_deleted == 0,
+                    )
+                    .first()
+                )
+                if not slot:
+                    raise ValidationError("所选上课时间段不存在")
+                if slot.status != 1:
+                    raise ValidationError("该时间段名额已满，请选择其他时间")
+                paid_count = (
+                    self.db.query(Order)
+                    .filter(
+                        Order.parent_course_time_id == slot.id,
+                        Order.type == OrderType.PARENT_COURSE,
+                        Order.pay_status == PayStatus.PAID,
+                        Order.is_deleted == 0,
+                    )
+                    .count()
+                )
+                if paid_count >= slot.max_participants:
+                    raise ConflictError("该时间段名额已满，请选择其他时间")
+
         # 前置状态校验
         from backend.common.types import MemberStatus
 
@@ -127,6 +158,19 @@ class OrderService:
                 raise ValidationError(
                     f"当前状态({child.status})不允许购买观察期，仅限试读用户"
                 )
+            # B3 漏斗校验：需先完成亲子课程（存在已支付亲子课订单）
+            has_parent_course = (
+                self.db.query(Order)
+                .filter(
+                    Order.child_id == order_data.child_id,
+                    Order.type == OrderType.PARENT_COURSE,
+                    Order.pay_status == PayStatus.PAID,
+                    Order.is_deleted == 0,
+                )
+                .first()
+            )
+            if not has_parent_course:
+                raise ValidationError("请先完成亲子课程并获得测评报告")
         elif order_data.type in (
             OrderType.OFFICIAL_MEMBER,
             OrderType.QUARTERLY,
@@ -156,6 +200,7 @@ class OrderService:
             type=order_data.type,
             amount=final_amount,
             remark=order_data.remark,
+            parent_course_time_id=order_data.slot_id,
         )
         created = self.order_repo.create(order)
         self.db.commit()

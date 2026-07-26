@@ -144,6 +144,95 @@
     scanInput.focus();
   }
 
+  // B3 代客预约：新建预约弹窗（孩子/图书搜索选择 + 提交）
+  var rsvChildId = null, rsvBookId = null, rsvChildName = '', rsvBookTitle = '';
+
+  function refreshRsvSelected() {
+    var el = document.getElementById('rsvSelected');
+    var btn = document.getElementById('rsvSubmitBtn');
+    var parts = [];
+    if (rsvChildName) parts.push('孩子：' + rsvChildName);
+    if (rsvBookTitle) parts.push('图书：' + rsvBookTitle);
+    el.textContent = parts.length ? parts.join('　|　') : '未选择';
+    btn.disabled = !(rsvChildId && rsvBookId);
+  }
+
+  function bindPickSearch(inputId, listId, urlBuilder, renderItem, onPick) {
+    var input = document.getElementById(inputId);
+    var list = document.getElementById(listId);
+    var timer = null;
+    input.addEventListener('input', function() {
+      clearTimeout(timer);
+      var kw = input.value.trim();
+      if (kw.length < 1) { list.innerHTML = ''; return; }
+      timer = setTimeout(function() {
+        api.get(urlBuilder(kw)).then(function(data) {
+          var items = data.items || data || [];
+          list.innerHTML = items.slice(0, 6).map(function(it) {
+            return renderItem(it);
+          }).join('') || '<div class="pick-item text-muted">无匹配结果</div>';
+        }).catch(function() { list.innerHTML = '<div class="pick-item text-muted">搜索失败</div>'; });
+      }, 300);
+    });
+    list.addEventListener('click', function(e) {
+      var el = e.target.closest('.pick-item[data-id]');
+      if (el) { onPick(el); list.innerHTML = ''; }
+    });
+  }
+
+  document.getElementById('btnNewReservation').addEventListener('click', function() {
+    rsvChildId = null; rsvBookId = null; rsvChildName = ''; rsvBookTitle = '';
+    document.getElementById('rsvChildKw').value = '';
+    document.getElementById('rsvBookKw').value = '';
+    document.getElementById('rsvChildList').innerHTML = '';
+    document.getElementById('rsvBookList').innerHTML = '';
+    refreshRsvSelected();
+    showModal('createReservationDialog');
+  });
+
+  bindPickSearch('rsvChildKw', 'rsvChildList',
+    function(kw) { return '/admin/api/children/search?keyword=' + encodeURIComponent(kw); },
+    function(c) {
+      var name = c.name || c.child_name || ('#' + c.id);
+      return '<div class="pick-item" data-id="' + c.id + '" data-name="' + escapeHtml(name) + '">' +
+        escapeHtml(name) + (c.parent_name ? '（' + escapeHtml(c.parent_name) + '）' : '') + '</div>';
+    },
+    function(el) {
+      rsvChildId = parseInt(el.dataset.id);
+      rsvChildName = el.dataset.name;
+      document.getElementById('rsvChildKw').value = rsvChildName;
+      refreshRsvSelected();
+    });
+
+  bindPickSearch('rsvBookKw', 'rsvBookList',
+    function(kw) { return '/admin/api/books?keyword=' + encodeURIComponent(kw) + '&page_size=6'; },
+    function(b) {
+      var title = b.title || ('#' + b.id);
+      var stock = (b.available_stock != null ? b.available_stock : '--');
+      return '<div class="pick-item" data-id="' + b.id + '" data-name="' + escapeHtml(title) + '">' +
+        escapeHtml(title) + ' <span class="text-muted">可借 ' + stock + '</span></div>';
+    },
+    function(el) {
+      rsvBookId = parseInt(el.dataset.id);
+      rsvBookTitle = el.dataset.name;
+      document.getElementById('rsvBookKw').value = rsvBookTitle;
+      refreshRsvSelected();
+    });
+
+  document.getElementById('rsvSubmitBtn').addEventListener('click', function() {
+    if (!(rsvChildId && rsvBookId)) return;
+    var btn = this;
+    btn.disabled = true;
+    api.post('/admin/api/reservations', { child_id: rsvChildId, book_id: rsvBookId }).then(function() {
+      showToast('预约创建成功');
+      closeModal('createReservationDialog');
+      loadReservations();
+    }).catch(function(err) {
+      showToast('创建失败: ' + (err.message || '未知错误'), 'error');
+      btn.disabled = false;
+    });
+  });
+
   window.reservationPage = { allReservations, currentFilter, loadReservations, updateStats, filterTab, renderReservations, showConfirmDialog, fulfill, cancelReservation };
 
 })();

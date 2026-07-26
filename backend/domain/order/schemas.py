@@ -17,6 +17,9 @@ class OrderCreate(BaseSchema):
         ..., ge=1, le=5, description="订单类型: 1=亲子课 2=观察期 3=年费 4=季度 5=半年"
     )
     remark: str | None = Field(None, max_length=255, description="备注")
+    slot_id: int | None = Field(
+        None, description="亲子课时段ID（type=1 时传入，关联 parent_course_time）"
+    )
 
 
 class OrderResponse(BaseSchema):

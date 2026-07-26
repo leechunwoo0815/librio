@@ -1,0 +1,29 @@
+/* backend/static/admin/css/pages/parent_course_time.css */
+/* 亲子课时段管理（B3） */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+.badge-success { background: #e6f7e9; color: #1a7f37; }
+.badge-warning { background: #fff4e0; color: #b26a00; }
+.badge-secondary { background: #eee; color: #666; }
+
+.form-row {
+  display: flex;
+  gap: 12px;
+}
+
+.form-row .form-group {
+  flex: 1;
+}

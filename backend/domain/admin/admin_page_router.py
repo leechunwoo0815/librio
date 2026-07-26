@@ -37,6 +37,7 @@ PAGE_PERM_MAP: dict[str, str] = {
     "audio": "content.list",
     "deposit": "deposit.list",
     "reservation": "reservation.list",
+    "parent-course-time": "parent_course_time.list",
     "levels": "level.list",
     "achievements": "achievement.list",
     "settings": "config.view",
@@ -229,6 +230,11 @@ async def deposit(request: Request):
 @router.get("/reservation", response_class=HTMLResponse)
 async def reservation(request: Request):
     return _render_page(request, "reservation")
+
+
+@router.get("/parent-course-time", response_class=HTMLResponse)
+async def parent_course_time(request: Request):
+    return _render_page(request, "parent-course-time")
 
 
 # ===== 系统 =====

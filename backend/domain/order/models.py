@@ -67,5 +67,12 @@ class Order(BaseModel):
 
     remark = Column(String(255), nullable=True, comment="订单备注")
 
+    parent_course_time_id = Column(
+        BigInteger,
+        ForeignKey("parent_course_time.id"),
+        nullable=True,
+        comment="亲子课时段ID（B3 关联，名额/退款校验用）",
+    )
+
     def __repr__(self):
         return f"<Order(id={self.id}, order_no='{self.order_no}', type={self.type}, pay_status={self.pay_status})>"
