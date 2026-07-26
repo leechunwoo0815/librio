@@ -118,6 +118,64 @@ def step_generate_voucher(context):
     pass  # 前端展示
 
 
+# ==================== B4 支付幂等 ====================
+
+
+@given("用户已创建观察期订单并完成支付")
+def step_observation_order_paid(context):
+    context.response = context.client.post(
+        "/order/",
+        json={"child_id": context.child.id, "type": 2},  # OBSERVATION
+        headers=context.headers,
+    )
+    assert context.response.status_code == 201, context.response.text
+    data = context.response.json()
+    context.order_no = data["order_no"]
+    context.order_amount = data["amount"]
+    resp = context.client.post(
+        "/order/payment-callback",
+        json={
+            "order_no": context.order_no,
+            "trade_no": "WX_TEST_IDEM_1",
+            "pay_type": 1,
+            "amount": context.order_amount,
+        },
+        headers=context.headers,
+    )
+    assert resp.status_code == 200
+
+
+@given("记录当前会员有效期")
+def step_record_expire_time(context):
+    resp = context.client.get(f"/child/{context.child.id}", headers=context.headers)
+    context.expire_before = resp.json().get("member_expire_time")
+    assert context.expire_before is not None
+
+
+@when("系统再次收到同一订单的支付回调")
+def step_duplicate_callback(context):
+    context.response = context.client.post(
+        "/order/payment-callback",
+        json={
+            "order_no": context.order_no,
+            "trade_no": "WX_TEST_IDEM_2",
+            "pay_type": 1,
+            "amount": context.order_amount,
+        },
+        headers=context.headers,
+    )
+
+
+@then("会员有效期与支付后一致")
+def step_expire_unchanged(context):
+    assert context.response.status_code == 200
+    resp = context.client.get(f"/child/{context.child.id}", headers=context.headers)
+    expire_after = resp.json().get("member_expire_time")
+    assert expire_after == context.expire_before, (
+        f"重复回调导致有效期变更: {context.expire_before} -> {expire_after}"
+    )
+
+
 # ==================== 表单验证失败 ====================
 
 
