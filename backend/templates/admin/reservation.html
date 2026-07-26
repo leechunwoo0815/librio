@@ -12,6 +12,13 @@
   <div class="stat-card"><div class="stat-label">即将过期</div>    <div class="stat-value text-warning" id="statExpiring">--</div></div>
 </div>
 
+<!-- 扫码枪取书（B1a）：扫副本条码回车即完成取书，自动匹配最早待取预约 -->
+<div class="scan-bar" style="margin:12px 0;display:flex;gap:8px;align-items:center;">
+  <input id="scanFulfillInput" type="text" placeholder="🔫 扫码取书：扫副本条码后回车（自动匹配待取预约）"
+    style="flex:1;max-width:480px;padding:8px 12px;border:1px solid var(--border,#ddd);border-radius:6px;font-size:14px;" />
+  <span class="text-muted" style="font-size:12px;">兼容扫码枪/手动输入；点列表「确认取书」为备用方式</span>
+</div>
+
 <!-- Filter Tabs -->
 <div class="tabs">
   <div class="tab active" data-action="filter-tab" data-filter="">全部</div>

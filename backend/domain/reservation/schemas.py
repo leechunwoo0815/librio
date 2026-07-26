@@ -15,7 +15,11 @@ class ReservationCreateRequest(BaseSchema):
 
 
 class ReservationFulfillRequest(BaseSchema):
-    reservation_id: int = Field(..., description="预约ID")
+    reservation_id: int | None = Field(None, description="预约ID（手动取书路径）")
+    barcode: str | None = Field(
+        None,
+        description="取书副本条码（扫码枪；单独提供时自动匹配该书最早待取预约）",
+    )
 
 
 class ReservationResponse(BaseSchema):

@@ -359,9 +359,13 @@ class BorrowService:
         return self.borrow_book(data)
 
     def borrow_from_reservation(
-        self, child_id: int, book_id: int, reservation_id: int | None = None
+        self,
+        child_id: int,
+        book_id: int,
+        reservation_id: int | None = None,
+        book_copy_id: int | None = None,
     ) -> None:
-        """预约取书 → 创建借阅记录（事件处理器调用）"""
+        """预约取书 → 创建借阅记录（事件处理器调用）；B1a 支持副本级（扫码取书）"""
         # 校验预约存在性
         if reservation_id:
             from backend.domain.reservation.models import Reservation
@@ -446,6 +450,7 @@ class BorrowService:
         record = BorrowRecord(
             child_id=child_id,
             book_id=book_id,
+            book_copy_id=book_copy_id,
             borrow_time=now,
             due_date=now + timedelta(days=borrow_days),
             status=BorrowStatus.BORROWING,
@@ -471,6 +476,7 @@ class BorrowService:
             BookBorrowedEvent(
                 child_id=child_id,
                 book_id=book_id,
+                book_copy_id=book_copy_id,
                 borrow_record_id=created.id,
             ),
             db=self.db,

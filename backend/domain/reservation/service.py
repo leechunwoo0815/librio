@@ -110,13 +110,55 @@ class ReservationService:
     def fulfill_reservation(
         self, data: ReservationFulfillRequest
     ) -> ReservationResponse:
-        """取书 — 转为正式借阅"""
-        reservation = self.reservation_repo.get_by_id_or_raise(data.reservation_id)
+        """取书 — 转为正式借阅（扫码枪条码驱动 或 手动预约ID 备用）"""
+        from backend.domain.book.models import BookCopy
+        from backend.common.types import BookCopyStatus
+        from backend.domain.reservation.models import Reservation
+
+        # B1a 条码先行：扫副本条码 → 定位图书与副本
+        copy = None
+        if data.barcode:
+            copy = (
+                self.db.query(BookCopy)
+                .filter(BookCopy.barcode == data.barcode, BookCopy.is_deleted == 0)
+                .first()
+            )
+            if not copy:
+                raise NotFoundError(f"条码 {data.barcode} 不存在，请先扫描入库")
+            if copy.status != BookCopyStatus.AVAILABLE:
+                raise ConflictError("该副本状态异常，请联系工作人员")
+
+        # 定位预约：显式 reservation_id 或按副本图书匹配最早待取预约
+        if data.reservation_id:
+            reservation = self.reservation_repo.get_by_id_or_raise(data.reservation_id)
+        elif copy:
+            reservation = (
+                self.db.query(Reservation)
+                .filter(
+                    Reservation.book_id == copy.book_id,
+                    Reservation.status == ReservationStatus.PENDING,
+                    Reservation.is_deleted == 0,
+                )
+                .order_by(Reservation.create_time)
+                .first()
+            )
+            if not reservation:
+                raise NotFoundError("该书当前没有待取预约")
+        else:
+            raise ValidationError("请提供预约ID或扫描副本条码")
+
         if reservation.status != ReservationStatus.PENDING:
             raise ConflictError("预约状态不正确")
 
         if datetime.now() > reservation.expire_time:
             raise ValidationError("预约已过期")
+
+        # B1a 扫码取书：校验副本并定位到本（P0：取书精确到具体副本）
+        book_copy_id = None
+        if copy:
+            if copy.book_id != reservation.book_id:
+                raise ValidationError("所扫副本与预约图书不符")
+            book_copy_id = copy.id
 
         # 校验借阅上限
         from backend.domain.borrow.models import BorrowRecord
@@ -146,6 +188,7 @@ class ReservationService:
                 child_id=reservation.child_id,
                 book_id=reservation.book_id,
                 reservation_id=reservation.id,
+                book_copy_id=book_copy_id,
             ),
             db=self.db,
         )

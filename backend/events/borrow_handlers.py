@@ -81,7 +81,12 @@ def handle_reservation_fulfilled_for_borrow(event, db: Session):
     from backend.domain.borrow.service import BorrowService
 
     service = BorrowService(db)
-    service.borrow_from_reservation(event.child_id, event.book_id, event.reservation_id)
+    service.borrow_from_reservation(
+        event.child_id,
+        event.book_id,
+        event.reservation_id,
+        book_copy_id=getattr(event, "book_copy_id", None),
+    )
 
 
 def handle_book_overdue_for_fines(event, db: Session):

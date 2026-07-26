@@ -230,6 +230,7 @@ class ReservationFulfilledEvent(DomainEvent):
     book_id: int = 0
     reservation_id: int = 0
     borrow_record_id: int | None = None
+    book_copy_id: int | None = None  # B1a：扫码取书时定位到具体副本
 
 
 @dataclass

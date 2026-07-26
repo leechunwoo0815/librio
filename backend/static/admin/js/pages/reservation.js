@@ -118,6 +118,32 @@
     if (el.getAttribute('data-action') === 'cancel-reservation') cancelReservation(parseInt(el.dataset.id));
   });
 
+  // B1a 扫码枪取书：扫副本条码回车 → 条码驱动 fulfill（自动匹配最早待取预约）
+  var scanInput = document.getElementById('scanFulfillInput');
+  var lastScanAt = 0;
+  if (scanInput) {
+    scanInput.addEventListener('keydown', function(e) {
+      if (e.key !== 'Enter') return;
+      var barcode = scanInput.value.trim();
+      if (!barcode) return;
+      var now = Date.now();
+      if (now - lastScanAt < 500) { scanInput.value = ''; return; }  // 防连续误扫
+      lastScanAt = now;
+      scanInput.value = '';
+      scanInput.disabled = true;
+      api.post('/admin/api/reservations/fulfill', { barcode: barcode }).then(function() {
+        showToast('取书成功（' + barcode + '）');
+        loadReservations();
+      }).catch(function(err) {
+        showToast('取书失败: ' + (err.message || '未知错误'), 'error');
+      }).finally(function() {
+        scanInput.disabled = false;
+        scanInput.focus();
+      });
+    });
+    scanInput.focus();
+  }
+
   window.reservationPage = { allReservations, currentFilter, loadReservations, updateStats, filterTab, renderReservations, showConfirmDialog, fulfill, cancelReservation };
 
 })();
