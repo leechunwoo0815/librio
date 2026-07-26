@@ -351,6 +351,47 @@ def step_teacher_creates_quiz(context):
     )
 
 
+# ==================== R6 异常场景补缺 ====================
+
+
+@given('图书"{title}"没有测验题目')
+def step_book_has_no_questions(context, title):
+    book = context.db.query(Book).filter(Book.title == title).first()
+    if not book:
+        book = Book(
+            isbn="9780064400558",
+            title=title,
+            author="E.B. White",
+            ar_value=3.2,
+            age_min=7,
+            age_max=9,
+            word_count=30000,
+            price=80,
+        )
+        context.db.add(book)
+        context.db.commit()
+        context.db.refresh(book)
+    context.book = book
+
+
+@when("孩子开始该书的测验")
+def step_child_starts_quiz(context):
+    svc = AdvancementService(context.db)
+    try:
+        svc.start_quiz(context.child.id, QuizStartRequest(book_id=context.book.id))
+        context.quiz_error = None
+    except Exception as e:
+        context.quiz_error = e
+
+
+@then('测验提示"{message}"')
+def step_quiz_error_message(context, message):
+    assert getattr(context, "quiz_error", None) is not None, "期望抛出异常但实际成功"
+    assert message in str(context.quiz_error), (
+        f"期望消息含「{message}」，实际: {context.quiz_error}"
+    )
+
+
 @then("创建测验实例")
 def step_quiz_created(context):
     assert context.quiz.id is not None

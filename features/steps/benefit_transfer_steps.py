@@ -94,6 +94,26 @@ def step_try_transfer(context):
     )
 
 
+# ==================== R6 异常场景补缺 ====================
+
+
+@given("{name}已有审核中的转让申请")
+def step_pending_transfer_application(context, name):
+    from backend.domain.child.benefit_transfer_model import BenefitTransferApplication
+
+    src = context.children[name]
+    tgt = next(c for k, c in context.children.items() if k != name)
+    context.db.add(
+        BenefitTransferApplication(
+            source_child_id=src.id,
+            target_child_id=tgt.id,
+            user_id=context.user.id,
+            status=0,
+        )
+    )
+    context.db.commit()
+
+
 @then("{child}获得正式会员权益（剩余{days:d}天）")
 @then("{child}获得观察期权益（剩余{days:d}天）")
 def step_child_gains_membership(context, child, days):

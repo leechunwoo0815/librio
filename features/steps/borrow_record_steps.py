@@ -118,14 +118,57 @@ def step_scan_barcode(context, barcode=None):
         context.response = type("R", (), {"status_code": 200})()
 
 
+def _staff_borrow_headers(context):
+    """工作人员（管理员）借书凭证 — 含 borrow.create 权限（POST /borrow/ 为管理员端点）"""
+    from backend.domain.admin.models import Admin
+    from backend.domain.admin.rbac_models import Role, RolePermission
+    from backend.middleware.admin_auth import create_admin_token
+
+    role = Role(code="test_borrow_role", name="借书测试角色", is_system=False)
+    context.db.add(role)
+    context.db.flush()
+    context.db.add(RolePermission(role_id=role.id, permission_code="borrow.create"))
+    context.db.flush()
+    admin = Admin(
+        username="test_borrow_admin",
+        password_hash="x",
+        name="借书测试管理员",
+        role=0,
+        status=1,
+        admin_role_id=role.id,
+    )
+    context.db.add(admin)
+    context.db.commit()
+    token = create_admin_token(admin_id=admin.id, role=0)
+    return {"Authorization": f"Bearer {token}"}
+
+
 @when("工作人员扫描条码尝试借书")
 def step_scan_to_borrow(context):
-    if hasattr(context, "barcode"):
-        context.response = context.client.post(
-            "/borrow/",
-            json={"child_id": context.child.id, "book_id": context.book.id},
-            headers=context.headers,
+    # R6 修复假绿：原实现仅在 hasattr(context, "barcode") 时才调 API，
+    # 无条码场景静默跳过 + 弱断言恒通过。现始终走真实管理员借书端点。
+    if not getattr(context, "book", None):
+        book = Book(
+            isbn="9780064400558",
+            title="Charlotte's Web",
+            author="E.B. White",
+            ar_value=3.2,
+            age_min=7,
+            age_max=9,
+            word_count=30000,
+            total_stock=1,
+            available_stock=1,
+            price=80,
         )
+        context.db.add(book)
+        context.db.commit()
+        context.db.refresh(book)
+        context.book = book
+    context.response = context.client.post(
+        "/borrow/",
+        json={"child_id": context.child.id, "book_id": context.book.id},
+        headers=_staff_borrow_headers(context),
+    )
 
 
 @when('工作人员扫描该书的新条码"{barcode}"')
@@ -421,6 +464,84 @@ def step_no_borrow_created(context):
             .count()
         )
     assert count == 0
+
+
+# ==================== R6 异常场景补缺 ====================
+
+
+@given("孩子已借阅{n:d}本图书")
+def step_child_has_n_borrows(context, n):
+    for i in range(n):
+        book = Book(
+            isbn=f"978L{i:05d}",
+            title=f"LimitBook{i}",
+            author="Author",
+            ar_value=2.0,
+            age_min=5,
+            age_max=9,
+            word_count=1000,
+            total_stock=1,
+            available_stock=1,
+            price=50,
+        )
+        context.db.add(book)
+        context.db.commit()
+        context.db.refresh(book)
+        context.db.add(
+            BorrowRecord(
+                child_id=context.child.id,
+                book_id=book.id,
+                borrow_time=datetime.now(),
+                due_date=datetime.now() + timedelta(days=21),
+                status=BorrowStatus.BORROWING,
+            )
+        )
+    context.db.commit()
+
+
+@when("孩子尝试再借一本新书")
+def step_try_borrow_new_book(context):
+    book = Book(
+        isbn="978NEW000001",
+        title="NewBorrow",
+        author="Author",
+        ar_value=2.0,
+        age_min=5,
+        age_max=9,
+        word_count=1000,
+        total_stock=1,
+        available_stock=1,
+        price=50,
+    )
+    context.db.add(book)
+    context.db.commit()
+    context.db.refresh(book)
+    context.response = context.client.post(
+        "/borrow/",
+        json={"child_id": context.child.id, "book_id": book.id},
+        headers=_staff_borrow_headers(context),
+    )
+
+
+@when("孩子尝试再借同一本书")
+@when("孩子尝试借阅该书")
+def step_try_borrow_same_book(context):
+    context.response = context.client.post(
+        "/borrow/",
+        json={"child_id": context.child.id, "book_id": context.book.id},
+        headers=_staff_borrow_headers(context),
+    )
+
+
+@then('拦截提示"{message}"')
+def step_block_message(context, message):
+    """强断言：4xx 状态码 + detail 包含指定消息（区别于弱断言"显示提示"）"""
+    assert context.response is not None
+    assert context.response.status_code in (400, 403, 404, 409, 422), (
+        f"期望拦截状态码，实际 {context.response.status_code}: {context.response.text}"
+    )
+    detail = context.response.json().get("detail", "")
+    assert message in str(detail), f"期望消息含「{message}」，实际 detail: {detail}"
 
 
 @then("仅创建新的馆藏副本（条码002）")

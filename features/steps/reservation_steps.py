@@ -137,6 +137,7 @@ def step_book_stock_gt0(context, title):
             word_count=30000,
             total_stock=5,
             available_stock=5,
+            offline_available=1,
         )
         context.db.add(book)
         context.db.commit()
@@ -147,7 +148,24 @@ def step_book_stock_gt0(context, title):
 @given('图书"{title}"库存为0')
 def step_book_stock_zero(context, title):
     book = context.db.query(Book).filter(Book.title == title).first()
-    if book:
+    if not book:
+        book = Book(
+            isbn="9780064400558",
+            title=title,
+            author="E.B. White",
+            ar_value=3.2,
+            age_min=7,
+            age_max=9,
+            word_count=30000,
+            total_stock=0,
+            available_stock=0,
+            offline_available=1,
+            price=80,
+        )
+        context.db.add(book)
+        context.db.commit()
+        context.db.refresh(book)
+    else:
         book.available_stock = 0
         context.db.commit()
     context.book = book
@@ -172,6 +190,7 @@ def step_has_reservation(context, title):
             word_count=30000,
             total_stock=5,
             available_stock=5,
+            offline_available=1,
         )
         context.db.add(book)
         context.db.commit()

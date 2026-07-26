@@ -17,6 +17,7 @@ def _ensure_book(context, title):
             age_min=7,
             age_max=9,
             word_count=5000,
+            offline_available=1,
         )
         context.db.add(book)
         context.db.commit()
@@ -318,20 +319,33 @@ def step_book_stock_positive(context):
 
 @when('用户点击"预约借书"')
 def step_click_reserve(context):
-    if hasattr(context, "book") and context.book:
-        from backend.domain.reservation.models import Reservation
-        from backend.common.types import ReservationStatus
-        from datetime import datetime, timedelta
+    # R6 修复假实现：原实现绕过 API 直接 db.add(Reservation)，
+    # 库存/重复预约/押金等 service 校验全部失效。现走真实预约端点。
+    if not getattr(context, "book", None):
+        from backend.domain.book.models import Book
 
-        record = Reservation(
-            child_id=context.child.id,
-            book_id=context.book.id,
-            status=ReservationStatus.PENDING,
-            expire_time=datetime.now() + timedelta(hours=72),
+        book = Book(
+            isbn="9780064400558",
+            title="Charlotte's Web",
+            author="E.B. White",
+            ar_value=3.2,
+            age_min=7,
+            age_max=9,
+            word_count=30000,
+            total_stock=5,
+            available_stock=5,
+            offline_available=1,
+            price=80,
         )
-        context.db.add(record)
+        context.db.add(book)
         context.db.commit()
-        context.reservation = record
+        context.db.refresh(book)
+        context.book = book
+    context.response = context.client.post(
+        "/reservation/",
+        json={"child_id": context.child.id, "book_id": context.book.id},
+        headers=context.headers,
+    )
 
 
 @then("创建预约记录")
