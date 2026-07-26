@@ -9,7 +9,6 @@ from backend.domain.report.schemas import (
     ObservationReportResponse,
     LearningReportResponse,
     ObservationReportDetailResponse,
-    GenerateReportsResponse,
     MarkViewedResponse,
     AddCommentResponse,
     SummaryResponse,
@@ -98,15 +97,6 @@ def get_observation_report_detail(
 ):
     """获取孩子的观察期报告详情"""
     return service.get_observation_report_detail(child.id)
-
-
-@router.post("/observation/generate", response_model=GenerateReportsResponse)
-def generate_observation_reports(
-    service: ReportService = Depends(get_report_service),
-    admin=Depends(require_perm("report.generate")),
-):
-    """手动触发生成到期的观察期报告"""
-    return service.generate_due_reports()
 
 
 @router.put("/observation/{report_id}/viewed", response_model=MarkViewedResponse)

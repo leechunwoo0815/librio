@@ -193,7 +193,6 @@ from backend.domain.admin.admin_page_router import router as admin_page_router  
 from backend.domain.parent_course_time.router import (  # noqa: E402
     router as parent_course_router,
 )
-from backend.domain.evaluation.router import router as evaluation_router  # noqa: E402
 from backend.domain.assessment.router import router as assessment_router  # noqa: E402
 from backend.domain.dictionary.router import router as dictionary_router  # noqa: E402
 from backend.domain.audio.router import router as audio_router  # noqa: E402
@@ -219,7 +218,6 @@ app.include_router(certificate_router)
 app.include_router(profile_router)
 app.include_router(activity_router)
 app.include_router(parent_course_router)
-app.include_router(evaluation_router)
 app.include_router(assessment_router)
 app.include_router(dictionary_router)
 app.include_router(audio_router)

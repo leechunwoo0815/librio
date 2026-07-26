@@ -21,6 +21,9 @@ from backend.common.exceptions import NotFoundError, ValidationError
 from backend.common.types import BorrowStatus, DepositStatus
 from backend.database import Base
 
+# 级联删除覆盖的表模型显式注册（router 删除后防止注册链断裂）
+from backend.domain.evaluation import models as _evaluation_models  # noqa: F401
+
 logger = logging.getLogger(__name__)
 
 # 物理删除：child_id 直接关联的非财务表（对应文档 §4.2 清单）
