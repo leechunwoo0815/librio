@@ -312,16 +312,8 @@ erDiagram
         datetime added_time
     }
 
-    FAVORITES {
-        bigint id PK
-        bigint child_id FK
-        bigint book_id FK
-    }
-
     CHILD ||--o{ BOOKSHELF : "wants_to_read"
-    CHILD ||--o{ FAVORITES : "collects"
     BOOK ||--o{ BOOKSHELF : "in_shelf"
-    BOOK ||--o{ FAVORITES : "in_favorites"
 ```
 
 ### 2.5 借阅与预约模块 ★ V3.1
@@ -825,12 +817,10 @@ graph TD
 
     BOOK --> BOOK_COPY[实体副本]
     BOOK --> BOOKSHELF[想读清单]
-    BOOK --> FAVORITES[收藏夹]
     BOOK --> QUESTION_BANK[题库]
     BOOK --> RESERVATION[预约]
 
     CHILD --> BOOKSHELF
-    CHILD --> FAVORITES
     CHILD --> BORROW_RECORD[借阅记录]
     CHILD --> DEPOSIT_RECORD[押金记录]
     CHILD --> RESERVATION

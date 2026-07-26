@@ -4,6 +4,7 @@
 from sqlalchemy import (
     BigInteger,
     Column,
+    DateTime,
     ForeignKey,
     Numeric,
     SmallInteger,
@@ -68,4 +69,4 @@ class BookDamageReport(BaseModel):
     override_level = Column(SmallInteger, nullable=True, comment="冲正后定级")
     override_fine = Column(Numeric(10, 2), nullable=True, comment="冲正后罚款金额")
     review_admin_id = Column(BigInteger, nullable=True, comment="申诉/冲正审核管理员ID")
-    reviewed_at = Column(String(30), nullable=True, comment="审核时间")
+    reviewed_at = Column(DateTime, nullable=True, comment="审核时间")

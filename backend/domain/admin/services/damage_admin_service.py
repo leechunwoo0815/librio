@@ -170,7 +170,7 @@ class DamageAdminService:
 
         report.appeal_result = review_remark
         report.review_admin_id = admin_id
-        report.reviewed_at = datetime.now().isoformat()
+        report.reviewed_at = datetime.now()
 
         if action == "override":
             if override_level is None and override_fine is None:
