@@ -161,7 +161,7 @@ class TestRequestAndCancel:
 class TestExecuteDueDeletions:
     def _seed_related_rows(self, db, child, user):
         from backend.domain.advancement.models import Quiz, QuizAnswer
-        from backend.domain.bookshelf.models import Bookshelf, Favorites
+        from backend.domain.bookshelf.models import Bookshelf
         from backend.domain.message.models import MessageReadStatus, SystemMessage
         from backend.domain.reading.models import CheckIn
         from backend.domain.voice.models import VoiceRecording
@@ -177,7 +177,6 @@ class TestExecuteDueDeletions:
             )
         )
         db.add(Bookshelf(child_id=child.id, book_id=1))
-        db.add(Favorites(child_id=child.id, book_id=1))
         quiz = Quiz(child_id=child.id, book_id=1)
         db.add(quiz)
         db.flush()

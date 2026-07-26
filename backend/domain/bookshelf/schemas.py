@@ -1,5 +1,5 @@
 # backend/domain/bookshelf/schemas.py
-"""书架域 Pydantic 模型 — V3.1 语义变更：想读清单 + 收藏夹"""
+"""书架域 Pydantic 模型 — V3.1 语义变更：想读清单（D5: favorites 已并入）"""
 
 from datetime import datetime
 
@@ -31,23 +31,3 @@ class BookshelfResponse(BaseSchema):
     word_count: int | None = None
     cover_emoji: str | None = None
     cover_bg: str | None = None
-
-
-class FavoriteAddRequest(BaseSchema):
-    """收藏请求"""
-
-    book_id: int = Field(..., description="图书ID")
-
-
-class FavoriteResponse(BaseSchema):
-    """收藏响应"""
-
-    id: int
-    child_id: int
-    book_id: int
-    book_title: str | None = None
-    book_cover: str | None = None
-    create_time: datetime | None = None
-    title: str | None = None
-    author: str | None = None
-    ar_value: float | None = None

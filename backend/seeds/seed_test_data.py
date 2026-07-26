@@ -28,7 +28,7 @@ from backend.domain.advancement.models import (
     Achievement,
     ChildAchievement,
 )
-from backend.domain.bookshelf.models import Bookshelf, Favorites
+from backend.domain.bookshelf.models import Bookshelf
 from backend.domain.message.models import SystemMessage
 from backend.domain.activity.models import Activity
 
@@ -431,19 +431,8 @@ def seed():
                     status=Bookshelf.STATUS_BORROWING,
                 )
             )
-    for book in created_books[5:]:
-        existing = (
-            db.query(Favorites)
-            .filter(
-                Favorites.child_id == child.id,
-                Favorites.book_id == book.id,
-            )
-            .first()
-        )
-        if not existing:
-            db.add(Favorites(child_id=child.id, book_id=book.id))
     db.commit()
-    logger.info(f"  ✅ 书架: 5本在借, {len(created_books) - 5}本收藏")
+    logger.info("  ✅ 书架: 5本想读")
 
     # ==================== 6. 阅读进度 ====================
     for i, book in enumerate(created_books[:3]):

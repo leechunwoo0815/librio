@@ -1,5 +1,5 @@
 # backend/domain/bookshelf/service.py
-"""书架域业务逻辑 — V3.1: 想读清单 + 收藏夹（无限量，与借阅无关）"""
+"""书架域业务逻辑 — V3.1: 想读清单（无限量，与借阅无关；D5: favorites 已并入）"""
 
 import logging
 
@@ -9,11 +9,10 @@ from backend.common.base_repo import BaseRepository
 from backend.common.exceptions import ConflictError, NotFoundError
 from backend.common.types import BookshelfStatus
 from backend.domain.book.models import Book
-from backend.domain.bookshelf.models import Bookshelf, Favorites
-from backend.domain.bookshelf.repository import BookshelfRepository, FavoritesRepository
+from backend.domain.bookshelf.models import Bookshelf
+from backend.domain.bookshelf.repository import BookshelfRepository
 from backend.domain.bookshelf.schemas import (
     BookshelfResponse,
-    FavoriteResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -23,7 +22,7 @@ class BookshelfService:
     """书架服务
 
     V3.1 语义变更：
-      - 书架 = 想读清单 + 已读记录 + 收藏夹（无上限）
+      - 书架 = 想读清单 + 已读记录（无上限）
       - 借阅功能由 borrow 域处理，与书架无关
       - 测验通过后不再自动还书（因为书架不是借阅）
     """
@@ -31,7 +30,6 @@ class BookshelfService:
     def __init__(self, db: Session):
         self.db = db
         self.shelf_repo = BookshelfRepository(db)
-        self.fav_repo = FavoritesRepository(db)
         self.book_repo = BaseRepository(db, Book)
 
     def add_to_shelf(self, child_id: int, book_id: int) -> BookshelfResponse:
@@ -132,66 +130,3 @@ class BookshelfService:
             )
             results.append(resp)
         return results
-
-    def add_favorite(self, child_id: int, book_id: int) -> FavoriteResponse:
-        """收藏图书"""
-        existing = self.fav_repo.get_by_child_and_book(child_id, book_id)
-        if existing:
-            book = existing.book
-            return FavoriteResponse(
-                id=existing.id,
-                child_id=child_id,
-                book_id=book_id,
-                book_title=book.title if book else None,
-                book_cover=book.cover if book else None,
-                create_time=existing.create_time,
-                title=book.title if book else None,
-                author=book.author if book else None,
-                ar_value=float(book.ar_value) if book and book.ar_value else None,
-            )
-
-        fav = Favorites(child_id=child_id, book_id=book_id)
-        created = self.fav_repo.create(fav)
-        self.db.commit()
-        book = created.book
-        return FavoriteResponse(
-            id=created.id,
-            child_id=child_id,
-            book_id=book_id,
-            book_title=book.title if book else None,
-            book_cover=book.cover if book else None,
-            create_time=created.create_time,
-            title=book.title if book else None,
-            author=book.author if book else None,
-            ar_value=float(book.ar_value) if book and book.ar_value else None,
-        )
-
-    def get_favorites(self, child_id: int) -> list[FavoriteResponse]:
-        """获取收藏夹"""
-        favs = self.fav_repo.get_favorites(child_id)
-        results = []
-        for f in favs:
-            book = f.book
-            results.append(
-                FavoriteResponse(
-                    id=f.id,
-                    child_id=f.child_id,
-                    book_id=f.book_id,
-                    book_title=book.title if book else None,
-                    book_cover=book.cover if book else None,
-                    create_time=f.create_time,
-                    title=book.title if book else None,
-                    author=book.author if book else None,
-                    ar_value=float(book.ar_value) if book and book.ar_value else None,
-                )
-            )
-        return results
-
-    def remove_favorite(self, child_id: int, book_id: int) -> dict:
-        """移除收藏"""
-        fav = self.fav_repo.get_by_child_and_book(child_id, book_id)
-        if not fav:
-            raise NotFoundError("未收藏该书")
-        self.db.delete(fav)
-        self.db.commit()
-        return {"status": "unfavorited"}

@@ -363,26 +363,6 @@ if child_id:
             role="家长",
         )
 
-print("\n--- 2.4 收藏夹 ---")
-if child_id and book_id:
-    test(
-        "添加收藏",
-        "POST",
-        f"/favorites/?child_id={child_id}",
-        token=UT,
-        json_data={"book_id": book_id},
-        expected_status=201,
-        role="家长",
-    )
-    test(
-        "获取收藏列表",
-        "GET",
-        f"/favorites/?child_id={child_id}",
-        token=UT,
-        expected_status=200,
-        role="家长",
-    )
-
 print("\n--- 2.5 订单 ---")
 test(
     "订单列表",

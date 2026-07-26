@@ -4,7 +4,7 @@
 from sqlalchemy.orm import Session, joinedload
 
 from backend.common.base_repo import BaseRepository
-from backend.domain.bookshelf.models import Bookshelf, Favorites
+from backend.domain.bookshelf.models import Bookshelf
 from backend.common.types import BookshelfStatus
 
 
@@ -41,35 +41,6 @@ class BookshelfRepository(BaseRepository[Bookshelf]):
                 Bookshelf.status != BookshelfStatus.REMOVED,
                 Bookshelf.is_deleted == 0,
             )
-            .limit(100)
-            .all()
-        )
-
-
-class FavoritesRepository(BaseRepository[Favorites]):
-    """收藏仓库"""
-
-    def __init__(self, db: Session):
-        super().__init__(db, Favorites)
-
-    def get_by_child_and_book(self, child_id: int, book_id: int) -> Favorites | None:
-        """查询是否已收藏"""
-        return (
-            self.db.query(Favorites)
-            .filter(
-                Favorites.child_id == child_id,
-                Favorites.book_id == book_id,
-                Favorites.is_deleted == 0,
-            )
-            .first()
-        )
-
-    def get_favorites(self, child_id: int) -> list[Favorites]:
-        """获取收藏夹"""
-        return (
-            self.db.query(Favorites)
-            .options(joinedload(Favorites.book))
-            .filter(Favorites.child_id == child_id, Favorites.is_deleted == 0)
             .limit(100)
             .all()
         )

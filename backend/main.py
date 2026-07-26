@@ -169,10 +169,7 @@ from backend.domain.user.consent_router import router as consent_router  # noqa:
 from backend.domain.venue.router import router as venue_router  # noqa: E402
 from backend.domain.child.router import router as child_router  # noqa: E402
 from backend.domain.book.router import router as book_router  # noqa: E402
-from backend.domain.bookshelf.router import (  # noqa: E402
-    router as bookshelf_router,
-    fav_router as bookshelf_fav_router,
-)
+from backend.domain.bookshelf.router import router as bookshelf_router  # noqa: E402
 from backend.domain.reading.router import router as reading_router  # noqa: E402
 from backend.domain.vocabulary.router import router as vocabulary_router  # noqa: E402
 from backend.domain.advancement.router import router as advancement_router  # noqa: E402
@@ -209,7 +206,6 @@ app.include_router(venue_router)
 app.include_router(child_router)
 app.include_router(book_router)
 app.include_router(bookshelf_router)
-app.include_router(bookshelf_fav_router)
 app.include_router(reading_router)
 app.include_router(vocabulary_router)
 app.include_router(advancement_router)

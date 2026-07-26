@@ -139,59 +139,6 @@ def step_reading_record_kept(context):
     assert resp.status_code == 200
 
 
-@when('用户将图书"{title}"收藏')
-def step_favorite_book(context, title):
-    book = _ensure_book(context, title)
-    context.response = context.client.post(
-        f"/favorites/?book_id={book.id}&child_id={context.child.id}",
-        headers=context.headers,
-    )
-
-
-@then("图书出现在收藏夹")
-def step_book_in_favorites(context):
-    resp = context.client.get(
-        f"/favorites/?child_id={context.child.id}", headers=context.headers
-    )
-    assert resp.status_code == 200
-    assert len(resp.json()) >= 1
-
-
-@then("收藏夹数量加{count:d}")
-def step_favorites_count_plus(context, count):
-    # 收藏夹数量验证
-    assert count >= 0
-
-
-@when("用户收藏{count:d}本图书")
-def step_collect_n_books(context, count):
-    for i in range(count):
-        book = Book(
-            isbn=f"978C{i:04d}0",
-            title=f"Col{i}",
-            author="Author",
-            ar_value=2.0,
-            age_min=5,
-            age_max=9,
-            word_count=1000,
-        )
-        context.db.add(book)
-        context.db.commit()
-        context.db.refresh(book)
-        context.client.post(
-            f"/favorites/?book_id={book.id}&child_id={context.child.id}",
-            headers=context.headers,
-        )
-
-
-@then("收藏夹显示{count:d}本图书")
-def step_favorites_count(context, count):
-    resp = context.client.get(
-        f"/favorites?child_id={context.child.id}", headers=context.headers
-    )
-    assert len(resp.json()) == count
-
-
 # ==================== V3.1 书架步骤 ====================
 
 

@@ -7,7 +7,7 @@ from backend.domain.book.schemas import BookResponse
 from backend.domain.deposit.schemas import DepositResponse
 from backend.domain.refund.schemas import RefundResponse
 from backend.domain.activity.schemas import ActivityResponse
-from backend.domain.bookshelf.schemas import BookshelfResponse, FavoriteResponse
+from backend.domain.bookshelf.schemas import BookshelfResponse
 from backend.domain.reservation.schemas import ReservationResponse
 from backend.domain.certificate.schemas import CertificateResponse
 from backend.domain.profile.schemas import ProfileResponse
@@ -20,7 +20,6 @@ SCHEMAS = {
     "RefundResponse": RefundResponse,
     "ActivityResponse": ActivityResponse,
     "BookshelfResponse": BookshelfResponse,
-    "FavoriteResponse": FavoriteResponse,
     "ReservationResponse": ReservationResponse,
     "CertificateResponse": CertificateResponse,
     "ProfileResponse": ProfileResponse,
@@ -112,19 +111,6 @@ def test_bookshelf_response():
     }
     missing = [f for f in expected if f not in BookshelfResponse.model_fields]
     assert not missing, f"BookshelfResponse missing: {missing}"
-
-
-def test_favorite_response():
-    expected = {
-        "book_title",
-        "book_cover",
-        "title",
-        "author",
-        "ar_value",
-        "create_time",
-    }
-    missing = [f for f in expected if f not in FavoriteResponse.model_fields]
-    assert not missing, f"FavoriteResponse missing: {missing}"
 
 
 def test_reservation_response():

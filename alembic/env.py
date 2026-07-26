@@ -19,7 +19,7 @@ from backend.domain.child.models import Child  # noqa: F401
 from backend.domain.child.benefit_transfer_model import BenefitTransferApplication  # noqa: F401
 from backend.domain.book.models import Book, BookCopy  # noqa: F401
 from backend.domain.book.damage_model import BookDamageReport  # noqa: F401
-from backend.domain.bookshelf.models import Bookshelf, Favorites  # noqa: F401
+from backend.domain.bookshelf.models import Bookshelf  # noqa: F401
 from backend.domain.reading.models import (  # noqa: F401
     BookPage,
     ReadingProgress,

@@ -195,9 +195,6 @@
 
     <!-- Bottom action bar -->
     <view class="action-bar">
-      <view class="action-btn action-fav btn-outline {{onFavorite ? 'fav-active' : ''}}" bindtap="addFavorite" loading="{{favLoading}}">
-        {{onFavorite ? '已收藏' : '收藏'}}
-      </view>
       <navigator class="action-btn action-primary btn-primary" wx:if="{{onShelf}}" url="/pages/reading-pkg/reader/reader?bookId={{book.id}}">
         继续阅读<text wx:if="{{progress && progress.progress_pct}}"> · {{progress.progress_pct}}%</text>
       </navigator>

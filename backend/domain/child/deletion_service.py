@@ -40,7 +40,6 @@ DELETE_TABLES_BY_CHILD = [
     "child_achievement",
     "level_certificate",
     "bookshelf",
-    "favorites",
     "activity_enrollment",
     "reservation",
     "observation_report",

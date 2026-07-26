@@ -8,12 +8,10 @@ Page({
     child: null,
     progress: null,
     onShelf: false,
-    onFavorite: false,
     readingTime: '',
     loading: true,
     descExpanded: false,
     shelfLoading: false,
-    favLoading: false,
     loadError: false,
     relatedBooks: [],
   },
@@ -50,21 +48,17 @@ Page({
     this.setData({ child });
 
     try {
-      // 并行查询书架、收藏、进度，避免串行 N+1
-      const [shelfBooks, favBooks, progress] = await Promise.all([
+      // 并行查询书架、进度，避免串行 N+1
+      const [shelfBooks, progress] = await Promise.all([
         api.getBookshelf(child.id).catch(() => []),
-        api.getFavorites(child.id).catch(() => []),
         api.getProgress(bookId, child.id).catch(() => null),
       ]);
 
       const onShelf = (shelfBooks || []).some(function (item) {
         return item.book_id === bookId || item.id === bookId;
       });
-      const onFavorite = (favBooks || []).some(function (item) {
-        return item.book_id === bookId || item.id === bookId;
-      });
 
-      this.setData({ onShelf, onFavorite, progress: onShelf ? progress : null });
+      this.setData({ onShelf, progress: onShelf ? progress : null });
     } catch (e) {
       console.error('load child status failed', e);
     }
@@ -98,25 +92,6 @@ Page({
       wx.showToast({ title: '加入书架失败', icon: 'none' });
     }
     this.setData({ shelfLoading: false });
-  },
-
-  async addFavorite() {
-    const { book, child } = this.data;
-    if (!child) {
-      wx.showToast({ title: '请先选择孩子', icon: 'none' });
-      return;
-    }
-    if (this.data.favLoading) return;
-    this.setData({ favLoading: true });
-    try {
-      await api.addFavorite(book.id, child.id);
-      this.setData({ onFavorite: true });
-      wx.showToast({ title: '已收藏', icon: 'success' });
-    } catch (e) {
-      console.error('add favorite failed', e);
-      wx.showToast({ title: '收藏失败', icon: 'none' });
-    }
-    this.setData({ favLoading: false });
   },
 
   toggleDesc() {
