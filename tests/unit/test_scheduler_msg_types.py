@@ -109,3 +109,41 @@ class TestObservationRemindersMsgType:
             call = mock_create.call_args
             assert call.kwargs["title"] == "观察期到期提醒"
             assert call.kwargs["msg_type"] == 1
+
+
+class TestAlertStaleRefunds:
+    """alert_stale_refunds：退款 7 天未到账告警（P3 补缺）"""
+
+    def test_stale_refund_creates_alert(self, monkeypatch):
+        from backend.tasks import scheduler
+
+        refund = MagicMock()
+        refund.id = 7
+        refund.user_id = 100
+        refund.order_id = 55
+        refund.refund_amount = 500
+        refund.review_time = datetime.now() - timedelta(days=8)
+
+        db = MagicMock()
+        db.query.return_value.filter.return_value.all.return_value = [refund]
+        monkeypatch.setattr(scheduler, "_get_db_session", lambda: db)
+
+        with patch.object(scheduler, "_create_message") as mock_create:
+            scheduler.alert_stale_refunds()
+            assert mock_create.call_count == 1
+            call = mock_create.call_args
+            assert call.kwargs["title"] == "退款超时告警"
+            assert call.kwargs["msg_type"] == 1
+            assert call.kwargs["priority"] == 2
+            assert "#7" in call.kwargs["content"]
+
+    def test_no_stale_refund_no_message(self, monkeypatch):
+        from backend.tasks import scheduler
+
+        db = MagicMock()
+        db.query.return_value.filter.return_value.all.return_value = []
+        monkeypatch.setattr(scheduler, "_get_db_session", lambda: db)
+
+        with patch.object(scheduler, "_create_message") as mock_create:
+            scheduler.alert_stale_refunds()
+            mock_create.assert_not_called()

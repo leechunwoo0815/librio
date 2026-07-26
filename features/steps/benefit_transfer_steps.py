@@ -114,6 +114,47 @@ def step_pending_transfer_application(context, name):
     context.db.commit()
 
 
+# ==================== P3 驳回重提 + 押金独立 ====================
+
+
+@given("{name}的押金已缴纳")
+def step_child_deposit_paid(context, name):
+    from backend.common.types import DepositStatus
+
+    c = context.children[name]
+    c.deposit_status = DepositStatus.PAID
+    context.db.commit()
+
+
+@when("用户再次提交权益转让申请")
+def step_resubmit_transfer(context):
+    children = list(context.children.values())
+    context.response = context.client.post(
+        "/child/transfer",
+        json={"source_child_id": children[0].id, "target_child_id": children[1].id},
+        headers=context.headers,
+    )
+
+
+@then("转让申请提交成功")
+def step_transfer_submit_ok(context):
+    assert context.response.status_code in (200, 201), (
+        f"期望提交成功，实际 {context.response.status_code}: {context.response.text}"
+    )
+
+
+@then("{name}的押金状态保持{expected}")
+def step_deposit_status_unchanged(context, name, expected):
+    from backend.common.types import DepositStatus
+
+    status_map = {"已缴纳": DepositStatus.PAID, "未缴纳": DepositStatus.UNPAID}
+    c = context.children[name]
+    context.db.refresh(c)
+    assert c.deposit_status == status_map[expected], (
+        f"{name}押金状态={c.deposit_status}，期望{expected}"
+    )
+
+
 @then("{child}获得正式会员权益（剩余{days:d}天）")
 @then("{child}获得观察期权益（剩余{days:d}天）")
 def step_child_gains_membership(context, child, days):
