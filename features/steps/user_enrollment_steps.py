@@ -346,7 +346,7 @@ def step_try_access_observation(context):
 
 @when("用户尝试为孩子购买观察期")
 def step_try_buy_observation(context):
-    """B3 漏斗校验：真实下单拦截点（POST /order/ type=OBSERVATION）"""
+    """A1 双轨制：未上亲子课也可创建观察期订单（POST /order/ type=OBSERVATION）"""
     context.response = context.client.post(
         "/order/",
         json={"child_id": context.child.id, "type": 2},  # OrderType.OBSERVATION
@@ -354,10 +354,43 @@ def step_try_buy_observation(context):
     )
 
 
+@then("观察期订单创建成功")
+def step_obs_order_create_ok(context):
+    assert context.response.status_code == 201
+    assert context.response.json()["type"] == 2
+
+
+@when("用户完成观察期订单支付")
+def step_pay_obs_order(context):
+    data = context.response.json()
+    context.client.post(
+        "/order/payment-callback",
+        json={
+            "order_no": data["order_no"],
+            "trade_no": "WX_OBS_DUAL",
+            "pay_type": 1,
+            "amount": data["amount"],
+        },
+        headers=context.headers,
+    )
+
+
+@then('孩子报名来源标记为"直接观察期"')
+def step_source_direct(context):
+    context.db.refresh(context.child)
+    assert context.child.enroll_source == 2
+
+
+@then('孩子报名来源标记为"亲子课转化"')
+def step_source_parent_course(context):
+    context.db.refresh(context.child)
+    assert context.child.enroll_source == 1
+
+
 # ==================== 正式会员报名 ====================
 
 
-@given('用户的孩子观察期评估结果为"通过"')
+@given("用户的孩子是观察期会员且已购观察期")
 def step_observation_passed(context):
     child = Child(
         user_id=context.user.id,
@@ -494,7 +527,7 @@ def step_multi_child_hint(context):
 # ==================== 正式会员前置条件不满足 ====================
 
 
-@given('用户的孩子观察期评估结果为"不通过"')
+@given("用户的孩子仍是试读用户（未进入观察期）")
 def step_observation_failed(context):
     child = Child(
         user_id=context.user.id,

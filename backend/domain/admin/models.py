@@ -144,6 +144,11 @@ class SystemConfig(BaseModel):
         "lost_book_fine_multiplier": ("1.5", "string", "丢书罚款倍率（图书定价×倍率）"),
         # ── 押金 ──
         "deposit_amount": ("1200", "int", "押金金额（元）"),
+        "parent_course_required": (
+            "false",
+            "bool",
+            "观察期报名是否强制要求完成亲子课（A1决策：双轨制默认false）",
+        ),
         # ── 预约 ──
         "reservation_expire_hours": ("72", "int", "预约过期时间（小时）"),
         # ── 晋级规则 ──

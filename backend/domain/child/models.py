@@ -73,6 +73,11 @@ class Child(BaseModel):
         nullable=True,
         comment="数据删除请求时间（24h冷静期，NULL=无进行中请求）",
     )
+    enroll_source = Column(
+        SmallInteger,
+        default=0,
+        comment="报名来源: 0=未知 1=亲子课转化 2=直接观察期（A1双轨制）",
+    )
 
     user = relationship("User", back_populates="children", foreign_keys=[user_id])
 

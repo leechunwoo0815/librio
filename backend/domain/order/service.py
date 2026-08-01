@@ -170,7 +170,14 @@ class OrderService:
                 .first()
             )
             if not has_parent_course:
-                raise ValidationError("请先完成亲子课程并获得测评报告")
+                # A1 双轨制：亲子课为推荐入口，非强制前置；配置可恢复强制（保留修改接口）
+                from backend.common.config_service import ConfigService
+
+                required = ConfigService.get_bool(
+                    self.db, "parent_course_required", False
+                )
+                if required:
+                    raise ValidationError("请先完成亲子课程并获得测评报告")
         elif order_data.type in (
             OrderType.OFFICIAL_MEMBER,
             OrderType.QUARTERLY,

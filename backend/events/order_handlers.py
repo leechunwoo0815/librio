@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 def handle_order_paid_for_child(event, db: Session):
     """订单支付 → 更新孩子会员状态（含状态迁移合法性校验）"""
     from datetime import datetime, timedelta
-    from backend.common.types import OrderType, MemberStatus
+    from backend.common.types import OrderType, MemberStatus, PayStatus
     from backend.domain.child.models import Child
     from backend.common.base_repo import BaseRepository
     from backend.common.config_service import ConfigService
@@ -82,19 +82,33 @@ def handle_order_paid_for_child(event, db: Session):
         child.status = MemberStatus.OBSERVATION
         child.member_start_time = now
         child.member_expire_time = now + timedelta(days=obs_days)
+        # A1 双轨制：标记报名来源（有已支付亲子课订单=亲子课转化，否则=直接观察期）
+        if not child.enroll_source:
+            from backend.domain.order.models import Order
+
+            has_parent_course = (
+                db.query(Order)
+                .filter(
+                    Order.child_id == event.child_id,
+                    Order.type == OrderType.PARENT_COURSE,
+                    Order.pay_status == PayStatus.PAID,
+                    Order.is_deleted == 0,
+                )
+                .first()
+            )
+            child.enroll_source = 1 if has_parent_course else 2
         child_repo.update(child)
         logger.info(
-            f"Child {event.child_id} observation period activated: {obs_days} days"
+            f"Child {event.child_id} observation period activated: {obs_days} days, "
+            f"source={child.enroll_source}"
         )
     elif event.order_type == OrderType.PARENT_COURSE:
-        obs_days = ConfigService.get_int(db, "observation_days", 45)
-        child.status = MemberStatus.OBSERVATION
-        child.member_start_time = now
-        child.member_expire_time = now + timedelta(days=obs_days)
-        child_repo.update(child)
-        logger.info(
-            f"Child {event.child_id} parent-course -> observation activated: {obs_days} days"
-        )
+        # A1 双轨制：亲子课支付不再直接开通观察期（观察期为 500 元独立产品），
+        # 仅标记转化来源，孩子保持 TRIAL 直至购买观察期
+        if not child.enroll_source:
+            child.enroll_source = 1
+            child_repo.update(child)
+        logger.info(f"Child {event.child_id} parent-course paid, source=1")
     else:
         logger.warning(f"OrderPaidEvent: unhandled order_type={event.order_type}")
 
