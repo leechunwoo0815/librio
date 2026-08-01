@@ -88,6 +88,20 @@ class CheckInRepository(BaseRepository[CheckIn]):
             .first()
         )
 
+    def get_today_checkin_by_type(
+        self, child_id: int, today: date, check_type: int
+    ) -> CheckIn | None:
+        """C1：按类型查当日打卡（每类型每日各 1 次）"""
+        return (
+            self.db.query(CheckIn)
+            .filter(
+                CheckIn.child_id == child_id,
+                CheckIn.check_date == today,
+                CheckIn.check_type == check_type,
+            )
+            .first()
+        )
+
     def count_today_checkins(self, child_id: int, today: date) -> int:
         return (
             self.db.query(CheckIn)

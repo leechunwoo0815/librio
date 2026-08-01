@@ -69,7 +69,9 @@ class CheckoutPhotosRequest(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    photos: list[str] = Field(..., min_length=1, max_length=6, description="照片URL列表")
+    photos: list[str] = Field(
+        ..., min_length=1, max_length=6, description="照片URL列表"
+    )
 
 
 class DamageReportResponse(BaseModel):

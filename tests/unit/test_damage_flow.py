@@ -213,9 +213,7 @@ class TestReplaceWithNewCopy:
         db.refresh(child)
         db.refresh(book)
         db.refresh(borrow)
-        new_copy = (
-            db.query(BookCopy).filter(BookCopy.barcode == "DF-NEW-001").first()
-        )
+        new_copy = db.query(BookCopy).filter(BookCopy.barcode == "DF-NEW-001").first()
         assert new_copy is not None
         assert new_copy.status == BookCopyStatus.AVAILABLE
         assert book.total_stock == 2  # 丢失-1 + 新增+1（净：原2-1+1=2）

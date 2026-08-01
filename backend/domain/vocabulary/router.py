@@ -27,12 +27,19 @@ router = APIRouter(prefix="/vocabulary", tags=["词汇"])
 @router.get("/lookup/{word}", response_model=WordLookupResponse | None)
 def lookup_word(
     word: str,
+    child_id: int | None = None,
+    book_id: int | None = None,
     service: VocabularyService = Depends(get_vocabulary_service),
     current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
-    """查词 — 受 enable_vocab_lookup 开关和 vocab_lookup_limit 次数限制"""
+    """查词 — 受开关和次数限制；传 child_id 时自动记录生词本（C3）"""
     service.check_lookup_allowed(current_user.id)
-    return service.lookup_word(word)
+    result = service.lookup_word(word)
+    if result and child_id:
+        verify_child_ownership(child_id, current_user, db)
+        service.record_lookup(child_id, word, book_id=book_id)
+    return result
 
 
 @router.post("/", response_model=VocabResponse, status_code=201)

@@ -44,8 +44,8 @@ class BookshelfService:
         if existing:
             raise ConflictError("该书已在书架中")
 
-        # 书架容量限制
-        limit = ConfigService.get_int(self.db, "bookshelf_limit", 0)
+        # 书架容量限制（C4：默认 100 本）
+        limit = ConfigService.get_int(self.db, "bookshelf_limit", 100)
         if limit > 0:
             current_count = self.shelf_repo.count_active(child_id)
             if current_count >= limit:
@@ -110,11 +110,12 @@ class BookshelfService:
         return {"id": entry.id, "status": "removed"}
 
     def get_shelf(self, child_id: int) -> list[BookshelfResponse]:
-        """获取书架列表"""
+        """获取书架列表（C4：附库存状态供前端标灰）"""
         entries = self.shelf_repo.get_shelf(child_id)
         results = []
         for e in entries:
             book = e.book
+            stock = (book.available_stock or 0) if book else 0
             resp = BookshelfResponse(
                 id=e.id,
                 child_id=e.child_id,
@@ -127,6 +128,8 @@ class BookshelfService:
                 author=book.author if book else None,
                 ar_value=float(book.ar_value) if book and book.ar_value else None,
                 word_count=book.word_count if book else None,
+                available_stock=stock,
+                in_stock=stock > 0,
             )
             results.append(resp)
         return results

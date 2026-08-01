@@ -246,3 +246,58 @@ def step_lookup_rejected(context):
 @then('提示"试读用户每日查词上限"')
 def step_trial_lookup_hint(context):
     assert "查词上限" in context.response.text or context.response.status_code == 403
+
+
+# ==================== C3 查词自动记录生词本 ====================
+
+
+@when('用户点击单词"{word}"（带child_id）')
+def step_click_word_with_child(context, word):
+    context.current_word = word
+    existing = (
+        context.db.query(DictionaryWord)
+        .filter(DictionaryWord.word == word.lower())
+        .first()
+    )
+    if not existing:
+        dw = DictionaryWord(
+            word=word.lower(),
+            chinese_meaning="好奇心",
+            phonetic="/test/",
+            part_of_speech="名词",
+        )
+        context.db.add(dw)
+        context.db.commit()
+    context.response = context.client.get(
+        f"/vocabulary/lookup/{word}",
+        params={"child_id": context.child.id},
+        headers=context.headers,
+    )
+
+
+@then("该单词自动加入生词本")
+def step_word_auto_added(context):
+    resp = context.client.get(
+        f"/vocabulary/{context.child.id}", headers=context.headers
+    )
+    assert resp.status_code == 200
+    words = [v["word"] for v in resp.json()]
+    assert context.current_word.lower() in words, f"生词本未包含 {context.current_word}"
+
+
+@then("再次查该词时查词次数累计为{n:d}")
+def step_lookup_count_accumulates(context, n):
+    context.client.get(
+        f"/vocabulary/lookup/{context.current_word}",
+        params={"child_id": context.child.id},
+        headers=context.headers,
+    )
+    resp = context.client.get(
+        f"/vocabulary/{context.child.id}", headers=context.headers
+    )
+    entry = next(
+        (v for v in resp.json() if v["word"] == context.current_word.lower()), None
+    )
+    assert entry is not None and entry["lookup_count"] == n, (
+        f"查词次数应为 {n}，实际 {entry['lookup_count'] if entry else 'N/A'}"
+    )

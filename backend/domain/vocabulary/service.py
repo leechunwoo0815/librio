@@ -44,6 +44,30 @@ class VocabularyService:
             "level": w.level,
         }
 
+    def record_lookup(self, child_id: int, word: str, book_id: int | None = None) -> None:
+        """C3：查词自动记录生词本（upsert：新词建档/旧词累计次数）"""
+        word_lower = word.lower()
+        dw = self.dict_repo.get_by_word(word_lower)
+        if not dw:
+            return
+
+        existing = self.vocab_repo.get_by_child_and_word(child_id, dw.id)
+        if existing:
+            existing.lookup_count += 1
+            existing.last_review_time = datetime.now()
+            self.vocab_repo.update(existing)
+        else:
+            uv = UserVocabulary(
+                child_id=child_id,
+                word_id=dw.id,
+                book_id=book_id,
+                lookup_count=1,
+                last_review_time=datetime.now(),
+            )
+            self.vocab_repo.create(uv)
+            self._check_vocab_checkin(child_id)
+        self.db.commit()
+
     def add_to_vocabulary(
         self, child_id: int, word=None, book_id=None, **kwargs
     ) -> dict:
@@ -164,11 +188,13 @@ class VocabularyService:
             return
 
         today = date.today()
+        # C1：每种类型每日各 1 次（生词类型独立于阅读/朗读）
         existing = (
             self.db.query(CheckIn)
             .filter(
                 CheckIn.child_id == child_id,
                 CheckIn.check_date == today,
+                CheckIn.check_type == CheckIn.TYPE_VOCABULARY,
                 CheckIn.is_deleted == 0,
             )
             .first()
@@ -178,7 +204,7 @@ class VocabularyService:
 
         from backend.common.config_service import ConfigService
 
-        daily_limit = ConfigService.get_int(self.db, "daily_checkin_limit", 1)
+        daily_limit = ConfigService.get_int(self.db, "daily_checkin_limit", 4)
         today_count = (
             self.db.query(CheckIn)
             .filter(

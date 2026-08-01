@@ -128,7 +128,9 @@ def _staff_borrow_headers(context):
     context.db.add(role)
     context.db.flush()
     context.db.add(RolePermission(role_id=role.id, permission_code="borrow.create"))
-    context.db.add(RolePermission(role_id=role.id, permission_code="book_damage.review"))
+    context.db.add(
+        RolePermission(role_id=role.id, permission_code="book_damage.review")
+    )
     context.db.flush()
     admin = Admin(
         username="test_borrow_admin",

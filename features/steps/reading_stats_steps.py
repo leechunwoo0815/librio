@@ -15,12 +15,64 @@ def step_auto_checkin_done(context):
     assert hasattr(context, "child") and context.child is not None
 
 
-@given("用户今日已打卡")
-@when("用户再次满足打卡条件")
+@given("用户今日已完成阅读打卡")
+def step_reading_checkin_done(context):
+    """C1：触发一次阅读自动打卡（满10分钟+5词）"""
+    from backend.domain.reading.service import ReadingService
+
+    svc = ReadingService(context.db)
+    svc._check_auto_checkin(context.child.id, duration_seconds=660, words_read=10)
+    context.db.commit()
+
+
+@when("用户再次满足阅读打卡条件")
+def step_reading_checkin_again(context):
+    from backend.domain.reading.service import ReadingService
+
+    svc = ReadingService(context.db)
+    svc._check_auto_checkin(context.child.id, duration_seconds=660, words_read=10)
+    context.db.commit()
+
+
 @then("不重复打卡")
 def step_no_duplicate_checkin(context):
-    # 每日最多打卡一次，由 CheckIn 表的 child_id + check_date 唯一约束保证
-    assert hasattr(context, "child") and context.child is not None
+    """C1：同类型（阅读）当日仍为 1 条"""
+    from datetime import date
+    from backend.domain.reading.models import CheckIn
+
+    count = (
+        context.db.query(CheckIn)
+        .filter(
+            CheckIn.child_id == context.child.id,
+            CheckIn.check_date == date.today(),
+            CheckIn.check_type == CheckIn.TYPE_READING,
+            CheckIn.is_deleted == 0,
+        )
+        .count()
+    )
+    assert count == 1, f"阅读类型当日打卡应为 1 条，实际 {count}"
+
+
+@then("朗读打卡仍可正常计入")
+def step_voice_checkin_allowed(context):
+    """C1：朗读类型不受阅读打卡影响（每类型各 1 次）"""
+    from datetime import date
+    from backend.domain.reading.service import ReadingService
+    from backend.domain.reading.models import CheckIn
+
+    svc = ReadingService(context.db)
+    svc._check_voice_checkin(context.child.id)
+    context.db.commit()
+    count = (
+        context.db.query(CheckIn)
+        .filter(
+            CheckIn.child_id == context.child.id,
+            CheckIn.check_date == date.today(),
+            CheckIn.is_deleted == 0,
+        )
+        .count()
+    )
+    assert count == 2, f"阅读+朗读应为 2 条打卡，实际 {count}"
 
 
 @when("用户进入打卡页面")

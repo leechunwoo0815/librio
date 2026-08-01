@@ -65,7 +65,9 @@ class BorrowRecord(BaseModel):
 
     # B9/B10 损坏丢失流程
     checkout_photos = Column(
-        String(500), nullable=True, comment="借出时拍照存档（JSON数组：封面/封底/书脊，B9）"
+        String(500),
+        nullable=True,
+        comment="借出时拍照存档（JSON数组：封面/封底/书脊，B9）",
     )
     lost_search_deadline = Column(
         DateTime, nullable=True, comment="丢失寻找期截止（登记+7天，B10：期内找回免赔）"

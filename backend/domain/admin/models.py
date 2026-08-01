@@ -208,9 +208,9 @@ class SystemConfig(BaseModel):
         # ── 打卡规则 ──
         "checkin_min_minutes": ("10", "int", "打卡最低阅读分钟数"),
         "checkin_min_vocab": ("5", "int", "打卡最低生词数"),
-        "daily_checkin_limit": ("1", "int", "每天最多打卡次数"),
+        "daily_checkin_limit": ("4", "int", "每天最多打卡次数（C1：每类型各1次，共4种）"),
         # ── 书架 ──
-        "bookshelf_limit": ("0", "int", "书架最大数量，0表示无限制"),
+        "bookshelf_limit": ("100", "int", "想读清单上限（C4：默认100本，0=无限制）"),
         # ── 场馆信息 ──
         "venue_name": (
             "人广馆",

@@ -302,12 +302,15 @@ class ReadingService:
             return
 
         today = date.today()
-        existing = self.checkin_repo.get_today_checkin(child_id, today)
+        # C1：每种类型每日各 1 次（阅读/读完/朗读/生词，最多 4 次/天）
+        existing = self.checkin_repo.get_today_checkin_by_type(
+            child_id, today, CheckIn.TYPE_READING
+        )
         if existing:
             return
 
-        # 每日打卡次数限制
-        daily_limit = ConfigService.get_int(self.db, "daily_checkin_limit", 1)
+        # 每日打卡总次数限制
+        daily_limit = ConfigService.get_int(self.db, "daily_checkin_limit", 4)
         today_count = self.checkin_repo.count_today_checkins(child_id, today)
         if today_count >= daily_limit:
             return
@@ -439,11 +442,14 @@ class ReadingService:
             return
 
         today = date.today()
-        existing = self.checkin_repo.get_today_checkin(child_id, today)
+        # C1：每种类型每日各 1 次
+        existing = self.checkin_repo.get_today_checkin_by_type(
+            child_id, today, CheckIn.TYPE_VOICE
+        )
         if existing:
             return
 
-        daily_limit = ConfigService.get_int(self.db, "daily_checkin_limit", 1)
+        daily_limit = ConfigService.get_int(self.db, "daily_checkin_limit", 4)
         today_count = self.checkin_repo.count_today_checkins(child_id, today)
         if today_count >= daily_limit:
             return

@@ -111,7 +111,8 @@ class TestVoiceCheckin:
         assert checkin.check_type == CheckIn.TYPE_VOICE
 
     def test_voice_recording_no_duplicate_checkin(self, db_session, reading_service):
-        """今日已打卡 → 不再重复创建"""
+        """C1：今日已有阅读打卡 → 朗读打卡仍可计入（每类型各1次）；
+        再次朗读才不去重"""
         child = _create_child(db_session)
         book = _create_book(db_session, child)
 
@@ -133,7 +134,19 @@ class TestVoiceCheckin:
         )
         reading_service.save_recording(data)
 
-        # 验证只有一条打卡记录（没重复创建）
+        # C1：阅读+朗读各计一次 → 共 2 条
+        count = (
+            db_session.query(CheckIn)
+            .filter(
+                CheckIn.child_id == child.id,
+                CheckIn.check_date == date.today(),
+            )
+            .count()
+        )
+        assert count == 2
+
+        # 再次朗读 → 同类型去重，仍 2 条
+        reading_service.save_recording(data)
         count = (
             db_session.query(CheckIn)
             .filter(
@@ -143,7 +156,7 @@ class TestVoiceCheckin:
             )
             .count()
         )
-        assert count == 1
+        assert count == 2
 
     def test_voice_recording_trial_no_checkin(self, db_session, reading_service):
         """体验用户 → 不创建打卡"""
