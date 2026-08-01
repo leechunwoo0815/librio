@@ -16,6 +16,7 @@ from sqlalchemy import (
     Integer,
     Numeric,
     SmallInteger,
+    String,
 )
 from sqlalchemy.orm import relationship
 
@@ -61,6 +62,14 @@ class BorrowRecord(BaseModel):
 
     # 测评去重标记
     quiz_passed = Column(SmallInteger, default=0, comment="是否已通过测评: 0=否 1=是")
+
+    # B9/B10 损坏丢失流程
+    checkout_photos = Column(
+        String(500), nullable=True, comment="借出时拍照存档（JSON数组：封面/封底/书脊，B9）"
+    )
+    lost_search_deadline = Column(
+        DateTime, nullable=True, comment="丢失寻找期截止（登记+7天，B10：期内找回免赔）"
+    )
 
     # 关系
     child = relationship("Child", foreign_keys=[child_id])

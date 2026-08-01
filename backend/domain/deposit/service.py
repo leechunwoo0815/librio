@@ -7,7 +7,7 @@ UNPAID → PAID → REFUNDED / DEDUCTED
 
 import logging
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 
 from sqlalchemy import func
@@ -463,6 +463,10 @@ class DepositService:
 
         record.status = BorrowStatus.LOST
         record.fine_amount = fine_amount
+
+        # B10：丢失寻找期（默认 7 天，期内找回免赔）
+        search_days = ConfigService.get_int(self.db, "lost_search_days", 7)
+        record.lost_search_deadline = datetime.now() + timedelta(days=search_days)
 
         child = (
             self.db.query(Child)

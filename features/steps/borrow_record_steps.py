@@ -128,6 +128,7 @@ def _staff_borrow_headers(context):
     context.db.add(role)
     context.db.flush()
     context.db.add(RolePermission(role_id=role.id, permission_code="borrow.create"))
+    context.db.add(RolePermission(role_id=role.id, permission_code="book_damage.review"))
     context.db.flush()
     admin = Admin(
         username="test_borrow_admin",
@@ -685,3 +686,22 @@ def step_send_reminder(context, msg):
     # 验证提醒消息已生成（通过 SystemMessage 表）
     # SystemMessage 表在测试环境中可能未创建，验证不抛异常
     assert hasattr(context, "child") and context.child is not None
+
+
+# ==================== B10 丢失找回 ====================
+
+
+@when("工作人员登记找回该书")
+def step_staff_mark_found(context):
+    context.response = context.client.post(
+        "/admin/api/damage-reports/found",
+        json={"borrow_record_id": context.borrow_record.id},
+        headers=_staff_borrow_headers(context),
+    )
+    assert context.response.status_code == 200, context.response.text
+
+
+@then("未结罚款全额免除")
+def step_fines_fully_waived(context):
+    context.db.refresh(context.child)
+    assert float(context.child.outstanding_fines or 0) == 0

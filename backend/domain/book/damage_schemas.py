@@ -39,6 +39,39 @@ class DamageReviewRequest(BaseModel):
     review_remark: str | None = Field("", description="审核备注")
 
 
+class DamageRejectRequest(BaseModel):
+    """B9：复核驳回"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    reason: str = Field("", max_length=255, description="驳回原因")
+
+
+class BookFoundRequest(BaseModel):
+    """B10：丢失图书找回"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    borrow_record_id: int = Field(..., description="借阅记录ID")
+
+
+class ReplaceNewCopyRequest(BaseModel):
+    """B10：买同 ISBN 新书归还替代赔偿"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    borrow_record_id: int = Field(..., description="借阅记录ID")
+    barcode: str = Field(..., min_length=1, max_length=50, description="新副本条码")
+
+
+class CheckoutPhotosRequest(BaseModel):
+    """B9：借出拍照存档（封面/封底/书脊）"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    photos: list[str] = Field(..., min_length=1, max_length=6, description="照片URL列表")
+
+
 class DamageReportResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

@@ -28,6 +28,8 @@ class BookDamageReport(BaseModel):
     STATUS_CONFIRMED = 1  # 已确认（申诉期过或家长接受）
     STATUS_DISPUTED = 2  # 申诉中
     STATUS_OVERRIDDEN = 3  # 已冲正（管理员改判）
+    STATUS_PENDING_REVIEW = 4  # 待复核（B9：重度/丢失定级财务效应待第二管理员复核）
+    STATUS_CANCELLED = 5  # 复核驳回（定责不成立，物理效应已回滚）
 
     borrow_record_id = Column(
         BigInteger,
@@ -61,7 +63,7 @@ class BookDamageReport(BaseModel):
     status = Column(
         SmallInteger,
         default=STATUS_PENDING,
-        comment="状态: 0=待申诉 1=已确认 2=申诉中 3=已冲正",
+        comment="状态: 0=待申诉 1=已确认 2=申诉中 3=已冲正 4=待复核 5=复核驳回",
     )
     admin_id = Column(BigInteger, nullable=True, comment="登记管理员ID")
     appeal_reason = Column(Text, nullable=True, comment="申诉理由")

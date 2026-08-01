@@ -39,6 +39,7 @@ from backend.domain.deposit.schemas import (
     DepositRefundRequest,
     DepositDeductRequest,
 )
+from backend.domain.book.damage_schemas import CheckoutPhotosRequest
 from backend.domain.reservation.service import ReservationService
 from backend.domain.reservation.schemas import ReservationFulfillRequest
 
@@ -211,6 +212,45 @@ def clear_child_fines(
         content=f"清零孩子 #{child_id} 罚款",
     )
     return result
+
+
+@router.post(
+    "/borrows/{borrow_record_id}/checkout-photos", response_model=AdminActionResponse
+)
+def save_checkout_photos(
+    borrow_record_id: int,
+    data: CheckoutPhotosRequest,
+    admin=Depends(require_perm("borrow.create")),
+    db: Session = Depends(get_db),
+):
+    """B9：借出拍照存档（封面/封底/书脊，还书定责时对比防扯皮）"""
+    import json
+
+    from backend.domain.borrow.models import BorrowRecord
+    from backend.common.exceptions import NotFoundError
+
+    record = (
+        db.query(BorrowRecord)
+        .filter(BorrowRecord.id == borrow_record_id, BorrowRecord.is_deleted == 0)
+        .with_for_update()
+        .first()
+    )
+    if not record:
+        raise NotFoundError("借阅记录不存在")
+
+    record.checkout_photos = json.dumps(data.photos, ensure_ascii=False)
+    db.commit()
+
+    from backend.domain.admin.services.system_service import AdminSystemService
+
+    system_service = AdminSystemService(db)
+    system_service.write_operation_log(
+        admin_id=admin.id,
+        module="borrow",
+        operation="checkout_photos",
+        content=f"借出拍照存档: borrow #{borrow_record_id}, {len(data.photos)}张",
+    )
+    return {"success": True, "photos": data.photos}
 
 
 # ==================== 押金管理 ====================

@@ -142,6 +142,16 @@ class SystemConfig(BaseModel):
             "每孩子首次逾期免罚（B7决策：培养习惯优先）",
         ),
         "lost_book_fine_multiplier": ("1.5", "string", "丢书罚款倍率（图书定价×倍率）"),
+        "lost_search_days": (
+            "7",
+            "int",
+            "丢失寻找期天数（B10：期内找回免赔）",
+        ),
+        "damage_dual_review": (
+            "true",
+            "bool",
+            "损坏定责双人复核（B9：重度/丢失财务效应需第二管理员复核）",
+        ),
         # ── 押金 ──
         "deposit_amount": ("1200", "int", "押金金额（元）"),
         "deposit_refund_auto_approve": (

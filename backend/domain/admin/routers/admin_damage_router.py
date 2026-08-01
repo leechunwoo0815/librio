@@ -10,6 +10,9 @@ from backend.domain.book.damage_schemas import (
     DamageCreateRequest,
     DamageAppealRequest,
     DamageReviewRequest,
+    DamageRejectRequest,
+    BookFoundRequest,
+    ReplaceNewCopyRequest,
     DamageReportResponse,
 )
 from backend.middleware.admin_rbac import require_perm
@@ -81,3 +84,52 @@ def review_damage_report(
         admin_id=admin.id,
     )
     return {"success": True, "data": DamageReportResponse.model_validate(report)}
+
+
+@router.post("/{report_id}/confirm", response_model=AdminActionResponse)
+def confirm_damage_report(
+    report_id: int,
+    db: Session = Depends(get_db),
+    admin=Depends(require_perm("book_damage.review")),
+):
+    """B9 双人复核确认 — 财务效应生效（复核人不能是登记人）"""
+    svc = DamageAdminService(db)
+    report = svc.confirm_report(report_id, admin_id=admin.id)
+    return {"success": True, "data": DamageReportResponse.model_validate(report)}
+
+
+@router.post("/{report_id}/reject", response_model=AdminActionResponse)
+def reject_damage_report(
+    report_id: int,
+    req: DamageRejectRequest,
+    db: Session = Depends(get_db),
+    admin=Depends(require_perm("book_damage.review")),
+):
+    """B9 双人复核驳回 — 定责不成立，物理效应回滚"""
+    svc = DamageAdminService(db)
+    report = svc.reject_report(report_id, admin_id=admin.id, reason=req.reason)
+    return {"success": True, "data": DamageReportResponse.model_validate(report)}
+
+
+@router.post("/found", response_model=AdminActionResponse)
+def mark_book_found(
+    req: BookFoundRequest,
+    db: Session = Depends(get_db),
+    admin=Depends(require_perm("book_damage.review")),
+):
+    """B10 丢失找回 — 回滚副本/库存/罚款（寻找期内全额免赔）"""
+    svc = DamageAdminService(db)
+    return svc.mark_book_found(req.borrow_record_id, admin_id=admin.id)
+
+
+@router.post("/replace-new", response_model=AdminActionResponse)
+def replace_with_new_copy(
+    req: ReplaceNewCopyRequest,
+    db: Session = Depends(get_db),
+    admin=Depends(require_perm("book_damage.review")),
+):
+    """B10 买同 ISBN 新书归还替代赔偿 — 登记新副本 + 全额免赔"""
+    svc = DamageAdminService(db)
+    return svc.replace_with_new_copy(
+        req.borrow_record_id, req.barcode, admin_id=admin.id
+    )

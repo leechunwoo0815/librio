@@ -41,7 +41,13 @@ class DamageAdminService:
         description: str | None = None,
         admin_id: int = 0,
     ) -> BookDamageReport:
-        """创建损坏报告 — 三级定级 + 罚款计算 + D05 联动"""
+        """创建损坏报告 — 三级定级 + B9 双人复核 + B10 丢失寻找期
+
+        - 轻度(1)：免费，即时生效（无争议风险）
+        - 重度(2)/丢失(3)：物理效应（副本/库存/借阅状态）即时，
+          财务效应（outstanding_fines）延迟到第二管理员复核（damage_dual_review）
+        - 丢失(3)：写入 lost_search_deadline（7 天寻找期，B10）
+        """
         record = (
             self.db.query(BorrowRecord)
             .filter(BorrowRecord.id == borrow_record_id, BorrowRecord.is_deleted == 0)
@@ -62,14 +68,19 @@ class DamageAdminService:
             Decimal("0.01"), rounding=ROUND_HALF_UP
         )
 
-        # 写入 child.outstanding_fines
+        from backend.common.config_service import ConfigService
+
+        dual_review = ConfigService.get_bool(self.db, "damage_dual_review", True)
+        needs_review = dual_review and damage_level in (2, 3) and fine_amount > 0
+
         child = (
             self.db.query(Child)
             .filter(Child.id == record.child_id, Child.is_deleted == 0)
             .with_for_update()
             .first()
         )
-        if child:
+        if child and not needs_review:
+            # 无需复核（轻度 或 复核开关关闭）→ 即时计入未缴罚款
             child.outstanding_fines = (child.outstanding_fines or 0) + fine_amount
 
         if damage_level == 3:
@@ -90,9 +101,13 @@ class DamageAdminService:
             book.total_stock = new_total
             book.available_stock = new_avail
 
-            # 更新借阅状态为 LOST
+            # 更新借阅状态为 LOST + B10 寻找期
             record.status = BorrowStatus.LOST
             record.fine_amount = fine_amount
+            search_days = ConfigService.get_int(self.db, "lost_search_days", 7)
+            from datetime import timedelta
+
+            record.lost_search_deadline = datetime.now() + timedelta(days=search_days)
         else:
             # 非丢失定级，标记借阅为损坏状态（保留借阅记录）
             record.fine_amount = (record.fine_amount or 0) + fine_amount
@@ -105,20 +120,296 @@ class DamageAdminService:
             photo_url=photo_url,
             description=description,
             fine_amount=fine_amount,
-            status=BookDamageReport.STATUS_PENDING,
+            status=BookDamageReport.STATUS_PENDING_REVIEW
+            if needs_review
+            else BookDamageReport.STATUS_PENDING,
             admin_id=admin_id,
         )
         self.db.add(report)
         self.db.commit()
         self.db.refresh(report)
 
-        self._send_damage_notification(report, child, fine_amount)
+        if needs_review:
+            self._send_review_pending_notification(report, child, fine_amount)
+        else:
+            self._send_damage_notification(report, child, fine_amount)
         self._log_operation(
             admin_id,
             "damage.create",
-            f"定级:{damage_level} 罚款:{fine_amount} 借阅:{borrow_record_id}",
+            f"定级:{damage_level} 罚款:{fine_amount} 借阅:{borrow_record_id}"
+            f"{'（待复核）' if needs_review else ''}",
         )
         return report
+
+    def confirm_report(self, report_id: int, admin_id: int) -> BookDamageReport:
+        """B9 双人复核：第二管理员确认定责 → 财务效应生效（计入未缴罚款）"""
+        report = self._get_report_or_raise(report_id)
+        if report.status != BookDamageReport.STATUS_PENDING_REVIEW:
+            raise ValidationError("仅待复核状态的报告可确认")
+        if report.admin_id and report.admin_id == admin_id:
+            raise ValidationError("复核人不能是登记人本人（双人复核）")
+
+        child = (
+            self.db.query(Child)
+            .filter(Child.id == report.child_id, Child.is_deleted == 0)
+            .with_for_update()
+            .first()
+        )
+        fine = report.fine_amount or Decimal("0")
+        if child:
+            child.outstanding_fines = (child.outstanding_fines or 0) + fine
+
+        report.status = BookDamageReport.STATUS_PENDING  # 进入 7 天申诉期
+        report.review_admin_id = admin_id
+        report.reviewed_at = datetime.now()
+        self.db.commit()
+        self.db.refresh(report)
+        if child:
+            self._send_damage_notification(report, child, fine)
+        self._log_operation(admin_id, "damage.confirm", f"复核确认 报告:{report_id}")
+        return report
+
+    def reject_report(
+        self, report_id: int, admin_id: int, reason: str = ""
+    ) -> BookDamageReport:
+        """B9 双人复核：第二管理员驳回定责 → 物理效应回滚（丢失定级）"""
+        report = self._get_report_or_raise(report_id)
+        if report.status != BookDamageReport.STATUS_PENDING_REVIEW:
+            raise ValidationError("仅待复核状态的报告可驳回")
+        if report.admin_id and report.admin_id == admin_id:
+            raise ValidationError("复核人不能是登记人本人（双人复核）")
+
+        if report.damage_level == 3:
+            self._rollback_lost_physical(report)
+
+        report.status = BookDamageReport.STATUS_CANCELLED
+        report.review_admin_id = admin_id
+        report.reviewed_at = datetime.now()
+        report.appeal_result = reason or "复核驳回：定责不成立"
+        self.db.commit()
+        self.db.refresh(report)
+        self._log_operation(
+            admin_id, "damage.reject", f"复核驳回 报告:{report_id} 原因:{reason}"
+        )
+        return report
+
+    def mark_book_found(self, borrow_record_id: int, admin_id: int) -> dict:
+        """B10 找回回滚：已按丢失处理的图书找回
+
+        - 寻找期内找回：全额免赔（fine 冲正为 0）
+        - 超过寻找期：同样冲正未缴罚款（已缴部分需线下协商，此处只冲正 outstanding）
+        """
+        record = (
+            self.db.query(BorrowRecord)
+            .filter(BorrowRecord.id == borrow_record_id, BorrowRecord.is_deleted == 0)
+            .with_for_update()
+            .first()
+        )
+        if not record:
+            raise NotFoundError("借阅记录不存在")
+        if record.status != BorrowStatus.LOST:
+            raise ValidationError("该记录不是丢失状态，无需找回")
+
+        within_window = bool(
+            record.lost_search_deadline
+            and datetime.now() <= record.lost_search_deadline
+        )
+
+        # 物理回滚：副本/库存
+        copy = None
+        if record.book_copy_id:
+            copy = (
+                self.db.query(BookCopy)
+                .filter(BookCopy.id == record.book_copy_id)
+                .with_for_update()
+                .first()
+            )
+            if copy and copy.status == BookCopyStatus.LOST:
+                copy.status = BookCopyStatus.AVAILABLE
+
+        book = self.db.query(Book).filter(Book.id == record.book_id).first()
+        if book:
+            book.total_stock = (book.total_stock or 0) + 1
+            book.available_stock = (book.available_stock or 0) + 1
+
+        # 财务回滚：冲正丢失罚款（含关联损坏报告）
+        fine = record.fine_amount or Decimal("0")
+        child = (
+            self.db.query(Child)
+            .filter(Child.id == record.child_id, Child.is_deleted == 0)
+            .with_for_update()
+            .first()
+        )
+        waived = Decimal("0")
+        if child and fine > 0:
+            waived = min(fine, child.outstanding_fines or Decimal("0"))
+            child.outstanding_fines = (child.outstanding_fines or 0) - waived
+
+        report = (
+            self.db.query(BookDamageReport)
+            .filter(
+                BookDamageReport.borrow_record_id == borrow_record_id,
+                BookDamageReport.damage_level == 3,
+                BookDamageReport.status.in_(
+                    [
+                        BookDamageReport.STATUS_PENDING,
+                        BookDamageReport.STATUS_PENDING_REVIEW,
+                        BookDamageReport.STATUS_CONFIRMED,
+                    ]
+                ),
+                BookDamageReport.is_deleted == 0,
+            )
+            .first()
+        )
+        if report:
+            report.override_fine = Decimal("0")
+            report.status = BookDamageReport.STATUS_OVERRIDDEN
+            report.review_admin_id = admin_id
+            report.reviewed_at = datetime.now()
+            report.appeal_result = (
+                "寻找期内找回，全额免赔" if within_window else "逾期找回，冲正未缴罚款"
+            )
+
+        record.status = BorrowStatus.RETURNED
+        record.return_time = datetime.now()
+        record.fine_amount = Decimal("0")
+        record.lost_search_deadline = None
+
+        self.db.commit()
+        self._log_operation(
+            admin_id,
+            "damage.found",
+            f"丢失找回 借阅:{borrow_record_id} 免赔:{waived} 期内:{within_window}",
+        )
+        return {
+            "success": True,
+            "borrow_record_id": borrow_record_id,
+            "waived_amount": str(waived),
+            "within_search_window": within_window,
+        }
+
+    def replace_with_new_copy(
+        self, borrow_record_id: int, barcode: str, admin_id: int
+    ) -> dict:
+        """B10 买同 ISBN 新书归还替代赔偿：登记新副本 + 全额免赔"""
+        record = (
+            self.db.query(BorrowRecord)
+            .filter(BorrowRecord.id == borrow_record_id, BorrowRecord.is_deleted == 0)
+            .with_for_update()
+            .first()
+        )
+        if not record:
+            raise NotFoundError("借阅记录不存在")
+        if record.status != BorrowStatus.LOST:
+            raise ValidationError("该记录不是丢失状态，无法用新书替代")
+
+        existing = (
+            self.db.query(BookCopy)
+            .filter(BookCopy.barcode == barcode, BookCopy.is_deleted == 0)
+            .first()
+        )
+        if existing:
+            raise ValidationError(f"条码 {barcode} 已存在，请换一个新条码")
+
+        # 新副本入库
+        new_copy = BookCopy(
+            book_id=record.book_id,
+            barcode=barcode,
+            status=BookCopyStatus.AVAILABLE,
+        )
+        self.db.add(new_copy)
+
+        book = self.db.query(Book).filter(Book.id == record.book_id).first()
+        if book:
+            book.total_stock = (book.total_stock or 0) + 1
+            book.available_stock = (book.available_stock or 0) + 1
+
+        # 全额免赔
+        fine = record.fine_amount or Decimal("0")
+        child = (
+            self.db.query(Child)
+            .filter(Child.id == record.child_id, Child.is_deleted == 0)
+            .with_for_update()
+            .first()
+        )
+        waived = Decimal("0")
+        if child and fine > 0:
+            waived = min(fine, child.outstanding_fines or Decimal("0"))
+            child.outstanding_fines = (child.outstanding_fines or 0) - waived
+
+        report = (
+            self.db.query(BookDamageReport)
+            .filter(
+                BookDamageReport.borrow_record_id == borrow_record_id,
+                BookDamageReport.damage_level == 3,
+                BookDamageReport.status.in_(
+                    [
+                        BookDamageReport.STATUS_PENDING,
+                        BookDamageReport.STATUS_PENDING_REVIEW,
+                        BookDamageReport.STATUS_CONFIRMED,
+                    ]
+                ),
+                BookDamageReport.is_deleted == 0,
+            )
+            .first()
+        )
+        if report:
+            report.override_fine = Decimal("0")
+            report.status = BookDamageReport.STATUS_OVERRIDDEN
+            report.review_admin_id = admin_id
+            report.reviewed_at = datetime.now()
+            report.appeal_result = f"购同ISBN新书归还替代赔偿（新条码:{barcode}）"
+
+        record.status = BorrowStatus.RETURNED
+        record.return_time = datetime.now()
+        record.fine_amount = Decimal("0")
+        record.lost_search_deadline = None
+
+        self.db.commit()
+        self.db.refresh(new_copy)
+        self._log_operation(
+            admin_id,
+            "damage.replace_new",
+            f"新书替代 借阅:{borrow_record_id} 新副本:{new_copy.id} 免赔:{waived}",
+        )
+        return {
+            "success": True,
+            "borrow_record_id": borrow_record_id,
+            "new_copy_id": new_copy.id,
+            "waived_amount": str(waived),
+        }
+
+    def _rollback_lost_physical(self, report: BookDamageReport) -> None:
+        """丢失定级的物理效应回滚（复核驳回用，不自行 commit）"""
+        if report.book_copy_id:
+            copy = (
+                self.db.query(BookCopy)
+                .filter(BookCopy.id == report.book_copy_id)
+                .with_for_update()
+                .first()
+            )
+            if copy and copy.status == BookCopyStatus.LOST:
+                copy.status = BookCopyStatus.AVAILABLE
+
+        record = (
+            self.db.query(BorrowRecord)
+            .filter(BorrowRecord.id == report.borrow_record_id)
+            .with_for_update()
+            .first()
+        )
+        if record:
+            book = self.db.query(Book).filter(Book.id == record.book_id).first()
+            if book:
+                book.total_stock = (book.total_stock or 0) + 1
+                book.available_stock = (book.available_stock or 0) + 1
+            now = datetime.now()
+            record.status = (
+                BorrowStatus.OVERDUE
+                if record.due_date and record.due_date < now
+                else BorrowStatus.BORROWING
+            )
+            record.fine_amount = Decimal("0")
+            record.lost_search_deadline = None
 
     def get_list(
         self,
@@ -304,7 +595,7 @@ class DamageAdminService:
         level_names = {1: "轻度（免费）", 2: "重度（0.5×定价）", 3: "丢失（1.5×定价）"}
         level_name = level_names.get(report.damage_level, "未知")
         fine_text = (
-            f"罚款¥{fine_amount}" if fine_amount and fine_amount > 0 else "无需罚款"
+            f"服务费¥{fine_amount}" if fine_amount and fine_amount > 0 else "无需费用"
         )
         from backend.domain.message.models import SystemMessage
 
@@ -312,6 +603,25 @@ class DamageAdminService:
             user_id=child.user_id,
             title="图书损坏通知",
             content=f"您的孩子「{child.name}」有图书被定为「{level_name}」，{fine_text}。如有异议请在7天内联系管理员申诉。",
+            msg_type=1,
+            priority=1,
+        )
+        self.db.add(msg)
+        self.db.flush()
+
+    def _send_review_pending_notification(
+        self, report: BookDamageReport, child, fine_amount: Decimal
+    ):
+        """B9 待复核通知 — 财务效应生效前告知家长（复核中）"""
+        from backend.domain.message.models import SystemMessage
+
+        msg = SystemMessage(
+            user_id=child.user_id,
+            title="图书损坏定责复核中",
+            content=(
+                f"您的孩子「{child.name}」有图书损坏定责正在复核，"
+                f"复核通过后将产生服务费¥{fine_amount}。如有异议请提前联系管理员。"
+            ),
             msg_type=1,
             priority=1,
         )

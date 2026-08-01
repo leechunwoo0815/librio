@@ -130,7 +130,8 @@ class TestCreateDamageReport:
         )
         assert report.damage_level == 2
         assert report.fine_amount == Decimal("100.00")  # 200 × 0.5
-        assert report.status == BookDamageReport.STATUS_PENDING
+        # B9 双人复核：重度定级财务效应待复核，状态为待复核
+        assert report.status == BookDamageReport.STATUS_PENDING_REVIEW
 
     def test_level_3_lost_with_d05(self, db_session):
         """丢失（1.5×定价）+ D05 联动验证 BookCopy.status → LOST"""
@@ -197,6 +198,7 @@ class TestAppeal:
             damage_level=2,
             admin_id=0,
         )
+        svc.confirm_report(report.id, admin_id=1)  # B9 双人复核
         appealed = svc.appeal(report.id, "图书归还时并未损坏")
         assert appealed.status == BookDamageReport.STATUS_DISPUTED
         assert appealed.appeal_reason == "图书归还时并未损坏"
@@ -221,6 +223,7 @@ class TestAppeal:
             damage_level=2,
             admin_id=0,
         )
+        svc.confirm_report(report.id, admin_id=1)  # B9 双人复核
         # 模拟超过7天
         db_session.query(BookDamageReport).filter(
             BookDamageReport.id == report.id
@@ -254,6 +257,7 @@ class TestReview:
             damage_level=2,
             admin_id=0,
         )
+        svc.confirm_report(report.id, admin_id=1)  # B9 双人复核
         svc.appeal(report.id, "申诉")
         reviewed = svc.review(
             report.id, action="approve", review_remark="查监控确认损坏", admin_id=1
@@ -282,6 +286,7 @@ class TestReview:
         )
         assert report.fine_amount == Decimal("100.00")
 
+        svc.confirm_report(report.id, admin_id=1)  # B9 双人复核
         # 申诉后冲正为轻度（免费）
         svc.appeal(report.id, "轻微折痕不应重度定级")
         reviewed = svc.review(
@@ -317,6 +322,7 @@ class TestReview:
         )
         assert report.fine_amount == Decimal("150.00")
 
+        svc.confirm_report(report.id, admin_id=1)  # B9 双人复核
         # 申诉：书找到了只是损坏
         svc.appeal(report.id, "书已找到，重度损坏")
         reviewed = svc.review(
