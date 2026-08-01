@@ -144,6 +144,26 @@ class SystemConfig(BaseModel):
         "lost_book_fine_multiplier": ("1.5", "string", "丢书罚款倍率（图书定价×倍率）"),
         # ── 押金 ──
         "deposit_amount": ("1200", "int", "押金金额（元）"),
+        "deposit_refund_auto_approve": (
+            "true",
+            "bool",
+            "押金退款满足条件自动审核通过（E1决策）",
+        ),
+        "deposit_partial_refund_amount": (
+            "600",
+            "int",
+            "押金减半退还金额（A2：借满N本无逾期可退，元）",
+        ),
+        "deposit_partial_refund_books": (
+            "10",
+            "int",
+            "押金减半退还所需已归还本数（A2）",
+        ),
+        "refund_auto_approve_max": (
+            "500",
+            "int",
+            "退款自动审核通过金额上限（E1决策：≤N元自动通过，元）",
+        ),
         "parent_course_required": (
             "false",
             "bool",

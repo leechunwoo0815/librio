@@ -431,3 +431,14 @@ def step_balance_decreased(context):
     # 验证罚款已记录（押金减少的体现）
     context.db.refresh(context.child)
     assert float(context.child.outstanding_fines or 0) >= 0
+
+
+@then("退款金额自动抵扣未结罚款{amount:d}元")
+def step_refund_deducts_fines(context, amount):
+    """B11：押金退款金额 = 押金 - 未缴罚款（自动抵扣，不再拦截）"""
+    assert context.response.status_code == 200
+    data = context.response.json()
+    expected = 1200 - amount
+    assert float(data["refund_amount"]) == float(expected), (
+        f"退款金额应为 {expected}（押金1200-罚款{amount}），实际 {data['refund_amount']}"
+    )

@@ -347,7 +347,8 @@ class DepositService:
         )
 
     def refund_deposit(self, data: DepositRefundRequest) -> DepositResponse:
-        """申请退还押金 — 进入 REFUND_PENDING 等待管理员审核"""
+        """申请退还押金 — B11：未缴罚款记账累计、退押金时自动抵扣（不再拦截）；
+        E1：满足条件由路由层自动审核通过"""
         record = self.deposit_repo.get_active_by_child_for_update(data.child_id)
         if not record:
             raise NotFoundError("未找到已缴纳的押金记录")
@@ -375,9 +376,14 @@ class DepositService:
             .with_for_update()
             .first()
         )
-        if child and child.outstanding_fines and child.outstanding_fines > 0:
-            raise ValidationError(f"请先结清未缴罚款 {child.outstanding_fines} 元")
 
+        # B11：未缴罚款从押金中自动抵扣，退余额（不用先缴）
+        outstanding = (
+            Decimal(str(child.outstanding_fines))
+            if child and child.outstanding_fines
+            else Decimal("0")
+        )
+        record.refund_amount = max(Decimal("0"), record.amount - outstanding)
         record.status = DepositStatus.REFUND_PENDING
         self.deposit_repo.update(record)
 
@@ -386,7 +392,8 @@ class DepositService:
 
         self.db.commit()
         logger.info(
-            f"Refund requested: child_id={data.child_id}, status=REFUND_PENDING"
+            f"Refund requested: child_id={data.child_id}, status=REFUND_PENDING, "
+            f"refund_amount={record.refund_amount} (fines deducted={outstanding})"
         )
         return DepositResponse.model_validate(record)
 
@@ -561,9 +568,12 @@ class DepositService:
             raise ValidationError(f"该孩子有 {active_borrows} 本未还书，请先归还再退款")
 
         # Phase 1: 设 REFUNDING → commit，释放行锁
+        # B11：refund_amount 已在申请时按（押金-未缴罚款）预设，此处尊重预设值
         record.status = DepositStatus.REFUNDING
         record.refund_time = datetime.now()
-        record.refund_amount = record.amount
+        record.refund_amount = (
+            record.refund_amount if record.refund_amount is not None else record.amount
+        )
         if child:
             child.deposit_status = DepositStatus.REFUNDING
         self.deposit_repo.update(record)
@@ -579,7 +589,7 @@ class DepositService:
                         if record.pay_order_id
                         else "",
                         total_amount=record.amount,
-                        refund_amount=record.amount,
+                        refund_amount=record.refund_amount,
                         reason="押金退款（审核通过）",
                     )
                 )
@@ -638,7 +648,7 @@ class DepositService:
         return DepositResponse.model_validate(record)
 
     def mark_refunded(self, child_id: int) -> DepositResponse:
-        """标记押金已到账退款 — REFUNDING → REFUNDED"""
+        """标记押金已到账退款 — REFUNDING → REFUNDED；B11：核销已抵扣的未缴罚款"""
         record = self.deposit_repo.get_active_by_child_for_update(child_id)
         if not record:
             raise NotFoundError("未找到已缴纳的押金记录")
@@ -647,7 +657,9 @@ class DepositService:
 
         record.status = DepositStatus.REFUNDED
         record.refund_time = record.refund_time or datetime.now()
-        record.refund_amount = record.refund_amount or record.amount
+        record.refund_amount = (
+            record.refund_amount if record.refund_amount is not None else record.amount
+        )
 
         child = (
             self.db.query(Child)
@@ -657,8 +669,108 @@ class DepositService:
         )
         if child:
             child.deposit_status = DepositStatus.REFUNDED
+            # B11：抵扣部分（押金-实退）从未缴罚款中核销
+            deducted = record.amount - record.refund_amount
+            if deducted > 0 and child.outstanding_fines:
+                child.outstanding_fines = max(
+                    Decimal("0"), child.outstanding_fines - deducted
+                )
 
         self.db.commit()
+        return DepositResponse.model_validate(record)
+
+    async def partial_refund_deposit(
+        self, child_id: int, payment_gateway: PaymentGateway | None = None
+    ) -> DepositResponse:
+        """A2：借满 N 本且无逾期记录 → 可申请减半退还押金（默认 600 元，一次为限）
+
+        配置：deposit_partial_refund_books（默认10）、deposit_partial_refund_amount（默认600）
+        """
+        record = self.deposit_repo.get_active_by_child_for_update(child_id)
+        if not record:
+            raise NotFoundError("未找到已缴纳的押金记录")
+        if record.status != DepositStatus.PAID:
+            raise ConflictError("仅已缴纳状态的押金可申请减半退还")
+        if record.partial_refunded:
+            raise ConflictError("已享受过押金减半退还，每个孩子限一次")
+
+        from backend.common.config_service import ConfigService
+
+        books_needed = ConfigService.get_int(self.db, "deposit_partial_refund_books", 10)
+        refund_amt = ConfigService.get_decimal(
+            self.db, "deposit_partial_refund_amount", Decimal("600")
+        )
+
+        returned_count = (
+            self.db.query(BorrowRecord)
+            .filter(
+                BorrowRecord.child_id == child_id,
+                BorrowRecord.status == BorrowStatus.RETURNED,
+                BorrowRecord.is_deleted == 0,
+            )
+            .count()
+        )
+        if returned_count < books_needed:
+            raise ValidationError(
+                f"借满 {books_needed} 本并归还后可申请减半退还（当前 {returned_count} 本）"
+            )
+
+        overdue_count = (
+            self.db.query(BorrowRecord)
+            .filter(
+                BorrowRecord.child_id == child_id,
+                BorrowRecord.overdue_days > 0,
+                BorrowRecord.is_deleted == 0,
+            )
+            .count()
+        )
+        if overdue_count > 0:
+            raise ValidationError("存在逾期记录，暂不符合减半退还条件")
+
+        if record.amount < refund_amt:
+            raise ValidationError(f"押金余额 {record.amount} 元，不足退还 {refund_amt} 元")
+
+        # Phase 1: 先落库（扣减押金余额 + 标记），commit 释放行锁
+        record.amount = record.amount - refund_amt
+        record.partial_refunded = 1
+        self.deposit_repo.update(record)
+        self.db.commit()
+
+        # Phase 2: 事务外调用退款网关，失败回滚标记
+        if payment_gateway:
+            try:
+                result = await payment_gateway.refund(
+                    PaymentRefundRequest(
+                        out_trade_no=str(record.pay_order_id)
+                        if record.pay_order_id
+                        else "",
+                        total_amount=record.amount + refund_amt,
+                        refund_amount=refund_amt,
+                        reason="押金减半退还（10本无逾期奖励）",
+                    )
+                )
+                if hasattr(result, "success") and not result.success:
+                    raise PaymentError(
+                        getattr(result, "error_message", "退款接口返回失败")
+                    )
+            except Exception as e:
+                logger.error(f"Partial refund failed: child={child_id}, error={e}")
+                record = (
+                    self.db.query(DepositRecord)
+                    .filter(DepositRecord.id == record.id)
+                    .with_for_update()
+                    .first()
+                )
+                if record and record.partial_refunded:
+                    record.amount = record.amount + refund_amt
+                    record.partial_refunded = 0
+                    self.db.commit()
+                raise PaymentError(f"押金减半退还调用失败: {e}")
+
+        logger.info(
+            f"Partial deposit refund: child={child_id}, amount={refund_amt}, "
+            f"remaining={record.amount}"
+        )
         return DepositResponse.model_validate(record)
 
     def get_deposit_status(self, child_id: int) -> dict:

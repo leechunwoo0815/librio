@@ -35,6 +35,7 @@ class DepositResponse(BaseSchema):
     refund_amount: Decimal | None = None
     deduct_amount: Decimal | None = None
     deduct_reason: str | None = None
+    partial_refunded: int = 0  # A2：是否已减半退还
     create_time: datetime
 
 

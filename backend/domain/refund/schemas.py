@@ -24,7 +24,7 @@ class RefundAudit(BaseSchema):
 
 class RefundResponse(BaseSchema):
     id: int
-    order_id: int
+    order_id: int | None = None  # 活动取消退款无订单（E5）
     user_id: int
     child_id: int
     refund_amount: Decimal
@@ -35,4 +35,5 @@ class RefundResponse(BaseSchema):
     review_time: datetime | None = None
     review_comment: str | None = None
     actual_refund_amount: Decimal | None = None
+    fine_deducted: Decimal = Decimal("0")  # E7：退款中抵扣的未缴罚款
     create_time: datetime

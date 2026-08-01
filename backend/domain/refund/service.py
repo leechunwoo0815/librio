@@ -120,17 +120,48 @@ class RefundService:
         used_days = (date.today() - order.pay_time.date()).days if order.pay_time else 0
         refund_amount = self._calculate(order, used_days)
 
+        # E7/B11：未缴罚款从退款中自动抵扣（不用先缴，退余额）
+        from backend.domain.child.models import Child
+
+        child = (
+            self.db.query(Child)
+            .filter(Child.id == order.child_id, Child.is_deleted == 0)
+            .with_for_update()
+            .first()
+        )
+        outstanding = (child.outstanding_fines or Decimal("0")) if child else Decimal("0")
+        fine_deducted = min(refund_amount, outstanding)
+        final_amount = refund_amount - fine_deducted
+
         refund = RefundApplication(
             order_id=data.order_id,
             user_id=user_id,
             child_id=order.child_id,
-            refund_amount=refund_amount,
+            refund_amount=final_amount,
             used_days=used_days,  # 使用服务端计算值
             reason=data.reason,
+            fine_deducted=fine_deducted,
         )
+
+        # E1：小额退款自动审核通过（默认 ≤500 元，配置 refund_auto_approve_max）
+        from backend.common.config_service import ConfigService
+
+        auto_max = ConfigService.get_decimal(
+            self.db, "refund_auto_approve_max", Decimal("500")
+        )
+        if final_amount <= auto_max:
+            refund.status = RefundApplication.STATUS_APPROVED
+            refund.review_time = datetime.now()
+            refund.review_comment = f"系统自动审核（退款≤{auto_max}元，E1决策）"
+            order.refund_status = 1  # 退款中
+            order.refund_amount = final_amount
+
         self.refund_repo.create(refund)
         self.db.commit()
-        logger.info(f"Refund applied: order={data.order_id}, refund={refund_amount}")
+        logger.info(
+            f"Refund applied: order={data.order_id}, amount={final_amount}, "
+            f"fine_deducted={fine_deducted}, status={refund.status}"
+        )
         return RefundResponse.model_validate(refund)
 
     def audit_refund(self, refund_id: int, audit: RefundAudit) -> RefundResponse:
@@ -266,6 +297,23 @@ class RefundService:
         refund.refund_time = datetime.now()
         order.refund_status = 2  # REFUND_DONE
         order.pay_status = PayStatus.REFUNDED
+
+        # E7/B11：退款完成时核销已抵扣的未缴罚款
+        if refund.fine_deducted and refund.fine_deducted > 0:
+            from backend.domain.child.models import Child
+
+            child = (
+                self.db.query(Child)
+                .filter(Child.id == refund.child_id, Child.is_deleted == 0)
+                .with_for_update()
+                .first()
+            )
+            if child:
+                child.outstanding_fines = max(
+                    Decimal("0"),
+                    (child.outstanding_fines or Decimal("0")) - refund.fine_deducted,
+                )
+
         self.db.commit()
         return RefundResponse.model_validate(refund)
 

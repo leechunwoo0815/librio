@@ -31,9 +31,9 @@ class RefundApplication(BaseModel):
     order_id = Column(
         BigInteger,
         ForeignKey("order.id"),
-        nullable=False,
+        nullable=True,
         index=True,
-        comment="关联订单ID",
+        comment="关联订单ID（活动取消退款无订单，E5）",
     )
     child_id = Column(
         BigInteger, ForeignKey("child.id"), nullable=False, index=True, comment="孩子ID"
@@ -54,5 +54,10 @@ class RefundApplication(BaseModel):
 
     actual_refund_amount = Column(Numeric(10, 2), nullable=True, comment="实际退款金额")
     refund_time = Column(DateTime, nullable=True, comment="退款完成时间")
+    fine_deducted = Column(
+        Numeric(10, 2),
+        default=0,
+        comment="退款中抵扣的未缴罚款（E7/B11：先扣罚款再退余额）",
+    )
 
     order = relationship("Order", foreign_keys=[order_id])

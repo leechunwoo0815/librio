@@ -44,6 +44,11 @@ class DepositRecord(BaseModel):
     refund_amount = Column(Numeric(10, 2), nullable=True, comment="退款金额")
     deduct_amount = Column(Numeric(10, 2), nullable=True, comment="扣除金额")
     deduct_reason = Column(String(255), nullable=True, comment="扣除原因")
+    partial_refunded = Column(
+        SmallInteger,
+        default=0,
+        comment="已减半退还: 0=否 1=是（A2：借满N本无逾期可退一半）",
+    )
 
     # 关系
     child = relationship("Child", foreign_keys=[child_id])

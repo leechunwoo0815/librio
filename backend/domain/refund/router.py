@@ -20,10 +20,26 @@ router = APIRouter(prefix="/refund", tags=["退款"])
 @router.post("/", response_model=RefundResponse, status_code=201)
 def apply_refund(
     data: RefundCreate,
+    background_tasks: BackgroundTasks,
     service: RefundService = Depends(get_refund_service),
     current_user=Depends(get_current_user),
 ):
-    return service.apply_refund(current_user.id, data)
+    result = service.apply_refund(current_user.id, data)
+
+    # E1：自动审核通过的（小额退款）直接发起退款执行
+    if result.status == 1 and result.order_id:
+        refund_order = service.get_refund_with_order(result.id)
+        if refund_order:
+            refund, order = refund_order
+            if refund and order:
+                background_tasks.add_task(
+                    RefundService._execute_wechat_refund,
+                    refund.id,
+                    order.order_no,
+                    refund.refund_amount,
+                    refund.review_comment or "",
+                )
+    return result
 
 
 @router.get("/")

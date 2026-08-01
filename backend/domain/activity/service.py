@@ -380,10 +380,12 @@ class ActivityService:
             cancelled_count += 1
 
             child = children.get(e.child_id)
-            # 收费活动报名 → 写退款申请
+            # 收费活动报名 → 写退款申请（E5：活动取消退款自动通过，钱原路退回无需人工）
             if child and not activity.is_free and activity.price and activity.price > 0:
                 eid = e.id
                 try:
+                    from datetime import datetime as _dt
+
                     from backend.domain.refund.models import RefundApplication
                     from backend.common.base_repo import BaseRepository
 
@@ -394,6 +396,9 @@ class ActivityService:
                         refund_amount=activity.price,
                         used_days=0,
                         reason=f"活动「{activity.title}」被组织者取消，自动退款",
+                        status=RefundApplication.STATUS_APPROVED,
+                        review_time=_dt.now(),
+                        review_comment="活动取消自动退款（E5决策：无需人工审核）",
                     )
                     refund_repo = BaseRepository(self.db, RefundApplication)
                     refund_repo.create(refund)

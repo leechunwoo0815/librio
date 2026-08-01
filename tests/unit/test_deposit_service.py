@@ -145,6 +145,7 @@ async def test_refund_deposit_with_active_borrows(db):
 
 @pytest.mark.asyncio
 async def test_refund_deposit_with_fines(db):
+    """B11：未缴罚款不再拦截押金退款，自动抵扣（1200-50=1150）"""
     user, child = _setup(db)
     svc = DepositService(db)
     await svc.pay_deposit(
@@ -152,8 +153,9 @@ async def test_refund_deposit_with_fines(db):
     )
     child.outstanding_fines = 50
     db.commit()
-    with pytest.raises(Exception, match="罚款"):
-        svc.refund_deposit(DepositRefundRequest(child_id=child.id))
+    result = svc.refund_deposit(DepositRefundRequest(child_id=child.id))
+    assert result.status == DepositStatus.REFUND_PENDING
+    assert result.refund_amount == Decimal("1150")
 
 
 @pytest.mark.asyncio

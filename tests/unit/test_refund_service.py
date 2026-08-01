@@ -54,13 +54,14 @@ def _setup(db):
 
 
 def test_apply_refund_duplicate_raises_conflict(db):
+    """E1：500 元退款自动审核通过后，重复申请被 365 天年度上限拦截"""
     user, child, order = _setup(db)
     svc = RefundService(db)
     data = RefundCreate(order_id=order.id, used_days=5, reason="不满意")
     r1 = svc.apply_refund(user.id, data)
     assert r1.id is not None
-    assert r1.status == RefundApplication.STATUS_PENDING
-    with pytest.raises(Exception, match="正在处理|已有|pending|退款申请已存在|重复"):
+    assert r1.status == RefundApplication.STATUS_APPROVED  # E1：≤500 自动通过
+    with pytest.raises(Exception, match="正在处理|已有|pending|365 天|年度上限"):
         svc.apply_refund(user.id, data)
 
 
@@ -141,7 +142,7 @@ def test_apply_refund_returned_borrows_allowed(db):
     data = RefundCreate(order_id=order.id, used_days=5, reason="不满意")
     r = svc.apply_refund(user.id, data)
     assert r.id is not None
-    assert r.status == RefundApplication.STATUS_PENDING
+    assert r.status == RefundApplication.STATUS_APPROVED  # E1：≤500 自动通过
 
 
 # ── T1.5 退款拦截网：365天退款上限 ──

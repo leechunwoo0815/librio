@@ -216,6 +216,40 @@ def step_refund_submitted(context):
     step_submit_refund(context)
 
 
+@given("用户提交了大额退款申请（正式会员5400元）")
+def step_large_refund_submitted(context):
+    """E1：>500 元退款保持人工审核（自动审核上限 refund_auto_approve_max=500）"""
+    from backend.domain.order.models import Order
+
+    child = Child(user_id=context.user.id, name="小明", age=7, grade="二年级")
+    context.db.add(child)
+    context.db.commit()
+    context.child = child
+    order = Order(
+        order_no="MW_REF_AUDIT_BIG",
+        user_id=context.user.id,
+        child_id=child.id,
+        type=Order.TYPE_OFFICIAL_MEMBER,
+        amount=5400,
+        pay_status=Order.PAY_PAID,
+        pay_time=datetime.now() - timedelta(days=30),
+    )
+    context.db.add(order)
+    context.db.commit()
+    context.order = order
+    step_submit_refund(context)
+    assert context.response.status_code == 201
+    assert context.response.json()["status"] == 0  # PENDING 待人工审核
+
+
+@when("系统自动审核通过（E1：≤500元）")
+@then("系统自动审核通过（E1：≤500元）")
+def step_auto_approved(context):
+    """E1：≤500 元退款申请提交即自动审核通过，无需管理员操作"""
+    assert context.refund_response.status_code == 201
+    assert context.refund_response.json()["status"] == 1  # APPROVED
+
+
 @then('退款状态变为"审核通过"')
 def step_refund_approved(context):
     assert context.response.status_code in (200, 201)

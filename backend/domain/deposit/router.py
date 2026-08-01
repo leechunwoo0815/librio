@@ -37,14 +37,40 @@ async def pay_deposit(
 
 
 @router.post("/refund", response_model=DepositResponse)
-def refund_deposit(
+async def refund_deposit(
     data: DepositRefundRequest,
     service: DepositService = Depends(get_deposit_service),
     current_user=Depends(get_current_user),
     db=Depends(get_db),
+    payment_gateway=Depends(get_payment_gateway),
 ):
     verify_child_ownership(data.child_id, current_user, db)
-    return service.refund_deposit(data)
+    result = service.refund_deposit(data)
+
+    # E1：押金退款满足条件自动审核通过（申请时已强校验无未还书，罚款走B11抵扣）
+    from backend.common.config_service import ConfigService
+
+    if ConfigService.get_bool(db, "deposit_refund_auto_approve", True):
+        result = await service.audit_refund(
+            child_id=data.child_id,
+            action="approve",
+            admin_id=0,  # 0=系统自动审核
+            payment_gateway=payment_gateway,
+        )
+    return result
+
+
+@router.post("/partial-refund", response_model=DepositResponse)
+async def partial_refund_deposit(
+    data: DepositRefundRequest,
+    service: DepositService = Depends(get_deposit_service),
+    current_user=Depends(get_current_user),
+    db=Depends(get_db),
+    payment_gateway=Depends(get_payment_gateway),
+):
+    """A2：借满 N 本无逾期 → 减半退还押金（默认 600 元，一次为限）"""
+    verify_child_ownership(data.child_id, current_user, db)
+    return await service.partial_refund_deposit(data.child_id, payment_gateway)
 
 
 @router.post("/deduct", response_model=DepositResponse)
