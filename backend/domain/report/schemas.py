@@ -60,6 +60,11 @@ class ObservationReportDetailResponse(BaseSchema):
     observation_start: datetime | None = None
     observation_end: datetime | None = None
     generated_at: datetime | None = None
+    # D6 转化导向
+    streak_days: int = 0
+    new_vocab_count: int = 0
+    peer_avg_books: float | None = None
+    cta_text: str | None = None
 
 
 class GenerateReportResult(BaseSchema):

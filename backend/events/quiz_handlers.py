@@ -61,10 +61,63 @@ def handle_quiz_passed_for_bookshelf(event, db: Session):
 
 
 def handle_quiz_passed_for_submission(event, db: Session):
-    """测验通过 → 阅读提交保持待审核状态（由老师手动审核）"""
-    # P0-9 修复：不再自动批准提交，由老师通过 review_submission 审核
-    # 审核通过时会触发 increment_books_read + check_and_advance
-    pass
+    """测验通过 → 达标提交自动审核（D4：阅读≥N分钟自动 APPROVED，否则转人工队列）"""
+    from datetime import datetime
+
+    from sqlalchemy import func
+
+    from backend.common.config_service import ConfigService
+    from backend.common.events import ReadingBookFinishedEvent, event_bus
+    from backend.domain.advancement.models import ReadingSubmission
+    from backend.domain.reading.models import ReadingSession
+
+    if not ConfigService.get_bool(db, "submission_auto_approve", True):
+        return
+
+    sub = (
+        db.query(ReadingSubmission)
+        .filter(
+            ReadingSubmission.child_id == event.child_id,
+            ReadingSubmission.book_id == event.book_id,
+            ReadingSubmission.status == ReadingSubmission.STATUS_PENDING,
+            ReadingSubmission.is_deleted == 0,
+        )
+        .order_by(ReadingSubmission.create_time)
+        .with_for_update()
+        .first()
+    )
+    if not sub:
+        return
+
+    min_minutes = ConfigService.get_int(db, "submission_min_minutes", 10)
+    total_seconds = (
+        db.query(func.coalesce(func.sum(ReadingSession.duration_seconds), 0))
+        .filter(
+            ReadingSession.child_id == event.child_id,
+            ReadingSession.book_id == event.book_id,
+            ReadingSession.is_deleted == 0,
+        )
+        .scalar()
+        or 0
+    )
+    if total_seconds < min_minutes * 60:
+        logger.info(
+            f"D4: submission {sub.id} 阅读时长不足 "
+            f"({total_seconds}s < {min_minutes}min)，转人工审核队列"
+        )
+        return
+
+    sub.status = ReadingSubmission.STATUS_APPROVED
+    sub.reviewed_at = datetime.now()
+    event_bus.publish(
+        ReadingBookFinishedEvent(
+            child_id=event.child_id,
+            book_id=event.book_id,
+            word_count=sub.word_count or event.word_count,
+        ),
+        db=db,
+    )
+    logger.info(f"D4: submission {sub.id} auto-approved on quiz pass")
 
 
 def handle_quiz_failed_for_logging(event, db: Session = None):

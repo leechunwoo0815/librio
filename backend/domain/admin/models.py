@@ -205,6 +205,16 @@ class SystemConfig(BaseModel):
             "每级需通过测验的最少书数（默认=required_books，全部通过）",
         ),
         "require_teacher_review": ("false", "bool", "晋级是否需要老师审核"),
+        "submission_auto_approve": (
+            "true",
+            "bool",
+            "提交达标自动通过（D4：测验通过且阅读时长达标）",
+        ),
+        "submission_min_minutes": (
+            "10",
+            "int",
+            "提交自动通过所需最低阅读分钟数（D4）",
+        ),
         "quiz_cooldown_minutes": (
             "10",
             "int",

@@ -11,7 +11,6 @@ from sqlalchemy import func
 from backend.common.base_repo import BaseRepository
 from backend.common.events import (
     CheckInEvent,
-    ReadingBookFinishedEvent,
     ReadingSessionCompletedEvent,
     event_bus,
 )
@@ -147,8 +146,8 @@ class ReadingService:
             progress.is_finished = 1
             progress.finish_time = datetime.now()
 
-            # 读完自动创建 ReadingSubmission（自动通过，无需审核）
-            # 晋级检测在 check_and_advance 中处理（需审核时会阻断）
+            # 读完创建 ReadingSubmission（D4：待审核；测验通过且时长达标后系统自动通过，
+            # 仅时长不足/未测验进人工队列）
             from backend.domain.advancement.models import ReadingSubmission
             from backend.domain.book.models import Book
 
@@ -174,21 +173,10 @@ class ReadingService:
                     child_id=progress.child_id,
                     book_id=progress.book_id,
                     word_count=book.word_count if book else 0,
-                    status=ReadingSubmission.STATUS_APPROVED,
-                    reviewed_at=datetime.now(),
+                    status=ReadingSubmission.STATUS_PENDING,
                 )
                 self.db.add(sub)
                 self.db.flush()
-
-                # 自动增加已读书数 + 触发晋级检测（通过事件总线解耦）
-                event_bus.publish(
-                    ReadingBookFinishedEvent(
-                        child_id=sub.child_id,
-                        book_id=sub.book_id,
-                        word_count=sub.word_count,
-                    ),
-                    db=self.db,
-                )
 
         self.progress_repo.update(progress)
         self.db.commit()

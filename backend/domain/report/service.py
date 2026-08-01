@@ -79,6 +79,13 @@ class ReportService:
             "observation_start": r.start_date.isoformat() if r.start_date else None,
             "observation_end": r.end_date.isoformat() if r.end_date else None,
             "generated_at": r.create_time.isoformat() if r.create_time else None,
+            # D6 转化导向
+            "streak_days": r.streak_days or 0,
+            "new_vocab_count": r.new_vocab_count or 0,
+            "peer_avg_books": float(r.peer_avg_books)
+            if r.peer_avg_books is not None
+            else None,
+            "cta_text": r.cta_text,
         }
 
     def get_learning_report(self, child_id: int) -> LearningReportResponse | None:
@@ -117,6 +124,12 @@ class ReportService:
             observation_start=report.start_date,
             observation_end=report.end_date,
             generated_at=report.create_time,
+            streak_days=report.streak_days or 0,
+            new_vocab_count=report.new_vocab_count or 0,
+            peer_avg_books=float(report.peer_avg_books)
+            if report.peer_avg_books is not None
+            else None,
+            cta_text=report.cta_text,
         )
 
     def generate_due_reports(self) -> list:
@@ -224,6 +237,46 @@ class ReportService:
             level = self.db.query(Level).filter(Level.id == current_cl.level_id).first()
             level_name = level.name if level else None
 
+        # ── D6 转化导向数据 ──
+        # 1. 进步曲线：连续打卡 + 新增生词
+        streak_days = child.current_streak_days or 0
+        new_vocab_count = (
+            self.db.query(UserVocabulary)
+            .filter(
+                UserVocabulary.child_id == child.id,
+                UserVocabulary.create_time >= obs_start,
+                UserVocabulary.create_time <= obs_end,
+                UserVocabulary.is_deleted == 0,
+            )
+            .count()
+        )
+
+        # 2. 同龄对比：同龄（同岁）观察期孩子的平均读完本数（取已生成报告）
+        from sqlalchemy import func as sql_func
+
+        peer_avg = (
+            self.db.query(sql_func.avg(ObservationReport.total_books_read))
+            .join(Child, ObservationReport.child_id == Child.id)
+            .filter(
+                Child.age == child.age,
+                Child.id != child.id,
+                ObservationReport.is_deleted == 0,
+            )
+            .scalar()
+        )
+
+        # 3. 续费引导文案（强调进步，弱化绝对值）
+        obs_days = ConfigService.get_int(self.db, "observation_days", OBSERVATION_DAYS)
+        cta_parts = [f"{obs_days}天里，{child.name}读完 {total_books} 本书"]
+        if streak_days:
+            cta_parts.append(f"连续打卡 {streak_days} 天")
+        if new_vocab_count:
+            cta_parts.append(f"学会 {new_vocab_count} 个新单词")
+        cta_text = (
+            "，".join(cta_parts)
+            + "！继续保持，3 个月后就能独立阅读章节书啦～ 现在续费立享正式会员全部权益！"
+        )
+
         report = ObservationReport(
             child_id=child.id,
             start_date=obs_start,
@@ -235,6 +288,12 @@ class ReportService:
             quizzes_attempted=quizzes_attempted,
             quizzes_passed=quizzes_passed,
             status=1,
+            streak_days=streak_days,
+            new_vocab_count=new_vocab_count,
+            peer_avg_books=(
+                round(float(peer_avg), 1) if peer_avg is not None else None
+            ),
+            cta_text=cta_text[:255],
         )
         self.observation_repo.create(report)
         self.db.commit()
