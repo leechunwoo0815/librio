@@ -1,13 +1,13 @@
 # backend/domain/borrow/service.py
 """借阅域业务逻辑 — V3.1 OMO 线下借阅
 
-借阅上限 20 本，借期 21 天，逾期罚款。
+借阅上限由配置 borrow_limit 控制（默认 10 本，B14 决策），借期 21 天，
+逾期服务费策略见 backend/common/fine_policy.py（B7/B8 决策）。
 与 Bookshelf（想读清单）完全分离。
 """
 
 import logging
 from datetime import datetime, timedelta
-from decimal import Decimal
 
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -39,7 +39,9 @@ from backend.domain.child.models import Child
 
 logger = logging.getLogger(__name__)
 
-MAX_BORROW = 20  # 默认值，通过 ConfigService.get_int(db, "borrow_limit", 20) 读取
+MAX_BORROW = (
+    10  # 默认值，通过 ConfigService.get_int(db, "borrow_limit", 10) 读取（B14）
+)
 BORROW_DAYS = (
     21  # 默认值，通过 ConfigService.get_int(db, "borrow_period_days", 21) 读取
 )
@@ -229,18 +231,15 @@ class BorrowService:
         record.return_time = now
         record.status = BorrowStatus.RETURNED
 
-        # 计算逾期
-        if now > record.due_date:
-            # 到期日当天不罚款，从第二天开始算
-            overdue_days = max(0, (now - record.due_date).days - 1)
-            record.overdue_days = overdue_days
-            if overdue_days > 0:
-                from backend.common.config_service import ConfigService
+        # 计算逾期服务费（B7：宽限期免罚 + 定价上限 + 首次免罚）
+        from backend.common.fine_policy import (
+            apply_fine,
+            calc_overdue_days,
+            get_overdue_policy,
+        )
 
-                daily_fine = ConfigService.get_decimal(
-                    self.db, "overdue_fine_per_day", Decimal("1")
-                )
-                record.fine_amount = Decimal(str(overdue_days)) * daily_fine
+        overdue_days = calc_overdue_days(now, record.due_date)
+        apply_fine(self.db, record, overdue_days, get_overdue_policy(self.db))
 
         self.borrow_repo.update(record)
 

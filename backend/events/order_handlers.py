@@ -78,7 +78,7 @@ def handle_order_paid_for_child(event, db: Session):
                 f"not allowed to start OBSERVATION"
             )
             return
-        obs_days = ConfigService.get_int(db, "observation_days", 30)
+        obs_days = ConfigService.get_int(db, "observation_days", 45)
         child.status = MemberStatus.OBSERVATION
         child.member_start_time = now
         child.member_expire_time = now + timedelta(days=obs_days)
@@ -87,7 +87,7 @@ def handle_order_paid_for_child(event, db: Session):
             f"Child {event.child_id} observation period activated: {obs_days} days"
         )
     elif event.order_type == OrderType.PARENT_COURSE:
-        obs_days = ConfigService.get_int(db, "observation_days", 30)
+        obs_days = ConfigService.get_int(db, "observation_days", 45)
         child.status = MemberStatus.OBSERVATION
         child.member_start_time = now
         child.member_expire_time = now + timedelta(days=obs_days)

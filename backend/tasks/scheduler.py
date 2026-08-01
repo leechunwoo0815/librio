@@ -1129,19 +1129,24 @@ def expire_reservations():
 @distributed_lock("job:mark_overdue_books", timeout=600)
 def mark_overdue_books():
     """
-    [What] 逾期检测 + 罚款按日累计
-    [Why] 超过21天未还的借阅记录标记为逾期，已逾期的更新罚款
-    [How] 查询到期日已过的BORROWING/OVERDUE记录，更新状态和罚款
+    [What] 逾期检测 + 服务费按日累计（B7：宽限期/上限/首次免罚走 fine_policy）
+    [Why] 超过21天未还的借阅记录标记为逾期，已逾期的更新服务费
+    [How] 查询到期日已过的BORROWING/OVERDUE记录，更新状态和服务费
     """
     from backend.domain.borrow.models import BorrowRecord
     from backend.domain.child.models import Child
     from backend.common.types import BorrowStatus
-    from backend.common.config_service import ConfigService
 
     db = _get_db_session()
     try:
         now = datetime.now()
-        daily_fine = ConfigService.get_decimal(db, "overdue_fine_per_day", Decimal("1"))
+        from backend.common.fine_policy import (
+            apply_fine,
+            calc_overdue_days,
+            get_overdue_policy,
+        )
+
+        policy = get_overdue_policy(db)
 
         # 新逾期：BORROWING → OVERDUE
         new_overdue = (
@@ -1155,15 +1160,14 @@ def mark_overdue_books():
         )
 
         for record in new_overdue:
-            overdue_days = (now - record.due_date).days
+            overdue_days = calc_overdue_days(now, record.due_date)
             record.status = BorrowStatus.OVERDUE
-            record.overdue_days = overdue_days
-            record.fine_amount = Decimal(str(overdue_days)) * daily_fine
+            apply_fine(db, record, overdue_days, policy)
             logger.debug(
                 f"BOOK_OVERDUE: id={record.id}, child={record.child_id}, book={record.book_id}, days={overdue_days}"
             )
 
-        # 已逾期：更新罚款按日累计
+        # 已逾期：更新服务费按日累计（宽限期/上限/首次免罚统一走 fine_policy）
         existing_overdue = (
             db.query(BorrowRecord)
             .filter(
@@ -1174,10 +1178,9 @@ def mark_overdue_books():
         )
 
         for record in existing_overdue:
-            current_days = (now - record.due_date).days
+            current_days = calc_overdue_days(now, record.due_date)
             if current_days > (record.overdue_days or 0):
-                record.overdue_days = current_days
-                record.fine_amount = Decimal(str(current_days)) * daily_fine
+                apply_fine(db, record, current_days, policy)
 
         # 按孩子汇总 outstanding_fines（用 GROUP BY 一次查询，避免 N+1 + O(N²)）
 

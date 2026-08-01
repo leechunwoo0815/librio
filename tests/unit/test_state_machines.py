@@ -52,9 +52,9 @@ def _make_child(db):
     return user, child
 
 
-def _make_book(db):
+def _make_book(db, isbn="978SM000001"):
     book = Book(
-        isbn="978SM000001",
+        isbn=isbn,
         title="状态机书本",
         author="A",
         ar_value=Decimal("2.0"),
@@ -181,6 +181,21 @@ class TestBorrowStateMachine:
         _, child = _make_child(db)
         book = _make_book(db)
         child.deposit_status = DepositStatus.PAID
+        db.commit()
+
+        # B7 决策：每孩子首次逾期免罚 — 先制造一条历史逾期记录核销免罚额度
+        prior_book = _make_book(db, isbn="PRIOR-001")
+        prior = BorrowRecord(
+            child_id=child.id,
+            book_id=prior_book.id,
+            borrow_time=datetime.now() - timedelta(days=60),
+            due_date=datetime.now() - timedelta(days=40),
+            return_time=datetime.now() - timedelta(days=39),
+            status=BorrowStatus.RETURNED,
+            overdue_days=1,
+            fine_waived=1,
+        )
+        db.add(prior)
         db.commit()
 
         br = BorrowRecord(

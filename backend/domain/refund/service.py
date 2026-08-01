@@ -270,11 +270,12 @@ class RefundService:
         return RefundResponse.model_validate(refund)
 
     def _calculate(self, order: Order, used_days: int) -> Decimal:
-        """退款计算 — 从配置读取天数"""
+        """退款计算 — 从配置读取天数；前 refund_free_days 天无理由全退（A4）"""
         from backend.common.config_service import ConfigService
 
-        obs_days = ConfigService.get_int(self.db, "observation_days", 30)
+        obs_days = ConfigService.get_int(self.db, "observation_days", 45)
         member_days = ConfigService.get_int(self.db, "member_days", 365)
+        free_days = ConfigService.get_int(self.db, "refund_free_days", 7)
 
         if order.type == OrderType.OBSERVATION:
             total_days = obs_days
@@ -287,7 +288,7 @@ class RefundService:
         else:
             return order.amount
 
-        used = min(used_days, total_days)
+        used = max(0, min(used_days, total_days) - free_days)
         refund = order.amount - (order.amount / total_days * used)
         return max(
             refund.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP), Decimal("0")

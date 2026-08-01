@@ -39,7 +39,7 @@ from backend.domain.vocabulary.models import UserVocabulary
 
 logger = logging.getLogger(__name__)
 
-OBSERVATION_DAYS = 30  # 默认值，可通过 SystemConfig observation_days 配置
+OBSERVATION_DAYS = 45  # 默认值，可通过 SystemConfig observation_days 配置（A3决策）
 
 
 class ReportService:

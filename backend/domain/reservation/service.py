@@ -165,7 +165,7 @@ class ReservationService:
         from backend.common.types import BorrowStatus
         from backend.common.config_service import ConfigService
 
-        max_borrow = ConfigService.get_int(self.db, "borrow_limit", 20)
+        max_borrow = ConfigService.get_int(self.db, "borrow_limit", 10)
         active_count = (
             self.db.query(BorrowRecord)
             .filter(

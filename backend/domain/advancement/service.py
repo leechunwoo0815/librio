@@ -99,8 +99,8 @@ class AdvancementService:
         if len(questions) > max_questions:
             questions = questions[:max_questions]
 
-        # 重考间隔检查：从配置读取冷却分钟数（5-1440，默认60）
-        cooldown_minutes = ConfigService.get_int(self.db, "quiz_cooldown_minutes", 60)
+        # 重考间隔检查：从配置读取冷却分钟数（5-1440，默认10，C2决策）
+        cooldown_minutes = ConfigService.get_int(self.db, "quiz_cooldown_minutes", 10)
         now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
         recent_quiz = (
             self.db.query(Quiz)

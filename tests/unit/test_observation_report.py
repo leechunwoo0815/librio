@@ -24,7 +24,7 @@ def db():
     session.close()
 
 
-def _setup(db, observation_days=31):
+def _setup(db, observation_days=46):
     """创建测试数据"""
     user = User(openid="obs_user", phone="13800138003")
     db.add(user)
@@ -55,8 +55,8 @@ def _setup(db, observation_days=31):
 
 
 def test_generate_report_for_due_child(db):
-    """30天到期自动生成报告"""
-    user, child, level = _setup(db, observation_days=31)
+    """45天到期自动生成报告（A3决策）"""
+    user, child, level = _setup(db, observation_days=46)
 
     svc = ReportService(db)
     results = svc.generate_due_reports()
@@ -65,7 +65,7 @@ def test_generate_report_for_due_child(db):
 
 
 def test_no_report_for_not_due_child(db):
-    """未满30天不生成报告"""
+    """未满45天不生成报告（A3决策）"""
     user, child, level = _setup(db, observation_days=15)
 
     svc = ReportService(db)
@@ -75,7 +75,7 @@ def test_no_report_for_not_due_child(db):
 
 def test_no_duplicate_report(db):
     """已生成报告的孩子不重复生成"""
-    user, child, level = _setup(db, observation_days=31)
+    user, child, level = _setup(db, observation_days=46)
 
     svc = ReportService(db)
     svc.generate_due_reports()
@@ -85,7 +85,7 @@ def test_no_duplicate_report(db):
 
 def test_report_contains_reading_stats(db):
     """报告包含阅读统计"""
-    user, child, level = _setup(db, observation_days=31)
+    user, child, level = _setup(db, observation_days=46)
 
     # 添加阅读提交记录
     book = Book(
@@ -122,7 +122,7 @@ def test_report_contains_reading_stats(db):
 
 def test_report_contains_quiz_stats(db):
     """报告包含测验统计"""
-    user, child, level = _setup(db, observation_days=31)
+    user, child, level = _setup(db, observation_days=46)
 
     book = Book(
         isbn="978OBS2",
@@ -165,7 +165,7 @@ def test_report_contains_quiz_stats(db):
 
 def test_report_contains_teacher_comment(db):
     """老师可以添加评语"""
-    user, child, level = _setup(db, observation_days=31)
+    user, child, level = _setup(db, observation_days=46)
 
     svc = ReportService(db)
     svc.generate_due_reports()
@@ -180,7 +180,7 @@ def test_report_contains_teacher_comment(db):
 
 def test_get_report_returns_none_when_absent(db):
     """没有报告时返回None"""
-    user, child, level = _setup(db, observation_days=31)
+    user, child, level = _setup(db, observation_days=46)
 
     svc = ReportService(db)
     report = svc.get_report(child.id)
@@ -189,7 +189,7 @@ def test_get_report_returns_none_when_absent(db):
 
 def test_mark_report_viewed(db):
     """标记报告已查看"""
-    user, child, level = _setup(db, observation_days=31)
+    user, child, level = _setup(db, observation_days=46)
 
     svc = ReportService(db)
     svc.generate_due_reports()

@@ -94,29 +94,53 @@ class SystemConfig(BaseModel):
     # 默认配置项
     DEFAULTS = {
         # ── 未付费体验用户 ──
-        "trial_pages": ("10", "int", "未付费体验用户试读页数（仅status=0体验用户）"),
-        "vocab_lookup_limit": (
-            "10",
+        "trial_pages": (
+            "20",
             "int",
-            "未付费体验用户查词次数上限（仅status=0体验用户）",
+            "未付费体验用户试读页数（仅status=0体验用户，C7决策）",
+        ),
+        "vocab_lookup_limit": (
+            "30",
+            "int",
+            "未付费体验用户查词次数上限（仅status=0体验用户，C3决策）",
         ),
         "enable_trial_reading": ("true", "bool", "是否开启未付费用户试读功能"),
         "enable_vocab_lookup": ("true", "bool", "是否开启查词功能"),
         # ── 会员管理 ──
-        "observation_days": ("30", "int", "观察期天数"),
+        "observation_days": ("45", "int", "观察期天数（A3决策：45天）"),
         "member_days": ("365", "int", "正式会员有效期（天）"),
         "member_grace_days": ("15", "int", "会员到期缓冲天数"),
         "renewal_discount": ("0.9", "string", "缓冲期内续费折扣"),
         "multi_child_discount": ("0.9", "string", "第2孩起折扣"),
+        "refund_free_days": (
+            "7",
+            "int",
+            "退款无理由全退天数（A4决策：前N天全退，第N+1天起按天扣）",
+        ),
         # ── 借阅规则 ──
-        "borrow_limit": ("20", "int", "每个孩子最大同时借阅数"),
+        "borrow_limit": ("10", "int", "每个孩子最大同时借阅数（B14决策：10本）"),
         "borrow_period_days": ("21", "int", "单次借阅期限（天）"),
         "due_remind_days": (
             "5,3,1,0",
             "string",
             "到期前提醒天数列表（逗号分隔，0=当天）",
         ),
-        "overdue_fine_per_day": ("1", "int", "逾期罚款（元/天）"),
+        "overdue_fine_per_day": ("1", "int", "逾期服务费（元/天，B7决策措辞）"),
+        "overdue_grace_days": (
+            "3",
+            "int",
+            "逾期宽限期天数（B7/B8决策：前N天免罚、音频不锁，第N+1天起算）",
+        ),
+        "overdue_fine_cap_ratio": (
+            "0.5",
+            "string",
+            "单本逾期服务费上限比例（B7决策：≤图书定价×比例）",
+        ),
+        "first_overdue_free": (
+            "true",
+            "bool",
+            "每孩子首次逾期免罚（B7决策：培养习惯优先）",
+        ),
         "lost_book_fine_multiplier": ("1.5", "string", "丢书罚款倍率（图书定价×倍率）"),
         # ── 押金 ──
         "deposit_amount": ("1200", "int", "押金金额（元）"),
@@ -137,9 +161,9 @@ class SystemConfig(BaseModel):
         ),
         "require_teacher_review": ("false", "bool", "晋级是否需要老师审核"),
         "quiz_cooldown_minutes": (
-            "60",
+            "10",
             "int",
-            "测验未通过后重考冷却时间（分钟，范围5-1440，T3.4）",
+            "测验未通过后重考冷却时间（分钟，范围5-1440，C2决策：10分钟）",
         ),
         # ── 打卡规则 ──
         "checkin_min_minutes": ("10", "int", "打卡最低阅读分钟数"),

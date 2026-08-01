@@ -223,7 +223,7 @@ class VocabularyService:
             for c in children
         )
         if not has_paid_member:
-            limit = ConfigService.get_int(self.db, "vocab_lookup_limit", 10)
+            limit = ConfigService.get_int(self.db, "vocab_lookup_limit", 30)
             today_count = self.get_today_lookup_count(user_id)
             if today_count >= limit:
                 raise ForbiddenError(f"试读用户每日查词上限 {limit} 次，请升级会员")

@@ -21,7 +21,7 @@ def _create_child(context, status, days_offset, name="小明"):
         age=7,
         grade="二年级",
         status=status,
-        member_start_time=now - timedelta(days=40),
+        member_start_time=now - timedelta(days=50),  # A3：观察期45天，起始须>45天前
         member_expire_time=now + timedelta(days=days_offset),
     )
     context.db.add(child)

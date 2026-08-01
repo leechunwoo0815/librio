@@ -2,9 +2,9 @@
 """借阅域模型 — V3.1 OMO 核心表
 
 线下借阅记录，与 Bookshelf（想读清单）完全分离。
-借阅上限 20 本（BorrowRecord 状态=BORROWING 的记录数）。
+借阅上限由配置 borrow_limit 控制（默认 10 本，B14 决策）。
 借期 21 天，到期前 5/3/1/当天发订阅消息提醒。
-逾期后音频伴读锁死。
+逾期宽限期 overdue_grace_days（默认 3 天）内免罚、音频不锁（B7/B8 决策）。
 积分去重：排行榜统计时，同一 child_id + book_id 的 word_count 只计一次。
 """
 
@@ -51,7 +51,13 @@ class BorrowRecord(BaseModel):
 
     # 逾期相关
     overdue_days = Column(Integer, default=0, comment="逾期天数")
-    fine_amount = Column(Numeric(10, 2), default=0, comment="逾期罚款")
+    fine_amount = Column(Numeric(10, 2), default=0, comment="逾期服务费（实际应收）")
+    fine_original = Column(
+        Numeric(10, 2), nullable=True, comment="免罚前计算金额（B7审计用）"
+    )
+    fine_waived = Column(
+        SmallInteger, default=0, comment="首次逾期免罚: 0=否 1=是（B7）"
+    )
 
     # 测评去重标记
     quiz_passed = Column(SmallInteger, default=0, comment="是否已通过测评: 0=否 1=是")

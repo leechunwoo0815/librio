@@ -5,7 +5,7 @@
 [How] 带 TTL 缓存的 classmethod，支持 int/decimal/bool/str/list 类型转换
 
 使用方式：
-    borrow_limit = ConfigService.get_int(db, "borrow_limit", 20)
+    borrow_limit = ConfigService.get_int(db, "borrow_limit", 10)
     fine = ConfigService.get_decimal(db, "overdue_fine_per_day", Decimal("1"))
     pass_rate = ConfigService.get_decimal(db, "quiz_pass_rate", Decimal("0.80"))
 """

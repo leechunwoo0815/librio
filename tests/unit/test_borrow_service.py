@@ -121,7 +121,8 @@ def test_return_book_releases_stock(db):
 def test_borrow_limit_includes_overdue(db):
     user, child, book = _setup(db)
     svc = BorrowService(db)
-    for i in range(20):
+    # B14 决策：上限默认 10 本（borrow_limit 配置）
+    for i in range(10):
         b = Book(
             isbn=f"978{i:010d}",
             title=f"Book{i}",

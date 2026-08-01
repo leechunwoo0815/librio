@@ -53,8 +53,8 @@ def test_observation_report_autoescape_child_name(db):
         age=6,
         grade="一年级",
         status=Child.STATUS_OBSERVATION,
-        create_time=datetime.now() - timedelta(days=31),
-        member_start_time=datetime.now() - timedelta(days=31),
+        create_time=datetime.now() - timedelta(days=46),
+        member_start_time=datetime.now() - timedelta(days=46),
     )
     db.add(child)
     db.commit()
@@ -89,8 +89,8 @@ def test_observation_report_autoescape_teacher_comment(db):
         age=6,
         grade="一年级",
         status=Child.STATUS_OBSERVATION,
-        create_time=datetime.now() - timedelta(days=31),
-        member_start_time=datetime.now() - timedelta(days=31),
+        create_time=datetime.now() - timedelta(days=46),
+        member_start_time=datetime.now() - timedelta(days=46),
     )
     db.add(child)
     db.commit()

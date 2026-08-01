@@ -10,10 +10,10 @@ from backend.domain.report.models import ObservationReport
 from backend.domain.report.service import ReportService as ObservationReportService
 
 
-@given("孩子已进入观察期30天")
-def step_observation_30_days(context):
-    context.child.create_time = datetime.now() - timedelta(days=31)
-    context.child.member_start_time = datetime.now() - timedelta(days=31)
+@given("孩子已进入观察期45天")
+def step_observation_45_days(context):
+    context.child.create_time = datetime.now() - timedelta(days=46)
+    context.child.member_start_time = datetime.now() - timedelta(days=46)
     context.child.status = Child.STATUS_OBSERVATION
     context.db.commit()
 
@@ -52,8 +52,8 @@ def step_no_new_report(context):
 
 @given("孩子观察期内读了5本书共15000词")
 def step_reading_stats(context):
-    context.child.create_time = datetime.now() - timedelta(days=31)
-    context.child.member_start_time = datetime.now() - timedelta(days=31)
+    context.child.create_time = datetime.now() - timedelta(days=46)
+    context.child.member_start_time = datetime.now() - timedelta(days=46)
     context.child.status = Child.STATUS_OBSERVATION
     context.db.commit()
 
@@ -103,8 +103,8 @@ def step_report_words(context, words):
 
 @given("孩子观察期内通过了3次测验")
 def step_quiz_passed(context):
-    context.child.create_time = datetime.now() - timedelta(days=31)
-    context.child.member_start_time = datetime.now() - timedelta(days=31)
+    context.child.create_time = datetime.now() - timedelta(days=46)
+    context.child.member_start_time = datetime.now() - timedelta(days=46)
     context.child.status = Child.STATUS_OBSERVATION
     context.db.commit()
 
@@ -141,8 +141,8 @@ def step_report_quizzes(context, count):
 
 @given("老师已提交观察期评价")
 def step_teacher_comment_exists(context):
-    context.child.create_time = datetime.now() - timedelta(days=31)
-    context.child.member_start_time = datetime.now() - timedelta(days=31)
+    context.child.create_time = datetime.now() - timedelta(days=46)
+    context.child.member_start_time = datetime.now() - timedelta(days=46)
     context.child.status = Child.STATUS_OBSERVATION
     context.db.commit()
 
@@ -164,8 +164,8 @@ def step_report_has_comment(context):
 
 @given("孩子已有观察期报告")
 def step_has_report(context):
-    context.child.create_time = datetime.now() - timedelta(days=31)
-    context.child.member_start_time = datetime.now() - timedelta(days=31)
+    context.child.create_time = datetime.now() - timedelta(days=46)
+    context.child.member_start_time = datetime.now() - timedelta(days=46)
     context.child.status = Child.STATUS_OBSERVATION
     context.db.commit()
     svc = ObservationReportService(context.db)

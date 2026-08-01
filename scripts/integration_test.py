@@ -726,22 +726,25 @@ if ADMIN_TOKEN and child1_id:
             f"status={record.status if record else 'NONE'}",
         )
         step(
-            "DB: fine_amount > 0",
-            record is not None and record.fine_amount > 0,
-            f"fine={record.fine_amount if record else 'NONE'}",
+            "DB: 服务费已计算（fine_original>0，B7首次免罚留痕）",
+            record is not None
+            and record.fine_original is not None
+            and record.fine_original > 0,
+            f"fine_original={record.fine_original if record else 'NONE'}, "
+            f"waived={record.fine_waived if record else 'NONE'}",
         )
         db.close()
     else:
         step("DB: set due_date", False, "SKIP")
         step("POST /borrow/return", False, "SKIP")
         step("DB: borrow RETURNED", False, "SKIP")
-        step("DB: fine_amount > 0", False, "SKIP")
+        step("DB: 服务费已计算（fine_original>0，B7首次免罚留痕）", False, "SKIP")
 else:
     step("POST /borrow/", False, "SKIP: no admin token or child")
     step("DB: set due_date", False, "SKIP")
     step("POST /borrow/return", False, "SKIP")
     step("DB: borrow RETURNED", False, "SKIP")
-    step("DB: fine_amount > 0", False, "SKIP")
+    step("DB: 服务费已计算（fine_original>0，B7首次免罚留痕）", False, "SKIP")
 
 
 # ══════════════════════════════════════════════════════════

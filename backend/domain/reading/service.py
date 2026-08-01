@@ -82,12 +82,19 @@ class ReadingService:
         ]
 
     def _check_overdue_audio(self, child_id: int):
-        """逾期音频锁定 — 孩子有任意 OVERDUE 借阅即全锁"""
+        """逾期音频锁定 — 逾期超过宽限期（overdue_grace_days，默认3天）才锁（B8决策）"""
+        from datetime import timedelta
+
+        from backend.common.fine_policy import get_overdue_policy
+
+        grace_days = get_overdue_policy(self.db).grace_days
+        cutoff = datetime.now() - timedelta(days=grace_days)
         overdue_count = (
             self.db.query(BorrowRecord)
             .filter(
                 BorrowRecord.child_id == child_id,
                 BorrowRecord.status == BorrowStatus.OVERDUE,
+                BorrowRecord.due_date < cutoff,
                 BorrowRecord.is_deleted == 0,
             )
             .count()
@@ -211,7 +218,7 @@ class ReadingService:
         if child and child.status == MemberStatus.TRIAL:
             enabled = ConfigService.get_bool(self.db, "enable_trial_reading", True)
             if enabled:
-                trial_pages = ConfigService.get_int(self.db, "trial_pages", 10)
+                trial_pages = ConfigService.get_int(self.db, "trial_pages", 20)
                 total_pages = (
                     self.db.query(func.sum(ReadingSession.pages_read))
                     .filter(

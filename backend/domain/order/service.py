@@ -461,7 +461,7 @@ class OrderService:
         )
 
     def calculate_refund(self, order_id: int, used_days: int) -> dict:
-        """计算退款金额 — 按实付金额 × 剩余天数比例"""
+        """计算退款金额 — 前 refund_free_days 天全退，之后按实付×剩余天数比例（A4）"""
         order = self.order_repo.get_by_id_or_raise(order_id)
         if order.pay_status != PayStatus.PAID:
             raise ValidationError("订单未支付，无法退款")
@@ -469,8 +469,9 @@ class OrderService:
         # 从配置读取天数
         from backend.common.config_service import ConfigService
 
-        obs_days = ConfigService.get_int(self.db, "observation_days", 30)
+        obs_days = ConfigService.get_int(self.db, "observation_days", 45)
         member_days = ConfigService.get_int(self.db, "member_days", 365)
+        free_days = ConfigService.get_int(self.db, "refund_free_days", 7)
 
         if order.type == OrderType.OBSERVATION:
             total_days = obs_days
@@ -488,7 +489,7 @@ class OrderService:
                 "total_days": 0,
             }
 
-        used = min(used_days, total_days)
+        used = max(0, min(used_days, total_days) - free_days)
         from decimal import ROUND_HALF_UP
 
         # 公式完整计算后取整，中间步骤不取整（与 refund/service.py 实际退款口径一致）
