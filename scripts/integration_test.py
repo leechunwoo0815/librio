@@ -887,17 +887,18 @@ step(
 if refund_ok:
     db = get_db_session()
     dep = db.query(DepositRecord).filter_by(child_id=child1_id, is_deleted=0).first()
+    # E1b：押金退款满足条件自动审核通过，申请即进入 REFUNDING
     step(
-        "DB: deposit REFUND_PENDING",
-        dep is not None and dep.status == DepositStatus.REFUND_PENDING,
+        "DB: deposit REFUNDING (E1自动审核)",
+        dep is not None and dep.status == DepositStatus.REFUNDING,
         f"status={dep.status if dep else 'NONE'}",
     )
 
     from backend.domain.deposit.service import DepositService
 
-    # Admin audit: approve refund (V3.8: REFUND_PENDING → REFUNDING)
-    audit_ok = False
-    if ADMIN_TOKEN:
+    # 兼容路径：若配置关闭自动审核，管理员人工 approve（已 REFUNDING 时 409 视为通过）
+    audit_ok = dep is not None and dep.status == DepositStatus.REFUNDING
+    if not audit_ok and ADMIN_TOKEN:
         audit_resp = client.post(
             f"/admin/api/deposits/{child1_id}/audit-refund",
             json={"action": "approve"},
@@ -939,7 +940,7 @@ if refund_ok:
         step("DB: deposit REFUNDED", False, "SKIP")
     db.close()
 else:
-    step("DB: deposit REFUND_PENDING", False, "SKIP: refund failed")
+    step("DB: deposit REFUNDING (E1自动审核)", False, "SKIP: refund failed")
     step("DB: deposit REFUNDING", False, "SKIP")
     step("DB: deposit REFUNDED", False, "SKIP")
 
@@ -1355,8 +1356,8 @@ if order_no:
             headers={"Authorization": f"Bearer {token_u1}"},
         )
         step(
-            "duplicate refund → conflict",
-            resp.status_code == 409,
+            "duplicate refund → blocked (E1后走365天年度上限)",
+            resp.status_code in (400, 409, 422),
             f"status={resp.status_code}, body={resp.text[:80]}",
         )
 else:

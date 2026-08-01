@@ -696,7 +696,9 @@ class DepositService:
 
         from backend.common.config_service import ConfigService
 
-        books_needed = ConfigService.get_int(self.db, "deposit_partial_refund_books", 10)
+        books_needed = ConfigService.get_int(
+            self.db, "deposit_partial_refund_books", 10
+        )
         refund_amt = ConfigService.get_decimal(
             self.db, "deposit_partial_refund_amount", Decimal("600")
         )
@@ -728,7 +730,9 @@ class DepositService:
             raise ValidationError("存在逾期记录，暂不符合减半退还条件")
 
         if record.amount < refund_amt:
-            raise ValidationError(f"押金余额 {record.amount} 元，不足退还 {refund_amt} 元")
+            raise ValidationError(
+                f"押金余额 {record.amount} 元，不足退还 {refund_amt} 元"
+            )
 
         # Phase 1: 先落库（扣减押金余额 + 标记），commit 释放行锁
         record.amount = record.amount - refund_amt

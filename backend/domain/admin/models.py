@@ -171,6 +171,11 @@ class SystemConfig(BaseModel):
         ),
         # ── 预约 ──
         "reservation_expire_hours": ("72", "int", "预约过期时间（小时）"),
+        "reservation_remind_hours": (
+            "24",
+            "int",
+            "预约取书提醒提前量（B4：到期前N小时未取提醒）",
+        ),
         # ── 晋级规则 ──
         "default_required_books": (
             "5",

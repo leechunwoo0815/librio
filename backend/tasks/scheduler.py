@@ -115,6 +115,14 @@ def init_scheduler(app):
         replace_existing=True,
     )
 
+    # 每小时：预约取书提醒（B4：到期前24h未取 → 提醒）
+    scheduler.add_job(
+        remind_reservation_pickup,
+        CronTrigger(minute=45),
+        id="remind_reservation_pickup",
+        replace_existing=True,
+    )
+
     # 每天凌晨2点30分：逾期检测
     scheduler.add_job(
         mark_overdue_books,
@@ -1124,6 +1132,83 @@ def expire_reservations():
         logger.exception(f"expire_reservations failed: {e}")
     finally:
         db.close()
+
+
+@distributed_lock("job:remind_reservation_pickup", timeout=300)
+def remind_reservation_pickup(db: Session | None = None):
+    """
+    [What] 预约取书提醒（B4：到期前 24h 未取 → 提醒一次）
+    [Why] 预约取书率仅 40-50%，提醒可显著降低空锁
+    [How] PENDING 且 expire_time 落在未来 24h 内且未提醒 → 发消息 + 标记
+
+    参数 db：可选的 session 注入（测试用），不传则自行创建。
+    """
+    from backend.domain.reservation.models import Reservation
+    from backend.common.types import ReservationStatus
+    from backend.domain.child.models import Child
+    from backend.domain.book.models import Book
+    from backend.domain.message.models import SystemMessage
+    from backend.common.config_service import ConfigService
+
+    own_session = db is None
+    if own_session:
+        db = _get_db_session()
+    try:
+        now = datetime.now()
+        remind_hours = ConfigService.get_int(db, "reservation_remind_hours", 24)
+        deadline = now + timedelta(hours=remind_hours)
+
+        pending = (
+            db.query(Reservation)
+            .filter(
+                Reservation.status == ReservationStatus.PENDING,
+                Reservation.expire_time > now,
+                Reservation.expire_time <= deadline,
+                Reservation.pickup_reminded == 0,
+                Reservation.is_deleted == 0,
+            )
+            .all()
+        )
+
+        count = 0
+        for r in pending:
+            child = (
+                db.query(Child)
+                .filter(Child.id == r.child_id, Child.is_deleted == 0)
+                .first()
+            )
+            book = (
+                db.query(Book)
+                .filter(Book.id == r.book_id, Book.is_deleted == 0)
+                .first()
+            )
+            if not child or not book:
+                continue
+            db.add(
+                SystemMessage(
+                    user_id=child.user_id,
+                    title="预约取书提醒",
+                    content=(
+                        f"您预约的《{book.title}》将于 "
+                        f"{r.expire_time.strftime('%m月%d日 %H:%M')} 过期，"
+                        f"请尽快到门店取书哦～"
+                    ),
+                    msg_type=3,  # 借阅通知
+                    priority=1,
+                )
+            )
+            r.pickup_reminded = 1
+            count += 1
+
+        db.commit()
+        if count:
+            logger.info(f"Reservation pickup reminders sent: {count}")
+    except Exception as e:
+        db.rollback()
+        logger.exception(f"remind_reservation_pickup failed: {e}")
+    finally:
+        if own_session:
+            db.close()
 
 
 @distributed_lock("job:mark_overdue_books", timeout=600)

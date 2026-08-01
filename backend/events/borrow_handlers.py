@@ -95,3 +95,14 @@ def handle_book_overdue_for_fines(event, db: Session):
         f"Book overdue: child_id={event.child_id}, book_id={event.book_id}, "
         f"borrow_record_id={event.borrow_record_id}, days={event.overdue_days}"
     )
+
+
+def handle_stock_released_for_waitlist(event, db: Session):
+    """F4：库存释放（还书/预约取消/预约过期）→ 通知等候名单队首（先到先得）
+
+    注意：必须注册在库存释放处理器之后，确保 notify 时 available_stock 已 +1
+    """
+    if event.book_id:
+        from backend.domain.reservation.service import ReservationService
+
+        ReservationService.notify_next_waiter(db, event.book_id)

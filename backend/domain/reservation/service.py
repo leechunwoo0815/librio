@@ -94,6 +94,9 @@ class ReservationService:
         )
         created = self.reservation_repo.create(reservation)
 
+        # F4：该孩子对此书的等候单标记成交（先到先得闭环）
+        self._fulfill_waitlist(data.child_id, data.book_id)
+
         # 发布预约创建事件（book 域扣库存）
         event_bus.publish(
             ReservationCreatedEvent(
@@ -239,6 +242,198 @@ class ReservationService:
             resp.book_cover = book.cover if book else None
             result.append(resp)
         return result
+
+    # ==================== F4 等候名单 ====================
+
+    def join_waitlist(self, child_id: int, book_id: int) -> dict:
+        """加入等候名单 — 库存为 0 时的出路（F4）
+
+        规则：有库存应直接预约；同一孩子同书仅一条活跃等候；已预约同书不可重复等候
+        """
+        book = (
+            self.db.query(Book).filter(Book.id == book_id, Book.is_deleted == 0).first()
+        )
+        if not book:
+            raise NotFoundError("书不存在")
+        if not book.offline_available:
+            raise ValidationError("该书不支持线下借阅")
+        if (book.available_stock or 0) > 0:
+            raise ValidationError("该书有库存，请直接预约")
+
+        from backend.domain.reservation.models import BookWaitlist
+
+        active_reservation = (
+            self.db.query(Reservation)
+            .filter(
+                Reservation.child_id == child_id,
+                Reservation.book_id == book_id,
+                Reservation.status == ReservationStatus.PENDING,
+                Reservation.is_deleted == 0,
+            )
+            .first()
+        )
+        if active_reservation:
+            raise ConflictError("该孩子已预约本书，无需加入等候")
+
+        existing = (
+            self.db.query(BookWaitlist)
+            .filter(
+                BookWaitlist.child_id == child_id,
+                BookWaitlist.book_id == book_id,
+                BookWaitlist.status.in_(
+                    [BookWaitlist.STATUS_WAITING, BookWaitlist.STATUS_NOTIFIED]
+                ),
+                BookWaitlist.is_deleted == 0,
+            )
+            .first()
+        )
+        if existing:
+            raise ConflictError("已在等候名单中，请留意到货通知")
+
+        entry = BookWaitlist(child_id=child_id, book_id=book_id)
+        self.db.add(entry)
+        self.db.commit()
+        self.db.refresh(entry)
+        return {
+            "success": True,
+            "waitlist_id": entry.id,
+            "message": "已加入等候名单，到货将第一时间通知您",
+        }
+
+    def cancel_waitlist(self, waitlist_id: int, user_id: int | None = None) -> dict:
+        """取消等候"""
+        from backend.common.exceptions import ForbiddenError
+        from backend.domain.child.models import Child
+        from backend.domain.reservation.models import BookWaitlist
+
+        entry = (
+            self.db.query(BookWaitlist)
+            .filter(BookWaitlist.id == waitlist_id, BookWaitlist.is_deleted == 0)
+            .with_for_update()
+            .first()
+        )
+        if not entry:
+            raise NotFoundError("等候记录不存在")
+        if entry.status not in (
+            BookWaitlist.STATUS_WAITING,
+            BookWaitlist.STATUS_NOTIFIED,
+        ):
+            raise ConflictError("该等候已结束")
+
+        if user_id is not None:
+            child = (
+                self.db.query(Child)
+                .filter(Child.id == entry.child_id, Child.is_deleted == 0)
+                .first()
+            )
+            if not child or child.user_id != user_id:
+                raise ForbiddenError("无权操作该等候")
+
+        entry.status = BookWaitlist.STATUS_CANCELLED
+        self.db.commit()
+        return {"success": True, "message": "已取消等候"}
+
+    def get_child_waitlist(self, child_id: int) -> list[dict]:
+        """孩子的活跃等候名单（附图书标题/封面）"""
+        from backend.domain.reservation.models import BookWaitlist
+
+        records = (
+            self.db.query(BookWaitlist)
+            .filter(
+                BookWaitlist.child_id == child_id,
+                BookWaitlist.status.in_(
+                    [BookWaitlist.STATUS_WAITING, BookWaitlist.STATUS_NOTIFIED]
+                ),
+                BookWaitlist.is_deleted == 0,
+            )
+            .order_by(BookWaitlist.create_time)
+            .limit(50)
+            .all()
+        )
+        book_ids = {r.book_id for r in records}
+        books = {}
+        if book_ids:
+            books = {
+                b.id: b for b in self.db.query(Book).filter(Book.id.in_(book_ids)).all()
+            }
+        return [
+            {
+                "id": r.id,
+                "book_id": r.book_id,
+                "book_title": books[r.book_id].title if r.book_id in books else None,
+                "book_cover": books[r.book_id].cover if r.book_id in books else None,
+                "status": r.status,
+                "notify_time": r.notify_time.isoformat() if r.notify_time else None,
+                "create_time": r.create_time.isoformat() if r.create_time else None,
+            }
+            for r in records
+        ]
+
+    def _fulfill_waitlist(self, child_id: int, book_id: int) -> None:
+        """孩子成功预约 → 关闭其对此书的活跃等候（不自行 commit）"""
+        from backend.domain.reservation.models import BookWaitlist
+
+        self.db.query(BookWaitlist).filter(
+            BookWaitlist.child_id == child_id,
+            BookWaitlist.book_id == book_id,
+            BookWaitlist.status.in_(
+                [BookWaitlist.STATUS_WAITING, BookWaitlist.STATUS_NOTIFIED]
+            ),
+            BookWaitlist.is_deleted == 0,
+        ).update({BookWaitlist.status: BookWaitlist.STATUS_FULFILLED})
+
+    @staticmethod
+    def notify_next_waiter(db: Session, book_id: int) -> bool:
+        """F4：库存释放/到货时通知队首（先到先得，不自行 commit）
+
+        仅在确有库存时通知；通知后家长可自行预约（预约即关闭等候）。
+        """
+        from backend.domain.reservation.models import BookWaitlist
+        from backend.domain.message.models import SystemMessage
+
+        book = db.query(Book).filter(Book.id == book_id, Book.is_deleted == 0).first()
+        if not book or (book.available_stock or 0) <= 0:
+            return False
+
+        entry = (
+            db.query(BookWaitlist)
+            .filter(
+                BookWaitlist.book_id == book_id,
+                BookWaitlist.status == BookWaitlist.STATUS_WAITING,
+                BookWaitlist.is_deleted == 0,
+            )
+            .order_by(BookWaitlist.create_time)
+            .with_for_update()
+            .first()
+        )
+        if not entry:
+            return False
+
+        from backend.domain.child.models import Child
+
+        child = (
+            db.query(Child)
+            .filter(Child.id == entry.child_id, Child.is_deleted == 0)
+            .first()
+        )
+        if not child:
+            return False
+
+        entry.status = BookWaitlist.STATUS_NOTIFIED
+        entry.notify_time = datetime.now()
+        db.add(
+            SystemMessage(
+                user_id=child.user_id,
+                title="您等候的图书到货啦",
+                content=f"您等候的《{book.title}》现在有库存了，先到先得，快来预约吧～",
+                msg_type=3,  # 借阅通知
+                priority=1,
+            )
+        )
+        logger.info(
+            f"WAITLIST_NOTIFIED: book={book_id}, child={entry.child_id}, entry={entry.id}"
+        )
+        return True
 
     def cancel_reservation(
         self, reservation_id: int, user_id: int | None = None

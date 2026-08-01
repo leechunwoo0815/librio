@@ -354,3 +354,147 @@ def step_reservation_expired_update(context):
         .first()
     )
     assert reservation.status == ReservationStatus.EXPIRED
+
+
+# ==================== F4 等候名单 ====================
+
+
+@when('用户点击"加入等候"')
+def step_join_waitlist(context):
+    context.response = context.client.post(
+        "/reservation/waitlist/join",
+        json={"child_id": context.child.id, "book_id": context.book.id},
+        headers=context.headers,
+    )
+
+
+@then("创建等候记录")
+def step_waitlist_created(context):
+    assert context.response.status_code == 201
+    data = context.response.json()
+    assert data["success"] is True
+    context.waitlist_id = data["waitlist_id"]
+
+
+@then('等候状态为"等候中"')
+def step_waitlist_waiting(context):
+    resp = context.client.get(
+        f"/reservation/waitlist/{context.child.id}", headers=context.headers
+    )
+    assert resp.status_code == 200
+    items = resp.json()
+    assert len(items) == 1
+    assert items[0]["status"] == 0  # WAITING
+
+
+@given("孩子已加入该书等候名单")
+def step_child_in_waitlist(context):
+    from backend.domain.reservation.models import BookWaitlist
+
+    entry = BookWaitlist(child_id=context.child.id, book_id=context.book.id)
+    context.db.add(entry)
+    context.db.commit()
+    context.waitlist_entry = entry
+
+
+@given("另一孩子有该书预约且预约已过期")
+def step_other_child_expired_reservation(context):
+    from backend.domain.user.models import User
+    from backend.domain.child.models import Child
+    from backend.domain.reservation.models import Reservation
+
+    user2 = User(openid="waitlist_other", phone="13800009999")
+    context.db.add(user2)
+    context.db.commit()
+    child2 = Child(user_id=user2.id, name="另一孩子", age=8, grade="三年级", status=2)
+    context.db.add(child2)
+    context.db.commit()
+    reservation = Reservation(
+        child_id=child2.id,
+        book_id=context.book.id,
+        status=0,  # PENDING
+        expire_time=datetime.now() - timedelta(hours=1),
+    )
+    context.db.add(reservation)
+    context.db.commit()
+
+
+@then('等候状态更新为"已通知"')
+def step_waitlist_notified(context):
+    from backend.domain.reservation.models import BookWaitlist
+
+    entry = (
+        context.db.query(BookWaitlist)
+        .filter(
+            BookWaitlist.child_id == context.child.id,
+            BookWaitlist.book_id == context.book.id,
+        )
+        .first()
+    )
+    assert entry is not None and entry.status == BookWaitlist.STATUS_NOTIFIED
+    assert entry.notify_time is not None
+
+
+@then('孩子收到"{title}"消息')
+def step_child_received_message(context, title):
+    from backend.domain.message.models import SystemMessage
+
+    msg = (
+        context.db.query(SystemMessage)
+        .filter(
+            SystemMessage.user_id == context.user.id,
+            SystemMessage.title == title,
+        )
+        .first()
+    )
+    assert msg is not None, f"未找到标题为「{title}」的消息"
+
+
+# ==================== B4 取书提醒 ====================
+
+
+@given('孩子有"{title}"的预约记录且24小时内到期')
+def step_reservation_expiring_soon(context, title):
+    from backend.domain.reservation.models import Reservation
+
+    book = context.db.query(Book).filter(Book.title == title).first()
+    if not book:
+        book = Book(
+            isbn="9780064400558",
+            title=title,
+            author="E.B. White",
+            ar_value=3.2,
+            age_min=7,
+            age_max=9,
+            word_count=30000,
+            price=80,
+            total_stock=1,
+            available_stock=1,
+            offline_available=1,
+        )
+        context.db.add(book)
+        context.db.commit()
+        context.db.refresh(book)
+    context.book = book
+    reservation = Reservation(
+        child_id=context.child.id,
+        book_id=book.id,
+        status=0,  # PENDING
+        expire_time=datetime.now() + timedelta(hours=12),
+    )
+    context.db.add(reservation)
+    context.db.commit()
+    context.reservation = reservation
+
+
+@when("定时任务执行预约取书提醒")
+def step_run_pickup_remind(context):
+    from backend.tasks.scheduler import remind_reservation_pickup
+
+    remind_reservation_pickup(context.db)
+
+
+@then("该预约标记为已提醒")
+def step_reservation_marked_reminded(context):
+    context.db.refresh(context.reservation)
+    assert context.reservation.pickup_reminded == 1

@@ -51,3 +51,35 @@ def cancel_reservation(
     current_user: UserResponse = Depends(get_current_user),
 ):
     return service.cancel_reservation(reservation_id, user_id=current_user.id)
+
+
+# ==================== F4 等候名单 ====================
+
+
+@router.post("/waitlist/join", status_code=201)
+def join_waitlist(
+    data: ReservationCreateRequest,
+    service: ReservationService = Depends(get_reservation_service),
+    child=Depends(GetOwnedChildFromBody()),
+):
+    """F4：库存为 0 时加入等候名单（到货/释放自动通知，先到先得）"""
+    return service.join_waitlist(child.id, data.book_id)
+
+
+@router.get("/waitlist/{child_id}")
+def get_child_waitlist(
+    child=Depends(GetOwnedChild()),
+    service: ReservationService = Depends(get_reservation_service),
+):
+    """孩子的活跃等候名单"""
+    return service.get_child_waitlist(child.id)
+
+
+@router.post("/waitlist/{waitlist_id}/cancel")
+def cancel_waitlist(
+    waitlist_id: int,
+    service: ReservationService = Depends(get_reservation_service),
+    current_user: UserResponse = Depends(get_current_user),
+):
+    """取消等候"""
+    return service.cancel_waitlist(waitlist_id, user_id=current_user.id)

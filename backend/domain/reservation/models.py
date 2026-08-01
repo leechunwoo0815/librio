@@ -34,6 +34,11 @@ class Reservation(BaseModel):
     borrow_record_id = Column(
         BigInteger, nullable=True, comment="取书后关联的借阅记录ID"
     )
+    pickup_reminded = Column(
+        SmallInteger,
+        default=0,
+        comment="取书提醒已发: 0=否 1=是（B4：到期前24h提醒）",
+    )
 
     # 关系
     child = relationship("Child", foreign_keys=[child_id])
@@ -41,3 +46,31 @@ class Reservation(BaseModel):
 
     def __repr__(self):
         return f"<Reservation(id={self.id}, child={self.child_id}, book={self.book_id}, status={self.status})>"
+
+
+class BookWaitlist(BaseModel):
+    """图书等候名单 — F4：库存为 0 时家长可加入等候，到货/释放自动通知（先到先得）"""
+
+    __tablename__ = "book_waitlist"
+    __table_args__ = {"extend_existing": True}
+
+    STATUS_WAITING = 0
+    STATUS_NOTIFIED = 1
+    STATUS_FULFILLED = 2
+    STATUS_CANCELLED = 3
+
+    child_id = Column(
+        BigInteger, ForeignKey("child.id"), nullable=False, index=True, comment="孩子ID"
+    )
+    book_id = Column(
+        BigInteger, ForeignKey("book.id"), nullable=False, index=True, comment="图书ID"
+    )
+    status = Column(SmallInteger, default=STATUS_WAITING, comment="等候状态")
+    notify_time = Column(DateTime, nullable=True, comment="到货通知时间")
+
+    # 关系
+    child = relationship("Child", foreign_keys=[child_id])
+    book = relationship("Book", foreign_keys=[book_id])
+
+    def __repr__(self):
+        return f"<BookWaitlist(id={self.id}, child={self.child_id}, book={self.book_id}, status={self.status})>"

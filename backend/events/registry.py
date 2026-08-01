@@ -30,6 +30,7 @@ def register_event_handlers():
         handle_reservation_expired_for_stock,
         handle_reservation_fulfilled_for_borrow,
         handle_book_overdue_for_fines,
+        handle_stock_released_for_waitlist,
     )
     from backend.events.misc_handlers import (
         handle_level_advanced_for_certificate,
@@ -61,6 +62,7 @@ def register_event_handlers():
 
     # ── 还书 ──
     event_bus.subscribe("book.returned", handle_book_returned_for_copy_status)
+    event_bus.subscribe("book.returned", handle_stock_released_for_waitlist)  # F4
 
     # ── 晋级 ──
     event_bus.subscribe("level.advanced", handle_level_advanced_for_certificate)
@@ -70,9 +72,13 @@ def register_event_handlers():
 
     # ── 预约取消 ──
     event_bus.subscribe("reservation.cancelled", handle_reservation_cancelled_for_stock)
+    event_bus.subscribe(
+        "reservation.cancelled", handle_stock_released_for_waitlist
+    )  # F4
 
     # ── 预约过期 ──
     event_bus.subscribe("reservation.expired", handle_reservation_expired_for_stock)
+    event_bus.subscribe("reservation.expired", handle_stock_released_for_waitlist)  # F4
 
     # ── 预约取书 ──
     event_bus.subscribe(
@@ -93,4 +99,4 @@ def register_event_handlers():
         "reading.session_completed", handle_session_completed_for_child_stats
     )
 
-    logger.info("Event handlers registered: 14 event types, 18 handlers")
+    logger.info("Event handlers registered: 14 event types, 21 handlers")

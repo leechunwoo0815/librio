@@ -129,7 +129,9 @@ class RefundService:
             .with_for_update()
             .first()
         )
-        outstanding = (child.outstanding_fines or Decimal("0")) if child else Decimal("0")
+        outstanding = (
+            (child.outstanding_fines or Decimal("0")) if child else Decimal("0")
+        )
         fine_deducted = min(refund_amount, outstanding)
         final_amount = refund_amount - fine_deducted
 

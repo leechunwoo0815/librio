@@ -61,7 +61,9 @@ def _mk_user_child(db, openid="ra1"):
     return user, child
 
 
-def _mk_paid_order(db, user, child, amount, order_type=OrderType.OBSERVATION, days_ago=10):
+def _mk_paid_order(
+    db, user, child, amount, order_type=OrderType.OBSERVATION, days_ago=10
+):
     order = Order(
         order_no=f"RA-{order_type}-{amount}-{days_ago}",
         user_id=user.id,
@@ -141,7 +143,7 @@ class TestRefundFineDeduction:
         db.commit()
         order = _mk_paid_order(db, user, child, 500)
         svc = RefundService(db)
-        result = svc.apply_refund(
+        svc.apply_refund(
             user.id, RefundCreate(order_id=order.id, used_days=10, reason="测试")
         )
         # ≤500 自动通过（466.67 - 100 = 366.67），模拟回调完成
@@ -173,7 +175,9 @@ class TestDepositRefundDeduction:
         # 审核通过（无网关）→ REFUNDING
         import asyncio
 
-        asyncio.run(svc.audit_refund(child.id, "approve", admin_id=1, payment_gateway=None))
+        asyncio.run(
+            svc.audit_refund(child.id, "approve", admin_id=1, payment_gateway=None)
+        )
         svc.mark_refunded(child.id)
         db.refresh(child)
         assert child.outstanding_fines == Decimal("0")
@@ -199,7 +203,7 @@ class TestPartialRefund:
 
     def test_partial_refund_success(self, db):
         user, child = _mk_user_child(db)
-        record = _mk_paid_deposit(db, child)
+        _mk_paid_deposit(db, child)
         self._mk_returned_borrows(db, child, 10)
         svc = DepositService(db)
         gw = MagicMock()
