@@ -117,6 +117,11 @@ class SystemConfig(BaseModel):
             "int",
             "退款无理由全退天数（A4决策：前N天全退，第N+1天起按天扣）",
         ),
+        "upgrade_deduct_enabled": (
+            "true",
+            "bool",
+            "观察期中途升级按剩余天数抵扣会员费（A6决策）",
+        ),
         # ── 借阅规则 ──
         "borrow_limit": ("10", "int", "每个孩子最大同时借阅数（B14决策：10本）"),
         "borrow_period_days": ("21", "int", "单次借阅期限（天）"),
@@ -208,7 +213,11 @@ class SystemConfig(BaseModel):
         # ── 打卡规则 ──
         "checkin_min_minutes": ("10", "int", "打卡最低阅读分钟数"),
         "checkin_min_vocab": ("5", "int", "打卡最低生词数"),
-        "daily_checkin_limit": ("4", "int", "每天最多打卡次数（C1：每类型各1次，共4种）"),
+        "daily_checkin_limit": (
+            "4",
+            "int",
+            "每天最多打卡次数（C1：每类型各1次，共4种）",
+        ),
         # ── 书架 ──
         "bookshelf_limit": ("100", "int", "想读清单上限（C4：默认100本，0=无限制）"),
         # ── 场馆信息 ──

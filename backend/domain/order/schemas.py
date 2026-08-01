@@ -38,6 +38,7 @@ class OrderResponse(BaseSchema):
     refund_status: int = 0
     refund_amount: Decimal | None = None
     remark: str | None = None
+    upgrade_deduct: Decimal = Decimal("0")  # A6：升级抵扣金额
     create_time: datetime
 
 

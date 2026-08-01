@@ -44,7 +44,9 @@ class VocabularyService:
             "level": w.level,
         }
 
-    def record_lookup(self, child_id: int, word: str, book_id: int | None = None) -> None:
+    def record_lookup(
+        self, child_id: int, word: str, book_id: int | None = None
+    ) -> None:
         """C3：查词自动记录生词本（upsert：新词建档/旧词累计次数）"""
         word_lower = word.lower()
         dw = self.dict_repo.get_by_word(word_lower)

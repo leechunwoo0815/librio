@@ -31,5 +31,9 @@ class BookshelfResponse(BaseSchema):
     word_count: int | None = None
     cover_emoji: str | None = None
     cover_bg: str | None = None
-    available_stock: int | None = Field(None, description="当前可借库存（C4：无库存标灰）")
-    in_stock: bool | None = Field(None, description="是否有库存（C4：False 时前端标灰'暂不可借'）")
+    available_stock: int | None = Field(
+        None, description="当前可借库存（C4：无库存标灰）"
+    )
+    in_stock: bool | None = Field(
+        None, description="是否有库存（C4：False 时前端标灰'暂不可借'）"
+    )

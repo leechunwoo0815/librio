@@ -200,6 +200,20 @@ class OrderService:
             user_id, order_data.type, base_amount, child.status, order_data.child_id
         )
 
+        # A6：观察期中途升级 — 按剩余天数抵扣观察期剩余价值（upgrade_deduct_enabled）
+        upgrade_deduct = Decimal("0")
+        if (
+            order_data.type
+            in (
+                OrderType.OFFICIAL_MEMBER,
+                OrderType.QUARTERLY,
+                OrderType.SEMI_ANNUAL,
+            )
+            and child.status == MemberStatus.OBSERVATION
+        ):
+            upgrade_deduct = self._calc_observation_credit(child)
+            final_amount = max(Decimal("0"), final_amount - upgrade_deduct)
+
         order = Order(
             order_no=self.order_repo.generate_order_no(),
             user_id=user_id,
@@ -208,6 +222,7 @@ class OrderService:
             amount=final_amount,
             remark=order_data.remark,
             parent_course_time_id=order_data.slot_id,
+            upgrade_deduct=upgrade_deduct,
         )
         created = self.order_repo.create(order)
         self.db.commit()
@@ -267,6 +282,41 @@ class OrderService:
 
         # 不可叠加：取最低价
         return min(renewal_price, multi_child_price)
+
+    def _calc_observation_credit(self, child) -> Decimal:
+        """A6：观察期剩余价值 = 实付 ÷ observation_days × 剩余天数"""
+        from decimal import ROUND_HALF_UP
+
+        from backend.common.config_service import ConfigService
+
+        if not ConfigService.get_bool(self.db, "upgrade_deduct_enabled", True):
+            return Decimal("0")
+        if not child.member_expire_time:
+            return Decimal("0")
+        remaining = (child.member_expire_time - datetime.now()).days
+        if remaining <= 0:
+            return Decimal("0")
+
+        obs_order = (
+            self.db.query(Order)
+            .filter(
+                Order.child_id == child.id,
+                Order.type == OrderType.OBSERVATION,
+                Order.pay_status == PayStatus.PAID,
+                Order.is_deleted == 0,
+            )
+            .order_by(Order.pay_time.desc())
+            .first()
+        )
+        if not obs_order:
+            return Decimal("0")
+
+        obs_days = ConfigService.get_int(self.db, "observation_days", 45)
+        credit = Decimal(str(obs_order.amount)) / obs_days * remaining
+        return min(
+            credit.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+            Decimal(str(obs_order.amount)),
+        )
 
     def handle_payment_callback(self, callback: OrderPayCallback) -> OrderResponse:
         """处理支付回调 — 校验金额 + 更新状态 + 发布事件"""
@@ -332,6 +382,69 @@ class OrderService:
 
         logger.info(f"Payment received: {callback.order_no}")
         return OrderResponse.model_validate(order)
+
+    # ==================== A5 iOS 替代支付路径 ====================
+
+    async def generate_pay_code(self, order_no: str, gateway) -> dict:
+        """A5 门店收款码：为待支付订单生成微信支付参数/收款码（管理端展示，家长 iPhone 扫码付）"""
+        order = (
+            self.db.query(Order)
+            .filter(Order.order_no == order_no, Order.is_deleted == 0)
+            .first()
+        )
+        if not order:
+            raise NotFoundError("订单不存在")
+        if order.pay_status not in (PayStatus.PENDING, PayStatus.CLOSED):
+            raise ConflictError("订单状态不允许支付")
+
+        from backend.common.gateways.payment.types import PaymentOrderRequest
+
+        result = await gateway.create_order(
+            PaymentOrderRequest(
+                out_trade_no=order.order_no,
+                amount=Decimal(str(order.amount)),
+                description=f"DmkWords订单 {order.order_no}",
+            )
+        )
+        return {
+            "order_no": order.order_no,
+            "amount": str(order.amount),
+            "pay_params": getattr(result, "pay_params", {}) or {},
+        }
+
+    def confirm_bank_transfer(
+        self, order_no: str, trade_no: str, admin_id: int
+    ) -> OrderResponse:
+        """A5 对公转账：管理员确认到账并开通（复用支付回调链路，pay_type=2）"""
+        order = (
+            self.db.query(Order)
+            .filter(Order.order_no == order_no, Order.is_deleted == 0)
+            .first()
+        )
+        if not order:
+            raise NotFoundError("订单不存在")
+        if order.pay_status == PayStatus.PAID:
+            raise ConflictError("订单已支付，请勿重复确认")
+
+        from backend.domain.order.schemas import OrderPayCallback
+
+        callback = OrderPayCallback(
+            order_no=order.order_no,
+            trade_no=trade_no or f"BANK-{order.order_no}",
+            pay_type=2,  # 对公转账
+            amount=Decimal(str(order.amount)),
+        )
+        result = self.handle_payment_callback(callback)
+
+        from backend.domain.admin.services.system_service import AdminSystemService
+
+        AdminSystemService(self.db).write_operation_log(
+            admin_id=admin_id,
+            module="order",
+            operation="confirm_transfer",
+            content=f"对公转账确认到账: {order_no}, 流水={callback.trade_no}",
+        )
+        return result
 
     # ==================== 升级差额计算 ====================
 

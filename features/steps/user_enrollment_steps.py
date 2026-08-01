@@ -6,6 +6,7 @@
 """
 
 from behave import given, when, then
+from datetime import datetime, timedelta
 from backend.common.types import OrderType
 from backend.domain.child.models import Child
 from backend.domain.order.models import Order
@@ -847,3 +848,46 @@ def step_child_expired_in_grace(context):
 def step_renewal_discount_hint(context):
     data = context.response.json()
     assert float(data["amount"]) < 5400.0, f"续费未打折: {data['amount']}"
+
+
+# ==================== A6 观察期中途升级抵扣 ====================
+
+
+@given("用户的孩子观察期已使用{used:d}天（剩余{remaining:d}天）")
+def step_observation_partial_used(context, used, remaining):
+    child = Child(
+        user_id=context.user.id,
+        name="小明",
+        age=7,
+        grade="二年级",
+        status=Child.STATUS_OBSERVATION,
+        member_start_time=datetime.now() - timedelta(days=used),
+        member_expire_time=datetime.now() + timedelta(days=remaining),
+    )
+    context.db.add(child)
+    context.db.commit()
+    context.child = child
+    order = Order(
+        order_no="MW_OBS_PARTIAL",
+        user_id=context.user.id,
+        child_id=child.id,
+        type=Order.TYPE_OBSERVATION,
+        amount=500.00,
+        pay_status=Order.PAY_PAID,
+        pay_time=datetime.now() - timedelta(days=used),
+    )
+    context.db.add(order)
+    context.db.commit()
+
+
+@then("订单抵扣观察期剩余价值")
+def step_upgrade_deducted(context):
+    assert context.response.status_code == 201
+    data = context.response.json()
+    assert float(data["upgrade_deduct"]) > 0
+
+
+@then("订单金额低于{amount:d}元")
+def step_amount_less_than(context, amount):
+    data = context.response.json()
+    assert float(data["amount"]) < amount

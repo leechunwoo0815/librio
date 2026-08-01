@@ -66,6 +66,11 @@ class Order(BaseModel):
     refund_remark = Column(String(255), nullable=True, comment="退款备注")
 
     remark = Column(String(255), nullable=True, comment="订单备注")
+    upgrade_deduct = Column(
+        Numeric(10, 2),
+        default=0,
+        comment="升级抵扣金额（A6：观察期剩余价值冲抵会员费）",
+    )
 
     parent_course_time_id = Column(
         BigInteger,

@@ -6,6 +6,7 @@ import io
 
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from backend.common.dependencies import (
@@ -17,8 +18,10 @@ from backend.common.dependencies import (
     get_admin_refund_service,
     get_admin_user_service,
     get_admin_dashboard_service,
+    get_payment_gateway,
 )
 from backend.common.exceptions import ForbiddenError
+from backend.common.gateways.payment import PaymentGateway
 from backend.middleware.admin_rbac import require_perm
 from backend.domain.admin.admin_schemas import (
     SuccessResponse,
@@ -454,6 +457,49 @@ def admin_create_order(
         module="order",
         operation="create",
         content="创建订单",
+    )
+    return result
+
+
+class ConfirmTransferRequest(BaseModel):
+    """A5 对公转账确认"""
+
+    trade_no: str = ""
+
+
+@router.post("/orders/{order_no}/pay-code", response_model=AdminActionResponse)
+async def admin_order_pay_code(
+    order_no: str,
+    admin=Depends(require_perm("order.create")),
+    db: Session = Depends(get_db),
+    payment_gateway: PaymentGateway = Depends(get_payment_gateway),
+):
+    """A5 门店收款码：为待支付订单生成收款码/支付参数（iOS 家长门店扫码付）"""
+    from backend.domain.order.service import OrderService
+
+    result = await OrderService(db).generate_pay_code(order_no, payment_gateway)
+    system_service = AdminSystemService(db)
+    system_service.write_operation_log(
+        admin_id=admin.id,
+        module="order",
+        operation="pay_code",
+        content=f"生成收款码: {order_no}",
+    )
+    return result
+
+
+@router.post("/orders/{order_no}/confirm-transfer", response_model=AdminActionResponse)
+def admin_confirm_transfer(
+    order_no: str,
+    data: ConfirmTransferRequest,
+    admin=Depends(require_perm("order.create")),
+    db: Session = Depends(get_db),
+):
+    """A5 对公转账：管理员确认银行转账到账并开通"""
+    from backend.domain.order.service import OrderService
+
+    result = OrderService(db).confirm_bank_transfer(
+        order_no, trade_no=data.trade_no, admin_id=admin.id
     )
     return result
 
