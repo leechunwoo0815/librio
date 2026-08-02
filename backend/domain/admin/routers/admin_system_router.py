@@ -364,6 +364,59 @@ def admin_create_child(
     return result
 
 
+class MigrateAccountRequest(BaseModel):
+    """F1 账号迁移"""
+
+    new_user_id: int
+
+
+class ChangeGuardianRequest(BaseModel):
+    """F1 监护人变更"""
+
+    new_user_id: int
+    confirmed: bool = False
+
+
+@router.post("/users/{user_id}/migrate-account", response_model=AdminActionResponse)
+def migrate_account(
+    user_id: int,
+    data: MigrateAccountRequest,
+    admin=Depends(require_perm("user.edit")),
+    db: Session = Depends(get_db),
+):
+    """F1 账号迁移（换微信/openid 变更）：全部孩子及关联数据迁到新账号"""
+    from backend.domain.admin.services.guardian_service import GuardianService
+
+    return GuardianService(db).migrate_account(user_id, data.new_user_id, admin.id)
+
+
+@router.post("/children/{child_id}/change-guardian", response_model=AdminActionResponse)
+def change_guardian(
+    child_id: int,
+    data: ChangeGuardianRequest,
+    admin=Depends(require_perm("child.edit")),
+    db: Session = Depends(get_db),
+):
+    """F1 监护人变更（需 confirmed=true，线下双方确认）"""
+    from backend.domain.admin.services.guardian_service import GuardianService
+
+    return GuardianService(db).change_guardian(
+        child_id, data.new_user_id, data.confirmed, admin.id
+    )
+
+
+@router.post("/children/{child_id}/revive", response_model=AdminActionResponse)
+def revive_child(
+    child_id: int,
+    admin=Depends(require_perm("child.edit")),
+    db: Session = Depends(get_db),
+):
+    """F5 复活：EXITED → TRIAL（历史数据保留，权益清零重来）"""
+    from backend.domain.admin.services.guardian_service import GuardianService
+
+    return GuardianService(db).revive_child(child_id, admin.id)
+
+
 @router.put("/children/{child_id}", response_model=AdminActionResponse)
 def admin_update_child(
     child_id: int,

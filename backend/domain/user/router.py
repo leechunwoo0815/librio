@@ -4,9 +4,10 @@
 import logging
 
 from fastapi import APIRouter, Depends
+from pydantic import BaseModel, ConfigDict, Field
 
 from backend.common.dependencies import get_user_service
-from backend.common.exceptions import ValidationError
+from backend.common.exceptions import ConflictError, ValidationError
 from backend.middleware.auth import create_access_token, get_current_user
 from backend.middleware.rate_limit import rate_limit
 from backend.domain.user.schemas import (
@@ -57,6 +58,36 @@ async def wx_login(
 def get_user_info(current_user=Depends(get_current_user)):
     """获取当前用户信息"""
     return current_user
+
+
+class ChangePhoneRequest(BaseModel):
+    """F1：手机号换绑请求"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    new_phone: str = Field(..., min_length=11, max_length=11, description="新手机号")
+    sms_code: str = Field(..., min_length=4, max_length=8, description="新手机号短信验证码")
+
+
+@router.post("/change-phone", response_model=UserResponse)
+async def change_phone(
+    data: ChangePhoneRequest,
+    user_service: UserService = Depends(get_user_service),
+    current_user=Depends(get_current_user),
+):
+    """F1 手机号换绑 — 验证新手机号短信验证码后换绑（防离婚/换号数据丢失）"""
+    from backend.common.dependencies import get_sms_gateway
+
+    gateway = get_sms_gateway()
+    if not await gateway.verify_code(data.new_phone, data.sms_code):
+        raise ValidationError("验证码错误或已过期")
+
+    # 新手机号不能已被其他账号占用
+    existing = user_service.user_repo.get_by_phone(data.new_phone)
+    if existing and existing.id != current_user.id:
+        raise ConflictError("该手机号已被其他账号使用，请联系门店处理")
+
+    return user_service.update_user_phone(current_user.id, data.new_phone)
 
 
 @router.put("/info", response_model=UserResponse)

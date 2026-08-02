@@ -264,11 +264,33 @@ class OrderService:
 
         # P0-6: 多孩优惠 — 检查该用户是否有其他孩子是观察期/正式会员
         # 排除报名孩子自身，避免单孩子也享受多孩优惠
+        # F5：历史付过费的孩子（含 EXITED 复活场景）同样计入多孩资格
         from backend.domain.child.models import Child
 
+        member_order_children = (
+            self.db.query(Order.child_id)
+            .filter(
+                Order.user_id == user_id,
+                Order.type.in_(
+                    [
+                        OrderType.OBSERVATION,
+                        OrderType.OFFICIAL_MEMBER,
+                        OrderType.QUARTERLY,
+                        OrderType.SEMI_ANNUAL,
+                    ]
+                ),
+                Order.pay_status == PayStatus.PAID,
+                Order.is_deleted == 0,
+            )
+            .distinct()
+            .subquery()
+        )
         active_children = self.db.query(Child).filter(
             Child.user_id == user_id,
-            Child.status.in_([MemberStatus.OBSERVATION, MemberStatus.OFFICIAL]),
+            (
+                Child.status.in_([MemberStatus.OBSERVATION, MemberStatus.OFFICIAL])
+                | Child.id.in_(member_order_children)
+            ),
             Child.is_deleted == 0,
         )
         if child_id is not None:

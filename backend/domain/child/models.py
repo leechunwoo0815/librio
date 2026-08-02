@@ -29,6 +29,7 @@ class Child(BaseModel):
     STATUS_OFFICIAL = 2
     STATUS_EXPIRED = 3
     STATUS_EXITED = 4
+    STATUS_ALUMNI = 5  # F2：满15岁毕业
 
     user_id = Column(
         BigInteger,

@@ -123,6 +123,22 @@ def init_scheduler(app):
         replace_existing=True,
     )
 
+    # 每天9点20分：人工审核 SLA 巡检（E2：超24h未审升级提醒超管）
+    scheduler.add_job(
+        audit_sla_escalation,
+        CronTrigger(hour=9, minute=20),
+        id="audit_sla_escalation",
+        replace_existing=True,
+    )
+
+    # 每天凌晨4点：满15岁毕业流程（F2）
+    scheduler.add_job(
+        graduate_children,
+        CronTrigger(hour=4, minute=0),
+        id="graduate_children",
+        replace_existing=True,
+    )
+
     # 每天凌晨2点30分：逾期检测
     scheduler.add_job(
         mark_overdue_books,
@@ -1206,6 +1222,201 @@ def remind_reservation_pickup(db: Session | None = None):
     except Exception as e:
         db.rollback()
         logger.exception(f"remind_reservation_pickup failed: {e}")
+    finally:
+        if own_session:
+            db.close()
+
+
+@distributed_lock("job:audit_sla_escalation", timeout=300)
+def audit_sla_escalation(db: Session | None = None):
+    """
+    [What] 人工审核 SLA 巡检（E2：超 24h 未审 → 升级提醒超管）
+    [Why] 管理员非 24h 在线，审核堆积会让家长等到第二天，必须有人兜底
+    [How] 每日扫描 4 个人工队列（退款/押金退款/定责复核/权益转让），
+          有超 24h 未审项 → 写系统告警（user_id=0 管理端可见）
+    参数 db：可选的 session 注入（测试用），不传则自行创建。
+    """
+    from backend.domain.refund.models import RefundApplication
+    from backend.domain.deposit.models import DepositRecord
+    from backend.domain.book.damage_model import BookDamageReport
+    from backend.domain.child.benefit_transfer_model import BenefitTransferApplication
+    from backend.common.types import DepositStatus
+
+    own_session = db is None
+    if own_session:
+        db = _get_db_session()
+    try:
+        cutoff = datetime.now() - timedelta(hours=24)
+        stale_items = []
+
+        refund_count = (
+            db.query(RefundApplication)
+            .filter(
+                RefundApplication.status == RefundApplication.STATUS_PENDING,
+                RefundApplication.create_time < cutoff,
+                RefundApplication.is_deleted == 0,
+            )
+            .count()
+        )
+        if refund_count:
+            stale_items.append(f"退款申请 {refund_count} 笔")
+
+        deposit_count = (
+            db.query(DepositRecord)
+            .filter(
+                DepositRecord.status == DepositStatus.REFUND_PENDING,
+                DepositRecord.update_time < cutoff,
+                DepositRecord.is_deleted == 0,
+            )
+            .count()
+        )
+        if deposit_count:
+            stale_items.append(f"押金退款 {deposit_count} 笔")
+
+        damage_count = (
+            db.query(BookDamageReport)
+            .filter(
+                BookDamageReport.status == BookDamageReport.STATUS_PENDING_REVIEW,
+                BookDamageReport.create_time < cutoff,
+                BookDamageReport.is_deleted == 0,
+            )
+            .count()
+        )
+        if damage_count:
+            stale_items.append(f"定责复核 {damage_count} 条")
+
+        transfer_count = (
+            db.query(BenefitTransferApplication)
+            .filter(
+                BenefitTransferApplication.status == 0,  # PENDING
+                BenefitTransferApplication.create_time < cutoff,
+                BenefitTransferApplication.is_deleted == 0,
+            )
+            .count()
+        )
+        if transfer_count:
+            stale_items.append(f"权益转让 {transfer_count} 笔")
+
+        if stale_items:
+            content = (
+                "以下人工审核已超过 24 小时未处理："
+                + "、".join(stale_items)
+                + "。请超管尽快处理。"
+            )
+            _create_message(
+                db,
+                user_id=0,  # 管理端告警
+                title="审核超时提醒（SLA 24h）",
+                content=content,
+                msg_type=1,
+                priority=2,
+            )
+            db.commit()
+            logger.warning(f"AUDIT_SLA: {content}")
+        else:
+            logger.info("AUDIT_SLA: 无超时审核项")
+    except Exception as e:
+        db.rollback()
+        logger.exception(f"audit_sla_escalation failed: {e}")
+    finally:
+        if own_session:
+            db.close()
+
+
+@distributed_lock("job:graduate_children", timeout=300)
+def graduate_children(db: Session | None = None):
+    """
+    [What] 满 15 岁毕业流程（F2）
+    [Why] 15 岁后不再提供借阅服务，转"校友"状态（不可借可查历史）+ 引导退押金
+    [How] age>=15 且为会员状态 → ALUMNI + 毕业通知；age==14 → 毕业提醒（每年最多1条）
+    参数 db：可选的 session 注入（测试用），不传则自行创建。
+    """
+    from backend.domain.child.models import Child
+    from backend.domain.message.models import SystemMessage
+
+    own_session = db is None
+    if own_session:
+        db = _get_db_session()
+    try:
+        member_statuses = [
+            MemberStatus.OBSERVATION,
+            MemberStatus.OFFICIAL,
+            MemberStatus.EXPIRED,
+        ]
+
+        # 满 15 岁 → 毕业（ALUMNI）
+        graduates = (
+            db.query(Child)
+            .filter(
+                Child.age >= 15,
+                Child.status.in_(member_statuses),
+                Child.is_deleted == 0,
+            )
+            .all()
+        )
+        for child in graduates:
+            child.status = MemberStatus.ALUMNI
+            _create_message(
+                db,
+                user_id=child.user_id,
+                title="毕业快乐",
+                content=(
+                    f"{child.name}已经 15 岁啦，从 DmkWords 正式毕业！"
+                    "历史阅读数据将永久保留。如尚有押金未退，"
+                    "请在小程序「会员中心-押金」申请退还，或联系门店办理。"
+                ),
+                msg_type=1,
+                priority=1,
+            )
+            logger.info(f"GRADUATED: child={child.id}, name={child.name}")
+
+        # 14 岁 → 毕业提醒（每年最多 1 条，近似"15 岁前 90 天"——当前仅有年龄无生日）
+        pre_grads = (
+            db.query(Child)
+            .filter(
+                Child.age == 14,
+                Child.status.in_([MemberStatus.OBSERVATION, MemberStatus.OFFICIAL]),
+                Child.is_deleted == 0,
+            )
+            .all()
+        )
+        remind_count = 0
+        one_year_ago = datetime.now() - timedelta(days=365)
+        for child in pre_grads:
+            already = (
+                db.query(SystemMessage)
+                .filter(
+                    SystemMessage.user_id == child.user_id,
+                    SystemMessage.title == "毕业提醒",
+                    SystemMessage.content.contains(child.name),
+                    SystemMessage.create_time >= one_year_ago,
+                    SystemMessage.is_deleted == 0,
+                )
+                .count()
+            )
+            if already:
+                continue
+            _create_message(
+                db,
+                user_id=child.user_id,
+                title="毕业提醒",
+                content=(
+                    f"{child.name}即将年满 15 岁，会员到期后将转为校友身份"
+                    "（不可再借阅，历史数据保留）。如有押金请提前安排退还。"
+                ),
+                msg_type=1,
+                priority=1,
+            )
+            remind_count += 1
+
+        db.commit()
+        if graduates or remind_count:
+            logger.info(
+                f"graduate_children: graduated={len(graduates)}, reminded={remind_count}"
+            )
+    except Exception as e:
+        db.rollback()
+        logger.exception(f"graduate_children failed: {e}")
     finally:
         if own_session:
             db.close()
