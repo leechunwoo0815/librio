@@ -38,7 +38,11 @@ class DepositRecord(BaseModel):
     status = Column(SmallInteger, default=DepositStatus.UNPAID, comment="押金状态")
 
     pay_time = Column(DateTime, nullable=True, comment="支付时间")
-    pay_order_id = Column(BigInteger, nullable=True, comment="支付订单ID")
+    pay_order_id = Column(
+        String(64),
+        nullable=True,
+        comment="支付单号（DP前缀字符串，审查 P0-1 修正列类型）",
+    )
 
     refund_time = Column(DateTime, nullable=True, comment="退款时间")
     refund_amount = Column(Numeric(10, 2), nullable=True, comment="退款金额")

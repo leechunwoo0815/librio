@@ -347,7 +347,7 @@ def reconcile_child_stats(db: Session | None = None):
       - total_words_read = 通过测验（score >= quiz_pass_rate×100，同一 child+book 只计一次）
         的图书 word_count 之和
       - total_reading_minutes = reading_session.duration_seconds 之和 // 60
-      - total_books_finished = check_in(check_type=2 读完图书) 条数
+      - total_books_finished = reading_progress(is_finished=1) 条数（P1-3 修正）
       - current_streak_days = 从今天（或昨天）向前连续打卡天数
       - longest_streak_days = max(现存值, 全量打卡日期最长连续段)（只升不降，保护历史）
     偏差修正并记录 operation_log。
@@ -396,14 +396,17 @@ def reconcile_child_stats(db: Session | None = None):
             .all()
         }
 
-        # books：读完图书打卡条数
+        # books：累计读完本数（P1-3 修正：以 ReadingProgress.is_finished=1 为准，
+        # 此前误用 TYPE_FINISH_BOOK 打卡条数——打卡每日每类型仅 1 次，会低估本数）
+        from backend.domain.reading.models import ReadingProgress
+
         books_map = dict(
-            db.query(CheckIn.child_id, sql_func.count(CheckIn.id))
+            db.query(ReadingProgress.child_id, sql_func.count(ReadingProgress.id))
             .filter(
-                CheckIn.check_type == CheckIn.TYPE_FINISH_BOOK,
-                CheckIn.is_deleted == 0,
+                ReadingProgress.is_finished == 1,
+                ReadingProgress.is_deleted == 0,
             )
-            .group_by(CheckIn.child_id)
+            .group_by(ReadingProgress.child_id)
             .all()
         )
 

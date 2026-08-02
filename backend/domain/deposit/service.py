@@ -860,14 +860,17 @@ class DepositService:
         }
 
     def handle_fine_callback(self, order_no: str) -> bool:
-        """罚款支付回调 — 按 pay_order_no 核销（找不到返回 False 走押金链路）"""
+        """罚款支付回调 — 按 pay_order_no 核销
+
+        幂等语义（P2-4）：已支付单重复回调返回 True（视为成功，避免微信重试 500）；
+        仅当单号完全不存在时返回 False（让调用方走押金链路）。
+        """
         from backend.domain.deposit.models import FinePayment
 
         record = (
             self.db.query(FinePayment)
             .filter(
                 FinePayment.pay_order_no == order_no,
-                FinePayment.status == FinePayment.STATUS_PENDING,
                 FinePayment.is_deleted == 0,
             )
             .with_for_update()
@@ -875,6 +878,8 @@ class DepositService:
         )
         if not record:
             return False
+        if record.status == FinePayment.STATUS_PAID:
+            return True  # 重复回调幂等成功
         self._settle_fine_payment(record)
         self.db.commit()
         return True

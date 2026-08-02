@@ -245,13 +245,24 @@ class RefundService:
             # 微信退款是异步的，状态由回调或定时任务更新
         except Exception as e:
             logger.error(f"WeChat refund failed: order={order_no}, error={e}")
-            # 退款失败：更新订单状态 + 写入消息
+            # 退款失败：回退 refund 为 PENDING（E1 自动审核可重试）+ 订单状态 + 管理端告警
             try:
                 order = db.query(Order).filter(Order.order_no == order_no).first()
                 if order:
                     order.refund_status = 3  # FAILED
                     order.pay_status = PayStatus.PAID
                     order.refund_remark = str(e)[:200]
+
+                refund = (
+                    db.query(RefundApplication)
+                    .filter(RefundApplication.id == refund_id)
+                    .first()
+                )
+                if refund and refund.status == RefundApplication.STATUS_APPROVED:
+                    refund.status = RefundApplication.STATUS_PENDING
+                    refund.review_comment = (
+                        f"退款执行失败已回退待审核，请管理员重试。错误: {str(e)[:150]}"
+                    )
 
                 from backend.domain.message.models import SystemMessage
 

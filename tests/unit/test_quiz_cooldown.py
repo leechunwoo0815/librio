@@ -1,7 +1,7 @@
 """测验冷却单元测试 — T3.4 quiz_cooldown_minutes 可配置"""
 
 import pytest
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from sqlalchemy import create_engine, update
 from sqlalchemy.orm import sessionmaker
 from backend.database import Base
@@ -29,9 +29,9 @@ def advancement_service(db):
     return AdvancementService(db)
 
 
-def _now_utc():
-    """匹配 start_quiz 中的时间获取方式"""
-    return datetime.now(timezone.utc).replace(tzinfo=None)
+def _now_local():
+    """匹配 start_quiz 中的时间获取方式（P1-2 修正：与 ORM func.now() 同为本地时间）"""
+    return datetime.now()
 
 
 def _setup_quiz(db, child_id, book_id, create_time, status=1):
@@ -98,7 +98,7 @@ class TestQuizCooldown:
         db.add(book)
         db.commit()
         _setup_question(db, book.id)
-        _setup_quiz(db, child.id, book.id, _now_utc() - timedelta(minutes=5))
+        _setup_quiz(db, child.id, book.id, _now_local() - timedelta(minutes=5))
 
         data = QuizStartRequest(book_id=book.id)
         with pytest.raises(ConflictError, match="冷却"):
@@ -131,7 +131,7 @@ class TestQuizCooldown:
         db.add(book)
         db.commit()
         _setup_question(db, book.id)
-        _setup_quiz(db, child.id, book.id, _now_utc() - timedelta(hours=2))
+        _setup_quiz(db, child.id, book.id, _now_local() - timedelta(hours=2))
 
         data = QuizStartRequest(book_id=book.id)
         result = advancement_service.start_quiz(child.id, data)
@@ -208,7 +208,7 @@ class TestQuizCooldown:
         db.commit()
         _setup_question(db, book1.id)
         _setup_question(db, book2.id)
-        _setup_quiz(db, child.id, book1.id, _now_utc() - timedelta(minutes=5))
+        _setup_quiz(db, child.id, book1.id, _now_local() - timedelta(minutes=5))
 
         data = QuizStartRequest(book_id=book2.id)
         result = advancement_service.start_quiz(child.id, data)

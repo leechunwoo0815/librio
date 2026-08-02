@@ -143,6 +143,7 @@ class ReadingService:
         progress.last_read_time = datetime.now()
 
         if data.current_page >= data.total_pages:
+            first_finish = progress.is_finished != 1
             progress.is_finished = 1
             progress.finish_time = datetime.now()
 
@@ -177,6 +178,17 @@ class ReadingService:
                 )
                 self.db.add(sub)
                 self.db.flush()
+
+            # C1 读完打卡（每类型每日各 1 次）+ 累计读完本数（审查 P1-3）
+            if first_finish:
+                self._check_finish_book_checkin(child_id)
+                child = (
+                    self.db.query(Child)
+                    .filter(Child.id == child_id, Child.is_deleted == 0)
+                    .first()
+                )
+                if child:
+                    child.total_books_finished = (child.total_books_finished or 0) + 1
 
         self.progress_repo.update(progress)
         self.db.commit()
@@ -450,6 +462,42 @@ class ReadingService:
         self.checkin_repo.create(checkin)
         event_bus.publish(CheckInEvent(child_id=child_id, streak_days=0), db=self.db)
         logger.info(f"Voice checkin: child={child_id}")
+
+    def _check_finish_book_checkin(self, child_id: int):
+        """读完打卡：读完一本书触发（C1 每类型每日各 1 次；仅观察期/正式会员）"""
+        from backend.common.types import MemberStatus
+
+        child = (
+            self.db.query(Child)
+            .filter(Child.id == child_id, Child.is_deleted == 0)
+            .first()
+        )
+        if not child or child.status not in (
+            MemberStatus.OBSERVATION,
+            MemberStatus.OFFICIAL,
+        ):
+            return
+
+        today = date.today()
+        existing = self.checkin_repo.get_today_checkin_by_type(
+            child_id, today, CheckIn.TYPE_FINISH_BOOK
+        )
+        if existing:
+            return
+
+        daily_limit = ConfigService.get_int(self.db, "daily_checkin_limit", 4)
+        today_count = self.checkin_repo.count_today_checkins(child_id, today)
+        if today_count >= daily_limit:
+            return
+
+        checkin = CheckIn(
+            child_id=child_id,
+            check_date=today,
+            check_type=CheckIn.TYPE_FINISH_BOOK,
+        )
+        self.checkin_repo.create(checkin)
+        event_bus.publish(CheckInEvent(child_id=child_id, streak_days=0), db=self.db)
+        logger.info(f"Finish-book checkin: child={child_id}")
 
     def get_recordings(
         self,

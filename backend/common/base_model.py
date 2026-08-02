@@ -15,7 +15,9 @@
   - 软删除不物理删除数据
 """
 
-from sqlalchemy import BigInteger, Column, DateTime, Integer, SmallInteger, func
+from datetime import datetime
+
+from sqlalchemy import BigInteger, Column, DateTime, Integer, SmallInteger
 
 from backend.database import Base as SQLAlchemyBase
 
@@ -30,11 +32,15 @@ class TimestampMixin:
     为什么用 Mixin 而不是直接写在 BaseModel？
     因为未来可能有不需要软删除的模型（如 DictionaryWord），
     可以只继承 TimestampMixin 而不继承 BaseModel。
+
+    时区口径（审查 P1-2 根治）：默认值使用应用侧 datetime.now()，
+    与业务代码所有 datetime.now() 比较保持同一时钟口径；
+    不用 func.now()（SQLite 存 UTC、MySQL 存会话时区，跨库不一致）。
     """
 
-    create_time = Column(DateTime, default=func.now(), comment="创建时间")
+    create_time = Column(DateTime, default=datetime.now, comment="创建时间")
     update_time = Column(
-        DateTime, default=func.now(), onupdate=func.now(), comment="更新时间"
+        DateTime, default=datetime.now, onupdate=datetime.now, comment="更新时间"
     )
     is_deleted = Column(SmallInteger, default=0, comment="软删除标记: 0=正常 1=已删除")
 

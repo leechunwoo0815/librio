@@ -104,8 +104,8 @@ class TestPayFines:
         assert svc.handle_fine_callback("FINE-TEST-CB") is True
         db.refresh(child)
         assert child.outstanding_fines == Decimal("0")
-        # 重复回调幂等
-        assert svc.handle_fine_callback("FINE-TEST-CB") is False
+        # 重复回调幂等成功（P2-4：微信重试不再 500）
+        assert svc.handle_fine_callback("FINE-TEST-CB") is True
 
 
 class TestLowLevelQuiz:

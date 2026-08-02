@@ -152,7 +152,18 @@ class TestReconcileChildStats:
                 duration_seconds=900,
             )
         )
-        db.add(CheckIn(child_id=child.id, check_type=2, check_date=datetime.now()))
+        # P1-3：对账口径改为 reading_progress.is_finished 计数
+        from backend.domain.reading.models import ReadingProgress
+
+        db.add(
+            ReadingProgress(
+                child_id=child.id,
+                book_id=1,
+                current_page=10,
+                total_pages=10,
+                is_finished=1,
+            )
+        )
         db.commit()
 
         scheduler.reconcile_child_stats(db)
