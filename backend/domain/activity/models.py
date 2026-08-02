@@ -55,6 +55,11 @@ class Activity(BaseModel):
     description = Column(Text, nullable=True, comment="活动描述")
     location = Column(String(100), nullable=True, comment="活动地点")
     status = Column(SmallInteger, default=STATUS_DRAFT, comment="活动状态")
+    is_light = Column(
+        SmallInteger,
+        default=0,
+        comment="轻量模式: 0=正式 1=轻量（E4：报名自动通过+免签到）",
+    )
 
     enrollments = relationship(
         "ActivityEnrollment",

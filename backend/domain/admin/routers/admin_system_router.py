@@ -20,7 +20,7 @@ from backend.common.dependencies import (
     get_admin_dashboard_service,
     get_payment_gateway,
 )
-from backend.common.exceptions import ForbiddenError
+from backend.common.exceptions import ConflictError, ForbiddenError
 from backend.common.gateways.payment import PaymentGateway
 from backend.middleware.admin_rbac import require_perm
 from backend.domain.admin.admin_schemas import (
@@ -101,6 +101,15 @@ def get_dashboard(
     return service.get_dashboard()
 
 
+@router.get("/dashboard/ops", response_model=AdminActionResponse)
+def get_ops_metrics(
+    service: AdminDashboardService = Depends(get_admin_dashboard_service),
+    admin=Depends(require_perm("dashboard.view")),
+):
+    """E6 运营核心报表（今日借还/本周新增流失/逾期排行/押金池/转化漏斗）"""
+    return service.get_ops_metrics()
+
+
 # ==================== 系统配置 ====================
 
 
@@ -127,16 +136,25 @@ def get_config(
 def set_config(
     key: str,
     value: str,
+    confirmed: bool = Query(False, description="警告级配置需 confirmed=true 确认"),
     service: AdminSystemService = Depends(get_admin_system_service),
     admin=Depends(require_perm("config.edit")),
 ):
-    """更新配置项"""
+    """更新配置项（E3 三级管控：锁定级仅超管/警告级需确认/自由级直接改）"""
+    from backend.domain.admin.config_levels import LEVEL_LOCKED, LEVEL_WARNING, level_of
+
+    level = level_of(key)
+    if level == LEVEL_LOCKED and getattr(admin, "role", None) != 0:
+        raise ForbiddenError(f"配置 {key} 为锁定级，仅超级管理员可修改")
+    if level == LEVEL_WARNING and not confirmed:
+        raise ConflictError(f"配置 {key} 为警告级，修改需二次确认（confirmed=true）")
+
     result = service.set_config(key, value)
     service.write_operation_log(
         admin_id=admin.id,
         module="config",
         operation="update",
-        content=f"更新配置: {key}={value}",
+        content=f"更新配置: {key}={value}（级别:{level}）",
     )
     return result
 

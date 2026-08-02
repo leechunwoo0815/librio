@@ -130,8 +130,8 @@ class ActivityService:
             activity_id=data.activity_id,
             ticket_code=ticket_code,
         )
-        # 免费活动自动通过，收费活动待审核（需付费后通过）
-        if activity.is_free:
+        # 免费/轻量活动自动通过（E4 双模式），收费正式活动待审核（需付费后通过）
+        if activity.is_free or getattr(activity, "is_light", 0):
             enrollment.status = ActivityEnrollment.STATUS_APPROVED
         self.enrollment_repo.create(enrollment)
 

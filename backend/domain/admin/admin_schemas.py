@@ -437,6 +437,9 @@ class CreateActivityRequest(BaseModel):
     title: str = Field(..., min_length=1, max_length=200)
     type: int = Field(..., ge=1, le=6)
     is_free: bool = True
+    is_light: bool = Field(
+        False, description="轻量模式（E4：免费/≤30人，报名自动通过+免签到）"
+    )
     price: Decimal = Field(Decimal("0"), ge=0)
     start_time: str
     end_time: str

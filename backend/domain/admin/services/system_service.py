@@ -58,7 +58,9 @@ class AdminSystemService:
         return val and val.lower() in ("true", "1", "yes")
 
     def get_all_configs(self) -> dict:
-        """获取所有配置（含默认值）"""
+        """获取所有配置（含默认值 + E3 管控级别）"""
+        from backend.domain.admin.config_levels import level_of
+
         self._load_config_cache()
         items = {}
         for key, (default_val, _type, desc) in SystemConfig.DEFAULTS.items():
@@ -66,6 +68,7 @@ class AdminSystemService:
                 "value": self._instance_config_cache.get(key, default_val),
                 "type": _type,
                 "description": desc,
+                "level": level_of(key),
             }
         return {"items": items, "total": len(items)}
 
