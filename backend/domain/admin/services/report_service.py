@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from backend.common.sql_utils import escape_like
 from backend.domain.child.models import Child
 
 
@@ -42,10 +43,11 @@ class AdminReportService:
 
         # 如果有关键词，先搜索匹配的 child
         if keyword:
+            esc = escape_like(keyword)
             matched_children = (
                 self.db.query(Child.id)
                 .filter(
-                    Child.name.ilike(f"%{keyword}%"),
+                    Child.name.ilike(f"%{esc}%", escape="\\"),
                     Child.is_deleted == 0,
                 )
                 .all()

@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from backend.common.config_service import ConfigService
 from backend.common.exceptions import NotFoundError, ValidationError
+from backend.common.sql_utils import escape_like
 from backend.domain.admin.models import SystemConfig
 from backend.domain.admin.repository import SystemConfigRepository
 from backend.domain.admin.schemas import SystemConfigResponse
@@ -129,7 +130,9 @@ class AdminSystemService:
 
         q = self.db.query(OperationLog).filter(OperationLog.is_deleted == 0)
         if module:
-            q = q.filter(OperationLog.module.like(f"%{module}%"))
+            q = q.filter(
+                OperationLog.module.like(f"%{escape_like(module)}%", escape="\\")
+            )
         total = q.count()
         logs = (
             q.order_by(OperationLog.create_time.desc())

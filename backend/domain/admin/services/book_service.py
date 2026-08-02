@@ -5,6 +5,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from backend.common.exceptions import NotFoundError, ValidationError
+from backend.common.sql_utils import escape_like
 from backend.domain.advancement.models import QuestionBank
 from backend.domain.admin.schemas import (
     BulkImportBookItem,
@@ -199,13 +200,14 @@ class AdminBookService:
         """按书名/ISBN搜索题库"""
         from backend.domain.book.models import Book
 
+        esc = escape_like(keyword)
         books = (
             self.db.query(Book)
             .filter(
                 Book.is_deleted == 0,
                 or_(
-                    Book.title.like(f"%{keyword}%"),
-                    Book.isbn.like(f"%{keyword}%"),
+                    Book.title.like(f"%{esc}%", escape="\\"),
+                    Book.isbn.like(f"%{esc}%", escape="\\"),
                 ),
             )
             .all()

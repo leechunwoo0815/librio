@@ -49,6 +49,9 @@ class Settings(BaseSettings):
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379
     REDIS_DB: int = 0
+    # Redis 宕机时分布式锁的降级策略：True=无锁执行（单实例/开发可接受）；
+    # False=跳过任务（多实例生产必须，防多实例并发重复执行）。审查 P1-3
+    REDIS_LOCK_FAIL_OPEN: bool = True
 
     # JWT配置 - 通过环境变量 SECRET_KEY 覆盖（pydantic-settings 自动读取）
     SECRET_KEY: str = "your-secret-key-change-in-production"

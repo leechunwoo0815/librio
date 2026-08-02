@@ -97,7 +97,12 @@ class CheckIn(BaseModel):
     """每日阅读打卡"""
 
     __tablename__ = "check_in"
-    __table_args__ = {"extend_existing": True}
+    __table_args__ = (
+        UniqueConstraint(
+            "child_id", "check_date", "check_type", name="uq_checkin_child_date_type"
+        ),
+        {"extend_existing": True},
+    )
 
     TYPE_READING = 1
     TYPE_FINISH_BOOK = 2

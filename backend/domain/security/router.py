@@ -51,4 +51,16 @@ async def check_text(
     if errcode != 0:
         return CheckTextResponse(passed=False, message="安全检查暂时不可用，请稍后重试")
 
+    # v2 接口 errcode=0 不代表通过，必须看 result.suggest（审查 P2-1）：
+    # pass=通过 review=需人工复核 risky=违规。儿童产品无人工复核队列，review 一并拦截。
+    suggest = (result.get("result") or {}).get("suggest", "")
+    if suggest in ("risky", "review"):
+        return CheckTextResponse(passed=False, message="内容包含违规信息，请修改后重试")
+    # detail 逐项兜底：任一策略判 risky 即拦截
+    for item in result.get("detail") or []:
+        if item.get("suggest") == "risky":
+            return CheckTextResponse(
+                passed=False, message="内容包含违规信息，请修改后重试"
+            )
+
     return CheckTextResponse(passed=True, message="")

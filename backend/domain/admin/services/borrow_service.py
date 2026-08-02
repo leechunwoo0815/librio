@@ -5,6 +5,7 @@ from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from backend.common.exceptions import NotFoundError
+from backend.common.sql_utils import escape_like
 from backend.common.types import BorrowStatus, DepositStatus
 from backend.domain.borrow.models import BorrowRecord
 from backend.domain.child.models import Child
@@ -21,9 +22,11 @@ class AdminBorrowService:
 
     def clear_child_fines(self, child_id: int, admin_id: int) -> dict:
         """管理员清零孩子罚款"""
+        # 行锁防并发罚款计入 lost update（审查 P0-3）
         child = (
             self.db.query(Child)
             .filter(Child.id == child_id, Child.is_deleted == 0)
+            .with_for_update()
             .first()
         )
         if not child:
@@ -309,16 +312,17 @@ class AdminBorrowService:
         self, keyword: str, child_ids: list[int] | None = None
     ) -> list[dict]:
         """搜索孩子 — 借还场景专用，返回孩子+家长+借阅信息"""
+        esc = escape_like(keyword)
         q = (
             self.db.query(Child)
             .join(User, Child.user_id == User.id)
             .filter(
                 Child.is_deleted == 0,
                 or_(
-                    Child.name.like(f"%{keyword}%"),
-                    Child.english_name.like(f"%{keyword}%"),
-                    User.phone.like(f"%{keyword}%"),
-                    User.parent_name.like(f"%{keyword}%"),
+                    Child.name.like(f"%{esc}%", escape="\\"),
+                    Child.english_name.like(f"%{esc}%", escape="\\"),
+                    User.phone.like(f"%{esc}%", escape="\\"),
+                    User.parent_name.like(f"%{esc}%", escape="\\"),
                 ),
             )
             .limit(10)

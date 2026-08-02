@@ -20,7 +20,13 @@ class WeChatAPIError(Exception):
 
 
 class _AccessTokenCache:
-    """线程安全的 access_token 缓存（双重检查锁定防并发击穿）"""
+    """access_token 缓存：Redis 为主（多实例共享，审查 P2-3），进程内存为降级。
+
+    多实例部署时若各进程独立刷新 token，微信侧会使旧 token 互踢失效，
+    导致刷新风暴甚至触发频率限制。Redis 共享后全集群只刷新一次。
+    """
+
+    REDIS_KEY = "wechat:access_token"
 
     def __init__(self):
         self._lock = threading.Lock()
@@ -28,14 +34,36 @@ class _AccessTokenCache:
         self._expires_at: float = 0
 
     def get(self) -> Optional[str]:
+        # 最快路径：进程内缓存
         if self._token and time.time() < self._expires_at:
             return self._token
+        # 其次：Redis 共享缓存（其他实例可能已刷新）
+        try:
+            from backend.common.distributed_lock import get_redis_client
+
+            data = get_redis_client().get(self.REDIS_KEY)
+            if data:
+                token, expires_at = data.rsplit("|", 1)
+                if time.time() < float(expires_at):
+                    self._token, self._expires_at = token, float(expires_at)
+                    return token
+        except Exception:
+            pass  # Redis 不可用静默降级为进程内缓存
         return None
 
     def set(self, token: str, expires_in: int):
+        expires_at = time.time() + min(expires_in, CACHE_TTL)
         with self._lock:
             self._token = token
-            self._expires_at = time.time() + min(expires_in, CACHE_TTL)
+            self._expires_at = expires_at
+        try:
+            from backend.common.distributed_lock import get_redis_client
+
+            ttl = int(expires_at - time.time())
+            if ttl > 0:
+                get_redis_client().set(self.REDIS_KEY, f"{token}|{expires_at}", ex=ttl)
+        except Exception:
+            pass  # Redis 写失败不影响进程内缓存
 
 
 _token_cache = _AccessTokenCache()

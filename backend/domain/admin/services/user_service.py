@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from backend.common.base_repo import BaseRepository
 from backend.common.exceptions import NotFoundError, ValidationError
+from backend.common.sql_utils import escape_like
 from backend.common.types import BorrowStatus
 from backend.domain.advancement.models import ReadingSubmission
 from backend.domain.borrow.models import BorrowRecord
@@ -37,18 +38,19 @@ class AdminUserService:
         """分页查询用户+孩子列表 — 支持家长姓名、手机号、孩子姓名搜索"""
         q = self.db.query(User).filter(User.is_deleted == 0)
         if search:
+            esc = escape_like(search)
             user_ids_with_matching_child = (
                 self.db.query(Child.user_id)
                 .filter(
                     Child.is_deleted == 0,
-                    Child.name.like(f"%{search}%"),
+                    Child.name.like(f"%{esc}%", escape="\\"),
                 )
                 .subquery()
             )
             q = q.filter(
                 or_(
-                    User.phone.like(f"%{search}%"),
-                    User.parent_name.like(f"%{search}%"),
+                    User.phone.like(f"%{esc}%", escape="\\"),
+                    User.parent_name.like(f"%{esc}%", escape="\\"),
                     User.id.in_(user_ids_with_matching_child),
                 )
             )
@@ -179,16 +181,17 @@ class AdminUserService:
         self, keyword: str, child_ids: list[int] | None = None
     ) -> list[dict]:
         """搜索孩子 — 借还场景专用，返回孩子+家长+借阅信息"""
+        esc = escape_like(keyword)
         q = (
             self.db.query(Child)
             .join(User, Child.user_id == User.id)
             .filter(
                 Child.is_deleted == 0,
                 or_(
-                    Child.name.like(f"%{keyword}%"),
-                    Child.english_name.like(f"%{keyword}%"),
-                    User.phone.like(f"%{keyword}%"),
-                    User.parent_name.like(f"%{keyword}%"),
+                    Child.name.like(f"%{esc}%", escape="\\"),
+                    Child.english_name.like(f"%{esc}%", escape="\\"),
+                    User.phone.like(f"%{esc}%", escape="\\"),
+                    User.parent_name.like(f"%{esc}%", escape="\\"),
                 ),
             )
             .limit(10)

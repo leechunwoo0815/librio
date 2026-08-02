@@ -5,6 +5,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from backend.common.base_repo import BaseRepository
+from backend.common.sql_utils import escape_like
 from backend.domain.book.models import Book, BookCopy
 
 
@@ -30,13 +31,14 @@ class BookRepository(BaseRepository[Book]):
         """多条件搜索图书，返回 (结果列表, 总数)"""
         query = self.db.query(Book).filter(Book.is_deleted == 0)
 
-        # 关键词搜索（标题/作者/ISBN）
+        # 关键词搜索（标题/作者/ISBN）——转义 LIKE 通配符防注入（审查 P1-4）
         if keyword:
+            esc = escape_like(keyword)
             query = query.filter(
                 or_(
-                    Book.title.like(f"%{keyword}%"),
-                    Book.author.like(f"%{keyword}%"),
-                    Book.isbn.like(f"%{keyword}%"),
+                    Book.title.like(f"%{esc}%", escape="\\"),
+                    Book.author.like(f"%{esc}%", escape="\\"),
+                    Book.isbn.like(f"%{esc}%", escape="\\"),
                 )
             )
 

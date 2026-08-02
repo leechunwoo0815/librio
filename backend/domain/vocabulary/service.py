@@ -6,6 +6,7 @@ from datetime import date, datetime
 from sqlalchemy.orm import Session
 from backend.common.exceptions import ValidationError
 from backend.common.events import CheckInEvent, event_bus
+from backend.common.sql_utils import add_with_unique_fallback
 from backend.common.types import MemberStatus
 from backend.domain.child.models import Child
 from backend.domain.reading.models import CheckIn
@@ -224,7 +225,9 @@ class VocabularyService:
             check_date=today,
             check_type=CheckIn.TYPE_VOCABULARY,
         )
-        self.db.add(checkin)
+        # DB 唯一约束兜底：并发重复时静默跳过（审查 P0-1）
+        if not add_with_unique_fallback(self.db, checkin):
+            return
         event_bus.publish(CheckInEvent(child_id=child_id, streak_days=0), db=self.db)
         logger.info(f"Vocab checkin: child={child_id}")
 

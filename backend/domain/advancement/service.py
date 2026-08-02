@@ -19,6 +19,7 @@ from backend.common.events import (
     event_bus,
 )
 from backend.common.exceptions import ConflictError, NotFoundError
+from backend.common.sql_utils import escape_like
 from backend.domain.advancement.models import (
     Level,
     ChildLevel,
@@ -1059,7 +1060,11 @@ class AdvancementService:
 
         query = self.db.query(QuestionBank).filter(QuestionBank.is_deleted == 0)
         if keyword:
-            query = query.filter(QuestionBank.question_text.ilike(f"%{keyword}%"))
+            query = query.filter(
+                QuestionBank.question_text.ilike(
+                    f"%{escape_like(keyword)}%", escape="\\"
+                )
+            )
 
         total = query.count()
         items = (

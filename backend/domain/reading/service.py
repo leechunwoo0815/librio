@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 from backend.common.base_repo import BaseRepository
+from backend.common.sql_utils import add_with_unique_fallback
 from backend.common.events import (
     CheckInEvent,
     ReadingSessionCompletedEvent,
@@ -182,9 +183,11 @@ class ReadingService:
             # C1 读完打卡（每类型每日各 1 次）+ 累计读完本数（审查 P1-3）
             if first_finish:
                 self._check_finish_book_checkin(child_id)
+                # 行锁防并发 lost update（审查 P0-2）
                 child = (
                     self.db.query(Child)
                     .filter(Child.id == child_id, Child.is_deleted == 0)
+                    .with_for_update()
                     .first()
                 )
                 if child:
@@ -329,7 +332,9 @@ class ReadingService:
                 reading_minutes=minutes,
                 words_read=words_read,
             )
-            self.checkin_repo.create(checkin)
+            # DB 唯一约束兜底：并发重复时静默跳过（审查 P0-1）
+            if not add_with_unique_fallback(self.db, checkin):
+                return
             # 发布打卡事件
             event_bus.publish(
                 CheckInEvent(child_id=child_id, streak_days=0), db=self.db
@@ -459,7 +464,9 @@ class ReadingService:
             check_date=today,
             check_type=CheckIn.TYPE_VOICE,
         )
-        self.checkin_repo.create(checkin)
+        # DB 唯一约束兜底：并发重复时静默跳过（审查 P0-1）
+        if not add_with_unique_fallback(self.db, checkin):
+            return
         event_bus.publish(CheckInEvent(child_id=child_id, streak_days=0), db=self.db)
         logger.info(f"Voice checkin: child={child_id}")
 
@@ -495,7 +502,9 @@ class ReadingService:
             check_date=today,
             check_type=CheckIn.TYPE_FINISH_BOOK,
         )
-        self.checkin_repo.create(checkin)
+        # DB 唯一约束兜底：并发重复时静默跳过（审查 P0-1）
+        if not add_with_unique_fallback(self.db, checkin):
+            return
         event_bus.publish(CheckInEvent(child_id=child_id, streak_days=0), db=self.db)
         logger.info(f"Finish-book checkin: child={child_id}")
 

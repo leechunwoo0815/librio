@@ -11,7 +11,8 @@ from backend.config import get_settings
 logger = logging.getLogger(__name__)
 
 
-def _get_redis_client():
+def get_redis_client():
+    """获取 Redis 客户端（供分布式锁/缓存等共用）"""
     settings = get_settings()
     return redis.Redis(
         host=settings.REDIS_HOST,
@@ -25,7 +26,7 @@ def _get_redis_client():
 def redis_lock(lock_key: str, timeout: int = 300):
     client = None
     try:
-        client = _get_redis_client()
+        client = get_redis_client()
         lock_value = str(uuid.uuid4())
         acquired = client.set(lock_key, lock_value, nx=True, ex=timeout)
         if not acquired:
@@ -33,10 +34,20 @@ def redis_lock(lock_key: str, timeout: int = 300):
             return
 
         yield True
-    except redis.ConnectionError:
-        logger.warning(f"Redis 不可用，任务 {lock_key} 本地降级执行（无分布式锁）")
-        client = None
-        yield True
+    except redis.RedisError:
+        # RedisError 覆盖 ConnectionError / TimeoutError / 连接池耗尽等（审查 P1-3）
+        fail_open = get_settings().REDIS_LOCK_FAIL_OPEN
+        if fail_open:
+            logger.warning(
+                f"Redis 不可用，任务 {lock_key} 本地降级执行（无分布式锁，"
+                "多实例部署请设 REDIS_LOCK_FAIL_OPEN=false）"
+            )
+            client = None
+            yield True
+        else:
+            logger.error(f"Redis 不可用且 FAIL_OPEN=false，任务 {lock_key} 跳过执行")
+            client = None
+            yield False
     finally:
         if client is not None:
             _safe_release(client, lock_key, lock_value)

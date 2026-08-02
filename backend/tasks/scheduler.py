@@ -365,7 +365,8 @@ def reconcile_child_stats(db: Session | None = None):
         db = _get_db_session()
     try:
         pass_rate = ConfigService.get_decimal(db, "quiz_pass_rate", Decimal("0.80"))
-        pass_score = float(pass_rate) * 100
+        # 保持 Decimal 与 Quiz.score(Numeric) 同精度比较，避免 float 边界偏差（审查 P2-2）
+        pass_score = (pass_rate * 100).quantize(Decimal("0.01"))
 
         # words：通过测验的去重 (child, book) × word_count
         pairs = (

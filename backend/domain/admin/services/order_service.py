@@ -9,6 +9,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from backend.common.exceptions import NotFoundError, ValidationError
+from backend.common.sql_utils import escape_like
 from backend.common.types import PayStatus
 from backend.domain.child.models import Child
 from backend.domain.order.models import Order
@@ -57,12 +58,15 @@ class AdminOrderService:
             except ValueError:
                 logger.warning("Invalid date_to format: %s", date_to)
         if search:
+            esc = escape_like(search)
             user_ids = (
-                self.db.query(User.id).filter(User.phone.like(f"%{search}%")).subquery()
+                self.db.query(User.id)
+                .filter(User.phone.like(f"%{esc}%", escape="\\"))
+                .subquery()
             )
             q = q.filter(
                 or_(
-                    Order.order_no.like(f"%{search}%"),
+                    Order.order_no.like(f"%{esc}%", escape="\\"),
                     Order.user_id.in_(user_ids),
                 )
             )

@@ -66,7 +66,7 @@ class AdminDashboardResponse(BaseModel):
     total_users: int = 0
     total_children: int = 0
     total_orders: int = 0
-    total_revenue: float = 0
+    total_revenue: Decimal = Decimal("0")  # 金额禁 float（审查 P1-2）
     daily_active_users: int = 0
     new_users_this_week: int = 0
     active_borrows: int = 0
