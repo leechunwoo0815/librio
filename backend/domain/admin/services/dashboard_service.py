@@ -35,7 +35,12 @@ class AdminDashboardService:
         - 押金池总额/待退押金、转化漏斗（亲子课→观察期→正式）
         """
         from backend.domain.deposit.models import DepositRecord
-        from backend.common.types import DepositStatus, MemberStatus, OrderType, PayStatus
+        from backend.common.types import (
+            DepositStatus,
+            MemberStatus,
+            OrderType,
+            PayStatus,
+        )
 
         today = date.today()
         week_ago = today - timedelta(days=7)
@@ -88,7 +93,9 @@ class AdminDashboardService:
                 Child.id,
                 Child.name,
                 func.count(BorrowRecord.id).label("overdue_count"),
-                func.coalesce(func.sum(BorrowRecord.fine_amount), 0).label("fine_total"),
+                func.coalesce(func.sum(BorrowRecord.fine_amount), 0).label(
+                    "fine_total"
+                ),
             )
             .join(BorrowRecord, BorrowRecord.child_id == Child.id)
             .filter(
@@ -175,7 +182,11 @@ class AdminDashboardService:
                 for r in overdue_by_child
             ],
             "overdue_top_books": [
-                {"book_id": r.id, "book_title": r.title, "overdue_count": r.overdue_count}
+                {
+                    "book_id": r.id,
+                    "book_title": r.title,
+                    "overdue_count": r.overdue_count,
+                }
                 for r in overdue_by_book
             ],
             "deposit_pool_total": str(deposit_pool or 0),

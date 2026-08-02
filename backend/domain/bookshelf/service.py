@@ -42,7 +42,7 @@ class BookshelfService:
         # 检查是否已在书架
         existing = self.shelf_repo.get_active_entry(child_id, book_id)
         if existing:
-            raise ConflictError("该书已在书架中")
+            raise ConflictError("这本书已经在你的想读清单里啦～")
 
         # 书架容量限制（C4：默认 100 本）
         limit = ConfigService.get_int(self.db, "bookshelf_limit", 100)

@@ -29,7 +29,30 @@
 <div class="scan-area">
   <input class="scan-input" id="barcodeInput" type="text" placeholder="扫描或输入图书条码..." autofocus />
   <button class="btn btn-primary" data-pg="lookupBarcode">&#x1F4F7; 查找</button>
+  <button class="btn btn-secondary" data-pg="toggleBatchMode" id="batchModeBtn">&#x1F4DA; 批量连扫：关</button>
   <button class="btn btn-danger" data-pg="sendOverdueReminders">&#x1F4E2; 发送逾期提醒</button>
+</div>
+
+<!-- B2 手动搜索（扫码枪故障/条码磨损降级方案） -->
+<div class="scan-area">
+  <input class="scan-input" id="bookSearchInput" type="text" placeholder="手动搜索：输入书名 / ISBN..." />
+  <button class="btn btn-secondary" data-pg="manualSearchBooks">&#x1F50D; 搜索图书</button>
+  <div id="bookSearchDropdown" class="hidden dropdown-popup"></div>
+</div>
+
+<!-- B1 批量连扫队列 -->
+<div id="batchQueuePanel" class="hidden">
+  <div class="section-header">&#x1F4DA; 批量借出队列 <span class="count" id="batchCount">（0 本）</span></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>书名</th><th>条码</th><th>库存</th><th>操作</th></tr></thead>
+      <tbody id="batchQueueBody"></tbody>
+    </table>
+  </div>
+  <div class="action-btns" style="margin-top:12px;">
+    <button class="btn btn-success" data-pg="doBatchBorrow">&#x2705; 一键全部借出</button>
+    <button class="btn btn-secondary" data-pg="clearBatchQueue">&#x1F5D1; 清空队列</button>
+  </div>
 </div>
 
 <!-- Scan Result Card -->

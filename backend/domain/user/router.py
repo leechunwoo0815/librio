@@ -66,7 +66,9 @@ class ChangePhoneRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     new_phone: str = Field(..., min_length=11, max_length=11, description="新手机号")
-    sms_code: str = Field(..., min_length=4, max_length=8, description="新手机号短信验证码")
+    sms_code: str = Field(
+        ..., min_length=4, max_length=8, description="新手机号短信验证码"
+    )
 
 
 @router.post("/change-phone", response_model=UserResponse)

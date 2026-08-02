@@ -94,7 +94,10 @@ class TeacherWorkbenchService:
         # 孩子近况（级别/累计）
         level_ids = {c.current_level_id for c in children if c.current_level_id}
         levels = (
-            {lv.id: lv.name for lv in self.db.query(Level).filter(Level.id.in_(level_ids)).all()}
+            {
+                lv.id: lv.name
+                for lv in self.db.query(Level).filter(Level.id.in_(level_ids)).all()
+            }
             if level_ids
             else {}
         )

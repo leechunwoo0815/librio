@@ -26,7 +26,9 @@ class GuardianService:
             admin_id=admin_id, module="guardian", operation=operation, content=content
         )
 
-    def migrate_account(self, old_user_id: int, new_user_id: int, admin_id: int) -> dict:
+    def migrate_account(
+        self, old_user_id: int, new_user_id: int, admin_id: int
+    ) -> dict:
         """F1 账号迁移（换微信/openid 变更）：旧账号全部孩子及关联数据迁到新账号"""
         if old_user_id == new_user_id:
             raise ValidationError("源账号与目标账号相同")
@@ -60,14 +62,17 @@ class GuardianService:
         )
         moved_refunds = (
             self.db.query(RefundApplication)
-            .filter(RefundApplication.user_id == old_user_id, RefundApplication.is_deleted == 0)
-            .update({RefundApplication.user_id: new_user_id}, synchronize_session="fetch")
+            .filter(
+                RefundApplication.user_id == old_user_id,
+                RefundApplication.is_deleted == 0,
+            )
+            .update(
+                {RefundApplication.user_id: new_user_id}, synchronize_session="fetch"
+            )
         )
         moved_messages = (
             self.db.query(SystemMessage)
-            .filter(
-                SystemMessage.user_id == old_user_id, SystemMessage.is_deleted == 0
-            )
+            .filter(SystemMessage.user_id == old_user_id, SystemMessage.is_deleted == 0)
             .update({SystemMessage.user_id: new_user_id}, synchronize_session="fetch")
         )
 
@@ -156,4 +161,8 @@ class GuardianService:
             f"孩子复活: child {child_id}（{child.name}）EXITED → TRIAL",
         )
         logger.info(f"Child revived: {child_id} EXITED→TRIAL by admin {admin_id}")
-        return {"success": True, "child_id": child_id, "status": int(MemberStatus.TRIAL)}
+        return {
+            "success": True,
+            "child_id": child_id,
+            "status": int(MemberStatus.TRIAL),
+        }

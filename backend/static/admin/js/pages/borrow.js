@@ -136,7 +136,7 @@
     const warnings = [];
     if (depositStatus !== 1) warnings.push('押金未缴纳');
     if (status === 3 || status === 4) warnings.push('会员已过期/退出');
-    if (borrowCount >= 20) warnings.push('已达借阅上限');
+    if (borrowCount >= 10) warnings.push('已达借阅上限');
 
     var el = document.getElementById('selectedChild');
     el.textContent = name + ' (' + (statusMap[status] || status) + ') · ' + (depositMap[depositStatus] || '未知') + ' · 当前借阅' + borrowCount + '本';
@@ -155,6 +155,13 @@
       const result = await api.get('/admin/api/books?keyword=' + encodeURIComponent(barcode));
       const books = result.items || result || [];
       if (books.length > 0) {
+        // B1：批量连扫模式下直接入队，不清空条码框等待下一件
+        if (batchMode) {
+          addToBatchQueue(books[0], barcode);
+          document.getElementById('barcodeInput').value = '';
+          document.getElementById('barcodeInput').focus();
+          return;
+        }
         currentBook = books[0];
         document.getElementById('bookTitle').textContent = currentBook.title;
         document.getElementById('bookIsbn').textContent = currentBook.isbn || '-';
@@ -171,6 +178,142 @@
     }
   }
 
+  // ==================== B1 批量连扫 ====================
+  let batchMode = false;
+  let batchQueue = [];
+
+  function toggleBatchMode() {
+    batchMode = !batchMode;
+    document.getElementById('batchModeBtn').innerHTML = batchMode ? '\u{1F4DA} 批量连扫：开' : '\u{1F4DA} 批量连扫：关';
+    document.getElementById('batchQueuePanel').classList.toggle('hidden', !batchMode && batchQueue.length === 0);
+    if (batchMode) {
+      document.getElementById('scanResult').classList.remove('show');
+      document.getElementById('barcodeInput').focus();
+      showToast('批量连扫已开启：连续扫码入队，最后一键借出', 'info');
+    }
+  }
+
+  function addToBatchQueue(book, barcode) {
+    if (batchQueue.some(function(item) { return item.book.id === book.id; })) {
+      showToast('「' + book.title + '」已在队列中，跳过（防误扫）', 'warning');
+      return;
+    }
+    batchQueue.push({ book: book, barcode: barcode, result: '' });
+    renderBatchQueue();
+  }
+
+  function removeFromBatchQueue(idx) {
+    batchQueue.splice(idx, 1);
+    renderBatchQueue();
+  }
+
+  function clearBatchQueue() {
+    batchQueue = [];
+    renderBatchQueue();
+  }
+
+  function renderBatchQueue() {
+    const panel = document.getElementById('batchQueuePanel');
+    document.getElementById('batchCount').textContent = '（' + batchQueue.length + ' 本）';
+    panel.classList.toggle('hidden', batchQueue.length === 0 && !batchMode);
+    var tbody = document.getElementById('batchQueueBody');
+    tbody.innerHTML = '';
+    batchQueue.forEach(function(item, idx) {
+      var tr = document.createElement('tr');
+      var tdTitle = document.createElement('td');
+      tdTitle.textContent = item.book.title;
+      tr.appendChild(tdTitle);
+      var tdBarcode = document.createElement('td');
+      tdBarcode.style.cssText = 'font-family:var(--font-mono);font-size:12px;';
+      tdBarcode.textContent = item.barcode;
+      tr.appendChild(tdBarcode);
+      var tdStock = document.createElement('td');
+      tdStock.textContent = (item.book.available_stock || 0) + ' / ' + (item.book.total_stock || 0);
+      tr.appendChild(tdStock);
+      var tdAction = document.createElement('td');
+      if (item.result) {
+        tdAction.textContent = item.result;
+      } else {
+        var link = document.createElement('span');
+        link.className = 'action-link';
+        link.textContent = '移除';
+        link.onclick = function() { removeFromBatchQueue(idx); };
+        tdAction.appendChild(link);
+      }
+      tr.appendChild(tdAction);
+      tbody.appendChild(tr);
+    });
+  }
+
+  async function doBatchBorrow() {
+    const childId = parseInt(document.getElementById('childIdInput').value);
+    if (!childId) { showToast('请先选择借阅孩子', 'error'); return; }
+    if (batchQueue.length === 0) { showToast('队列为空，请先扫码添加图书', 'warning'); return; }
+
+    let success = 0;
+    const failed = [];
+    for (const item of batchQueue) {
+      try {
+        await api.post('/admin/api/borrows', { child_id: childId, book_id: item.book.id });
+        item.result = '✅ 已借出';
+        success++;
+      } catch (e) {
+        item.result = '❌ ' + (e.message || '失败');
+        failed.push(item.book.title);
+      }
+      renderBatchQueue();
+    }
+    if (failed.length === 0) {
+      showToast('批量借出完成：' + success + ' 本全部成功');
+      batchQueue = [];
+      renderBatchQueue();
+    } else {
+      showToast('成功 ' + success + ' 本，失败 ' + failed.length + ' 本：' + failed.join('、'), 'warning');
+    }
+    loadRecords(childId);
+  }
+
+  // ==================== B2 手动搜索降级 ====================
+  async function manualSearchBooks() {
+    const keyword = document.getElementById('bookSearchInput').value.trim();
+    const dropdown = document.getElementById('bookSearchDropdown');
+    if (!keyword) { showToast('请输入书名或 ISBN', 'warning'); return; }
+    try {
+      const result = await api.get('/admin/api/books?keyword=' + encodeURIComponent(keyword));
+      const books = result.items || result || [];
+      dropdown.innerHTML = '';
+      if (books.length === 0) {
+        dropdown.innerHTML = '<div style="padding:12px;color:#999;">未找到匹配图书</div>';
+      } else {
+        books.slice(0, 8).forEach(function(b) {
+          var div = document.createElement('div');
+          div.style.cssText = 'padding:10px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;';
+          var strong = document.createElement('strong');
+          strong.textContent = b.title || '';
+          div.appendChild(strong);
+          var info = document.createElement('span');
+          info.style.cssText = 'color:#999;font-size:12px;margin-left:8px;';
+          info.textContent = 'ISBN:' + (b.isbn || '-') + ' 库存:' + (b.available_stock || 0);
+          div.appendChild(info);
+          div.onclick = function() {
+            dropdown.classList.add('hidden');
+            currentBook = b;
+            document.getElementById('bookTitle').textContent = b.title;
+            document.getElementById('bookIsbn').textContent = b.isbn || '-';
+            document.getElementById('bookBarcode').textContent = '手动选择';
+            document.getElementById('bookAr').textContent = b.ar_value || '-';
+            document.getElementById('bookStock').textContent = (b.available_stock || 0) + ' / ' + (b.total_stock || 0);
+            document.getElementById('scanResult').classList.add('show');
+          };
+          dropdown.appendChild(div);
+        });
+      }
+      dropdown.classList.remove('hidden');
+    } catch (e) {
+      showToast('搜索失败: ' + (e.message || '网络异常'), 'error');
+    }
+  }
+
   async function doBorrow() {
     const childId = parseInt(document.getElementById('childIdInput').value);
     if (!childId || !currentBook) { showToast('请先选择孩子并扫描图书', 'error'); return; }
@@ -180,9 +323,9 @@
       loadRecords(childId);
     } catch (e) {
       const msg = e.message || '';
-      if (msg.includes('库存不足')) {
-        showToast('该书库存不足，暂无可借副本', 'error');
-      } else if (msg.includes('借阅上限')) {
+      if (msg.includes('暂无库存') || msg.includes('库存不足')) {
+        showToast('该书暂无库存，暂无可借副本', 'error');
+      } else if (msg.includes('小书架') || msg.includes('借阅上限')) {
         showToast('该孩子已达借阅上限，请先归还部分图书', 'error');
       } else if (msg.includes('已借阅')) {
         showToast('该孩子已借阅此书，请先归还', 'error');
@@ -273,6 +416,11 @@
     doReturn,
     loadRecords,
     sendOverdueReminders,
-    closeConfirmModal
+    closeConfirmModal,
+    toggleBatchMode,
+    removeFromBatchQueue,
+    clearBatchQueue,
+    doBatchBorrow,
+    manualSearchBooks
   };
 })();

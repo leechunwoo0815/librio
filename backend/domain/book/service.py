@@ -32,8 +32,10 @@ class BookService:
         self.book_repo = BookRepository(db)
         self.copy_repo = BookCopyRepository(db)
 
-    def search_books(self, search_params: BookSearch) -> BookListResponse:
-        """搜索图书 — 多条件 + 分页"""
+    def search_books(
+        self, search_params: BookSearch, child_id: int | None = None
+    ) -> BookListResponse:
+        """搜索图书 — 多条件 + 分页；child_id 传入时标记'挑战'书（H2）"""
         books, total = self.book_repo.search(
             keyword=search_params.keyword,
             ar_level=search_params.ar_level,
@@ -42,6 +44,29 @@ class BookService:
             page=search_params.page,
             page_size=search_params.page_size,
         )
+
+        # H2：孩子当前级别的 AR 上限（超限标'挑战'徽标，不隐藏，引导性提示）
+        max_ar = None
+        if child_id:
+            from backend.domain.advancement.models import ChildLevel, Level
+
+            current_cl = (
+                self.db.query(ChildLevel)
+                .filter(
+                    ChildLevel.child_id == child_id,
+                    ChildLevel.is_current,
+                    ChildLevel.is_deleted == 0,
+                )
+                .first()
+            )
+            if current_cl:
+                level = (
+                    self.db.query(Level)
+                    .filter(Level.id == current_cl.level_id, Level.is_deleted == 0)
+                    .first()
+                )
+                if level and level.max_ar_level is not None:
+                    max_ar = level.max_ar_level
 
         # 批量查询每本书的题目数量，避免 N+1
         book_ids = [b.id for b in books]
@@ -68,6 +93,8 @@ class BookService:
         for b in books:
             resp = BookResponse.model_validate(b)
             resp.question_count = question_counts.get(b.id, 0)
+            if max_ar is not None:
+                resp.is_challenge = bool(b.ar_value and b.ar_value > max_ar)
             items.append(resp)
 
         return BookListResponse.create(
@@ -207,7 +234,7 @@ class BookService:
             .update({Book.available_stock: Book.available_stock - 1})
         )
         if not updated:
-            raise ValidationError("库存不足，无法借出")
+            raise ValidationError("该书暂无库存")
 
     def increase_available_stock(self, book_id: int) -> None:
         """恢复可借库存（事件处理器调用，不自行 commit）"""

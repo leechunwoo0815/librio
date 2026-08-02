@@ -53,7 +53,6 @@ def seed_levels():
                 name=name,
                 sort_order=sort,
                 required_books=books,
-                max_borrow_count=borrow,
                 badge_emoji=emoji,
                 required_quiz_pass_rate=Decimal("0.80"),
             )

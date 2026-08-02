@@ -705,7 +705,6 @@ class CreateLevelRequest(BaseModel):
     sort_order: int | None = None
     required_books: int = Field(5, ge=1)
     pass_rate: float = Field(0.80, ge=0, le=1)
-    max_borrow_count: int | None = None
     max_ar_level: float | None = None
     require_teacher_review: bool = False
 
@@ -721,7 +720,6 @@ class UpdateLevelRequest(BaseModel):
     sort_order: int | None = None
     required_books: int | None = Field(None, ge=1)
     pass_rate: float | None = Field(None, ge=0, le=1)
-    max_borrow_count: int | None = None
     max_ar_level: float | None = None
     require_teacher_review: bool | None = None
 
@@ -739,7 +737,6 @@ class LevelResponse(BaseModel):
     required_books: int | None = None
     required_quiz_pass_rate: float | None = None
     require_teacher_review: bool | None = None
-    max_borrow_count: int | None = None
     max_ar_level: float | None = None
 
 

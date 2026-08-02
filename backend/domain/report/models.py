@@ -51,7 +51,9 @@ class ObservationReport(BaseModel):
     # D6 转化导向字段
     streak_days = Column(Integer, default=0, comment="连续打卡天数（进步曲线）")
     new_vocab_count = Column(Integer, default=0, comment="观察期新增生词数")
-    peer_avg_books = Column(Numeric(5, 1), nullable=True, comment="同龄孩子平均读完本数")
+    peer_avg_books = Column(
+        Numeric(5, 1), nullable=True, comment="同龄孩子平均读完本数"
+    )
     cta_text = Column(String(255), nullable=True, comment="续费引导文案（D6）")
 
     child = relationship("Child", foreign_keys=[child_id])

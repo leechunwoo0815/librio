@@ -90,7 +90,6 @@ def seed():
                     sort_order=order,
                     required_books=req_books,
                     required_quiz_pass_rate=Decimal("0.80"),
-                    max_borrow_count=20,
                     badge_emoji=emoji,
                 )
             )

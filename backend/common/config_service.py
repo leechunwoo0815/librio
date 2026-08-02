@@ -67,6 +67,12 @@ class ConfigService:
             return default
 
     @classmethod
+    def get_str(cls, db: Session, key: str, default: str) -> str:
+        """读取字符串配置"""
+        val = cls._get_raw(db, key)
+        return val if val is not None else default
+
+    @classmethod
     def get_decimal(cls, db: Session, key: str, default: Decimal) -> Decimal:
         """读取金额/比率配置"""
         val = cls._get_raw(db, key)

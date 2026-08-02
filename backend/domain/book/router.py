@@ -25,6 +25,7 @@ def search_books(
     ar_level: str | None = None,
     age_range: str | None = None,
     theme: str | None = None,
+    child_id: int | None = Query(None, description="孩子ID（H2：传入时标记'挑战'书）"),
     page: int = Query(1, ge=1),
     page_size: int = Query(10, ge=1, le=100),
     book_service: BookService = Depends(get_book_service),
@@ -38,7 +39,7 @@ def search_books(
         page=page,
         page_size=page_size,
     )
-    return book_service.search_books(search_params)
+    return book_service.search_books(search_params, child_id=child_id)
 
 
 @router.get("/{book_id}", response_model=BookResponse)

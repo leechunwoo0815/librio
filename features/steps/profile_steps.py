@@ -47,7 +47,6 @@ def step_current_level_a(context):
             name="A",
             sort_order=1,
             required_books=10,
-            max_borrow_count=20,
             badge_emoji="🌱",
         )
         context.db.add(level)

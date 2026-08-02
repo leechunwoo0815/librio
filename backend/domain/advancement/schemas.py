@@ -22,7 +22,6 @@ class LevelResponse(BaseSchema):
     required_books: int = 5
     required_quiz_pass_rate: Decimal = Decimal("0.80")
     require_teacher_review: bool = False
-    max_borrow_count: int = 1
     max_ar_level: Decimal | None = None
 
 

@@ -75,7 +75,7 @@ class BorrowService:
                 DepositStatus.REFUNDING,
                 DepositStatus.REFUND_PENDING,
             ):
-                raise ForbiddenError("请先缴纳押金")
+                raise ForbiddenError("缴纳押金后即可借阅实体书哦～")
 
             # 校验上限 — 从配置读取
             from backend.common.config_service import ConfigService
@@ -95,7 +95,7 @@ class BorrowService:
             )
             active_count = len(active_records)
             if active_count >= max_borrow:
-                raise ValidationError(f"借阅上限 {max_borrow} 本，请先归还")
+                raise ValidationError("小书架满啦！先还一本，再借新的吧～")
 
             # 先查重复（BORROWING 和 OVERDUE 都算未还）
             existing = self.borrow_repo.get_by_child_and_book(
@@ -151,7 +151,7 @@ class BorrowService:
                 .update({Book.available_stock: Book.available_stock - 1})
             )
             if not updated:
-                raise ValidationError("库存不足，无法借出")
+                raise ValidationError("该书暂无库存")
 
             borrow_days = ConfigService.get_int(
                 self.db, "borrow_period_days", BORROW_DAYS
@@ -414,7 +414,7 @@ class BorrowService:
             DepositStatus.REFUNDING,
             DepositStatus.REFUND_PENDING,
         ):
-            raise ForbiddenError("请先缴纳押金")
+            raise ForbiddenError("缴纳押金后即可借阅实体书哦～")
 
         # 校验借阅上限
         from backend.common.config_service import ConfigService
@@ -432,7 +432,7 @@ class BorrowService:
         )
         active_count = len(active_records)
         if active_count >= max_borrow:
-            raise ValidationError(f"借阅上限 {max_borrow} 本，请先归还")
+            raise ValidationError("小书架满啦！先还一本，再借新的吧～")
 
         # 防御性库存检查（仅非预约借书时检查，预约已锁定库存）
         if not reservation_id:
@@ -442,7 +442,7 @@ class BorrowService:
                 .first()
             )
             if book and (book.available_stock or 0) <= 0:
-                raise ValidationError("库存不足，无法借阅")
+                raise ValidationError("该书暂无库存")
 
         borrow_days = ConfigService.get_int(self.db, "borrow_period_days", BORROW_DAYS)
         now = datetime.now()

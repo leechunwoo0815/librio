@@ -241,6 +241,11 @@ class SystemConfig(BaseModel):
             "string",
             "场馆地址（预留，当前读取 Venue 表 address 字段）",
         ),
+        "service_wechat": (
+            "",
+            "string",
+            "微信客服号（G2：错误提示人工兜底入口）",
+        ),
         # ── 订单 ──
         "order_expire_minutes": ("30", "int", "订单未支付自动关闭时间（分钟）"),
         "price_parent_course": ("99", "string", "亲子课价格（元）"),

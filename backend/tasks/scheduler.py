@@ -651,6 +651,18 @@ def generate_weekly_reports():
                 logger.info(
                     f"WEEKLY_REPORT: child={child.id}, minutes={report['total_minutes']}, books={report['books_finished']}"
                 )
+                # H3：周报生成后系统消息触达家长
+                _create_message(
+                    db,
+                    user_id=child.user_id,
+                    title="孩子的周报来啦",
+                    content=(
+                        f"{child.name}上周阅读 {report['total_minutes']} 分钟，"
+                        f"读完 {report['books_finished']} 本书，点击查看完整周报～"
+                    ),
+                    msg_type=1,  # 系统通知
+                    priority=1,
+                )
                 count += 1
             except Exception as e:
                 logger.error(f"Weekly report failed for child {child.id}: {e}")
@@ -822,6 +834,18 @@ def generate_monthly_reports():
                 logger.info(
                     f"MONTHLY_REPORT: child={child.id}, minutes={report['total_minutes']}, "
                     f"books={report['books_finished']}, checkin_rate={report['checkin_rate']}%"
+                )
+                # H3：月报生成后系统消息触达家长
+                _create_message(
+                    db,
+                    user_id=child.user_id,
+                    title="孩子的月报来啦",
+                    content=(
+                        f"{child.name}上月阅读 {report['total_minutes']} 分钟，"
+                        f"读完 {report['books_finished']} 本书，点击查看完整月报～"
+                    ),
+                    msg_type=1,  # 系统通知
+                    priority=1,
                 )
                 count += 1
             except Exception as e:

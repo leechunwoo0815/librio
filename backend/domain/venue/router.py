@@ -29,3 +29,21 @@ def list_public_venues(db: Session = Depends(get_db)):
         }
         for v in venues
     ]
+
+
+@router.get("/contact", response_model=dict)
+def get_service_contact(db: Session = Depends(get_db)):
+    """G2 人工兜底联系方式 — 错误页/提示附门店电话+微信客服入口"""
+    from backend.common.config_service import ConfigService
+
+    venue = (
+        db.query(Venue)
+        .filter(Venue.is_deleted == 0, Venue.status == "active")
+        .order_by(Venue.id)
+        .first()
+    )
+    return {
+        "venue_name": venue.name if venue else None,
+        "phone": venue.phone if venue else None,
+        "wechat": ConfigService.get_str(db, "service_wechat", ""),
+    }

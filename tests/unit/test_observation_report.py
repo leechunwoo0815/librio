@@ -43,7 +43,7 @@ def _setup(db, observation_days=46):
     db.add(child)
     db.commit()
 
-    level = Level(name="A", sort_order=1, required_books=10, max_borrow_count=20)
+    level = Level(name="A", sort_order=1, required_books=10)
     db.add(level)
     db.commit()
 

@@ -15,7 +15,6 @@ def _ensure_levels(context):
             name="A",
             sort_order=1,
             required_books=10,
-            max_borrow_count=20,
             badge_emoji="🌱",
         )
         context.db.add(level_a)
@@ -26,7 +25,6 @@ def _ensure_levels(context):
             name="B",
             sort_order=2,
             required_books=15,
-            max_borrow_count=20,
             badge_emoji="🌿",
         )
         context.db.add(level_b)

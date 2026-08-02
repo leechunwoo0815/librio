@@ -80,7 +80,6 @@ def _setup(db):
         sort_order=1,
         required_books=3,
         required_quiz_pass_rate=Decimal("0.80"),
-        max_borrow_count=20,
         badge_emoji="🌱",
         require_teacher_review=False,
     )
@@ -89,7 +88,6 @@ def _setup(db):
         sort_order=2,
         required_books=5,
         required_quiz_pass_rate=Decimal("0.80"),
-        max_borrow_count=20,
         badge_emoji="🌿",
         require_teacher_review=False,
     )

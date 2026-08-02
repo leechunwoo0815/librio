@@ -58,6 +58,9 @@ class BookResponse(BaseSchema):
     available_stock: int = 0
     offline_available: int = 0
     question_count: int | None = None
+    is_challenge: bool | None = Field(
+        None, description="H2：超出孩子当前级别 AR 上限时 true（前端标'挑战'徽标）"
+    )
     create_time: datetime
     description: str | None = None
     available_copies: int = 0

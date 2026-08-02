@@ -66,7 +66,7 @@ def step_stock_locked(context):
     assert context.book.available_stock == 0
 
 
-@then('提示"请先缴纳押金"')
+@then('提示"缴纳押金后即可借阅实体书哦～"')
 @then('提示"请先缴纳1200元押金"')
 def step_prompt_deposit(context):
     assert context.response is not None

@@ -44,9 +44,10 @@ class Level(BaseModel):
     )
     require_teacher_review = Column(Boolean, default=False, comment="是否需要老师审核")
 
-    # 晋级权限
-    max_borrow_count = Column(Integer, default=1, comment="最大同时借阅数")
-    max_ar_level = Column(Numeric(3, 1), nullable=True, comment="最大可读AR等级")
+    # 晋级权限（H2：借阅上限统一走全局配置 borrow_limit，不再按级别）
+    max_ar_level = Column(
+        Numeric(3, 1), nullable=True, comment="最大可读AR等级（H2：超限标'挑战'徽标）"
+    )
 
 
 class ChildLevel(BaseModel):

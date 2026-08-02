@@ -161,7 +161,7 @@ def test_borrow_limit_includes_overdue(db):
     )
     db.add(extra)
     db.commit()
-    with pytest.raises(Exception, match="借阅上限"):
+    with pytest.raises(Exception, match="小书架满啦"):
         svc.borrow_book(BorrowBookRequest(child_id=child.id, book_id=extra.id))
 
 

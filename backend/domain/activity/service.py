@@ -167,7 +167,7 @@ class ActivityService:
                 activity.start_time - datetime.now()
             ).total_seconds() / 3600
             if hours_until_start < cancel_hours:
-                raise ValidationError(f"活动开始前{cancel_hours}小时内不可取消")
+                raise ValidationError("活动明天就开始啦，我们已经为你留了位置哦～")
 
         enrollment.status = ActivityEnrollment.STATUS_CANCELLED
         self.enrollment_repo.update(enrollment)

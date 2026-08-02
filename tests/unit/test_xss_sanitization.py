@@ -59,7 +59,7 @@ def test_observation_report_autoescape_child_name(db):
     db.add(child)
     db.commit()
 
-    level = Level(name="A", sort_order=1, required_books=10, max_borrow_count=20)
+    level = Level(name="A", sort_order=1, required_books=10)
     db.add(level)
     db.commit()
 
@@ -95,7 +95,7 @@ def test_observation_report_autoescape_teacher_comment(db):
     db.add(child)
     db.commit()
 
-    level = Level(name="A", sort_order=1, required_books=10, max_borrow_count=20)
+    level = Level(name="A", sort_order=1, required_books=10)
     db.add(level)
     db.commit()
 
@@ -131,7 +131,7 @@ def test_certificate_autoescape_child_name(db):
     db.add(child)
     db.commit()
 
-    level = Level(name="A", sort_order=1, required_books=10, max_borrow_count=20)
+    level = Level(name="A", sort_order=1, required_books=10)
     db.add(level)
     db.commit()
 

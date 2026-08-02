@@ -79,7 +79,6 @@ def _create_test_data(db):
         sort_order=1,
         required_books=3,
         required_quiz_pass_rate=Decimal("0.80"),
-        max_borrow_count=1,
         max_ar_level=Decimal("2.0"),
         require_teacher_review=False,
     )
@@ -89,7 +88,6 @@ def _create_test_data(db):
         sort_order=2,
         required_books=5,
         required_quiz_pass_rate=Decimal("0.80"),
-        max_borrow_count=2,
         max_ar_level=Decimal("3.5"),
         require_teacher_review=False,
     )
@@ -99,7 +97,6 @@ def _create_test_data(db):
         sort_order=3,
         required_books=8,
         required_quiz_pass_rate=Decimal("0.80"),
-        max_borrow_count=3,
         max_ar_level=Decimal("5.0"),
         require_teacher_review=False,
     )

@@ -58,7 +58,7 @@ class ReservationService:
         if not book.offline_available:
             raise ValidationError("该书不支持线下借阅")
         if (book.available_stock or 0) <= 0:
-            raise ValidationError("库存不足，无法预约")
+            raise ValidationError("该书暂无库存")
 
         assert_no_pending_transfer(self.db, data.child_id)
 
@@ -179,7 +179,7 @@ class ReservationService:
             .count()
         )
         if active_count >= max_borrow:
-            raise ValidationError(f"借阅上限 {max_borrow} 本，请先归还")
+            raise ValidationError("小书架满啦！先还一本，再借新的吧～")
 
         reservation.status = ReservationStatus.FULFILLED
         reservation.fulfilled_time = datetime.now()

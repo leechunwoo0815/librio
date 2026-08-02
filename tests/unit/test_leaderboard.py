@@ -56,7 +56,7 @@ def _setup(db):
     db.add_all([child1, child2])
     db.commit()
 
-    level = Level(name="A", sort_order=1, required_books=10, max_borrow_count=20)
+    level = Level(name="A", sort_order=1, required_books=10)
     db.add(level)
     db.commit()
 
