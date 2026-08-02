@@ -55,6 +55,11 @@ Page({
     vocabMap: {},
   },
 
+  // C5：切换 简化/标准 模式
+  toggleSimpleMode() {
+    this.setData({ simpleMode: !this.data.simpleMode })
+  },
+
   async onLoad(options) {
     const bookId = parseInt(options.bookId) || parseInt(options.id)
     const child = auth.getCurrentChild()
@@ -64,7 +69,13 @@ Page({
       return
     }
 
-    this.setData({ bookId, childId: child.id, startTime: Date.now() })
+    this.setData({
+      bookId,
+      childId: child.id,
+      startTime: Date.now(),
+      // C5：6 岁及以下默认开启简化模式（大按钮一键听读），可手动切换
+      simpleMode: (child.age || 99) <= 6,
+    })
 
     try {
       const book = await api.getBookDetail(bookId)

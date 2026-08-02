@@ -167,6 +167,24 @@ Page({
     }
   },
 
+  // C2 家长辅助模式：题目语音朗读（英文 TTS，低龄孩子家长播给孩子听）
+  playQuestionAudio() {
+    const text = this.data.question && this.data.question.question_text
+    if (!text) return
+    if (this._ttsCtx) {
+      this._ttsCtx.destroy()
+      this._ttsCtx = null
+    }
+    const ctx = wx.createInnerAudioContext()
+    ctx.src = 'https://dict.youdao.com/dictvoice?audio=' + encodeURIComponent(text) + '&type=1'
+    ctx.onError((err) => {
+      console.warn('TTS播放失败', err)
+      wx.showToast({ title: '语音播放失败，请重试', icon: 'none' })
+    })
+    ctx.play()
+    this._ttsCtx = ctx
+  },
+
   nextQuestion() {
     const { selected, answers, currentQ, totalQ, questions } = this.data
     if (!selected) return

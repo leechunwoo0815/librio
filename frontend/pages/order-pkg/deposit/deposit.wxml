@@ -45,6 +45,12 @@
             <text>申请退款</text>
           </view>
         </view>
+        <!-- B12：有未缴罚款时显示线上缴纳入口 -->
+        <view class="action-buttons" wx:if="{{depositInfo.fine > 0}}">
+          <view class="btn-primary-full" bindtap="onPayFines">
+            <text>缴纳罚款 ¥{{depositInfo.fine}}</text>
+          </view>
+        </view>
         <view class="action-buttons" wx:elif="{{depositInfo.status === 0}}">
           <view class="btn-primary-full" bindtap="onPay">
             <text>缴纳押金 ¥{{depositInfo.amount}}</text>

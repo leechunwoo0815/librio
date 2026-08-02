@@ -91,6 +91,19 @@ def get_deposit_status(
     return service.get_deposit_status(child.id)
 
 
+@router.post("/pay-fines")
+async def pay_fines(
+    data: DepositRefundRequest,
+    service: DepositService = Depends(get_deposit_service),
+    current_user=Depends(get_current_user),
+    db=Depends(get_db),
+    payment_gateway=Depends(get_payment_gateway),
+):
+    """B12：线上缴纳罚款（微信支付，缴清后 outstanding_fines 归零）"""
+    verify_child_ownership(data.child_id, current_user, db)
+    return await service.pay_fines(data, payment_gateway, current_user)
+
+
 @router.post("/repay", response_model=DepositPayResponse, status_code=201)
 async def repay_deposit(
     child=Depends(GetOwnedChildFromQuery()),
@@ -131,6 +144,15 @@ async def deposit_callback(
 
     # 网关 decrypt_callback_data 已做分→元转换，直接使用
     callback_amount = callback_data.amount
+
+    # B12：先尝试罚款缴款单（FINE 前缀单号），命中则核销罚款
+    if callback_data.out_trade_no.startswith("FINE"):
+        settled = await asyncio.to_thread(
+            service.handle_fine_callback, callback_data.out_trade_no
+        )
+        if settled:
+            return {"success": True, "fine_payment": True}
+
     result = await asyncio.to_thread(
         service.handle_callback, callback_data.out_trade_no, callback_amount
     )

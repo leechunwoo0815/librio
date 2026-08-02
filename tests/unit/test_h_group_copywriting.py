@@ -99,17 +99,29 @@ class TestH1PaymentLocksChild:
 class TestH2ChallengeBadge:
     def test_challenge_flag_by_level_ar(self, db):
         _, child = _mk(db)
-        level = Level(name="A", sort_order=1, required_books=3, max_ar_level=Decimal("2.0"))
+        level = Level(
+            name="A", sort_order=1, required_books=3, max_ar_level=Decimal("2.0")
+        )
         db.add(level)
         db.commit()
         db.add(ChildLevel(child_id=child.id, level_id=level.id, is_current=True))
         easy = Book(
-            isbn="H2-E", title="简单", author="A", ar_value=Decimal("1.5"),
-            age_min=3, age_max=9, word_count=100,
+            isbn="H2-E",
+            title="简单",
+            author="A",
+            ar_value=Decimal("1.5"),
+            age_min=3,
+            age_max=9,
+            word_count=100,
         )
         hard = Book(
-            isbn="H2-H", title="困难", author="A", ar_value=Decimal("3.5"),
-            age_min=3, age_max=9, word_count=100,
+            isbn="H2-H",
+            title="困难",
+            author="A",
+            ar_value=Decimal("3.5"),
+            age_min=3,
+            age_max=9,
+            word_count=100,
         )
         db.add_all([easy, hard])
         db.commit()
@@ -158,8 +170,15 @@ class TestGCopywriting:
         child.deposit_status = 0
         db.commit()
         book = Book(
-            isbn="G1-B", title="书", author="A", ar_value=Decimal("1.0"),
-            age_min=3, age_max=9, word_count=100, total_stock=1, available_stock=1,
+            isbn="G1-B",
+            title="书",
+            author="A",
+            ar_value=Decimal("1.0"),
+            age_min=3,
+            age_max=9,
+            word_count=100,
+            total_stock=1,
+            available_stock=1,
         )
         db.add(book)
         db.commit()
@@ -172,8 +191,15 @@ class TestGCopywriting:
         child.deposit_status = 1
         db.commit()
         book = Book(
-            isbn="G1-C", title="书", author="A", ar_value=Decimal("1.0"),
-            age_min=3, age_max=9, word_count=100, total_stock=1, available_stock=0,
+            isbn="G1-C",
+            title="书",
+            author="A",
+            ar_value=Decimal("1.0"),
+            age_min=3,
+            age_max=9,
+            word_count=100,
+            total_stock=1,
+            available_stock=0,
         )
         db.add(book)
         db.commit()
@@ -186,8 +212,13 @@ class TestGCopywriting:
 
         _, child = _mk(db)
         book = Book(
-            isbn="G1-D", title="书", author="A", ar_value=Decimal("1.0"),
-            age_min=3, age_max=9, word_count=100,
+            isbn="G1-D",
+            title="书",
+            author="A",
+            ar_value=Decimal("1.0"),
+            age_min=3,
+            age_max=9,
+            word_count=100,
         )
         db.add(book)
         db.commit()

@@ -28,7 +28,10 @@
 
   <!-- Question Area -->
   <view class="question-area" wx:if="{{!noQuestions}}">
-    <view class="question-num text-primary text-bold">第 {{currentQ + 1}} 题</view>
+    <view class="question-num text-primary text-bold">第 {{currentQ + 1}} 题
+      <!-- C2 家长辅助模式：题目语音朗读（低龄孩子家长可播给孩子听） -->
+      <text class="tts-btn" bindtap="playQuestionAudio">🔊 听题</text>
+    </view>
     <view class="question-text">{{question.question_text}}<text class="en" wx:if="{{question.question_cn}}" style="display:block;">{{question.question_cn}}</text></view>
 
     <!-- MP-010: 选项触控区域优化（最小 96rpx） -->

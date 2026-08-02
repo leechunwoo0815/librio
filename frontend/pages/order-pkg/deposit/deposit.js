@@ -195,6 +195,49 @@ Page({
     }
   },
 
+  // B12：线上缴纳罚款（微信支付，缴清后未缴罚款归零）
+  async onPayFines() {
+    if (this.data.isIOS) {
+      wx.showModal({ title: '暂不支持 iOS 支付', content: 'iOS 端请前往门店办理，我们的老师会帮您完成～', showCancel: false })
+      return
+    }
+    const child = auth.getCurrentChild()
+    if (!child) {
+      wx.showToast({ title: '请先选择孩子', icon: 'none' })
+      return
+    }
+    const res = await wx.showModal({
+      title: '缴纳罚款',
+      content: `确认缴纳未结罚款 ¥${this.data.depositInfo.fine} 吗？`,
+    })
+    if (!res.confirm) return
+    this.setData({ loading: true })
+    try {
+      const res = await api.payFines(child.id)
+      const payParams = res.pay_params || res
+      if (!payParams.timeStamp || !payParams.nonceStr || !payParams.package || !payParams.signType || !payParams.paySign) {
+        throw new Error('支付参数异常，请稍后重试')
+      }
+      await new Promise((resolve, reject) => {
+        wx.requestPayment({
+          ...payParams,
+          success: resolve,
+          fail: reject,
+        })
+      })
+      wx.showToast({ title: '缴纳成功', icon: 'success' })
+      this.loadDepositInfo()
+    } catch (e) {
+      if (e.errMsg && e.errMsg.indexOf('cancel') > -1) {
+        wx.showToast({ title: '已取消支付', icon: 'none' })
+      } else {
+        wx.showToast({ title: e.message || '缴纳失败', icon: 'none' })
+      }
+    } finally {
+      this.setData({ loading: false })
+    }
+  },
+
   goBack() {
     wx.navigateBack()
   },

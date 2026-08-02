@@ -55,3 +55,28 @@ class DepositRecord(BaseModel):
 
     def __repr__(self):
         return f"<DepositRecord(id={self.id}, child={self.child_id}, status={self.status}, amount={self.amount})>"
+
+
+class FinePayment(BaseModel):
+    """罚款缴纳记录 — B12：家长线上缴纳 outstanding_fines"""
+
+    __tablename__ = "fine_payment"
+    __table_args__ = {"extend_existing": True}
+
+    STATUS_PENDING = 0
+    STATUS_PAID = 1
+
+    child_id = Column(
+        BigInteger, ForeignKey("child.id"), nullable=False, index=True, comment="孩子ID"
+    )
+    amount = Column(Numeric(10, 2), nullable=False, comment="缴纳金额（元）")
+    status = Column(SmallInteger, default=STATUS_PENDING, comment="支付状态")
+    pay_order_no = Column(
+        String(32), nullable=True, unique=True, index=True, comment="支付单号"
+    )
+    pay_time = Column(DateTime, nullable=True, comment="支付时间")
+
+    child = relationship("Child", foreign_keys=[child_id])
+
+    def __repr__(self):
+        return f"<FinePayment(id={self.id}, child={self.child_id}, amount={self.amount}, status={self.status})>"

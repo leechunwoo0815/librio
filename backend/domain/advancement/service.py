@@ -84,18 +84,60 @@ class AdvancementService:
 
     # ==================== 测验 ====================
 
+    def _child_level_sort_order(self, child_id: int) -> int | None:
+        """孩子当前级别 sort_order（无级别返回 None）"""
+        from backend.domain.advancement.models import ChildLevel, Level
+
+        current_cl = (
+            self.db.query(ChildLevel)
+            .filter(
+                ChildLevel.child_id == child_id,
+                ChildLevel.is_current,
+                ChildLevel.is_deleted == 0,
+            )
+            .first()
+        )
+        if not current_cl:
+            return None
+        level = (
+            self.db.query(Level)
+            .filter(Level.id == current_cl.level_id, Level.is_deleted == 0)
+            .first()
+        )
+        return level.sort_order if level else None
+
+    def _quiz_rule_for_child(self, child_id: int) -> tuple[int, int]:
+        """C2 低龄测验规则：A-F 级（sort_order≤quiz_low_level_max_sort）
+        → 3 题答对 2 题通过；其余级别走全局题数与通过率
+
+        返回 (题数上限, 通过所需答对题数[0=按比例])
+        """
+        from backend.common.config_service import ConfigService
+
+        sort_order = self._child_level_sort_order(child_id)
+        low_max_sort = ConfigService.get_int(self.db, "quiz_low_level_max_sort", 6)
+        if sort_order is not None and sort_order <= low_max_sort:
+            low_questions = ConfigService.get_int(
+                self.db, "quiz_low_level_questions", 3
+            )
+            low_pass_count = ConfigService.get_int(
+                self.db, "quiz_low_level_pass_count", 2
+            )
+            return low_questions, low_pass_count
+        return ConfigService.get_int(self.db, "quiz_total_questions", 5), 0
+
     def start_quiz(self, child_id: int, data: QuizStartRequest) -> QuizResponse:
-        """开始测验 — 含可配置重考间隔限制"""
+        """开始测验 — 含可配置重考间隔限制 + C2 低龄题数"""
         from datetime import timezone
 
         questions = self.question_repo.get_by_book(data.book_id)
         if not questions:
             raise NotFoundError("该图书暂无测验题目")
 
-        # 从配置读取测验题数上限
+        # C2：按孩子级别取题数（低龄 3 题，其余走全局配置）
         from backend.common.config_service import ConfigService
 
-        max_questions = ConfigService.get_int(self.db, "quiz_total_questions", 5)
+        max_questions, _ = self._quiz_rule_for_child(child_id)
         if len(questions) > max_questions:
             questions = questions[:max_questions]
 
@@ -209,7 +251,17 @@ class AdvancementService:
         self.quiz_repo.update(quiz)
 
         pass_rate = ConfigService.get_decimal(self.db, "quiz_pass_rate", PASS_THRESHOLD)
-        passed = quiz.score >= pass_rate * 100
+
+        # C2 低龄规则：按答对题数判定（默认 3 题对 2）；其余按全局通过率
+        _, low_pass_count = self._quiz_rule_for_child(quiz.child_id)
+        if low_pass_count > 0:
+            passed = correct >= low_pass_count
+            pass_threshold = round(
+                low_pass_count / max(quiz.total_questions, 1) * 100, 2
+            )
+        else:
+            passed = quiz.score >= pass_rate * 100
+            pass_threshold = pass_rate * 100
 
         book = self.book_repo.get_by_id(quiz.book_id)
         word_count = book.word_count if book else 0
@@ -217,7 +269,7 @@ class AdvancementService:
 
         if passed:
             # P0-8: 去重条件改为"存在其他已通过的 Quiz"（而非任意已完成）
-            pass_threshold = pass_rate * 100
+            # 阈值与本次判定口径一致（C2：低龄按答对题数折算，其余按全局通过率）
             already_counted = (
                 self.db.query(Quiz)
                 .filter(
@@ -262,6 +314,7 @@ class AdvancementService:
         self.db.commit()
         return {
             "correct": correct,
+            "correct_count": correct,
             "total": quiz.total_questions,
             "score": float(quiz.score),
             "passed": passed,
@@ -291,7 +344,10 @@ class AdvancementService:
 
         from backend.common.config_service import ConfigService
 
-        min_quiz_pass = ConfigService.get_int(self.db, "quiz_pass_count", 5)
+        # C6：测验通过数随级别 required_books 收敛（低龄 A-F 每级 3 本 → 3 次测验）
+        min_quiz_pass = min(
+            ConfigService.get_int(self.db, "quiz_pass_count", 5), level.required_books
+        )
         if (
             current.books_read_at_level >= level.required_books
             and current.quizzes_passed_at_level >= min_quiz_pass

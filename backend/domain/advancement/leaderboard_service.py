@@ -43,22 +43,44 @@ class LeaderboardService:
         month: Optional[int] = None,
         year: Optional[int] = None,
         limit: int = 20,
+        age_group: str | None = None,
     ) -> list[LeaderboardEntryResponse]:
-        """获取排行榜"""
+        """获取排行榜（C6：age_group 支持 3-6 / 7-9 / 10-12 / 13-15 年龄段分组）"""
+        age_range = self._parse_age_group(age_group)
         if period == "total":
-            return self._total_leaderboard(level_id, limit)
+            return self._total_leaderboard(level_id, limit, age_range)
         elif period == "month":
             if not year or not month:
                 now = datetime.now()
                 year, month = now.year, now.month
-            return self._period_leaderboard(year, month, level_id, limit)
+            return self._period_leaderboard(year, month, level_id, limit, age_range)
         elif period == "year":
             if not year:
                 year = datetime.now().year
-            return self._year_leaderboard(year, level_id, limit)
+            return self._year_leaderboard(year, level_id, limit, age_range)
         else:
             days = self._PERIOD_MAP.get(period, 7)
-            return self._days_leaderboard(days, level_id, limit)
+            return self._days_leaderboard(days, level_id, limit, age_range)
+
+    @staticmethod
+    def _parse_age_group(age_group: str | None) -> tuple[int, int] | None:
+        """'3-6' → (3, 6)；非法返回 None"""
+        if not age_group:
+            return None
+        try:
+            lo, hi = age_group.split("-", 1)
+            return int(lo), int(hi)
+        except (ValueError, AttributeError):
+            return None
+
+    def _children_in_age(self, age_range: tuple[int, int] | None):
+        """年龄段内的孩子ID集合（None 时返回 None 表示不过滤）"""
+        if not age_range:
+            return None
+        lo, hi = age_range
+        return self.db.query(Child.id).filter(
+            Child.age >= lo, Child.age <= hi, Child.is_deleted == 0
+        )
 
     def _format_name(self, child: Child) -> str:
         name_part = child.name or ""
@@ -69,6 +91,7 @@ class LeaderboardService:
         self,
         level_id: Optional[int] = None,
         limit: int = 20,
+        age_range: tuple[int, int] | None = None,
     ) -> list[LeaderboardEntryResponse]:
         """累计排行榜"""
         q = self.db.query(Child).filter(
@@ -80,6 +103,8 @@ class LeaderboardService:
                 ChildLevel.level_id == level_id
             )
             q = q.filter(Child.id.in_(cl))
+        if age_range:
+            q = q.filter(Child.age >= age_range[0], Child.age <= age_range[1])
         children = q.order_by(Child.total_words_read.desc()).limit(limit).all()
 
         result = []
@@ -102,6 +127,7 @@ class LeaderboardService:
         days: int,
         level_id: Optional[int] = None,
         limit: int = 20,
+        age_range: tuple[int, int] | None = None,
     ) -> list[LeaderboardEntryResponse]:
         """近N天排行榜"""
         cutoff = datetime.now() - timedelta(days=days)
@@ -129,6 +155,8 @@ class LeaderboardService:
                 ChildLevel.level_id == level_id
             )
             q = q.filter(deduped.c.child_id.in_(cl))
+        if age_range:
+            q = q.filter(deduped.c.child_id.in_(self._children_in_age(age_range)))
 
         rows = q.order_by(func.sum(deduped.c.book_words).desc()).limit(limit).all()
 
@@ -163,6 +191,7 @@ class LeaderboardService:
         month: int,
         level_id: Optional[int] = None,
         limit: int = 20,
+        age_range: tuple[int, int] | None = None,
     ) -> list[LeaderboardEntryResponse]:
         """月排行榜"""
         start = datetime(year, month, 1)
@@ -187,6 +216,9 @@ class LeaderboardService:
             deduped.c.child_id,
             func.sum(deduped.c.book_words).label("total_words"),
         ).group_by(deduped.c.child_id)
+
+        if age_range:
+            q = q.filter(deduped.c.child_id.in_(self._children_in_age(age_range)))
 
         rows = q.order_by(func.sum(deduped.c.book_words).desc()).limit(limit).all()
 
@@ -220,6 +252,7 @@ class LeaderboardService:
         year: int,
         level_id: Optional[int] = None,
         limit: int = 20,
+        age_range: tuple[int, int] | None = None,
     ) -> list[LeaderboardEntryResponse]:
         """年排行榜"""
         start = datetime(year, 1, 1)
@@ -244,6 +277,9 @@ class LeaderboardService:
             deduped.c.child_id,
             func.sum(deduped.c.book_words).label("total_words"),
         ).group_by(deduped.c.child_id)
+
+        if age_range:
+            q = q.filter(deduped.c.child_id.in_(self._children_in_age(age_range)))
 
         rows = q.order_by(func.sum(deduped.c.book_words).desc()).limit(limit).all()
 

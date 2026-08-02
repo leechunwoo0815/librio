@@ -111,6 +111,7 @@ module.exports = {
   payDeposit(childId) { return req.post('/deposit/pay', { child_id: childId }) },
   refundDeposit(childId) { return req.post('/deposit/refund', { child_id: childId }) },
   repayDeposit(childId) { return req.post('/deposit/repay', null, { params: { child_id: childId } }) },
+  payFines(childId) { return req.post('/deposit/pay-fines', { child_id: childId }) },
 
   // 用户/孩子信息更新
   updateUserInfo(data) { return req.put('/user/info', data) },

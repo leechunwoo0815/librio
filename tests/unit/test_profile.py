@@ -46,9 +46,7 @@ def _setup(db):
     db.add(child)
     db.commit()
 
-    level = Level(
-        name="A", sort_order=1, required_books=10, badge_emoji="🌱"
-    )
+    level = Level(name="A", sort_order=1, required_books=10, badge_emoji="🌱")
     db.add(level)
     db.commit()
 

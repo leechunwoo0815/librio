@@ -37,12 +37,8 @@ def _setup(db):
     db.add(child)
     db.commit()
 
-    level_a = Level(
-        name="A", sort_order=1, required_books=10, badge_emoji="🌱"
-    )
-    level_b = Level(
-        name="B", sort_order=2, required_books=15, badge_emoji="🌿"
-    )
+    level_a = Level(name="A", sort_order=1, required_books=10, badge_emoji="🌱")
+    level_b = Level(name="B", sort_order=2, required_books=15, badge_emoji="🌿")
     db.add_all([level_a, level_b])
     db.commit()
 

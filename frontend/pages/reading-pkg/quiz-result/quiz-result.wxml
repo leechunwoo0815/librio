@@ -21,9 +21,9 @@
       <text class="icon-warning">!</text>
     </view>
 
-    <!-- Badge -->
+    <!-- Badge（C2 零负面：不出现"未通过"字样） -->
     <view class="result-badge {{passed ? 'badge-pass' : 'badge-fail'}}">
-      {{passed ? '测验通过' : '未通过'}}
+      {{passed ? '测验通过' : '再读一遍就能答对啦！'}}
     </view>
 
     <!-- Score Circle -->

@@ -220,6 +220,21 @@ class SystemConfig(BaseModel):
             "int",
             "测验未通过后重考冷却时间（分钟，范围5-1440，C2决策：10分钟）",
         ),
+        "quiz_low_level_max_sort": (
+            "6",
+            "int",
+            "低龄级别上限 sort_order（C2：A-F 级=1-6 走低龄测验规则）",
+        ),
+        "quiz_low_level_questions": (
+            "3",
+            "int",
+            "低龄测验题数（C2：A-F 级 3 题）",
+        ),
+        "quiz_low_level_pass_count": (
+            "2",
+            "int",
+            "低龄测验通过所需答对题数（C2：3 题对 2）",
+        ),
         # ── 打卡规则 ──
         "checkin_min_minutes": ("10", "int", "打卡最低阅读分钟数"),
         "checkin_min_vocab": ("5", "int", "打卡最低生词数"),

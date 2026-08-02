@@ -8,6 +8,10 @@
     <view class="back-btn" bindtap="closePage">
       <text class="nav-title">听读</text>
     </view>
+    <!-- C5 简化模式切换（低龄大按钮 UI） -->
+    <view class="simple-toggle" bindtap="toggleSimpleMode">
+      <text>{{simpleMode ? '标准模式' : '儿童模式'}}</text>
+    </view>
   </view>
 
   <!-- 逾期锁定遮罩 — centered card layout -->
@@ -34,8 +38,8 @@
     </view>
   </view>
 
-  <!-- 音频播放器 -->
-  <view class="audio-section player-section" wx:if="{{book.has_audio && book.audio_url}}">
+  <!-- 音频播放器（C5：简化模式只保留一键播放大按钮） -->
+  <view class="audio-section player-section" wx:if="{{book.has_audio && book.audio_url && !simpleMode}}">
     <!-- Progress Bar -->
     <view class="audio-progress-wrap progress-area">
       <view class="progress-times">
@@ -76,6 +80,14 @@
     <view class="chapter-indicator chapter-tag">Chapter {{currentChapter || 1}}</view>
   </view>
 
+  <!-- C5 简化模式：一键听读大按钮 -->
+  <view class="simple-player" wx:if="{{book.has_audio && book.audio_url && simpleMode}}">
+    <view class="simple-play-btn {{audioPlaying ? 'playing' : ''}}" bindtap="toggleAudio">
+      <text class="simple-play-icon">{{audioPlaying ? '⏸' : '▶'}}</text>
+      <text class="simple-play-text">{{audioPlaying ? '暂停故事' : '点我听故事'}}</text>
+    </view>
+  </view>
+
   <view class="no-audio" wx:elif="{{book.has_audio && !book.audio_url}}" style="padding:24rpx;text-align:center;background:var(--bg-card,#fff);border-radius:16rpx;margin:16rpx;">
     <text style="font-size:48rpx;"><text class="icon icon-volume-up">🔊</text></text>
     <text style="display:block;font-size:28rpx;color:var(--muted,#999);margin-top:8rpx;">该书籍音频尚未就绪</text>
@@ -106,8 +118,8 @@
   <!-- Divider -->
   <view class="section-divider divider"></view>
 
-  <!-- 查词区域 dict-section -->
-  <view class="lookup-section dict-section">
+  <!-- 查词区域 dict-section（C5：简化模式隐藏，聚焦一键听读） -->
+  <view class="lookup-section dict-section" wx:if="{{!simpleMode}}">
     <view class="lookup-header">
       <text class="lookup-title section-title">词典查词</text>
     </view>
@@ -150,7 +162,7 @@
       <text class="bar-icon"><text class="icon icon-note">📝</text></text>
       <text class="tool-label">测评</text>
     </view>
-    <view class="tool-btn bar-item" bindtap="shareBook">
+    <view class="tool-btn bar-item" bindtap="shareBook" wx:if="{{!simpleMode}}">
       <text class="bar-icon"><text class="icon icon-upload">📤</text></text>
       <text class="tool-label">分享</text>
     </view>

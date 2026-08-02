@@ -781,6 +781,126 @@ class DepositService:
         )
         return DepositResponse.model_validate(record)
 
+    async def pay_fines(
+        self,
+        data: DepositRefundRequest,
+        payment_gateway: PaymentGateway,
+        current_user=None,
+    ) -> dict:
+        """B12：线上缴纳罚款（未缴罚款全额缴清，支付成功 outstanding_fines 归零）"""
+        import uuid
+
+        from backend.domain.deposit.models import FinePayment
+        from backend.domain.user.models import User
+
+        child = (
+            self.db.query(Child)
+            .filter(Child.id == data.child_id, Child.is_deleted == 0)
+            .first()
+        )
+        if not child:
+            raise NotFoundError("孩子不存在")
+        outstanding = child.outstanding_fines or Decimal("0")
+        if outstanding <= 0:
+            raise ValidationError("当前没有未缴罚款")
+
+        user = self.db.query(User).filter(User.id == current_user.id).first()
+        if not user or not user.openid:
+            raise ValidationError("用户openid不存在")
+
+        # 防重：存在进行中的缴款单则复用
+        pending = (
+            self.db.query(FinePayment)
+            .filter(
+                FinePayment.child_id == data.child_id,
+                FinePayment.status == FinePayment.STATUS_PENDING,
+                FinePayment.amount == outstanding,
+                FinePayment.is_deleted == 0,
+            )
+            .first()
+        )
+        if pending:
+            record = pending
+        else:
+            record = FinePayment(
+                child_id=data.child_id,
+                amount=outstanding,
+                status=FinePayment.STATUS_PENDING,
+                pay_order_no=f"FINE{uuid.uuid4().hex[:20].upper()}",
+            )
+            self.db.add(record)
+            self.db.commit()
+            self.db.refresh(record)
+
+        amount_cent = int(outstanding * 100)
+        order_req = PaymentOrderRequest(
+            out_trade_no=record.pay_order_no,
+            amount=amount_cent,
+            description="逾期服务费缴纳",
+            openid=user.openid,
+            attach="fine_payment",
+        )
+        try:
+            result = await payment_gateway.create_order(order_req)
+        except Exception as e:
+            logger.error(f"pay_fines gateway error: child={data.child_id}, error={e}")
+            raise PaymentError(f"支付网关调用失败: {e}")
+        if not result.success:
+            raise PaymentError(result.error_message)
+
+        # Mock/即时支付环境直接核销
+        if payment_gateway.supports_instant_payment:
+            self._settle_fine_payment(record)
+            self.db.commit()
+
+        return {
+            "fine_payment_id": record.id,
+            "amount": str(record.amount),
+            "pay_params": result.pay_params,
+        }
+
+    def handle_fine_callback(self, order_no: str) -> bool:
+        """罚款支付回调 — 按 pay_order_no 核销（找不到返回 False 走押金链路）"""
+        from backend.domain.deposit.models import FinePayment
+
+        record = (
+            self.db.query(FinePayment)
+            .filter(
+                FinePayment.pay_order_no == order_no,
+                FinePayment.status == FinePayment.STATUS_PENDING,
+                FinePayment.is_deleted == 0,
+            )
+            .with_for_update()
+            .first()
+        )
+        if not record:
+            return False
+        self._settle_fine_payment(record)
+        self.db.commit()
+        return True
+
+    def _settle_fine_payment(self, record) -> None:
+        """核销罚款：缴款单→已支付，child.outstanding_fines 归零（不自行 commit）"""
+        from backend.domain.deposit.models import FinePayment
+
+        record.status = FinePayment.STATUS_PAID
+        record.pay_time = datetime.now()
+        child = (
+            self.db.query(Child)
+            .filter(Child.id == record.child_id, Child.is_deleted == 0)
+            .with_for_update()
+            .first()
+        )
+        if child:
+            paid = record.amount
+            child.outstanding_fines = max(
+                Decimal("0"), (child.outstanding_fines or Decimal("0")) - paid
+            )
+        logger.info(
+            f"Fine settled: child={record.child_id}, amount={record.amount}, "
+            f"order={record.pay_order_no}"
+        )
+
     def get_deposit_status(self, child_id: int) -> dict:
         """查询押金状态"""
         from backend.common.config_service import ConfigService

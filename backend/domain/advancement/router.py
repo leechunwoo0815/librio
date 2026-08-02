@@ -124,6 +124,7 @@ def get_leaderboard(
     month: int = Query(None, description="月排行榜的月份"),
     year: int = Query(None, description="月/年排行榜的年份"),
     limit: int = Query(20, ge=1, le=100),
+    age_group: str = Query(None, description="C6：年龄段分组（3-6/7-9/10-12/13-15）"),
     service: LeaderboardService = Depends(get_leaderboard_service),
     current_user=Depends(get_current_user),
 ):
@@ -134,4 +135,5 @@ def get_leaderboard(
         month=month,
         year=year,
         limit=limit,
+        age_group=age_group,
     )

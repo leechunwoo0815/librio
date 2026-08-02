@@ -399,3 +399,15 @@
   color: var(--surface);
 }
 
+
+/* C2 家长辅助模式：听题按钮 */
+.tts-btn {
+  display: inline-block;
+  margin-left: 16rpx;
+  padding: 6rpx 20rpx;
+  font-size: 24rpx;
+  font-weight: normal;
+  color: var(--primary, #4a7dff);
+  background: rgba(74, 125, 255, 0.1);
+  border-radius: 24rpx;
+}
