@@ -5,6 +5,7 @@ Revises: b7e9a2c44d10
 Create Date: 2026-08-01 23:13:00.480824
 
 """
+
 from typing import Sequence, Union
 
 from alembic import op
@@ -12,8 +13,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'c4d8f1a55e21'
-down_revision: Union[str, Sequence[str], None] = 'b7e9a2c44d10'
+revision: str = "c4d8f1a55e21"
+down_revision: Union[str, Sequence[str], None] = "b7e9a2c44d10"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

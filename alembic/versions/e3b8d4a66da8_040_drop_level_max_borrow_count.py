@@ -5,6 +5,7 @@ Revises: d2a9b6f33c97
 Create Date: 2026-08-02 09:00:32.553058
 
 """
+
 from typing import Sequence, Union
 
 from alembic import op
@@ -12,8 +13,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'e3b8d4a66da8'
-down_revision: Union[str, Sequence[str], None] = 'd2a9b6f33c97'
+revision: str = "e3b8d4a66da8"
+down_revision: Union[str, Sequence[str], None] = "d2a9b6f33c97"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -34,5 +35,11 @@ def downgrade() -> None:
     """Downgrade schema."""
     op.add_column(
         "level",
-        sa.Column("max_borrow_count", sa.Integer(), server_default="1", nullable=True, comment="最大同时借阅数"),
+        sa.Column(
+            "max_borrow_count",
+            sa.Integer(),
+            server_default="1",
+            nullable=True,
+            comment="最大同时借阅数",
+        ),
     )
