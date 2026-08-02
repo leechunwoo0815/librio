@@ -140,7 +140,7 @@ class AdvancementService:
             questions = questions[:max_questions]
 
         # 重考间隔检查：从配置读取冷却分钟数（5-1440，默认10，C2决策）
-        # 时区口径：与 ORM create_time（func.now()，库会话时区）一致使用本地时间，
+        # 时区口径：与 ORM 时间戳（应用侧 datetime.now()）一致，
         # 禁止混用 UTC（MySQL 生产会放大 8 小时冷却 — 审查 P1-2）
         cooldown_minutes = ConfigService.get_int(self.db, "quiz_cooldown_minutes", 10)
         now = datetime.now()

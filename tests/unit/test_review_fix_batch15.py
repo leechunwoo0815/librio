@@ -315,3 +315,70 @@ class TestP2FineCallbackIdempotent:
         assert svc.handle_fine_callback("FINE-DUP-1") is True  # 首次核销
         assert svc.handle_fine_callback("FINE-DUP-1") is True  # 重复回调幂等
         assert svc.handle_fine_callback("FINE-NOT-EXIST") is False  # 不存在走押金链路
+
+
+class TestP2RefundFailureRollback:
+    """P2-7：退款执行失败 → refund 回退 PENDING（可重审）+ 管理端告警"""
+
+    def test_gateway_failure_reverts_refund_to_pending(self, db, monkeypatch):
+        import asyncio
+        from unittest.mock import AsyncMock, MagicMock
+
+        from backend.common.types import PayStatus
+        from backend.domain.message.models import SystemMessage
+        from backend.domain.order.models import Order
+        from backend.domain.refund.models import RefundApplication
+        from backend.domain.refund.service import RefundService
+
+        user, child = _mk_child(db)
+        order = Order(
+            order_no="B15-RF-1",
+            user_id=user.id,
+            child_id=child.id,
+            type=2,
+            amount=Decimal("500"),
+            pay_status=PayStatus.PAID,
+            refund_status=1,
+        )
+        db.add(order)
+        db.commit()
+        refund = RefundApplication(
+            order_id=order.id,
+            user_id=user.id,
+            child_id=child.id,
+            refund_amount=Decimal("466.67"),
+            status=RefundApplication.STATUS_APPROVED,
+        )
+        db.add(refund)
+        db.commit()
+
+        # 注入测试会话（屏蔽函数尾部 close，避免共享会话被关闭）与"会失败的"支付网关
+        monkeypatch.setattr("backend.database.get_session", lambda: lambda: db)
+        monkeypatch.setattr(db, "close", lambda: None)
+        gateway = MagicMock()
+        gateway.refund = AsyncMock(side_effect=Exception("微信退款通道超时"))
+        monkeypatch.setattr(
+            "backend.common.dependencies.get_payment_gateway", lambda: gateway
+        )
+        # 绕过 DEBUG 早退分支（该分支仅本地开发跳过真实退款）
+        from backend.config import get_settings
+
+        monkeypatch.setattr(get_settings(), "DEBUG", False)
+
+        asyncio.run(
+            RefundService._execute_wechat_refund(
+                refund.id, order.order_no, refund.refund_amount, "测试"
+            )
+        )
+
+        db.refresh(refund)
+        db.refresh(order)
+        assert refund.status == RefundApplication.STATUS_PENDING  # 回退可重审
+        assert "执行失败已回退" in (refund.review_comment or "")
+        assert order.refund_status == 3  # FAILED
+        msg = (
+            db.query(SystemMessage)
+            .filter(SystemMessage.user_id == 0, SystemMessage.title == "退款执行失败")
+            .first()
+        )
+        assert msg is not None  # 管理端告警保留

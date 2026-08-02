@@ -1,7 +1,8 @@
 import logging
 
+from datetime import datetime
+
 from sqlalchemy.orm import Session
-from sqlalchemy import func
 
 from backend.common.exceptions import ValidationError
 from backend.domain.child.benefit_transfer_model import BenefitTransferApplication
@@ -95,7 +96,7 @@ class BenefitTransferAdminService:
         app.status = 1
         app.reviewer_id = reviewer_id
         app.review_remark = review_remark
-        app.reviewed_at = func.now()
+        app.reviewed_at = datetime.now()
         self.db.commit()
         logger.info(
             f"Benefit transfer approved: application_id={application_id}, reviewer_id={reviewer_id}"
@@ -121,7 +122,7 @@ class BenefitTransferAdminService:
         app.status = 2
         app.reviewer_id = reviewer_id
         app.review_remark = review_remark
-        app.reviewed_at = func.now()
+        app.reviewed_at = datetime.now()
         self.db.commit()
         logger.info(
             f"Benefit transfer rejected: application_id={application_id}, reviewer_id={reviewer_id}"

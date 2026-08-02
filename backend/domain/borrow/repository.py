@@ -1,8 +1,9 @@
 # backend/domain/borrow/repository.py
 """借阅域数据访问层"""
 
+from datetime import datetime
+
 from sqlalchemy.orm import Session
-from sqlalchemy import func
 
 from backend.common.base_repo import BaseRepository
 from backend.common.types import BorrowStatus
@@ -48,7 +49,7 @@ class BorrowRecordRepository(BaseRepository[BorrowRecord]):
             self.db.query(BorrowRecord)
             .filter(
                 BorrowRecord.status.in_([BorrowStatus.BORROWING, BorrowStatus.OVERDUE]),
-                BorrowRecord.due_date < func.now(),
+                BorrowRecord.due_date < datetime.now(),
                 BorrowRecord.is_deleted == 0,
             )
             .all()
