@@ -1,6 +1,6 @@
 # DmkWords — 架构文档
 
-> 版本：V3.12（2026-07-22 更新）
+> 版本：V3.13（2026-08-02 更新：52 题决策落地 — 56 表/59 配置/fine_policy/config_levels/guardian/teacher_workbench）
 > 零粉饰，只写事实
 
 ---
@@ -66,13 +66,17 @@ backend/
 │   ├── base_schema.py   #   Pydantic 基类
 │   ├── base_repo.py     #   通用 Repository（CRUD 模板，68 处 with_for_update）
 │   ├── config_service.py #  统一配置读取（带 TTL 缓存）
+│   ├── fine_policy.py   #   逾期服务费统一策略（B7/B8：宽限/上限/首次免罚）
 │   ├── dependencies.py  #   FastAPI Depends 工厂
 │   ├── events.py        #   领域事件总线（共享/独立双模式事务）
 │   ├── exceptions.py    #   统一异常体系（7 个异常类）
 │   └── types.py         #   枚举类型定义
 ├── domain/              # 领域模块（26 个域）
 │   ├── activity/        #   活动域
-│   ├── admin/           #   管理域（含 SystemConfig、Teacher、Venue）
+│   ├── admin/           #   管理域（含 SystemConfig、Teacher、Venue、
+│   │                    #     config_levels.py 配置三级管控、
+│   │                    #     guardian_service.py 迁移/监护人/复活、
+│   │                    #     teacher_workbench_service.py 工作台/课后反馈）
 │   │   └── routers/     #     管理端路由（8 个领域路由文件）
 │   ├── advancement/     #   晋级域（含 LeaderboardService 独立拆分）
 │   ├── book/            #   图书域（Book + BookCopy）
@@ -120,7 +124,7 @@ backend/
 │   ├── rate_limit.py    #   速率限制
 │   ├── request_log.py   #   请求日志（输出到 logs/admin_requests.log）
 │   └── trace.py         #   请求追踪
-├── tasks/               # APScheduler 定时任务（18 个）
+├── tasks/               # APScheduler 定时任务（21 个，V3.22 +3：取书提醒/SLA巡检/毕业）
 ├── templates/admin/     # 管理端 Jinja2 模板（38 个页面，含 base.html）
 ├── static/admin/        # 管理端静态资源（CSS/JS）
 ├── seeds/               # 种子数据脚本
@@ -166,7 +170,7 @@ frontend/                # 微信小程序（31 个页面，4 子包）
 
 ---
 
-## 五、数据库（49 张表）
+## 五、数据库（56 张表，V3.22 决策落地）
 
 ### RBAC 权限域（Phase 1-2）
 - `role` — 角色（3 个种子: super_admin/staff/teacher）
@@ -175,7 +179,7 @@ frontend/                # 微信小程序（31 个页面，4 子包）
 
 ### 用户域
 - `user` — 家长账户
-- `child` — 孩子（含 english_name、current_level_id、deposit_status、outstanding_fines）
+- `child` — 孩子（含 english_name、current_level_id、deposit_status、outstanding_fines、enroll_source 报名来源 A1；status 5=ALUMNI 校友 F2）
 
 ### 场馆运营域
 - `venue` — 场馆
@@ -189,10 +193,12 @@ frontend/                # 微信小程序（31 个页面，4 子包）
 - `dictionary_word` — 系统词库（ECDICT）
 
 ### 三个列表（V3.5 OMO）
-- `bookshelf` — 收藏夹（想读列表，不限量）
-- `borrow_record` — 借阅记录（正在阅读，线下扫码自动生成，最多 20 本，21 天借期）
-- `deposit_record` — 押金记录（1200 元，状态机：UNPAID→PAID→REFUNDED/DEDUCTED）
-- `reservation` — 预约（线上预约借书，72 小时过期，锁定库存）
+- `bookshelf` — 收藏夹（想读列表，上限 bookshelf_limit=100，V3.22 C4）
+- `borrow_record` — 借阅记录（正在阅读，线下扫码自动生成，上限 borrow_limit=10，21 天借期；含 fine_original/fine_waived/checkout_photos/lost_search_deadline，B7/B9/B10）
+- `deposit_record` — 押金记录（1200 元，状态机：UNPAID→PAID→REFUNDED/DEDUCTED；partial_refunded 减半退还标记 A2）
+- `reservation` — 预约（线上预约借书，72 小时过期，锁定库存；pickup_reminded 取书提醒 B4）
+- `book_waitlist` — 等候名单（V3.22 F4：库存 0 可加入，释放自动通知队首）
+- `fine_payment` — 罚款缴纳记录（V3.22 B12：线上缴 outstanding_fines，FINE 前缀单号）
 
 ### 阅读行为域
 - `reading_progress` — 阅读进度
@@ -227,7 +233,7 @@ frontend/                # 微信小程序（31 个页面，4 子包）
 - `guidance_record` — 指导课记录
 
 ### 系统域
-- `system_config` — 动态配置（30+ 项）
+- `system_config` — 动态配置（59 项，三级管控 config_levels.py）
 - `system_message` — 站内信
 - `operation_log` — 操作日志
 - `observation_report` — 观察期报告

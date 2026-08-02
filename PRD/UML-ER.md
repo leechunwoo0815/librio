@@ -1,6 +1,6 @@
 # DmkWords V3.8 UML状态图 + 数据库ER图
 
-> 版本：V3.8（2026-07-15，9张状态图+18张ER子图，49表全量对齐实际代码）
+> 版本：V3.9（2026-08-02，52 题决策落地：book_waitlist/fine_payment 新表 + borrow_record/reservation 新列 + level 删 max_borrow_count，56 表对齐实际代码）
 > 所有图表采用 Mermaid 标准语法
 
 ---
@@ -12,21 +12,27 @@
 ```mermaid
 stateDiagram-v2
     [*] --> 体验用户 : 注册小程序
-    体验用户 --> 观察期 : 支付500元
-    观察期 --> 已过期 : 30天到期自动转入（生成评估报告）
+    体验用户 --> 观察期 : 支付500元（双轨制，亲子课非强制）
+    观察期 --> 已过期 : 45天到期自动转入（生成评估报告）
     已过期 --> 正式会员 : 支付会员费（年费/季度/半年）
     正式会员 --> 已过期 : 会员到期未续费
     已过期 --> 正式会员 : 续费成功（缓冲期内9折）
     任何状态 --> 已退出 : 主动退款/退出
+    已退出 --> 体验用户 : 管理员复活（F5，历史数据保留）
+    观察期 --> 校友 : 满15岁毕业（F2）
+    正式会员 --> 校友 : 满15岁毕业（F2）
+    已过期 --> 校友 : 满15岁毕业（F2）
 ```
 
-代码常量（`child.status`）：0=体验用户 1=观察期 2=正式会员 3=已过期 4=已退出
+代码常量（`child.status`）：0=体验用户 1=观察期 2=正式会员 3=已过期 4=已退出 5=校友（ALUMNI）
 
 注：
 - 观察期到期后自动转为 EXPIRED(3)（由定时任务 `check_observation_expiry` 每日 9:30 执行）
 - EXPIRED 用户可续费任何会员类型恢复为 OFFICIAL(2)，缓冲期内享 9 折（`renewal_discount` 配置）
 - 季度/半年会员复用 OFFICIAL(2) 状态，通过 `Order.type` 字段区分（QUARTERLY=4, SEMI_ANNUAL=5）
 - 退款前必须无活跃借阅记录（BORROWING/OVERDUE），否则拒绝退款
+- F2：满 15 岁由 `graduate_children` 任务转为 ALUMNI(5)（不可借阅，历史数据保留，毕业引导退押金）
+- F5：EXITED 可由管理员复活为 TRIAL（历史阅读数据保留，权益清零重来；历史付费订单计入多孩资格）
 
 ### 1.2 订单状态流转图
 
@@ -93,11 +99,11 @@ stateDiagram-v2
     [*] --> 借出 : 扫码借书/预约取书
     借出 --> 已还 : 归还图书
     借出 --> 逾期 : 超过21天未还
-    逾期 --> 已还 : 归还图书（含罚款）
+    逾期 --> 已还 : 归还图书（含逾期服务费）
     借出 --> 丢失 : 确认丢失
     逾期 --> 丢失 : 确认丢失
     已还 --> [*]
-    丢失 --> [*] : 触发押金扣除
+    丢失 --> [*] : 记账 outstanding_fines（7天寻找期可找回回滚）
 ```
 
 代码常量（`borrow_record.status`）：0=借出 1=已还 2=逾期 3=丢失
@@ -108,7 +114,7 @@ stateDiagram-v2
 stateDiagram-v2
     [*] --> 未付 : 创建孩子档案
     未付 --> 已付 : 支付1200元押金
-    已付 --> 退款中 : 申请退款（无未还书+无罚款）
+    已付 --> 退款中 : 申请退款（无未还书，E1自动审核，罚款自动抵扣）
     退款中 --> 已退 : 退款到账确认
     已付 --> 已扣 : 丢书/损坏扣除
     已扣 --> 已付 : 补缴押金
@@ -168,7 +174,7 @@ erDiagram
         varchar english_name
         tinyint age
         varchar grade
-        tinyint status "0=体验 1=观察期 2=正式 3=过期 4=退出"
+        tinyint status "0=体验 1=观察期 2=正式 3=过期 4=退出 5=校友"
         decimal ar_level
         bigint teacher_id FK
         bigint venue_id FK
@@ -329,7 +335,11 @@ erDiagram
         datetime due_date "借出+21天"
         datetime return_time
         tinyint quiz_passed
-        decimal fine_amount
+        decimal fine_amount "逾期服务费（B7）"
+        decimal fine_original "免罚前金额（B7）"
+        tinyint fine_waived "首次免罚（B7）"
+        varchar checkout_photos "借出拍照JSON（B9）"
+        datetime lost_search_deadline "寻找期截止（B10）"
     }
 
     RESERVATION {
@@ -340,12 +350,23 @@ erDiagram
         datetime expires_at "预约+72小时"
         datetime picked_up_at
         bigint borrow_record_id FK
+        tinyint pickup_reminded "24h提醒已发（B4）"
+    }
+
+    BOOK_WAITLIST {
+        bigint id PK
+        bigint child_id FK
+        bigint book_id FK
+        tinyint status "0=等候中 1=已通知 2=已成交 3=已取消"
+        datetime notify_time
     }
 
     CHILD ||--o{ BORROW_RECORD : "borrows"
     CHILD ||--o{ RESERVATION : "reserves"
+    CHILD ||--o{ BOOK_WAITLIST : "waits"
     BOOK ||--o{ BORROW_RECORD : "borrowed_as"
     BOOK ||--o{ RESERVATION : "reserved_as"
+    BOOK ||--o{ BOOK_WAITLIST : "waited_for"
 ```
 
 ### 2.6 押金模块 ★ V3.1
@@ -357,12 +378,25 @@ erDiagram
         bigint child_id FK
         decimal amount "默认1200"
         tinyint status "0=未付 1=已付 2=已退 3=已扣 4=退款中 5=支付中 6=退款待审核"
+        tinyint partial_refunded "已减半退还（A2）"
         datetime paid_at
         datetime refunded_at
         varchar deduction_reason
     }
 
     CHILD ||--o{ DEPOSIT_RECORD : "has_deposit"
+
+
+    FINE_PAYMENT {
+        bigint id PK
+        bigint child_id FK
+        decimal amount "缴纳金额"
+        tinyint status "0=待支付 1=已支付"
+        varchar pay_order_no "FINE前缀单号"
+        datetime pay_time
+    }
+
+    CHILD ||--o{ FINE_PAYMENT : "pays_fines"
 ```
 
 ### 2.7 阅读行为模块
@@ -460,7 +494,6 @@ erDiagram
         int required_books "默认5"
         decimal required_quiz_pass_rate "默认0.80"
         boolean require_teacher_review
-        int max_borrow_count "默认1"
         decimal max_ar_level
     }
 

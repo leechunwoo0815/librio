@@ -82,7 +82,9 @@ class TestPayFines:
 
         with pytest.raises(ValidationError, match="没有未缴罚款"):
             asyncio.run(
-                svc.pay_fines(DepositRefundRequest(child_id=child.id), MagicMock(), user)
+                svc.pay_fines(
+                    DepositRefundRequest(child_id=child.id), MagicMock(), user
+                )
             )
 
     def test_fine_callback_settles(self, db):
@@ -114,8 +116,13 @@ class TestLowLevelQuiz:
         db.commit()
         db.add(ChildLevel(child_id=child.id, level_id=level.id, is_current=True))
         book = Book(
-            isbn="LQ1", title="低龄书", author="A", ar_value=Decimal("1.0"),
-            age_min=3, age_max=6, word_count=100,
+            isbn="LQ1",
+            title="低龄书",
+            author="A",
+            ar_value=Decimal("1.0"),
+            age_min=3,
+            age_max=6,
+            word_count=100,
         )
         db.add(book)
         db.commit()
@@ -175,8 +182,13 @@ class TestLowLevelQuiz:
         db.commit()
         db.add(ChildLevel(child_id=child.id, level_id=level.id, is_current=True))
         book = Book(
-            isbn="LQ2", title="高龄书", author="A", ar_value=Decimal("5.0"),
-            age_min=10, age_max=15, word_count=5000,
+            isbn="LQ2",
+            title="高龄书",
+            author="A",
+            ar_value=Decimal("5.0"),
+            age_min=10,
+            age_max=15,
+            word_count=5000,
         )
         db.add(book)
         db.commit()
@@ -203,13 +215,23 @@ class TestLeaderboardAgeGroup:
         from backend.domain.advancement.leaderboard_service import LeaderboardService
 
         young = Child(
-            user_id=1, name="小宝", age=5, grade="大班",
-            status=2, total_words_read=9000, total_books_finished=9,
+            user_id=1,
+            name="小宝",
+            age=5,
+            grade="大班",
+            status=2,
+            total_words_read=9000,
+            total_books_finished=9,
         )
         db.add(young)
         teen = Child(
-            user_id=1, name="大宝", age=13, grade="初一",
-            status=2, total_words_read=5000, total_books_finished=3,
+            user_id=1,
+            name="大宝",
+            age=13,
+            grade="初一",
+            status=2,
+            total_words_read=5000,
+            total_books_finished=3,
         )
         db.add(teen)
         db.commit()

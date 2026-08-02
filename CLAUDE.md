@@ -7,7 +7,7 @@
 
 > ⚠️ **最高指令注入**：本文件是 DmkWords 项目的最高法律。任何代码生成、修改、重构，必须无条件服从本文件中的【零容忍铁律】与【业务红线】。
 
-> **最后更新**：2026-07-23（全量终审修订 — 418/0 pytest + 179/0 behave(1171 steps) + CI 同构十关全绿 + 全数字实测校准）
+> **最后更新**：2026-08-02（52 题决策全量落地 — 518/0 pytest + 210/0 behave(1361 steps) + 56 表 + 59 配置 + CI 同构十关全绿）
 
 ## 一、 核心身份与零容忍铁律 (System Prompt)
 
@@ -131,7 +131,7 @@ npx skills.sh obra/superpowers
 | 红线领域 | 绝对禁令 |
 | :--- | :--- |
 | **iOS 虚拟支付** | 500元观察期/5400元会员属虚拟服务，**iOS 端严禁调用 `wx.requestPayment`**。必须隐藏价格/支付按钮，替换为：“因苹果规则限制，请前往线下门店或使用安卓设备办理”。 |
-| **资金与并发** | 押金退款前**必须**校验：无未还书 AND 无未缴罚款。预约借书**必须**锁定 `offline_available` 库存。金额**必须**用 `Decimal` 或整数分，严禁 `float`。 |
+| **资金与并发** | 押金退款前**必须**校验：无未还书（未缴服务费走 B11 自动抵扣退余额）。预约借书**必须**锁定 `offline_available` 库存。金额**必须**用 `Decimal` 或整数分，严禁 `float`。 |
 | **安全与越权** | 严禁在 Router 手动写 `child.user_id != current_user.id`，**必须**使用 `middleware/ownership.py` 的声明式归属校验（如 `Depends(GetOwnedChild())`）。 |
 | **已删除模块** | 严禁引用 `collection` (馆藏)、V2.0 旧版电子预约逻辑、`PDF阅读器`。V3.5 已彻底删除线上 PDF，改为**音频伴读**。V3.1+ 的 `reservation` 是合法的 OMO 实体书预约取书模块，严禁删除。 |
 
@@ -148,7 +148,7 @@ Router (参数校验、HTTP状态码、依赖注入，🚫不含 try/except，�
 ### 📱 微信小程序宪法
 1. **防白屏底线**：所有 `{{}}` 数据绑定**必须**配合 `wx:if` 或默认值（如 `{{data || '暂无'}}`），杜绝 `undefined` 导致崩溃。
 2. **网络底线**：`wx.request` 封装**必须**包含 `fail` / `complete` 回调，且必须有 `wx.showToast` 异常提示。
-3. **音频伴读**：必须使用 `wx.getBackgroundAudioManager()` 支持锁屏；进度条更新**严禁**使用全局 `setData` 防卡顿；逾期**必须**锁死播放。
+3. **音频伴读**：必须使用 `wx.getBackgroundAudioManager()` 支持锁屏；进度条更新**严禁**使用全局 `setData` 防卡顿；逾期超过宽限期（默认 3 天）**必须**锁死播放。
 4. **样式禁令**：禁用 `oklch()`、`aspect-ratio`、`backdrop-filter`、`translateY(-50%)`。`position: fixed` 必须加 `box-sizing: border-box`。
 
 ---
@@ -206,7 +206,7 @@ Router (参数校验、HTTP状态码、依赖注入，🚫不含 try/except，�
 | **数据库** | MySQL 8.0 (utf8mb4)，测试用 SQLite `:memory:` |
 | **前端** | 微信小程序 (WXML/WXSS/JS, 34 页, 12 个通用组件) + MCP (wechat-devtools) |
 | **管理端** | PC 后台 38 个模板页面（含 base.html）+ 页面级 CSS + 设计系统 Token (--accent: #5560cf) |
-| **测试** | pytest (418 passed, 0 skipped) + behave (189 scenarios, 1240 steps, 0 failed) + Ruff (0 errors) |
+| **测试** | pytest (518 passed, 0 skipped) + behave (210 scenarios, 1361 steps, 0 failed) + Ruff (0 errors) |
 | **API** | 311 个端点（装饰器实测，含 38 页面路由） |
 | **领域模块** | 28 个 |
 | **定时任务** | 18 个 |
@@ -253,9 +253,9 @@ venv/bin/python -m backend.seeds.seed_test_data
 | 规则域 | 核心逻辑 |
 | :--- | :--- |
 | **图书与库存** | `Book` (唯一条码/总库存/可借库存/音频时间线/词数)；`BookCopy` (实体书条码，扫码智能合并)。 |
-| **借阅与预约** | 线下扫码借书(21天) -> 自动生成"正在阅读"(最多20本) -> 逾期锁死音频。线上预约锁库存(72h过期释放)。 |
-| **押金系统** | 1200元。状态机：UNPAID→PAID→REFUNDED/DEDUCTED。退款校验：无未还书 AND 无未缴罚款。丢书罚款：定价×1.5。 |
-| **三个列表** | 1. 收藏夹(想读，无限)；2. 正在阅读(线下扫码生成，最多20)；3. 阅读历史(永久，可补测)。 |
+| **借阅与预约** | 线下扫码借书(21天) -> 自动生成"正在阅读"(上限 borrow_limit=10) -> 逾期宽限 3 天后锁音频。线上预约锁库存(72h过期释放+24h提醒+候补通知)。 |
+| **押金系统** | 1200元。状态机：UNPAID→PAID→REFUNDED/DEDUCTED。退款校验：无未还书（罚款自动抵扣）；满足条件自动审核。丢书赔偿：定价×1.5，7天寻找期找回免赔。借满10本无逾期可退600。 |
+| **三个列表** | 1. 收藏夹(想读，上限 bookshelf_limit=100)；2. 正在阅读(线下扫码生成，上限 borrow_limit=10)；3. 阅读历史(永久，可补测)。 |
 | **测评与积分** | 正确率≥80%通过（5题答对4题，管理员可配阈值）。通过后该书 `word_count` 计入积分（同一 child+book 只计一次，防刷分）。 |
 | **RBAC 权限** | 三级：超管理员(135权限)/运营人员(108权限)/教师(28权限)。角色管理页面 `/admin/view/roles` 可视编辑权限。老师卡片底部可创建/编辑关联管理员账号。 |
 
