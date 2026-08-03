@@ -1,0 +1,81 @@
+{% extends "admin/base.html" %}
+{% block title %}老师工作台{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="/static/admin/css/pages/teacher_workbench.css" />
+{% endblock %}
+{% block page_title %}老师工作台{% endblock %}
+
+{% block content %}
+{% import "admin/macros.html" as m %}
+<!-- Stats -->
+<div class="stats-grid">
+  <div class="stat-card"><div class="stat-label">今日课程</div><div class="stat-value" id="statCourses">--</div><div class="stat-change">按排班</div></div>
+  <div class="stat-card"><div class="stat-label">待审核提交</div><div class="stat-value" id="statPending">--</div><div class="stat-change">人工队列</div></div>
+  <div class="stat-card"><div class="stat-label">负责孩子</div><div class="stat-value" id="statChildren">--</div><div class="stat-change">在读</div></div>
+  <div class="stat-card"><div class="stat-label">最近指导</div><div class="stat-value" id="statGuidance">--</div><div class="stat-change">近5条</div></div>
+</div>
+
+<div class="wb-grid">
+  <!-- 今日课程 -->
+  <div class="table-card">
+    <div class="card-title">今日课程</div>
+    <table>
+      <thead><tr><th>时间</th><th>课程类型</th></tr></thead>
+      <tbody id="courseBody">
+        <tr><td colspan="2" class="empty-state">加载中...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 待审核提交 -->
+  <div class="table-card">
+    <div class="card-title">待审核提交 <a class="card-link" href="/admin/view/submissions">前往审核队列 →</a></div>
+    <table>
+      <thead><tr><th>孩子</th><th>书名</th><th>提交时间</th></tr></thead>
+      <tbody id="pendingBody">
+        <tr><td colspan="3" class="empty-state">加载中...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 课后反馈（D2） -->
+<div class="table-card">
+  <div class="card-title">发课后反馈 <span class="card-sub">将写入指导记录并推送给家长（老师消息）</span></div>
+  <div class="feedback-form">
+    <select class="form-input" id="feedbackChild">
+      <option value="">选择孩子…</option>
+    </select>
+    <textarea class="form-textarea" id="feedbackContent" placeholder="填写本节课表现、阅读建议等（1-500字）…" maxlength="500"></textarea>
+    <button class="btn btn-primary" data-action="submit-feedback">发送反馈</button>
+  </div>
+</div>
+
+<div class="wb-grid">
+  <!-- 负责孩子 -->
+  <div class="table-card">
+    <div class="card-title">负责孩子近况</div>
+    <table>
+      <thead><tr><th>孩子</th><th>状态</th><th>级别</th><th>读完</th><th>连续打卡</th></tr></thead>
+      <tbody id="childBody">
+        <tr><td colspan="5" class="empty-state">加载中...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 最近指导记录 -->
+  <div class="table-card">
+    <div class="card-title">最近指导记录</div>
+    <table>
+      <thead><tr><th>孩子</th><th>内容</th><th>时间</th></tr></thead>
+      <tbody id="guidanceBody">
+        <tr><td colspan="3" class="empty-state">加载中...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/admin/js/pages/teacher_workbench.js"></script>
+{% endblock %}

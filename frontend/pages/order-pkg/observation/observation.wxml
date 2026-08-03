@@ -7,7 +7,8 @@
 
   <view wx:if="{{isIOS}}" class="ios-restrict">
     <text class="ios-restrict-icon"><text class="icon icon-apple">🍎</text></text>
-    <text class="ios-restrict-text">当前暂不支持 iOS 端开通，请使用安卓设备或联系客服办理</text>
+    <text class="ios-restrict-text">iOS 端暂不支持在线支付，可前往门店办理或对公转账</text>
+    <button class="ios-guide-btn" bindtap="handleOrder">查看办理指引</button>
   </view>
   <block wx:else>
 
@@ -15,16 +16,16 @@
   <view class="hero">
     <text class="hero-icon"><text class="icon icon-telescope">🔭</text></text>
     <view class="hero-h1">DmkWords 观察期体验</view>
-    <text class="hero-p">30 天沉浸式英语阅读之旅\n配备 1 对 1 专业老师全程指导</text>
+    <text class="hero-p">45 天沉浸式英语阅读之旅\n配备 1 对 1 专业老师全程指导</text>
   </view>
 
   <!-- price -->
   <view class="price-section">
-    <text class="duration-badge">30 天体验期</text>
+    <text class="duration-badge">45 天体验期</text>
     <view class="price-row">
       <text class="price-sym">¥</text>
       <text class="price-val">{{price}}</text>
-      <text class="price-unit">/ 30天</text>
+      <text class="price-unit">/ 45天</text>
     </view>
     <text class="price-note">升级正式会员时可全额抵扣</text>
   </view>
@@ -68,7 +69,7 @@
         <view class="inc-icon ic5"><text class="icon icon-clipboard">📋</text></view>
         <view class="inc-content">
           <text class="inc-title">观察期结束报告</text>
-          <text class="inc-desc">30 天后生成个性化阅读能力分析报告</text>
+          <text class="inc-desc">45 天后生成个性化阅读能力分析报告</text>
         </view>
       </view>
     </view>
@@ -77,7 +78,7 @@
   <!-- guarantee -->
   <view class="guarantee-box">
     <text class="guarantee-icon"><text class="icon icon-shield">🛡</text></text>
-    <text class="g-strong">无忧退款：</text><text>按剩余天数结算，计算公式：{{price}} / 30 x 剩余天数，3 个工作日内原路返回。</text>
+    <text class="g-strong">无忧退款：</text><text>前 7 天全额退款，第 8 天起按剩余天数结算（{{price}} ÷ 45 × 剩余天数），3 个工作日内原路返回。</text>
   </view>
 
   <!-- FAQ -->
@@ -105,7 +106,7 @@
       disabled="{{loading}}"
       bind:pay="handleOrder"
     />
-    <text class="bottom-subtitle">30 天观察期 · 不满意随时退款</text>
+    <text class="bottom-subtitle">45 天观察期 · 不满意随时退款</text>
   </view>
   </block>
 </view>

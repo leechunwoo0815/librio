@@ -1,0 +1,52 @@
+/* pages/teacher_workbench.css — 老师工作台页专属样式 */
+
+.wb-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.card-title {
+  font-size: 15px;
+  font-weight: 600;
+  padding: 16px 20px 8px;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.card-link {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.card-sub {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.feedback-form {
+  display: grid;
+  grid-template-columns: 200px 1fr auto;
+  gap: 12px;
+  padding: 16px 20px 20px;
+  align-items: start;
+}
+
+.feedback-form .form-textarea {
+  min-height: 44px;
+  resize: vertical;
+}
+
+@media (max-width: 960px) {
+  .wb-grid {
+    grid-template-columns: 1fr;
+  }
+  .feedback-form {
+    grid-template-columns: 1fr;
+  }
+}

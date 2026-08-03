@@ -195,8 +195,16 @@ def init_scheduler(app):
         replace_existing=True,
     )
 
+    # 每天凌晨4点30：数据保留期到期清理（H5：消息1年/行为退出后2年/财务5年/语音6个月）
+    scheduler.add_job(
+        purge_expired_data,
+        CronTrigger(hour=4, minute=30),
+        id="purge_expired_data",
+        replace_existing=True,
+    )
+
     scheduler.start()
-    logger.info("Scheduler started with 17 jobs")
+    logger.info("Scheduler started with 22 jobs")
 
 
 def stop_scheduler():
@@ -1274,7 +1282,11 @@ def audit_sla_escalation(db: Session | None = None):
     if own_session:
         db = _get_db_session()
     try:
-        cutoff = datetime.now() - timedelta(hours=24)
+        # E2 SLA 小时数配置化（P1-2：默认 24，范围 1-168）
+        from backend.common.config_service import ConfigService
+
+        sla_hours = ConfigService.get_int(db, "review_sla_hours", 24)
+        cutoff = datetime.now() - timedelta(hours=sla_hours)
         stale_items = []
 
         refund_count = (
@@ -1327,14 +1339,14 @@ def audit_sla_escalation(db: Session | None = None):
 
         if stale_items:
             content = (
-                "以下人工审核已超过 24 小时未处理："
+                f"以下人工审核已超过 {sla_hours} 小时未处理："
                 + "、".join(stale_items)
                 + "。请超管尽快处理。"
             )
             _create_message(
                 db,
                 user_id=0,  # 管理端告警
-                title="审核超时提醒（SLA 24h）",
+                title=f"审核超时提醒（SLA {sla_hours}h）",
                 content=content,
                 msg_type=1,
                 priority=2,
@@ -1713,6 +1725,7 @@ def check_activity_reminders():
         db.close()
 
 
+@distributed_lock("job:confirm_expired_damage_reports", timeout=300)
 def confirm_expired_damage_reports():
     """确认过期未申诉的损坏报告（超过7天自动确认）"""
     from backend.domain.admin.services.damage_admin_service import DamageAdminService
@@ -1727,3 +1740,200 @@ def confirm_expired_damage_reports():
         logger.exception(f"confirm_expired_damage_reports failed: {e}")
     finally:
         db.close()
+
+
+@distributed_lock("job:purge_expired_data", timeout=1800)
+def purge_expired_data(db: Session | None = None):
+    """H5 数据保留期到期清理（隐私政策承诺的自动删除）
+
+    统一口径（PRD N.10 / 前端隐私政策一致）：
+      - 消息类（system_message/teacher_message + message_read_status 级联）：
+        创建超 data_retention_message_years（默认 1 年）→ 物理删除
+      - 行为类：EXITED 且退出超 data_retention_behavior_years（默认 2 年）的孩子，
+        其学习行为数据（阅读进度/会话/打卡/生词/测验/书架/候补/预约）→ 物理删除
+      - 财务类：EXITED 孩子的 order/deposit_record/fine_payment/refund_application/
+        borrow_record/book_damage_report/benefit_transfer_application，
+        记录创建超 data_retention_finance_years（默认 5 年）→ 物理删除
+      - 语音录音：创建超 voice_retention_months（默认 6 个月）→ 物理删除行 + 删音频文件
+      - consent_record 永不物理删除（法定留存，与删除权级联一致）
+    """
+    from backend.common.config_service import ConfigService
+    from backend.common.types import MemberStatus
+    from backend.domain.child.models import Child
+
+    own_session = db is None
+    if own_session:
+        db = _get_db_session()
+    try:
+        now = datetime.now()
+        msg_years = ConfigService.get_int(db, "data_retention_message_years", 1)
+        behavior_years = ConfigService.get_int(db, "data_retention_behavior_years", 2)
+        finance_years = ConfigService.get_int(db, "data_retention_finance_years", 5)
+        voice_months = ConfigService.get_int(db, "voice_retention_months", 6)
+
+        stats: dict[str, int] = {}
+
+        # ── 1) 消息类（所有用户，按记录年龄）──
+        from backend.domain.message.models import (
+            MessageReadStatus,
+            SystemMessage,
+            TeacherMessage,
+        )
+
+        msg_cutoff = now - timedelta(days=msg_years * 365)
+        old_msg_ids = [
+            r[0]
+            for r in db.query(SystemMessage.id)
+            .filter(SystemMessage.create_time < msg_cutoff)
+            .all()
+        ]
+        if old_msg_ids:
+            stats["message_read_status"] = (
+                db.query(MessageReadStatus)
+                .filter(MessageReadStatus.message_id.in_(old_msg_ids))
+                .delete(synchronize_session=False)
+            )
+            stats["system_message"] = (
+                db.query(SystemMessage)
+                .filter(SystemMessage.id.in_(old_msg_ids))
+                .delete(synchronize_session=False)
+            )
+        stats["teacher_message"] = (
+            db.query(TeacherMessage)
+            .filter(TeacherMessage.create_time < msg_cutoff)
+            .delete(synchronize_session=False)
+        )
+
+        # ── 2) 行为类（仅 EXITED 且退出已久的孩子）──
+        behavior_cutoff = now - timedelta(days=behavior_years * 365)
+        exited_ids = [
+            r[0]
+            for r in db.query(Child.id)
+            .filter(
+                Child.status == MemberStatus.EXITED,
+                Child.update_time < behavior_cutoff,
+            )
+            .all()
+        ]
+        if exited_ids:
+            from backend.domain.advancement.models import Quiz, QuizAnswer
+            from backend.domain.bookshelf.models import Bookshelf
+            from backend.domain.reading.models import (
+                CheckIn,
+                ReadingProgress,
+                ReadingSession,
+            )
+            from backend.domain.reservation.models import BookWaitlist, Reservation
+            from backend.domain.vocabulary.models import UserVocabulary
+
+            # quiz_answer 经 quiz_id 级联（先删子表）
+            quiz_ids = [
+                r[0]
+                for r in db.query(Quiz.id).filter(Quiz.child_id.in_(exited_ids)).all()
+            ]
+            if quiz_ids:
+                stats["quiz_answer"] = (
+                    db.query(QuizAnswer)
+                    .filter(QuizAnswer.quiz_id.in_(quiz_ids))
+                    .delete(synchronize_session=False)
+                )
+                stats["quiz"] = (
+                    db.query(Quiz)
+                    .filter(Quiz.id.in_(quiz_ids))
+                    .delete(synchronize_session=False)
+                )
+            for model, key in (
+                (ReadingProgress, "reading_progress"),
+                (ReadingSession, "reading_session"),
+                (CheckIn, "check_in"),
+                (UserVocabulary, "user_vocabulary"),
+                (Bookshelf, "bookshelf"),
+                (BookWaitlist, "book_waitlist"),
+                (Reservation, "reservation"),
+            ):
+                stats[key] = (
+                    db.query(model)
+                    .filter(model.child_id.in_(exited_ids))
+                    .delete(synchronize_session=False)
+                )
+
+        # ── 3) 财务类（EXITED 孩子 + 记录超 5 年；法定保留期内不动）──
+        finance_cutoff = now - timedelta(days=finance_years * 365)
+        if exited_ids:
+            from backend.domain.book.damage_model import BookDamageReport
+            from backend.domain.borrow.models import BorrowRecord
+            from backend.domain.child.benefit_transfer_model import (
+                BenefitTransferApplication,
+            )
+            from backend.domain.deposit.models import DepositRecord, FinePayment
+            from backend.domain.order.models import Order
+            from backend.domain.refund.models import RefundApplication
+
+            for model, key in (
+                (Order, "order"),
+                (DepositRecord, "deposit_record"),
+                (FinePayment, "fine_payment"),
+                (RefundApplication, "refund_application"),
+                (BorrowRecord, "borrow_record"),
+                (BookDamageReport, "book_damage_report"),
+            ):
+                stats[key] = (
+                    db.query(model)
+                    .filter(
+                        model.child_id.in_(exited_ids),
+                        model.create_time < finance_cutoff,
+                    )
+                    .delete(synchronize_session=False)
+                )
+            stats["benefit_transfer_application"] = (
+                db.query(BenefitTransferApplication)
+                .filter(
+                    BenefitTransferApplication.source_child_id.in_(exited_ids),
+                    BenefitTransferApplication.create_time < finance_cutoff,
+                )
+                .delete(synchronize_session=False)
+            )
+
+        # ── 4) 语音录音（所有记录，按 6 个月承诺；含文件清理）──
+        from backend.domain.reading.models import VoiceRecording
+        from scripts.purge_soft_deleted import delete_voice_files
+
+        voice_cutoff = now - timedelta(days=voice_months * 30)
+        old_voices = (
+            db.query(VoiceRecording)
+            .filter(VoiceRecording.create_time < voice_cutoff)
+            .all()
+        )
+        if old_voices:
+            audio_urls = [v.audio_url for v in old_voices if v.audio_url]
+            voice_ids = [v.id for v in old_voices]
+            stats["voice_recording"] = (
+                db.query(VoiceRecording)
+                .filter(VoiceRecording.id.in_(voice_ids))
+                .delete(synchronize_session=False)
+            )
+            stats["voice_files"] = delete_voice_files(audio_urls)
+
+        db.commit()
+
+        total = sum(v for k, v in stats.items() if k != "voice_files")
+        if total or stats.get("voice_files"):
+            logger.info(f"定时任务 purge_expired_data: 清理 {stats}")
+            from backend.domain.admin.services.system_service import (
+                AdminSystemService,
+            )
+
+            AdminSystemService(db).write_operation_log(
+                admin_id=None,
+                module="system",
+                operation="purge_expired_data",
+                content=f"数据保留期到期清理: {stats}",
+            )
+        return stats
+    except Exception as e:
+        db.rollback()
+        logger.exception(f"purge_expired_data failed: {e}")
+        return {}
+    finally:
+        if own_session:
+            db.close()

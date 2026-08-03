@@ -450,4 +450,14 @@
   text-align: center;
   line-height: 1.6;
 }
+.ios-guide-btn {
+  margin-top: 40rpx;
+  padding: 0 64rpx;
+  height: 80rpx;
+  line-height: 80rpx;
+  font-size: 30rpx;
+  color: var(--surface);
+  background: var(--accent);
+  border-radius: 40rpx;
+}
 

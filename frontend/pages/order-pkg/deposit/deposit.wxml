@@ -16,12 +16,6 @@
 
   <block wx:elif="{{!loading}}">
 
-    <!-- iOS Restriction Banner -->
-    <view wx:if="{{isIOS}}" class="ios-restrict">
-      <text class="ios-restrict-icon"><text class="icon icon-apple">🍎</text></text>
-      <text class="ios-restrict-text">当前暂不支持 iOS 端支付，请使用安卓设备或联系客服办理</text>
-    </view>
-
     <!-- Status Card -->
     <view class="status-section" wx:if="{{depositInfo}}">
       <view class="status-card">
@@ -78,6 +72,12 @@
     <view class="info-banner">
       <text class="info-icon"><text class="icon icon-lightbulb">💡</text></text>
       <text class="info-text">押金 ¥{{depositInfo.amount}} 为图书借阅保证金，退还时将原路退回支付账户，处理时间约 1-3 个工作日。</text>
+    </view>
+
+    <!-- A2 押金减半退还 SLA -->
+    <view class="info-banner">
+      <text class="info-icon"><text class="icon icon-gift">🎁</text></text>
+      <text class="info-text">守约奖励：借满 10 本且无任何逾期记录，可申请退还 600 元押金（剩余 600 元继续保障借阅）。退款审核通过后 24 小时内发起，3-5 个工作日到账。</text>
     </view>
 
     <!-- Record Section -->

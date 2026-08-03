@@ -7,7 +7,8 @@
 
   <view wx:if="{{isIOS}}" class="ios-restrict">
     <text class="ios-restrict-icon"><text class="icon icon-apple">🍎</text></text>
-    <text class="ios-restrict-text">当前暂不支持 iOS 端开通，请使用安卓设备或联系客服办理</text>
+    <text class="ios-restrict-text">iOS 端暂不支持在线支付，可前往门店办理或对公转账</text>
+    <button class="ios-guide-btn" bindtap="handleOrder">查看办理指引</button>
   </view>
   <block wx:else>
 

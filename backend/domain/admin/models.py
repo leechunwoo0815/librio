@@ -179,6 +179,11 @@ class SystemConfig(BaseModel):
             "int",
             "退款自动审核通过金额上限（E1决策：≤N元自动通过，元）",
         ),
+        "review_sla_hours": (
+            "24",
+            "int",
+            "人工审核 SLA 小时数（E2：超 N 小时未审升级提醒超管，范围1-168）",
+        ),
         "parent_course_required": (
             "false",
             "bool",
@@ -289,6 +294,27 @@ class SystemConfig(BaseModel):
             "会员到期提醒天数列表",
         ),
         "observation_remind_days": ("7,5,3,2,1,0", "string", "观察期到期提醒天数列表"),
+        # ── 数据保留（H5 隐私合规，单位见各键说明）──
+        "data_retention_finance_years": (
+            "5",
+            "int",
+            "财务类数据保留年数（H5：订单/押金/退款/罚款/借阅/损坏/权益转让）",
+        ),
+        "data_retention_behavior_years": (
+            "2",
+            "int",
+            "行为类数据保留年数（H5：EXITED 孩子的学习数据，退出后计）",
+        ),
+        "data_retention_message_years": (
+            "1",
+            "int",
+            "消息类数据保留年数（H5：系统消息/老师消息）",
+        ),
+        "voice_retention_months": (
+            "6",
+            "int",
+            "语音录音保留月数（H5：到期物理删除含音频文件）",
+        ),
     }
 
 

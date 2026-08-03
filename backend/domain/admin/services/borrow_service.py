@@ -37,6 +37,25 @@ class AdminBorrowService:
         self.db.commit()
         return {"success": True, "child_id": child_id, "cleared_amount": str(old_fines)}
 
+    def save_checkout_photos(
+        self, borrow_record_id: int, photos: list[str], admin_id: int
+    ) -> dict:
+        """B9：借出拍照存档（封面/封底/书脊，还书定责时对比防扯皮）"""
+        import json
+
+        record = (
+            self.db.query(BorrowRecord)
+            .filter(BorrowRecord.id == borrow_record_id, BorrowRecord.is_deleted == 0)
+            .with_for_update()
+            .first()
+        )
+        if not record:
+            raise NotFoundError("借阅记录不存在")
+
+        record.checkout_photos = json.dumps(photos, ensure_ascii=False)
+        self.db.commit()
+        return {"success": True, "photos": photos}
+
     def list_borrows(
         self,
         page: int = 1,

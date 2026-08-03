@@ -1,6 +1,7 @@
 // frontend/pages/order-pkg/official/official.js
 const api = require('../../utils/api')
 const auth = require('../../utils/auth')
+const platform = require('../../utils/platform')
 
 Page({
   data: {
@@ -35,15 +36,14 @@ Page({
       { feature: '排行榜', observation: false, official: true },
       { feature: '晋级证书', observation: false, official: true },
       { feature: '成就系统', observation: false, official: true },
-      { feature: '有效期', observation: '30天', official: '365天' },
+      { feature: '有效期', observation: '45天', official: '365天' },
     ],
   },
 
   onLoad() {
     const app = getApp()
     if (!auth.requireAuth()) return
-    const systemInfo = wx.getSystemInfoSync()
-    this.setData({ isIOS: systemInfo.platform === 'ios' })
+    this.setData({ isIOS: platform.isIOS() })
     this.loadChild()
   },
 
@@ -108,11 +108,8 @@ Page({
 
   async handleOrder() {
     if (this.data.isIOS) {
-      wx.showModal({
-        title: '暂不支持 iOS 开通',
-        content: '当前暂不支持 iOS 端开通，请使用安卓设备或联系客服办理',
-        showCancel: false,
-      })
+      // 会员属虚拟服务（A5），iOS 禁付 → 给门店收款码/对公转账替代路径（P1-1）
+      platform.showIOSPaymentGuide('正式会员')
       return
     }
     const child = this.data.child

@@ -26,6 +26,7 @@ PAGE_PERM_MAP: dict[str, str] = {
     "activity-checkin": "activity.checkin",
     "venues": "venue.list",
     "teachers": "teacher.list",
+    "teacher-workbench": "dashboard.view",
     "assessments": "assessment.list",
     "books": "book.list",
     "library": "book.list",
@@ -167,6 +168,11 @@ async def activity_checkin(request: Request):
 @router.get("/venues", response_class=HTMLResponse)
 async def venues(request: Request):
     return _render_page(request, "venues")
+
+
+@router.get("/teacher-workbench", response_class=HTMLResponse)
+async def teacher_workbench(request: Request):
+    return _render_page(request, "teacher-workbench")
 
 
 @router.get("/teachers", response_class=HTMLResponse)

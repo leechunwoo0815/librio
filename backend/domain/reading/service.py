@@ -52,6 +52,57 @@ logger = logging.getLogger(__name__)
 CHECKIN_MIN_MINUTES_DEFAULT = 10
 
 
+def maybe_send_full_attendance_message(
+    db: Session, child_id: int, check_date: date
+) -> None:
+    """C1 今日全勤：当日集满 4 种打卡类型 → 发全勤奖励提示（每孩子每日最多 1 条）
+
+    在每次打卡插入成功后调用；函数内部自行判断集满与幂等，调用方无需关心。
+    """
+    from backend.domain.message.models import SystemMessage
+
+    type_count = (
+        db.query(func.count(func.distinct(CheckIn.check_type)))
+        .filter(
+            CheckIn.child_id == child_id,
+            CheckIn.check_date == check_date,
+            CheckIn.is_deleted == 0,
+        )
+        .scalar()
+    ) or 0
+    if type_count < 4:
+        return
+
+    child = db.query(Child).filter(Child.id == child_id, Child.is_deleted == 0).first()
+    if not child:
+        return
+
+    # 幂等：今日已发过全勤消息则跳过
+    already = (
+        db.query(SystemMessage)
+        .filter(
+            SystemMessage.user_id == child.user_id,
+            SystemMessage.title == "今日全勤",
+            func.date(SystemMessage.create_time) == check_date,
+            SystemMessage.is_deleted == 0,
+        )
+        .count()
+    )
+    if already:
+        return
+
+    db.add(
+        SystemMessage(
+            user_id=child.user_id,
+            title="今日全勤",
+            content="太棒啦！今天完成了阅读、读完、朗读、生词全部 4 种打卡，达成今日全勤！继续保持哦～",
+            msg_type=5,  # 阅读提醒
+            priority=1,
+        )
+    )
+    logger.info(f"Full-attendance message: child={child_id}, date={check_date}")
+
+
 class ReadingService:
     """阅读服务
 
@@ -339,6 +390,7 @@ class ReadingService:
             event_bus.publish(
                 CheckInEvent(child_id=child_id, streak_days=0), db=self.db
             )
+            maybe_send_full_attendance_message(self.db, child_id, today)  # C1 全勤
             logger.info(f"Auto checkin: child={child_id}, minutes={minutes}")
 
     def get_checkin_calendar(
@@ -468,6 +520,7 @@ class ReadingService:
         if not add_with_unique_fallback(self.db, checkin):
             return
         event_bus.publish(CheckInEvent(child_id=child_id, streak_days=0), db=self.db)
+        maybe_send_full_attendance_message(self.db, child_id, today)  # C1 全勤
         logger.info(f"Voice checkin: child={child_id}")
 
     def _check_finish_book_checkin(self, child_id: int):
@@ -506,6 +559,7 @@ class ReadingService:
         if not add_with_unique_fallback(self.db, checkin):
             return
         event_bus.publish(CheckInEvent(child_id=child_id, streak_days=0), db=self.db)
+        maybe_send_full_attendance_message(self.db, child_id, today)  # C1 全勤
         logger.info(f"Finish-book checkin: child={child_id}")
 
     def get_recordings(

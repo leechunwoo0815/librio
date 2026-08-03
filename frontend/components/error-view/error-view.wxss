@@ -42,3 +42,9 @@
   padding: 20rpx 48rpx;
   font-size: 28rpx;
 }
+.error-contact {
+  margin-top: 24rpx;
+  font-size: 24rpx;
+  color: var(--muted);
+  text-align: center;
+}

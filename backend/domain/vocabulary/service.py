@@ -229,6 +229,10 @@ class VocabularyService:
         if not add_with_unique_fallback(self.db, checkin):
             return
         event_bus.publish(CheckInEvent(child_id=child_id, streak_days=0), db=self.db)
+        # C1 全勤检查
+        from backend.domain.reading.service import maybe_send_full_attendance_message
+
+        maybe_send_full_attendance_message(self.db, child_id, today)
         logger.info(f"Vocab checkin: child={child_id}")
 
     def check_lookup_allowed(self, user_id: int) -> None:

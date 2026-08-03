@@ -51,6 +51,7 @@ cp .env.example .env
 - [ ] `ENABLE_TEST_TOKEN=false`（生产绝不可为 true）
 - [ ] `MOCK_PAYMENT=false`（生产绝不可为 true）
 - [ ] `MOCK_SMS=false`（生产绝不可为 true）
+- [ ] 多实例部署必须 `REDIS_LOCK_FAIL_OPEN=false`（默认 true 为单实例/开发降级；多实例下 Redis 宕机若无锁执行，定时任务会在各实例并发重复跑）
 - [ ] `SECRET_KEY` 已改为随机值，不是默认值
 - [ ] 微信支付私钥权限为 `600`：`chmod 600 $WECHAT_PRIVATE_KEY_PATH`
 - [ ] 文件上传 MIME 校验已启用（后端 `validate_file_content` 严格拦截魔数不匹配）

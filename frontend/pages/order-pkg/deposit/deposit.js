@@ -19,15 +19,10 @@ Page({
     statusIcon: '',
     statusCls: '',
     statusBadgeCls: '',
-    isIOS: false,
   },
 
   onLoad() {
     if (!auth.requireAuth()) return
-    try {
-      var windowInfo = wx.getWindowInfo();
-      this.setData({ isIOS: windowInfo.platform === 'ios' });
-    } catch (e) {}
     this.loadDepositInfo()
   },
 
@@ -117,10 +112,7 @@ Page({
   },
 
   async onPay() {
-    if (this.data.isIOS) {
-      wx.showModal({ title: '暂不支持 iOS 支付', content: '当前暂不支持 iOS 端支付，请使用安卓设备或联系客服办理', showCancel: false })
-      return
-    }
+    // 押金属实物担保金（非虚拟商品），iOS 可正常支付（P1-1 豁免）
     const child = auth.getCurrentChild()
     if (!child) {
       wx.showToast({ title: '请先选择孩子', icon: 'none' })
@@ -154,10 +146,7 @@ Page({
   },
 
   async onTopUp() {
-    if (this.data.isIOS) {
-      wx.showModal({ title: '暂不支持 iOS 支付', content: '当前暂不支持 iOS 端支付，请使用安卓设备或联系客服办理', showCancel: false })
-      return
-    }
+    // 押金补缴同属实物担保金，iOS 可正常支付（P1-1 豁免）
     const child = auth.getCurrentChild()
     if (!child) {
       wx.showToast({ title: '请先选择孩子', icon: 'none' })
@@ -197,10 +186,7 @@ Page({
 
   // B12：线上缴纳罚款（微信支付，缴清后未缴罚款归零）
   async onPayFines() {
-    if (this.data.isIOS) {
-      wx.showModal({ title: '暂不支持 iOS 支付', content: 'iOS 端请前往门店办理，我们的老师会帮您完成～', showCancel: false })
-      return
-    }
+    // 罚款为图书逾期/损坏赔偿（实物关联资金，非虚拟商品），iOS 可正常支付（P1-1 豁免）
     const child = auth.getCurrentChild()
     if (!child) {
       wx.showToast({ title: '请先选择孩子', icon: 'none' })

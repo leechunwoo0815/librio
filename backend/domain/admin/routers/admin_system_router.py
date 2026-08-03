@@ -20,7 +20,7 @@ from backend.common.dependencies import (
     get_admin_dashboard_service,
     get_payment_gateway,
 )
-from backend.common.exceptions import ConflictError, ForbiddenError
+from backend.common.exceptions import ConflictError, ForbiddenError, ValidationError
 from backend.common.gateways.payment import PaymentGateway
 from backend.middleware.admin_rbac import require_perm
 from backend.domain.admin.admin_schemas import (
@@ -140,14 +140,22 @@ def set_config(
     service: AdminSystemService = Depends(get_admin_system_service),
     admin=Depends(require_perm("config.edit")),
 ):
-    """更新配置项（E3 三级管控：锁定级仅超管/警告级需确认/自由级直接改）"""
-    from backend.domain.admin.config_levels import LEVEL_LOCKED, LEVEL_WARNING, level_of
+    """更新配置项（E3 三级管控：锁定级仅超管/警告级需确认/自由级直接改 + P2-4 范围校验）"""
+    from backend.domain.admin.config_levels import (
+        LEVEL_LOCKED,
+        LEVEL_WARNING,
+        level_of,
+        validate_config_value,
+    )
 
     level = level_of(key)
     if level == LEVEL_LOCKED and getattr(admin, "role", None) != 0:
         raise ForbiddenError(f"配置 {key} 为锁定级，仅超级管理员可修改")
     if level == LEVEL_WARNING and not confirmed:
         raise ConflictError(f"配置 {key} 为警告级，修改需二次确认（confirmed=true）")
+    range_err = validate_config_value(key, value)
+    if range_err:
+        raise ValidationError(range_err)
 
     result = service.set_config(key, value)
     service.write_operation_log(

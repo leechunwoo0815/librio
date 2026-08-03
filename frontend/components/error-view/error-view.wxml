@@ -10,4 +10,5 @@
   <button class="error-btn-outline" wx:if="{{showBack}}" bindtap="onBack">
     <text>{{backText}}</text>
   </button>
+  <view class="error-contact" wx:if="{{contactText}}">{{contactText}}</view>
 </view>

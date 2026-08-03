@@ -1,6 +1,7 @@
 // frontend/pages/order-pkg/observation/observation.js
 const api = require('../../utils/api')
 const auth = require('../../utils/auth')
+const platform = require('../../utils/platform')
 
 Page({
   data: {
@@ -11,7 +12,7 @@ Page({
     faqList: [
       {
         q: '观察期和正式会员有什么区别？',
-        a: '观察期为30天体验，可在线阅读全量图书、每日打卡、查看阅读统计和老师评估报告。正式会员为年卡，额外享有A-Z晋级体系、排行榜、成就系统等完整功能。',
+        a: '观察期为45天体验，可在线阅读全量图书、每日打卡、查看阅读统计和老师评估报告。正式会员为年卡，额外享有A-Z晋级体系、排行榜、成就系统等完整功能。',
         open: false,
       },
       {
@@ -35,8 +36,7 @@ Page({
   onLoad() {
     const app = getApp()
     if (!auth.requireAuth()) return
-    const deviceInfo = wx.getDeviceInfo()
-    this.setData({ isIOS: deviceInfo.platform === 'ios' })
+    this.setData({ isIOS: platform.isIOS() })
     this.loadChild()
   },
 
@@ -70,11 +70,8 @@ Page({
 
   async handleOrder() {
     if (this.data.isIOS) {
-      wx.showModal({
-        title: '暂不支持 iOS 开通',
-        content: '当前暂不支持 iOS 端开通，请使用安卓设备或联系客服办理',
-        showCancel: false,
-      })
+      // 观察期属虚拟服务（A5），iOS 禁付 → 给门店收款码/对公转账替代路径（P1-1）
+      platform.showIOSPaymentGuide('观察期')
       return
     }
     const child = this.data.child
