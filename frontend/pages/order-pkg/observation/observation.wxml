@@ -78,7 +78,7 @@
   <!-- guarantee -->
   <view class="guarantee-box">
     <text class="guarantee-icon"><text class="icon icon-shield">🛡</text></text>
-    <text class="g-strong">无忧退款：</text><text>前 7 天全额退款，第 8 天起按剩余天数结算（{{price}} ÷ 45 × 剩余天数），3 个工作日内原路返回。</text>
+    <text class="g-strong">无忧退款：</text><text>前 7 天全额退款；第 8 天起按天扣除已使用费用（每天 = {{price}} ÷ 45），剩余金额 3 个工作日内原路返回。</text>
   </view>
 
   <!-- FAQ -->
