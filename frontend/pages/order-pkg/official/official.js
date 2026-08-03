@@ -108,8 +108,8 @@ Page({
 
   async handleOrder() {
     if (this.data.isIOS) {
-      // 会员属虚拟服务（A5），iOS 禁付 → 给门店收款码/对公转账替代路径（P1-1）
-      platform.showIOSPaymentGuide('正式会员')
+      // 虚拟服务（A5）：微信 iOS 严格口径，仅给门店/客服联系入口（终审 P1-4）
+      platform.showIOSContactGuide('正式会员')
       return
     }
     const child = this.data.child

@@ -916,15 +916,15 @@
 
 | 角色 | 权限数 | 典型操作 |
 |------|--------|---------|
-| super_admin（超级管理员） | 135 | 全部权限，含退款审批/押金扣除/全局配置/管理员 CRUD/角色管理 |
+| super_admin（超级管理员） | 136 | 全部权限，含退款审批/押金扣除/全局配置/管理员 CRUD/角色管理 |
 | staff（运营人员） | 108 | 扫码借还/录入图书/发起退款/审核/报告/数据统计/消息/活动/场馆 |
-| teacher（教师） | 28 | 查看用户/孩子/图书/订单/报告 + 审核提交 + 活动签到 |
+| teacher（教师） | 29 | 查看用户/孩子/图书/订单/报告 + 审核提交 + 活动签到 + 老师工作台 |
 
 ### 17.2 权限分配
 
 - 权限码格式：`group.action`（如 `user.create`、`order.refund`）
 - 每个权限码对应一个 API 端点或页面
-- 种子共 135 个权限，覆盖 34 个功能分组
+- 种子共 136 个权限，覆盖 34 个功能分组
 - 角色-权限关联通过 `role_permission` 表实现（多对多）
 
 ### 17.3 管理界面
@@ -1117,9 +1117,9 @@ def reconcile_stock():
 
 | 角色代码 | 角色名称 | 权限数 | 说明 |
 |---------|---------|:----:|------|
-| super_admin | 超级管理员 | 82 | 全部权限，不可编辑 |
-| staff | 运营人员 | 70 | 日常运营权限，不含敏感管理操作 |
-| teacher | 教师 | 28 | 教学相关权限，只读为主 |
+| super_admin | 超级管理员 | 136 | 全部权限，不可编辑 |
+| staff | 运营人员 | 108 | 日常运营权限，不含敏感管理操作 |
+| teacher | 教师 | 29 | 教学相关权限 + 老师工作台（V3.23 新增 teacher.workbench） |
 
 ### E.2 权限分组矩阵
 
@@ -1465,7 +1465,7 @@ def reconcile_stock():
 
 所有配置存储在 `system_config` 表，通过 `ConfigService` 统一读取（带TTL缓存）。
 
-> V3.22：配置总数 59 项，全量清单以《PRD/动态配置清单.md》为准（由脚本从 `SystemConfig.DEFAULTS` 直接生成，含 E3 三级管控标注），本节不再重复维护以免双写漂移。
+> V3.23：配置总数 64 项，全量清单以《PRD/动态配置清单.md》为准（由 scripts/gen_config_doc.py 从 `SystemConfig.DEFAULTS` 直接生成，含 E3 三级管控标注，CI 附 --check 防漂移），本节不再重复维护以免双写漂移。
 >
 > 关键默认值的决策依据见附录 N（如 observation_days=45、borrow_limit=10、overdue_grace_days=3、vocab_lookup_limit=30、trial_pages=20、daily_checkin_limit=4、bookshelf_limit=100、quiz_cooldown_minutes=10 等）。
 
@@ -1785,4 +1785,6 @@ def reconcile_stock():
 | 同意记录（consent_record） | 长期留存 | — | 法定追溯依据，永不物理删除 |
 
 > 执行机制：`purge_expired_data` 定时任务每日 04:30 按上表清理（调度器注册，带分布式锁），清理明细写 operation_log。与前端《隐私政策》第七条第 4 款口径一致。
+> 计时基准（V3.23）：行为/财务类以 `child.exited_at`（EXITED 迁移时写入、复活清空）为准，不用 update_time（会被后续字段更新刷新）。
+> 豁免与快照：`user_id=0` 管理端告警消息豁免清理（审计链保留）；`user.paid_member_ever` 快照列保证财务 purge 删除历史订单后 F5 多孩资格仍有效（资格不随数据删除失效）。
 

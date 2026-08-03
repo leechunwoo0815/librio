@@ -41,6 +41,13 @@ class User(BaseModel):
         server_default="0",
         comment="Token版本号，改密码/禁用时+1使旧Token失效",
     )
+    paid_member_ever = Column(
+        SmallInteger,
+        nullable=False,
+        default=0,
+        server_default="0",
+        comment="是否曾有已支付会员订单（F5 多孩资格快照，财务 purge 后仍有效）",
+    )
 
     children = relationship(
         "Child", back_populates="user", foreign_keys="Child.user_id"

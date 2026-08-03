@@ -45,6 +45,7 @@ class ChildResponse(BaseSchema):
     # V3.1
     deposit_status: int | None = 0
     outstanding_fines: Decimal | None = Decimal("0")
+    exited_at: datetime | None = None  # 退出时间（H5 数据保留计时基准，V3.23）
 
     create_time: datetime
 

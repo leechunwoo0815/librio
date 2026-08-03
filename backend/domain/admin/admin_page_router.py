@@ -26,7 +26,7 @@ PAGE_PERM_MAP: dict[str, str] = {
     "activity-checkin": "activity.checkin",
     "venues": "venue.list",
     "teachers": "teacher.list",
-    "teacher-workbench": "dashboard.view",
+    "teacher-workbench": "teacher.workbench",
     "assessments": "assessment.list",
     "books": "book.list",
     "library": "book.list",

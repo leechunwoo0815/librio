@@ -1773,7 +1773,7 @@ def purge_expired_data(db: Session | None = None):
 
         stats: dict[str, int] = {}
 
-        # ── 1) 消息类（所有用户，按记录年龄）──
+        # ── 1) 消息类（所有用户，按记录年龄；user_id=0 管理端告警豁免保留审计链）──
         from backend.domain.message.models import (
             MessageReadStatus,
             SystemMessage,
@@ -1784,7 +1784,10 @@ def purge_expired_data(db: Session | None = None):
         old_msg_ids = [
             r[0]
             for r in db.query(SystemMessage.id)
-            .filter(SystemMessage.create_time < msg_cutoff)
+            .filter(
+                SystemMessage.create_time < msg_cutoff,
+                (SystemMessage.user_id.is_(None)) | (SystemMessage.user_id != 0),
+            )
             .all()
         ]
         if old_msg_ids:
@@ -1804,14 +1807,15 @@ def purge_expired_data(db: Session | None = None):
             .delete(synchronize_session=False)
         )
 
-        # ── 2) 行为类（仅 EXITED 且退出已久的孩子）──
+        # ── 2) 行为类（仅 EXITED 且退出已久的孩子；exited_at 为计时基准，不受后续字段更新影响）──
         behavior_cutoff = now - timedelta(days=behavior_years * 365)
         exited_ids = [
             r[0]
             for r in db.query(Child.id)
             .filter(
                 Child.status == MemberStatus.EXITED,
-                Child.update_time < behavior_cutoff,
+                Child.exited_at.isnot(None),
+                Child.exited_at < behavior_cutoff,
             )
             .all()
         ]
@@ -1896,7 +1900,7 @@ def purge_expired_data(db: Session | None = None):
 
         # ── 4) 语音录音（所有记录，按 6 个月承诺；含文件清理）──
         from backend.domain.reading.models import VoiceRecording
-        from scripts.purge_soft_deleted import delete_voice_files
+        from backend.common.file_utils import delete_voice_files
 
         voice_cutoff = now - timedelta(days=voice_months * 30)
         old_voices = (

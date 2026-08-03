@@ -45,9 +45,9 @@ Gateways → Mock支付网关 / Mock短信网关 / 真实支付网关（依赖�
 | 后端 | Python 3.13 + FastAPI + SQLAlchemy 2.0 + Pydantic V2 |
 | 数据库 | MySQL 8.0 (utf8mb4)，测试用 SQLite :memory: |
 | 测试 | pytest (570 passed) + behave (210 scenarios / 1361 steps) |
-| 管理端 | 38 个 PC 后台模板（含 base.html）+ 34 页面级 CSS + 36 page JS（IIFE） |
+| 管理端 | 39 个 PC 后台模板（含 base.html）+ 35 页面级 CSS + 36 page JS（IIFE） |
 | 设计系统 | --accent: #5560cf + 31/31 class 对齐 ≥95% + 0 hardcoded + 0 oklch |
-| 定时 | APScheduler（15 个任务） |
+| 定时 | APScheduler（22 个任务） |
 | 认证 | JWT (python-jose) + bcrypt 密码哈希 |
 | 缓存 | Redis（access_token 缓存，带内存降级） |
 | 查词词库 | ECDICT（338 万词条，本地离线） |
@@ -124,7 +124,7 @@ backend/
 │   ├── rate_limit.py    #   速率限制
 │   ├── request_log.py   #   请求日志（输出到 logs/admin_requests.log）
 │   └── trace.py         #   请求追踪
-├── tasks/               # APScheduler 定时任务（21 个，V3.22 +3：取书提醒/SLA巡检/毕业）
+├── tasks/               # APScheduler 定时任务（22 个，V3.23 +1：purge_expired_data 数据保留清理）
 ├── templates/admin/     # 管理端 Jinja2 模板（38 个页面，含 base.html）
 ├── static/admin/        # 管理端静态资源（CSS/JS）
 ├── seeds/               # 种子数据脚本

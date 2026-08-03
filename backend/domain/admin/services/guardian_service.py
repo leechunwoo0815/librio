@@ -154,6 +154,7 @@ class GuardianService:
         child.status = MemberStatus.TRIAL
         child.member_start_time = None
         child.member_expire_time = None
+        child.exited_at = None  # 复活清空退出计时（H5）
         self.db.commit()
         self._log(
             admin_id,

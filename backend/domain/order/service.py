@@ -36,6 +36,14 @@ MULTI_CHILD_DISCOUNT = Decimal("0.9")
 class OrderService:
     """订单服务 — 三步漏斗 + 多孩优惠"""
 
+    # 会员类订单类型（多孩资格/快照判定用，亲子课不计）
+    MEMBER_TYPES = (
+        OrderType.OBSERVATION,
+        OrderType.OFFICIAL_MEMBER,
+        OrderType.QUARTERLY,
+        OrderType.SEMI_ANNUAL,
+    )
+
     # 默认价格表（可通过 ConfigService 覆盖）
     _DEFAULT_PRICES = {
         OrderType.PARENT_COURSE: Decimal("99.00"),
@@ -229,6 +237,19 @@ class OrderService:
         logger.info(f"Order created: {created.order_no}, amount={created.amount}")
         return OrderResponse.model_validate(created)
 
+    def _mark_paid_member_ever(self, order) -> None:
+        """F5 快照：会员类订单支付成功 → user.paid_member_ever=1
+
+        财务 purge 删除历史订单后，多孩资格仍以该快照为准（决策：资格不随数据删除失效）。
+        """
+        if order.type not in self.MEMBER_TYPES:
+            return
+        from backend.domain.user.models import User
+
+        user = self.db.query(User).filter(User.id == order.user_id).first()
+        if user and not user.paid_member_ever:
+            user.paid_member_ever = 1
+
     def _apply_discount(
         self,
         user_id: int,
@@ -296,6 +317,17 @@ class OrderService:
         if child_id is not None:
             active_children = active_children.filter(Child.id != child_id)
         active_children_count = active_children.count()
+        # F5 快照兜底：历史订单被财务 purge 后，仍以 user.paid_member_ever 判定资格
+        if active_children_count < 1:
+            from backend.domain.user.models import User
+
+            paid_ever = (
+                self.db.query(User.paid_member_ever)
+                .filter(User.id == user_id, User.is_deleted == 0)
+                .scalar()
+            )
+            if paid_ever:
+                active_children_count = 1
         if active_children_count >= 1:
             discount = ConfigService.get_decimal(
                 self.db, "multi_child_discount", MULTI_CHILD_DISCOUNT
@@ -371,6 +403,7 @@ class OrderService:
         order.trade_no = callback.trade_no
         order.pay_time = datetime.now()
         self.order_repo.update(order)
+        self._mark_paid_member_ever(order)  # F5 快照（purge 财务数据后多孩资格仍有效）
 
         # 发布支付成功事件
         event_bus.publish(

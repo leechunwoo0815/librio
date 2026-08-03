@@ -79,6 +79,11 @@ class Child(BaseModel):
         default=0,
         comment="报名来源: 0=未知 1=亲子课转化 2=直接观察期（A1双轨制）",
     )
+    exited_at = Column(
+        DateTime,
+        nullable=True,
+        comment="退出时间（H5 数据保留计时基准，EXITED 迁移时写入，复活清空）",
+    )
 
     user = relationship("User", back_populates="children", foreign_keys=[user_id])
 

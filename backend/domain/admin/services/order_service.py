@@ -226,6 +226,8 @@ class AdminOrderService:
                     order.pay_type = pay_type
                     order.pay_status = PayStatus.PAID
                     order.pay_time = datetime.now()
+                    # F5 快照：管理员手动标记已支付同样计入多孩资格
+                    DomainOrderService(self.db)._mark_paid_member_ever(order)
                 self.db.commit()
         return result.model_dump() if hasattr(result, "model_dump") else result
 
@@ -281,6 +283,10 @@ class AdminOrderService:
             remark=data.get("remark", ""),
         )
         self.db.add(order)
+        self.db.flush()
+        if order.pay_status == PayStatus.PAID:
+            # F5 快照：线下订单已收款同样计入多孩资格
+            DomainOrderService(self.db)._mark_paid_member_ever(order)
         self.db.commit()
         return {
             "success": True,

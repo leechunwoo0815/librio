@@ -27,7 +27,7 @@ def _teacher_id_of(admin) -> int:
 @router.get("/workbench", response_model=AdminActionResponse)
 def get_workbench(
     db: Session = Depends(get_db),
-    admin=Depends(require_perm("dashboard.view")),
+    admin=Depends(require_perm("teacher.workbench")),
 ):
     """D1 老师工作台：今日课程 / 待审核提交 / 负责孩子近况 / 最近指导"""
     return TeacherWorkbenchService(db).get_workbench(_teacher_id_of(admin))

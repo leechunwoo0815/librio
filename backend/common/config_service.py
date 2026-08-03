@@ -115,7 +115,15 @@ class ConfigService:
     def set_config(
         cls, db: Session, key: str, value: str, admin_id: int = None
     ) -> None:
-        """更新配置并记录审计日志"""
+        """更新配置并记录审计日志（P2-4 范围校验统一在此执行，覆盖所有写入路径）"""
+        from backend.domain.admin.config_levels import validate_config_value
+
+        range_err = validate_config_value(key, value)
+        if range_err:
+            from backend.common.exceptions import ValidationError
+
+            raise ValidationError(range_err)
+
         config = (
             db.query(SystemConfig)
             .filter(

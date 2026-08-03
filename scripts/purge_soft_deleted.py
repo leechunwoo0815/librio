@@ -79,25 +79,14 @@ def collect_voice_files(engine, cutoff) -> list[str]:
 
 
 def delete_voice_files(audio_urls: list[str]) -> int:
-    """根据 audio_url 列表删除本地音频文件。"""
-    deleted_count = 0
-    for audio_url in audio_urls:
-        # audio_url 可能是相对路径 (uploads/voice/xxx.wav) 或绝对 URL
-        if audio_url.startswith("uploads/"):
-            file_path = PROJECT_DIR / audio_url
-        elif audio_url.startswith("/uploads/"):
-            file_path = PROJECT_DIR / audio_url[1:]
-        elif audio_url.startswith("http"):
-            # 远程 URL，跳过本地文件删除
-            continue
-        else:
-            file_path = PROJECT_DIR / "uploads" / "voice" / audio_url
+    """按 audio_url 列表删除本地音频文件。
 
-        if file_path.exists():
-            file_path.unlink()
-            deleted_count += 1
+    唯一实现已下沉 backend.common.file_utils（终审 P2 分层修正），
+    此处保留委托包装以兼容既有调用与测试（monkeypatch 本模块 PROJECT_DIR 生效）。
+    """
+    from backend.common.file_utils import delete_voice_files as _impl
 
-    return deleted_count
+    return _impl(audio_urls, base_dir=PROJECT_DIR)
 
 
 def main():

@@ -52,6 +52,8 @@ cp .env.example .env
 - [ ] `MOCK_PAYMENT=false`（生产绝不可为 true）
 - [ ] `MOCK_SMS=false`（生产绝不可为 true）
 - [ ] 多实例部署必须 `REDIS_LOCK_FAIL_OPEN=false`（默认 true 为单实例/开发降级；多实例下 Redis 宕机若无锁执行，定时任务会在各实例并发重复跑）
+- [ ] 迁移 043（check_in 唯一约束）含历史去重 DELETE：大表执行前评估锁表时长，建议低峰执行
+- [ ] 迁移 044（child.exited_at / user.paid_member_ever）含存量回填 UPDATE：同上低峰执行
 - [ ] `SECRET_KEY` 已改为随机值，不是默认值
 - [ ] 微信支付私钥权限为 `600`：`chmod 600 $WECHAT_PRIVATE_KEY_PATH`
 - [ ] 文件上传 MIME 校验已启用（后端 `validate_file_content` 严格拦截魔数不匹配）

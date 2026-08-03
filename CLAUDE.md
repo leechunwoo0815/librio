@@ -237,6 +237,9 @@ venv/bin/python -m scripts.check_model_consistency
 # ── Gate 10: data-action wiring check ──
 venv/bin/python -m scripts.verify_action_wiring --strict
 
+# ── Gate 11: 动态配置清单一致性（DEFAULTS 与文档零漂移）──
+PYTHONPATH=. venv/bin/python scripts/gen_config_doc.py --check
+
 # ── regression extras（CI 外补充，但已加入交付标准）──
 MOCK_PAYMENT=true MOCK_SMS=true DEBUG=true venv/bin/python scripts/integration_test.py
 venv/bin/python -m alembic check

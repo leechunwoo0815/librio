@@ -172,6 +172,9 @@ class ChildService:
             )
 
         child.status = new_status
+        if new_status == MemberStatus.EXITED and child.exited_at is None:
+            # H5：退出计时基准（purge 用，不受后续字段更新影响）
+            child.exited_at = datetime.now()
         if status_data.member_start_time is not None:
             child.member_start_time = status_data.member_start_time
         if status_data.member_expire_time is not None:

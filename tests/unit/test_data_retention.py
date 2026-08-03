@@ -39,11 +39,18 @@ def db():
     session.close()
 
 
-def _mk_user_child(db, status=MemberStatus.OFFICIAL, openid="ret1"):
+def _mk_user_child(db, status=MemberStatus.OFFICIAL, openid="ret1", exited_at=None):
     user = User(openid=openid, phone=f"138{abs(hash(openid)) % 10**8:08d}")
     db.add(user)
     db.commit()
-    child = Child(user_id=user.id, name="保留", age=7, grade="二年级", status=status)
+    child = Child(
+        user_id=user.id,
+        name="保留",
+        age=7,
+        grade="二年级",
+        status=status,
+        exited_at=exited_at,
+    )
     db.add(child)
     db.commit()
     return user, child
@@ -55,15 +62,6 @@ def _age(db, model, obj_id, days):
     db.execute(
         text(f"UPDATE {model.__tablename__} SET create_time=:t WHERE id=:i"),
         {"t": old, "i": obj_id},
-    )
-    db.commit()
-
-
-def _age_update_time(db, child_id, days):
-    old = datetime.now() - timedelta(days=days)
-    db.execute(
-        text("UPDATE child SET update_time=:t WHERE id=:i"),
-        {"t": old, "i": child_id},
     )
     db.commit()
 
@@ -113,19 +111,39 @@ class TestMessageRetention:
         assert stats.get("teacher_message") == 1
         assert db.query(TeacherMessage).count() == 0
 
+    def test_admin_alert_user_id_0_exempt(self, db):
+        """终审 P2：user_id=0 管理端告警豁免清理（审计链保留），群发/普通消息照常"""
+        from backend.tasks.scheduler import purge_expired_data
+
+        user, _ = _mk_user_child(db)
+        admin_alert = SystemMessage(user_id=0, title="SLA告警", content="c", msg_type=1)
+        broadcast = SystemMessage(user_id=None, title="群发", content="c", msg_type=1)
+        personal = SystemMessage(user_id=user.id, title="个人", content="c", msg_type=1)
+        db.add_all([admin_alert, broadcast, personal])
+        db.commit()
+        for m in (admin_alert, broadcast, personal):
+            _age(db, SystemMessage, m.id, 400)
+
+        stats = purge_expired_data(db)
+        assert stats.get("system_message") == 2  # 群发+个人被清，告警豁免
+        remaining = {m.title for m in db.query(SystemMessage).all()}
+        assert remaining == {"SLA告警"}
+
 
 class TestBehaviorRetention:
     def test_exited_child_behavior_purged_after_2y(self, db):
         from backend.tasks.scheduler import purge_expired_data
 
-        _, exited = _mk_user_child(db, status=MemberStatus.EXITED, openid="ret2")
+        old_exit = datetime.now() - timedelta(days=800)
+        _, exited = _mk_user_child(
+            db, status=MemberStatus.EXITED, openid="ret2", exited_at=old_exit
+        )
         _, active = _mk_user_child(db, status=MemberStatus.OFFICIAL, openid="ret3")
         for c in (exited, active):
             db.add(
                 CheckIn(child_id=c.id, check_date=datetime.now().date(), check_type=1)
             )
         db.commit()
-        _age_update_time(db, exited.id, 800)  # 退出 800 天 > 2 年
 
         stats = purge_expired_data(db)
         assert stats.get("check_in") == 1
@@ -135,12 +153,51 @@ class TestBehaviorRetention:
     def test_recently_exited_kept(self, db):
         from backend.tasks.scheduler import purge_expired_data
 
-        _, exited = _mk_user_child(db, status=MemberStatus.EXITED, openid="ret4")
+        recent_exit = datetime.now() - timedelta(days=100)
+        _, exited = _mk_user_child(
+            db, status=MemberStatus.EXITED, openid="ret4", exited_at=recent_exit
+        )
         db.add(
             CheckIn(child_id=exited.id, check_date=datetime.now().date(), check_type=1)
         )
         db.commit()
-        _age_update_time(db, exited.id, 100)  # 退出仅 100 天 < 2 年
+
+        stats = purge_expired_data(db)
+        assert stats.get("check_in", 0) == 0
+        assert db.query(CheckIn).count() == 1
+
+    def test_field_refresh_does_not_delay_purge(self, db):
+        """终审 P1-2 反例：EXITED 后字段被刷新（update_time 变新）不影响 exited_at 计时"""
+        from backend.tasks.scheduler import purge_expired_data
+
+        old_exit = datetime.now() - timedelta(days=800)
+        _, exited = _mk_user_child(
+            db, status=MemberStatus.EXITED, openid="ret8", exited_at=old_exit
+        )
+        db.add(
+            CheckIn(child_id=exited.id, check_date=datetime.now().date(), check_type=1)
+        )
+        db.commit()
+        # 模拟对账任务/管理员编辑刷新字段（update_time 被 onupdate 刷新为现在）
+        exited.total_reading_minutes = 999
+        db.commit()
+        db.refresh(exited)
+        assert exited.update_time > old_exit  # update_time 已变新
+
+        stats = purge_expired_data(db)
+        assert stats.get("check_in") == 1  # 仍按 exited_at 判定，照样清理
+
+    def test_exited_at_null_legacy_not_purged(self, db):
+        """存量无 exited_at 的 EXITED 行不清理（迁移已回填，此处兜底验证）"""
+        from backend.tasks.scheduler import purge_expired_data
+
+        _, exited = _mk_user_child(
+            db, status=MemberStatus.EXITED, openid="ret9", exited_at=None
+        )
+        db.add(
+            CheckIn(child_id=exited.id, check_date=datetime.now().date(), check_type=1)
+        )
+        db.commit()
 
         stats = purge_expired_data(db)
         assert stats.get("check_in", 0) == 0
@@ -151,14 +208,16 @@ class TestFinanceRetention:
     def test_finance_kept_within_5y_even_if_exited(self, db):
         from backend.tasks.scheduler import purge_expired_data
 
-        _, exited = _mk_user_child(db, status=MemberStatus.EXITED, openid="ret5")
+        old_exit = datetime.now() - timedelta(days=800)
+        _, exited = _mk_user_child(
+            db, status=MemberStatus.EXITED, openid="ret5", exited_at=old_exit
+        )
         dep = DepositRecord(
             child_id=exited.id, amount=Decimal("1200"), status=DepositStatus.PAID
         )
         db.add(dep)
         db.commit()
         _age(db, DepositRecord, dep.id, 800)  # 2 年前（<5 年）
-        _age_update_time(db, exited.id, 800)
 
         stats = purge_expired_data(db)
         assert stats.get("deposit_record", 0) == 0
@@ -167,14 +226,16 @@ class TestFinanceRetention:
     def test_finance_purged_after_5y_for_exited(self, db):
         from backend.tasks.scheduler import purge_expired_data
 
-        _, exited = _mk_user_child(db, status=MemberStatus.EXITED, openid="ret6")
+        old_exit = datetime.now() - timedelta(days=800)
+        _, exited = _mk_user_child(
+            db, status=MemberStatus.EXITED, openid="ret6", exited_at=old_exit
+        )
         dep = DepositRecord(
             child_id=exited.id, amount=Decimal("1200"), status=DepositStatus.PAID
         )
         db.add(dep)
         db.commit()
         _age(db, DepositRecord, dep.id, 2000)  # >5 年
-        _age_update_time(db, exited.id, 800)
 
         stats = purge_expired_data(db)
         assert stats.get("deposit_record") == 1

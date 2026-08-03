@@ -152,6 +152,7 @@ PERMISSIONS = [
     {"code": "teacher.delete", "name": "删除老师", "group_name": "teacher"},
     {"code": "teacher.assign", "name": "分配学生", "group_name": "teacher"},
     {"code": "teacher.schedule", "name": "排课管理", "group_name": "teacher"},
+    {"code": "teacher.workbench", "name": "老师工作台", "group_name": "teacher"},
     # venue
     {"code": "venue.list", "name": "场馆列表", "group_name": "venue"},
     {"code": "venue.create", "name": "创建场馆", "group_name": "venue"},
@@ -359,6 +360,7 @@ TEACHER_PERMS = [
     "report.comment",
     "report.reading_data",
     "message.list",
+    "teacher.workbench",
 ]
 
 OLD_ROLE_MAP = {0: "super_admin", 1: "staff", 2: "teacher"}

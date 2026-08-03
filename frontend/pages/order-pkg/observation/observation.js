@@ -22,7 +22,7 @@ Page({
       },
       {
         q: '观察期内可以申请退款吗？',
-        a: '观察期开始7天内可申请全额退款，超过7天按剩余天数比例退款。',
+        a: '观察期开始7天内可申请全额退款；第8天起按天扣除已使用费用（每天=实付÷45），退还剩余金额，3个工作日内原路返回。',
         open: false,
       },
       {
@@ -70,8 +70,8 @@ Page({
 
   async handleOrder() {
     if (this.data.isIOS) {
-      // 观察期属虚拟服务（A5），iOS 禁付 → 给门店收款码/对公转账替代路径（P1-1）
-      platform.showIOSPaymentGuide('观察期')
+      // 虚拟服务（A5）：微信 iOS 严格口径，仅给门店/客服联系入口（终审 P1-4）
+      platform.showIOSContactGuide('观察期')
       return
     }
     const child = this.data.child
