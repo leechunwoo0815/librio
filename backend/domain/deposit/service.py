@@ -25,6 +25,7 @@ from backend.common.gateways.payment import (
     PaymentGateway,
     PaymentOrderRequest,
     PaymentRefundRequest,
+    yuan_to_cents,
 )
 from backend.common.types import BookCopyStatus, BorrowStatus, DepositStatus
 from backend.domain.borrow.models import BorrowRecord
@@ -592,8 +593,8 @@ class DepositService:
                         out_trade_no=str(record.pay_order_id)
                         if record.pay_order_id
                         else "",
-                        total_amount=record.amount,
-                        refund_amount=record.refund_amount,
+                        total_amount=Decimal(yuan_to_cents(record.amount)),  # F2 修复
+                        refund_amount=Decimal(yuan_to_cents(record.refund_amount)),
                         reason="押金退款（审核通过）",
                     )
                 )
@@ -752,8 +753,10 @@ class DepositService:
                         out_trade_no=str(record.pay_order_id)
                         if record.pay_order_id
                         else "",
-                        total_amount=record.amount + refund_amt,
-                        refund_amount=refund_amt,
+                        total_amount=Decimal(
+                            yuan_to_cents(record.amount + refund_amt)
+                        ),  # F2 修复
+                        refund_amount=Decimal(yuan_to_cents(refund_amt)),
                         reason="押金减半退还（10本无逾期奖励）",
                     )
                 )

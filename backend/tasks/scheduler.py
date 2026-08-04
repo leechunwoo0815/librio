@@ -888,21 +888,31 @@ def close_expired_orders():
 
         timeout_minutes = ConfigService.get_int(db, "order_expire_minutes", 30)
         cutoff = datetime.now() - timedelta(minutes=timeout_minutes)
-        expired = (
-            db.query(Order)
+        expired_ids = [
+            r[0]
+            for r in db.query(Order.id)
             .filter(
                 Order.pay_status == PayStatus.PENDING,
                 Order.create_time < cutoff,
                 Order.is_deleted == 0,
             )
             .all()
-        )
-        for order in expired:
-            order.pay_status = PayStatus.CLOSED
-            logger.info(f"ORDER_CLOSED: {order.order_no}, created={order.create_time}")
-        if expired:
+        ]
+        if expired_ids:
+            # F5 修复：条件更新带 pay_status=PENDING 前置，防"先付后关"竞态覆盖已支付订单
+            closed = (
+                db.query(Order)
+                .filter(
+                    Order.id.in_(expired_ids),
+                    Order.pay_status == PayStatus.PENDING,
+                )
+                .update(
+                    {Order.pay_status: PayStatus.CLOSED},
+                    synchronize_session=False,
+                )
+            )
             db.commit()
-            logger.info(f"Expired orders closed: {len(expired)}")
+            logger.info(f"Expired orders closed: {closed}")
     except Exception as e:
         db.rollback()
         logger.exception(f"close_expired_orders failed: {e}")

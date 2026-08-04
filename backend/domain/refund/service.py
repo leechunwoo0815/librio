@@ -214,7 +214,10 @@ class RefundService:
         try:
             from backend.config import get_settings
             from backend.common.dependencies import get_payment_gateway
-            from backend.common.gateways.payment.types import PaymentRefundRequest
+            from backend.common.gateways.payment.types import (
+                PaymentRefundRequest,
+                yuan_to_cents,
+            )
 
             settings = get_settings()
             if settings.DEBUG:
@@ -236,8 +239,8 @@ class RefundService:
                 PaymentRefundRequest(
                     out_trade_no=order_no,
                     out_refund_no=out_refund_no,
-                    total_amount=amount,
-                    refund_amount=amount,
+                    total_amount=Decimal(yuan_to_cents(amount)),  # 元入分出（F2 修复）
+                    refund_amount=Decimal(yuan_to_cents(amount)),
                     reason=reason or "管理员审核通过",
                 )
             )

@@ -6,6 +6,7 @@ from backend.common.gateways.payment.types import (
     PaymentRefundRequest,
     PaymentRefundResponse,
     PaymentCallbackData,
+    yuan_to_cents,
 )
 
 __all__ = [
@@ -15,4 +16,5 @@ __all__ = [
     "PaymentRefundRequest",
     "PaymentRefundResponse",
     "PaymentCallbackData",
+    "yuan_to_cents",
 ]

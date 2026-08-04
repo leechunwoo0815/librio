@@ -452,12 +452,15 @@ class OrderService:
         if order.pay_status not in (PayStatus.PENDING, PayStatus.CLOSED):
             raise ConflictError("订单状态不允许支付")
 
-        from backend.common.gateways.payment.types import PaymentOrderRequest
+        from backend.common.gateways.payment.types import (
+            PaymentOrderRequest,
+            yuan_to_cents,
+        )
 
         result = await gateway.create_order(
             PaymentOrderRequest(
                 out_trade_no=order.order_no,
-                amount=Decimal(str(order.amount)),
+                amount=Decimal(yuan_to_cents(order.amount)),  # 元入分出（F1 修复）
                 description=f"DmkWords订单 {order.order_no}",
             )
         )
