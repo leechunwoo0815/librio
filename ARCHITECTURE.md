@@ -243,43 +243,22 @@ frontend/                # 微信小程序（34 个页面，4 子包）
 
 ## 六、API 端点清单
 
-### 6.1 用户端 API（74 个 + Mock 网关路由）
+### 6.1 全量口径（2026-08-04 运行时实测）
 
-| 模块 | 端点数 | 认证方式 | 说明 |
-|------|--------|----------|------|
-| user | 3 | 可选/必选 | 微信登录、用户信息、更新 |
-| book | 4 | admin(create) | 搜索、详情、创建、副本管理 |
-| child | 7 | get_current_user + 归属校验 | CRUD、状态、权益转让 |
-| order | 7 | get_current_user + 归属校验 | 创建、支付回调(验签)、退款预览、pay-params |
+- 业务路由合计 **332**（`include_router` 注册 APIRoute 数；不含 `/health`、`/`、`/openapi.json`；DEBUG 下的 mock 路由不计）
+- 管理端 `/admin`：**211**（174 个 admin API + 37 个页面路由）
+- 用户端：**121**（各模块明细见《PRD/DmkWords_V3.5需求文档.md》附录 C）
+- DEBUG 限定路由：docs/redoc（+3）、mock 支付/短信（+4）
 
-Mock 网关路由（仅 `MOCK_PAYMENT=True` / `MOCK_SMS=True` 时注册）：
-- `POST /mock/payment/notify/order` — 模拟微信支付订单回调
-- `POST /mock/payment/notify/refund` — 模拟微信支付退款回调
-- `GET /mock/sms/code/{phone}` — 查看 Mock 短信验证码
-| activity | 5 | get_current_user + 归属校验 | 活动列表、报名、取消、签到 |
-| refund | 4 | user/admin | 申请、审核(admin)、列表、详情 |
-| reading | 10 | get_current_user + 归属校验 | 进度、会话、打卡、语音录音 |
-| vocabulary | 5 | get_current_user + 归属校验 | 查词、生词本、统计、标记掌握 |
-| message | 3 | get_current_user | 消息列表、标记已读、全部已读 |
-| voice | 2 | get_current_user + 归属校验 | 录音、列表 |
-| stats | 4 | get_current_user + 归属校验 | 汇总、趋势、周报 |
-| advancement | 10 | get_current_user + 归属校验 | 级别、测验(含start)、成就、排行榜(LeaderboardService) |
-| teacher | 7 | admin | CRUD、分配(admin only)、排班 |
-| config | 3 | admin | 配置读写 |
-
-### 6.2 管理端 API（93 个）
-
-管理端 API 统一前缀 `/admin/api`，使用 admin 认证。
-
-详见 `checkpoint.md` 中的完整 API 路由清单。
+> 历史口径（V3.9 时代"74 用户端/93 管理端"）已废弃，以本行与 PRD 附录 C 为准。
 
 ---
 
-## 七、验证结果
+## 七、验证结果（2026-07-09 快照；现行十一关门禁见 CLAUDE.md §六）
 
 ```bash
 # pytest
-316/5 passed (local)
+586 collected（通过数随环境：本机 581+5 skip / CI 571+15 skip / 无 MySQL 沙箱 577+9 err）
 
 # 架构验证
 ✅ Router 层 ORM 操作：0 处
@@ -287,11 +266,11 @@ Mock 网关路由（仅 `MOCK_PAYMENT=True` / `MOCK_SMS=True` 时注册）：
 ✅ 无分页列表接口：0 个
 ✅ inline import：0 处
 ✅ response_model：所有路由都有
-✅ Schema extra=forbid：52/52
+✅ Schema extra=forbid：52/52（2026-07-09 口径）
 ✅ stub 函数：返回 success: false
 ✅ 前端 stub 按钮：3 个全部 disabled
-✅ 前端 API 路径：32/32 正常
-✅ 集成测试（全链路）：53/53 step pass
+✅ 前端 API 路径：32/32 正常（2026-07-09 口径）
+✅ 集成测试（全链路）：53/53 step pass（2026-07-09 口径；现行 56/56）
 ```
 
 ---

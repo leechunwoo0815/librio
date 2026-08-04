@@ -52,12 +52,12 @@ DmkWords 是一个儿童英语阅读管理平台：
 | 弹窗宏 inline onclick | ✅ data-close-modal + ESC 关闭 |
 | 表格布局 | ✅ `table-layout: auto` 自动伸缩 |
 | 自定义每页条数 | ✅ 全局 renderPagination 支持 onPageSizeChange |
-| 内联 `<script>` 标签 | ✅ 34 模板清零 → 34 page JS + base-init.js |
-| IIFE 全覆盖 | ✅ 34/34 page JS 全文件包裹 |
-| inline onclick 清零 | ✅ 7 模板迁移 data-pg 委托（剩 27 模板 135 处） |
+| 内联 `<script>` 标签 | ✅ 39 模板清零 → 36 page JS + base-init.js |
+| IIFE 全覆盖 | ✅ 36/36 page JS 全文件包裹 |
+| inline onclick 清零 | ✅ 0 处（39 模板全量 data-action 委托） |
 | B1 escapeHtml 冲突 | ✅ 11/11 修复（2 手动 + 9 IIFE 隔离） |
 | B5 getElementById 保护 | ✅ dictionary.js 22 处 safeEl() 包装 |
-| window.XxxPage 导出 | ✅ 34/34 统一导出模式 |
+| window.XxxPage 导出 | ✅ 35 个 page 对象 + damage_reports.js 以 window.filterTab 暴露 |
 
 ### 2.3 功能状态
 

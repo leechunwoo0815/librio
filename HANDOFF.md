@@ -58,7 +58,7 @@ python -m alembic check              # OK ✅
 | 阶段 | 内容 | 状态 |
 |------|------|:----:|
 | Phase 1: `<script>` 提取 | 29 模板的内联 `<script>` 提取为 34 个独立的 `pages/*.js` 文件 + `base-init.js` | ✅ |
-| Phase 2: 全量迁移 | **38 模板 × 35 JS** 全部 inline handler → `data-action` 事件委托（~150 处） | ✅ 全覆盖 |
+| Phase 2: 全量迁移 | **39 模板 × 36 JS** 全部 inline handler → `data-action` 事件委托（~150 处） | ✅ 全覆盖 |
 | 事件类型 | click/input/change/keydown/submit 全部通过 `#admin-root` 委托 | ✅ |
 | IIFE 全覆盖 | 所有 35 个 page JS 文件 `(function() { ... })();` 包裹 | ✅ 35/35 |
 | window.XxxPage 导出 | 所有文件通过 `window.xxxPage = { ... }` 导出 | ✅ |
@@ -192,7 +192,7 @@ CI 十关全绿: ruff check/format, pytest 418/0, behave 189/1240, api contract,
 
 ### 3.11 Phase 2 全量完成 — 数据驱动事件委托迁移（2026-07-22 ✅）
 
-在 3.1 阶段 7 模板迁移基础上，扩展至全部 **38 模板 × 35 JS** 文件。
+在 3.1 阶段 7 模板迁移基础上，扩展至全部 **39 模板 × 36 JS** 文件。
 
 | 指标 | 值 |
 |------|-----|
@@ -257,7 +257,7 @@ CI 十关全绿: ruff check/format, pytest 418/0, behave 189/1240, api contract,
 | R5 | nginx rate limit | 为 9 个资金/用户接口添加 `limit_req_zone`（建议网关层，非后端代码） | 1 小时 |
 
 ### ✅ 已完成的 P1（无需重复修复）
-- **R1 Phase 2 全量扩展** — 38 模板 × 35 JS，~150 处 inline handler → `data-action` 委托 ✅
+- **R1 Phase 2 全量扩展** — 39 模板 × 36 JS，~150 处 inline handler → `data-action` 委托 ✅
 - **R2 兼容重导出清除** — 24 文件删除 `for (var k in window.xxxPage)` ✅
 - **R3 escapeHtml 统一** — 17 文件局部函数删除 ✅
 - **R4 iconfont 目录** — `.gitkeep` 已创建 ✅
@@ -287,7 +287,7 @@ CI 十关全绿: ruff check/format, pytest 418/0, behave 189/1240, api contract,
 
 ## 五、管理后台事件委托架构（Phase 2 全部完成 ✅）
 
-所有 38 模板 × 35 JS 文件已迁移到 `data-action` 事件委托模式，**0 处 inline handler 残留**。
+所有 39 模板 × 36 JS 文件已迁移到 `data-action` 事件委托模式，**0 处 inline handler 残留**。
 
 ### 事件委托方案
 
