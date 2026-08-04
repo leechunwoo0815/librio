@@ -529,13 +529,13 @@ def admin_create_order(
     service: AdminOrderService = Depends(get_admin_order_service),
 ):
     """管理员代客创建订单"""
-    result = service.create_order(data.model_dump())
+    result = service.create_order(data.model_dump(), admin.id)
     system_service = AdminSystemService(service.db)
     system_service.write_operation_log(
         admin_id=admin.id,
         module="order",
         operation="create",
-        content="创建订单",
+        content=f"创建订单: {result.get('order_no') if isinstance(result, dict) else ''}",
     )
     return result
 

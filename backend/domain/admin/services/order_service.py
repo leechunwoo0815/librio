@@ -4,6 +4,7 @@
 import logging
 import secrets
 from datetime import datetime
+from decimal import Decimal
 
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
@@ -184,7 +185,7 @@ class AdminOrderService:
             else None,
         }
 
-    def create_order(self, data: dict) -> dict:
+    def create_order(self, data: dict, admin_id: int = None) -> dict:
         """管理员代客创建订单（支持直接标记已支付）"""
         child_id = data.get("child_id")
         order_type = data.get("order_type")
@@ -205,9 +206,14 @@ class AdminOrderService:
         service = DomainOrderService(self.db)
         order_data = OrderCreate(child_id=child_id, type=order_type, remark=remark)
         result = service.create_order(child.user_id, order_data)
-        # 管理员输入的金额始终覆盖打折价
+        # 管理员输入的金额始终覆盖打折价（F11：覆盖须走审计——范围校验+明细日志+超阈值告警）
         amount = data.get("amount")
         pay_type = data.get("pay_type")
+        system_price = (
+            result.get("amount")
+            if isinstance(result, dict)
+            else getattr(result, "amount", None)
+        )
         order_no = (
             result.get("order_no")
             if isinstance(result, dict)
@@ -221,7 +227,14 @@ class AdminOrderService:
             )
             if order:
                 if amount is not None:
-                    order.amount = amount
+                    self._apply_amount_override(
+                        order,
+                        amount,
+                        system_price,
+                        admin_id,
+                        child_id,
+                        order_no,
+                    )
                 if pay_type is not None:
                     order.pay_type = pay_type
                     order.pay_status = PayStatus.PAID
@@ -230,6 +243,56 @@ class AdminOrderService:
                     DomainOrderService(self.db)._mark_paid_member_ever(order)
                 self.db.commit()
         return result.model_dump() if hasattr(result, "model_dump") else result
+
+    def _apply_amount_override(
+        self,
+        order: Order,
+        amount,
+        system_price,
+        admin_id: int | None,
+        child_id: int,
+        order_no: str,
+    ) -> None:
+        """F11：代客下单金额覆盖审计——范围校验 + 明细日志 + 偏离系统价 ±50% 告警"""
+        from backend.common.exceptions import ValidationError
+        from backend.domain.admin.models import OperationLog
+        from backend.domain.message.models import SystemMessage
+
+        amount_dec = Decimal(str(amount))
+        if amount_dec <= 0 or amount_dec > Decimal("100000"):
+            raise ValidationError(f"实收金额超出允许范围(0, 100000]: {amount}")
+        order.amount = amount_dec
+
+        self.db.add(
+            OperationLog(
+                admin_id=admin_id,
+                module="order",
+                operation="create_amount_override",
+                content=(
+                    f"代客下单金额覆盖: order={order_no}, child={child_id}, "
+                    f"系统价={system_price}, 实收价={amount_dec}, 操作人={admin_id}"
+                ),
+            )
+        )
+
+        if system_price:
+            sys_dec = Decimal(str(system_price))
+            if sys_dec > 0:
+                ratio = abs(amount_dec - sys_dec) / sys_dec
+                if ratio > Decimal("0.5"):
+                    self.db.add(
+                        SystemMessage(
+                            user_id=0,
+                            title="代客下单金额覆盖异常",
+                            content=(
+                                f"管理员(#{admin_id})为订单 {order_no} 覆盖金额 "
+                                f"{amount_dec} 元，偏离系统价 {sys_dec} 元"
+                                f"（{ratio * 100:.0f}%），请核对"
+                            ),
+                            msg_type=1,  # 系统通知
+                            priority=2,
+                        )
+                    )
 
     def create_offline_order(self, data: dict) -> dict:
         """线下创建用户+订单（兜底场景）"""

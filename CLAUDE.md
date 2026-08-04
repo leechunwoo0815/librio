@@ -206,7 +206,7 @@ Router (参数校验、HTTP状态码、依赖注入，🚫不含 try/except，�
 | **数据库** | MySQL 8.0 (utf8mb4)，测试用 SQLite `:memory:` |
 | **前端** | 微信小程序 (WXML/WXSS/JS, 34 页, 12 个通用组件) + MCP (wechat-devtools) |
 | **管理端** | PC 后台 39 个模板页面（含 base.html）+ 页面级 CSS + 设计系统 Token (--accent: #5560cf) |
-| **测试** | pytest (614 collected；通过数随环境：本机 609+5 skip / CI 599+15 skip / 无 MySQL 沙箱 605+9 err) + behave (211 scenarios, 1368 steps, 0 failed) + Ruff (0 errors) |
+| **测试** | pytest (618 collected；通过数随环境：本机 613+5 skip / CI 603+15 skip / 无 MySQL 沙箱 609+9 err) + behave (211 scenarios, 1368 steps, 0 failed) + Ruff (0 errors) |
 | **API** | 332 个业务路由（include_router 注册，含 37 页面路由；不含 /health、/、/openapi.json，DEBUG mock 不计） |
 | **领域模块** | 28 个 |
 | **定时任务** | 22 个 |
