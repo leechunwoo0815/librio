@@ -1501,8 +1501,9 @@ def reconcile_stock():
 | audit_sla_escalation | 每天 09:20 | 人工审核 SLA 巡检（E2：超 review_sla_hours(默认24) 未审升级提醒超管） |
 | graduate_children | 每天 04:00 | 满 15 岁毕业（F2：转 ALUMNI + 14 岁毕业提醒） |
 | purge_expired_data | 每天 04:30 | 数据保留期到期清理（H5：消息1年/行为退出后2年/财务5年/语音6个月，consent_record 豁免） |
+| check_paid_not_activated | 每天 05:00 | 支付成功但会员未激活对账（F7：扫描 activation_issue 订单，告警超管+人工队列，PRD §1.2 定时修复） |
 
-> 合计 22 个任务（全部带 @distributed_lock 分布式锁）。
+> 合计 23 个任务（全部带 @distributed_lock 分布式锁）。
 
 ---
 

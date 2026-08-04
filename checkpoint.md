@@ -1,7 +1,7 @@
 # DmkWords (librio) 项目检查点
 
 > 更新时间：2026-08-04 GMT+8 (v12)
-> 状态：✅ V3.23 — 52 题需求决策 + 四轮外部审查全闭环 + 终极全量审查 P0/P1 修复（F1-F5/F12/F8 含 day-0 与终态回退）+ 605 pytest collected（通过数随环境）/ 211/1368 behave + 56 表 + 64 配置 + 22 定时任务 + CI 同构十一关全绿（含 Gate 11）
+> 状态：✅ V3.23 — 52 题需求决策 + 四轮外部审查全闭环 + 终极全量审查 P0/P1 修复（F1-F5/F7/F8/F12）+ 610 pytest collected（通过数随环境）/ 211/1368 behave + 56 表 + 64 配置 + 23 定时任务 + CI 同构十一关全绿（含 Gate 11）
 
 ---
 
@@ -26,7 +26,7 @@ DmkWords 是一个儿童英语阅读管理平台：
 
 | 检查项 | 状态 |
 |--------|------|
-| pytest | ✅ 605 collected（本机 600 passed + 5 skipped；CI sqlite 590 + 15 skipped；无 MySQL 沙箱 596 passed + 9 failed） |
+| pytest | ✅ 610 collected（本机 605 passed + 5 skipped；CI sqlite 595 + 15 skipped；无 MySQL 沙箱 601 passed + 9 failed） |
 | behave | ✅ 211 scenarios / 1368 steps（无 MySQL 沙箱 171 passed + 40 error / 0 failed） |
 | ruff check `backend/ tests/` | ✅ 0 errors |
 | ruff check `features/ scripts/` | ✅ 0 errors |

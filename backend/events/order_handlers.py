@@ -7,6 +7,35 @@ from sqlalchemy.orm import Session
 logger = logging.getLogger(__name__)
 
 
+def _mark_activation_issue(db: Session, event, reason: str) -> None:
+    """F7：支付成功但会员未激活 → 订单留痕 + OperationLog（对账任务/人工队列用）
+
+    路线：保留支付、不抛异常回滚——钱已到账的交易不交给回调重试机制决定资金状态。
+    """
+    from backend.domain.admin.models import OperationLog
+    from backend.domain.order.models import Order
+
+    order = (
+        db.query(Order)
+        .filter(Order.id == event.order_id, Order.is_deleted == 0)
+        .first()
+    )
+    if order:
+        order.activation_issue = 1
+    db.add(
+        OperationLog(
+            admin_id=0,
+            module="order",
+            operation="paid_not_activated",
+            content=(
+                f"order={event.order_id}, child={event.child_id}, "
+                f"type={event.order_type}, 已支付但未激活（{reason}），请人工处理"
+            ),
+        )
+    )
+    db.flush()
+
+
 def handle_order_paid_for_child(event, db: Session):
     """订单支付 → 更新孩子会员状态（含状态迁移合法性校验）"""
     from datetime import datetime, timedelta
@@ -24,12 +53,14 @@ def handle_order_paid_for_child(event, db: Session):
     child_repo = BaseRepository(db, Child)
     if not child:
         logger.warning(f"OrderPaidEvent: child_id={event.child_id} not found")
+        _mark_activation_issue(db, event, "child_not_found")
         return
 
     if child.status == MemberStatus.EXITED:
         logger.warning(
             f"OrderPaidEvent: child {event.child_id} is EXITED, cannot restore"
         )
+        _mark_activation_issue(db, event, "child_exited")
         return
 
     # 合法状态迁移校验
@@ -51,6 +82,9 @@ def handle_order_paid_for_child(event, db: Session):
             logger.warning(
                 f"OrderPaidEvent: child {event.child_id} status={child.status} "
                 f"not allowed to become OFFICIAL"
+            )
+            _mark_activation_issue(
+                db, event, f"status_not_allowed_for_official({child.status})"
             )
             return
         # 根据订单类型设置不同的到期时间
@@ -76,6 +110,9 @@ def handle_order_paid_for_child(event, db: Session):
             logger.warning(
                 f"OrderPaidEvent: child {event.child_id} status={child.status} "
                 f"not allowed to start OBSERVATION"
+            )
+            _mark_activation_issue(
+                db, event, f"status_not_allowed_for_observation({child.status})"
             )
             return
         obs_days = ConfigService.get_int(db, "observation_days", 45)
@@ -111,6 +148,7 @@ def handle_order_paid_for_child(event, db: Session):
         logger.info(f"Child {event.child_id} parent-course paid, source=1")
     else:
         logger.warning(f"OrderPaidEvent: unhandled order_type={event.order_type}")
+        _mark_activation_issue(db, event, f"unhandled_order_type({event.order_type})")
 
 
 def handle_deposit_paid_for_child(event, db: Session):

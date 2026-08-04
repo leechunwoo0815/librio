@@ -203,8 +203,16 @@ def init_scheduler(app):
         replace_existing=True,
     )
 
+    # 每天凌晨5点：支付成功但会员未激活对账（F7：告警超管 + 人工队列，PRD §1.2 定时修复）
+    scheduler.add_job(
+        check_paid_not_activated,
+        CronTrigger(hour=5, minute=0),
+        id="check_paid_not_activated",
+        replace_existing=True,
+    )
+
     scheduler.start()
-    logger.info("Scheduler started with 22 jobs")
+    logger.info("Scheduler started with 23 jobs")
 
 
 def stop_scheduler():
@@ -1948,6 +1956,106 @@ def purge_expired_data(db: Session | None = None):
         db.rollback()
         logger.exception(f"purge_expired_data failed: {e}")
         return {}
+    finally:
+        if own_session:
+            db.close()
+
+
+@distributed_lock("job:check_paid_not_activated", timeout=300)
+def check_paid_not_activated(db: Session | None = None):
+    """F7：每日对账——PAID 但会员未激活的订单 → 告警超管 + 人工队列
+
+    背景：支付回调的事件处理器在状态非法（EXITED / 不允许迁移）时 warn-skip，
+    订单照常 PAID 但会员未激活。本任务扫描 activation_issue=1 的会员类订单：
+      - 孩子已被人工激活（member_expire_time > pay_time）→ 清除标记（已解决）
+      - 仍未激活 → 写超管告警（7 天内同单去重），留待人工核对/退款
+    兑现 PRD §1.2"支付成功但状态未更新 → 重试/定时任务修复"承诺（修复动作=告警+人工）。
+    """
+    from backend.common.types import OrderType, PayStatus
+    from backend.domain.admin.models import OperationLog
+    from backend.domain.child.models import Child
+    from backend.domain.message.models import SystemMessage
+    from backend.domain.order.models import Order
+
+    own_session = db is None
+    if own_session:
+        db = _get_db_session()
+    try:
+        flagged = (
+            db.query(Order)
+            .filter(
+                Order.pay_status == PayStatus.PAID,
+                Order.activation_issue == 1,
+                Order.is_deleted == 0,
+                Order.type.in_(
+                    [
+                        OrderType.OBSERVATION,
+                        OrderType.OFFICIAL_MEMBER,
+                        OrderType.QUARTERLY,
+                        OrderType.SEMI_ANNUAL,
+                    ]
+                ),
+            )
+            .all()
+        )
+        resolved = 0
+        alerts = 0
+        for order in flagged:
+            child = (
+                db.query(Child)
+                .filter(Child.id == order.child_id, Child.is_deleted == 0)
+                .first()
+            )
+            activated = (
+                child is not None
+                and child.member_expire_time is not None
+                and order.pay_time is not None
+                and child.member_expire_time > order.pay_time
+            )
+            if activated:
+                order.activation_issue = 0
+                db.add(
+                    OperationLog(
+                        admin_id=0,
+                        module="order",
+                        operation="paid_not_activated_resolved",
+                        content=f"order={order.id} 已确认激活，清除未激活标记",
+                    )
+                )
+                resolved += 1
+            else:
+                recent = (
+                    db.query(SystemMessage.id)
+                    .filter(
+                        SystemMessage.user_id == 0,
+                        SystemMessage.title == "支付未激活告警",
+                        SystemMessage.content.like(f"%order={order.id}%"),
+                        SystemMessage.create_time > datetime.now() - timedelta(days=7),
+                    )
+                    .count()
+                )
+                if not recent:
+                    db.add(
+                        SystemMessage(
+                            user_id=0,
+                            title="支付未激活告警",
+                            content=(
+                                f"订单 {order.order_no}（order={order.id}）已支付但会员未激活，"
+                                "请人工核对：确认开通会员或走退款流程"
+                            ),
+                            msg_type=1,  # 系统通知
+                            priority=2,
+                        )
+                    )
+                    alerts += 1
+        db.commit()
+        if resolved or alerts:
+            logger.info(
+                f"check_paid_not_activated: resolved={resolved}, alerts={alerts}"
+            )
+    except Exception as e:
+        db.rollback()
+        logger.exception(f"check_paid_not_activated failed: {e}")
     finally:
         if own_session:
             db.close()

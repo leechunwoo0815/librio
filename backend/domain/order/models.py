@@ -64,6 +64,12 @@ class Order(BaseModel):
     refund_amount = Column(Numeric(10, 2), nullable=True, comment="已退款金额")
     refund_time = Column(DateTime, nullable=True, comment="退款完成时间")
     refund_remark = Column(String(255), nullable=True, comment="退款备注")
+    activation_issue = Column(
+        SmallInteger,
+        default=0,
+        server_default="0",
+        comment="支付成功但会员未激活标记: 0=正常 1=待人工处理（F7 对账任务扫描）",
+    )
 
     remark = Column(String(255), nullable=True, comment="订单备注")
     upgrade_deduct = Column(
