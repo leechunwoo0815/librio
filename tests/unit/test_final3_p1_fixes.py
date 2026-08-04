@@ -173,6 +173,18 @@ class TestPaidMemberEver:
         )
         assert price == Decimal("5400")
 
+    def test_update_order_status_sets_flag(self, db):
+        """终审 A-1：管理端 PUT /orders/{order_no}/status 置 PAID 也写快照（第 4 个支付入口）"""
+        from backend.domain.admin.services.order_service import AdminOrderService
+
+        user, child = _mk_user_child(db)
+        order = self._mk_paid_order(db, user, child)
+        assert user.paid_member_ever == 0
+
+        AdminOrderService(db).update_order_status(order.order_no, {"pay_status": 1})
+        db.refresh(user)
+        assert user.paid_member_ever == 1
+
 
 # ---------------------------------------------------------------- P2 权限与工作台
 class TestTeacherWorkbenchPerm:

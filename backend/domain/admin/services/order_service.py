@@ -322,6 +322,8 @@ class AdminOrderService:
             order.pay_status = new_status
             if new_status == PayStatus.PAID:
                 order.pay_time = datetime.now()
+                # F5 快照：管理端改订单状态为已支付同样是支付成功入口（终审 A-1 补漏）
+                DomainOrderService(self.db)._mark_paid_member_ever(order)
 
         self.db.commit()
         return {"success": True, "message": "订单状态已更新"}

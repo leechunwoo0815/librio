@@ -99,7 +99,7 @@
       <!-- Tip Card -->
       <view class="tip-card">
         <text class="tip-icon"><text class="icon icon-info">ℹ</text></text>
-        <text class="tip-text">退款申请提交后将在 24 小时内完成审核，通过后 3 个工作日内原路退回。</text>
+        <text class="tip-text">退款申请提交后将在 24 小时内进入审核流程，超时将升级处理；通过后 3 个工作日内原路退回。</text>
       </view>
 
       <!-- Submit Button -->
