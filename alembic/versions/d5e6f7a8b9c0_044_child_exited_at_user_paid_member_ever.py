@@ -38,7 +38,9 @@ def upgrade() -> None:
             )
         )
     # 存量 EXITED 行回填（用 update_time 作最佳近似）
-    op.execute("UPDATE child SET exited_at = update_time WHERE status = 4 AND exited_at IS NULL")
+    op.execute(
+        "UPDATE child SET exited_at = update_time WHERE status = 4 AND exited_at IS NULL"
+    )
 
     with op.batch_alter_table("user") as batch_op:
         batch_op.add_column(

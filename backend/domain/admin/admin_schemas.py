@@ -648,7 +648,12 @@ class UpdateOrderStatusRequest(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    pay_status: int | None = None
+    pay_status: int | None = Field(
+        None,
+        ge=0,
+        le=5,
+        description="0待支付/1已支付/2失败/3退款中/4已退款/5已关闭",
+    )
 
 
 class AdminOfflineCreateOrderRequest(BaseModel):

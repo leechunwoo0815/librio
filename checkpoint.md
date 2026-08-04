@@ -1,7 +1,7 @@
 # DmkWords (librio) 项目检查点
 
 > 更新时间：2026-08-04 GMT+8 (v12)
-> 状态：✅ V3.23 — 52 题需求决策 + 四轮外部审查全闭环（FINAL-3.0 专家签署放行）+ 585 pytest（9 例需本机 MySQL，沙箱 576+9）/ 210/1361 behave + 56 表 + 64 配置 + 22 定时任务 + CI 同构十一关全绿（含 Gate 11）
+> 状态：✅ V3.23 — 52 题需求决策 + 四轮外部审查全闭环（FINAL-3.0 专家签署放行）+ 586 pytest collected（通过数随环境）/ 210/1361 behave + 56 表 + 64 配置 + 22 定时任务 + CI 同构十一关全绿（含 Gate 11）
 
 ---
 
@@ -9,8 +9,14 @@
 
 DmkWords 是一个儿童英语阅读管理平台：
 - **微信小程序**：家长端，34 页，12 通用组件
-- **PC 管理后台**：39 模板（35 业务页面含 login/403），335 API 端点（37 页面路由）
+- **PC 管理后台**：39 模板（35 业务页面含 login/403），332 API 端点（37 页面路由）
 - **后端 API**：FastAPI + SQLAlchemy + MySQL，28 领域模块
+
+---
+
+## 决策记录（20260804 增补）
+
+> 决策（20260804，终审 P3-④ 闭环）：管理端三个"标已付"入口（create_order 手动标付 / 线下建单 / update_order_status）置 PAID 时仅写订单状态与 F5 快照（paid_member_ever），不发布 OrderPaidEvent、不自动激活会员。会员开通由管理员经 PUT /child/{id}/status（child.edit 权限）另行操作。理由：收款对账与会员开通职责分离；三入口行为一致且历轮审查无异议；上线冻结期不引入行为变更。再评估触发条件：甲方明确要求"管理端标已付即开通会员"时，作为独立变更批次处理——须三入口同补、增加"变更前状态非 PAID 才发事件"守卫、覆盖订单类型 × 孩子状态全矩阵回归测试。
 
 ---
 
@@ -20,7 +26,7 @@ DmkWords 是一个儿童英语阅读管理平台：
 
 | 检查项 | 状态 |
 |--------|------|
-| pytest | ✅ 585 passed（9 例需本机 MySQL；无 MySQL 沙箱为 576+9） |
+| pytest | ✅ 586 collected（本机 581 passed + 5 skipped；CI sqlite 571 + 15 skipped；无 MySQL 沙箱 577 passed + 9 failed） |
 | behave | ✅ 210 scenarios / 1361 steps（无 MySQL 沙箱 170 passed + 40 error / 0 failed） |
 | ruff check `backend/ tests/` | ✅ 0 errors |
 | ruff check `features/ scripts/` | ✅ 0 errors |

@@ -2,7 +2,7 @@
 """终审 FINAL-3.0 P1 修复单测 — exited_at 钩子 / paid_member_ever 快照 /
 teacher.workbench 权限 / 工作台页面冒烟"""
 
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 
 import pytest
@@ -28,6 +28,38 @@ def db():
     session = Session()
     register_event_handlers()
     yield session
+    session.close()
+
+
+@pytest.fixture
+def http_client_db():
+    """HTTP 层 fixture：StaticPool 共享连接，供 TestClient 跨线程使用"""
+    from fastapi.testclient import TestClient
+    from sqlalchemy.pool import StaticPool
+
+    from backend.database import get_db
+    from backend.main import app
+
+    engine = create_engine(
+        "sqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(bind=engine)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    register_event_handlers()
+
+    def override_get_db():
+        try:
+            yield session
+        finally:
+            pass
+
+    app.dependency_overrides[get_db] = override_get_db
+    client = TestClient(app)
+    yield client, session
+    app.dependency_overrides.clear()
     session.close()
 
 
@@ -233,3 +265,63 @@ class TestTeacherWorkbenchPerm:
         assert 'data-action="submit-feedback"' in html
         assert "feedbackChild" in html
         assert "老师工作台" in html
+
+
+# ---------------------------------------------------------------- P2 订单状态更新请求校验
+class TestUpdateOrderStatusValidation:
+    def test_pay_status_out_of_range_rejected_422(self, http_client_db):
+        """专家 P2：UpdateOrderStatusRequest.pay_status 越界（99）必须 422，合法值不被误拦"""
+        from jose import jwt
+
+        from backend.domain.admin.models import Admin
+        from backend.domain.admin.rbac_models import Role
+        from backend.config import get_settings
+        from backend.seeds.seed_rbac import (
+            seed_permissions,
+            seed_role_permissions,
+            seed_roles,
+        )
+
+        client, db = http_client_db
+        seed_roles(db)
+        seed_permissions(db)
+        seed_role_permissions(db)
+        db.flush()
+        role = db.query(Role).filter(Role.code == "staff").first()
+        admin = Admin(
+            username="status_validator",
+            name="Validator",
+            admin_role_id=role.id,
+            password_hash="x",
+        )
+        db.add(admin)
+        db.commit()
+
+        settings = get_settings()
+        token = jwt.encode(
+            {
+                "sub": str(admin.id),
+                "role": 1,
+                "exp": datetime.now(timezone.utc) + timedelta(hours=1),
+                "type": "admin",
+                "jti": "status-validator",
+                "gen": 0,
+            },
+            settings.SECRET_KEY,
+            algorithm=settings.ALGORITHM,
+        )
+        headers = {"Authorization": f"Bearer {token}"}
+        # 越界值 422（Pydantic ge/le 校验，不落库）
+        r = client.put(
+            "/admin/api/orders/MW-NOPE/status",
+            json={"pay_status": 99},
+            headers=headers,
+        )
+        assert r.status_code == 422
+        # 合法值通过校验后走业务（订单不存在 → 404），证明约束未误伤正常路径
+        r2 = client.put(
+            "/admin/api/orders/MW-NOPE/status",
+            json={"pay_status": 1},
+            headers=headers,
+        )
+        assert r2.status_code == 404

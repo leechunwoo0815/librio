@@ -54,6 +54,21 @@ cp .env.example .env
 - [ ] 多实例部署必须 `REDIS_LOCK_FAIL_OPEN=false`（默认 true 为单实例/开发降级；多实例下 Redis 宕机若无锁执行，定时任务会在各实例并发重复跑）
 - [ ] 迁移 043（check_in 唯一约束）含历史去重 DELETE：大表执行前评估锁表时长，建议低峰执行
 - [ ] 迁移 044（child.exited_at / user.paid_member_ever）含存量回填 UPDATE：同上低峰执行
+- [ ] 上线前对生产库跑一次 P3-① 核对 SQL（应得 0 行；非零则执行幂等回填，与迁移 044 同逻辑）：
+      ```sql
+      -- 核对：应得 0
+      SELECT COUNT(DISTINCT o.user_id) FROM `order` o
+      JOIN `user` u ON u.id = o.user_id
+      WHERE o.type IN (2,3,4,5) AND o.pay_status = 1 AND o.is_deleted = 0
+        AND u.paid_member_ever = 0;
+      -- 若非零，回填（幂等）
+      UPDATE `user` SET paid_member_ever = 1 WHERE id IN (
+        SELECT uid FROM (
+          SELECT DISTINCT user_id AS uid FROM `order`
+          WHERE type IN (2,3,4,5) AND pay_status = 1 AND is_deleted = 0
+        ) t
+      );
+      ```
 - [ ] `SECRET_KEY` 已改为随机值，不是默认值
 - [ ] 微信支付私钥权限为 `600`：`chmod 600 $WECHAT_PRIVATE_KEY_PATH`
 - [ ] 文件上传 MIME 校验已启用（后端 `validate_file_content` 严格拦截魔数不匹配）
