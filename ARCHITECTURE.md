@@ -1,6 +1,6 @@
 # DmkWords — 架构文档
 
-> 版本：V3.13（2026-08-02 更新：52 题决策落地 — 56 表/59 配置/fine_policy/config_levels/guardian/teacher_workbench）
+> 版本：V3.13（2026-08-04 更新：52 题决策 + 四轮审查闭环 — 56 表/64 配置/fine_policy/config_levels/guardian/teacher_workbench）
 > 零粉饰，只写事实
 
 ---
@@ -44,7 +44,7 @@ Gateways → Mock支付网关 / Mock短信网关 / 真实支付网关（依赖�
 | 前端 | 微信小程序原生（34 页，4 子包） |
 | 后端 | Python 3.13 + FastAPI + SQLAlchemy 2.0 + Pydantic V2 |
 | 数据库 | MySQL 8.0 (utf8mb4)，测试用 SQLite :memory: |
-| 测试 | pytest (570 passed) + behave (210 scenarios / 1361 steps) |
+| 测试 | pytest (585 passed，其中 9 例需本机 MySQL) + behave (210 scenarios / 1361 steps) |
 | 管理端 | 39 个 PC 后台模板（含 base.html）+ 35 页面级 CSS + 36 page JS（IIFE） |
 | 设计系统 | --accent: #5560cf + 31/31 class 对齐 ≥95% + 0 hardcoded + 0 oklch |
 | 定时 | APScheduler（22 个任务） |
@@ -125,7 +125,7 @@ backend/
 │   ├── request_log.py   #   请求日志（输出到 logs/admin_requests.log）
 │   └── trace.py         #   请求追踪
 ├── tasks/               # APScheduler 定时任务（22 个，V3.23 +1：purge_expired_data 数据保留清理）
-├── templates/admin/     # 管理端 Jinja2 模板（38 个页面，含 base.html）
+├── templates/admin/     # 管理端 Jinja2 模板（39 个页面，含 base.html）
 ├── static/admin/        # 管理端静态资源（CSS/JS）
 ├── seeds/               # 种子数据脚本
 └── utils/               # 工具函数
@@ -134,9 +134,9 @@ scripts/                 # CI 脚本
 └── verify_api_contract.py    # 前后端 API 契约验证
 .github/workflows/ci.yml     # CI 配置
 features/                # BDD feature 文件（20 个，210 场景，1361 步骤）
-tests/unit/              # pytest 单元测试（570 个）
+tests/unit/              # pytest 单元测试（585 个，9 例需 MySQL）
 scripts/integration_test.py  # 全链路集成测试（867 行，6 主流程 + 7 异常场景）
-frontend/                # 微信小程序（31 个页面，4 子包）
+frontend/                # 微信小程序（34 个页面，4 子包）
 ```
 
 ---

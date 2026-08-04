@@ -7,7 +7,7 @@
 
 > ⚠️ **最高指令注入**：本文件是 DmkWords 项目的最高法律。任何代码生成、修改、重构，必须无条件服从本文件中的【零容忍铁律】与【业务红线】。
 
-> **最后更新**：2026-08-02（52 题决策全量落地 — 518/0 pytest + 210/0 behave(1361 steps) + 56 表 + 59 配置 + CI 同构十关全绿）
+> **最后更新**：2026-08-04（52 题决策 + 四轮外部审查全闭环，FINAL-3.0 专家签署放行 — 585 pytest（9 例需本机 MySQL）/ 210/1361 behave + 56 表 + 64 配置 + 22 定时任务 + CI 同构十一关全绿（含 Gate 11））
 
 ## 一、 核心身份与零容忍铁律 (System Prompt)
 
@@ -205,19 +205,19 @@ Router (参数校验、HTTP状态码、依赖注入，🚫不含 try/except，�
 | **后端** | Python 3.13 + FastAPI + SQLAlchemy 2.0 + Pydantic V2 |
 | **数据库** | MySQL 8.0 (utf8mb4)，测试用 SQLite `:memory:` |
 | **前端** | 微信小程序 (WXML/WXSS/JS, 34 页, 12 个通用组件) + MCP (wechat-devtools) |
-| **管理端** | PC 后台 38 个模板页面（含 base.html）+ 页面级 CSS + 设计系统 Token (--accent: #5560cf) |
-| **测试** | pytest (518 passed, 0 skipped) + behave (210 scenarios, 1361 steps, 0 failed) + Ruff (0 errors) |
-| **API** | 311 个端点（装饰器实测，含 38 页面路由） |
+| **管理端** | PC 后台 39 个模板页面（含 base.html）+ 页面级 CSS + 设计系统 Token (--accent: #5560cf) |
+| **测试** | pytest (585 passed，其中 9 例需本机 MySQL) + behave (210 scenarios, 1361 steps, 0 failed) + Ruff (0 errors) |
+| **API** | 335 个端点（装饰器实测，含 37 页面路由） |
 | **领域模块** | 28 个 |
-| **定时任务** | 18 个 |
+| **定时任务** | 22 个 |
 | **定时/认证** | APScheduler / JWT (python-jose) |
 | **词典** | ECDICT 本地 338 万词条 + Free Dictionary API 兜底 |
 | **环境变量** | ENABLE_TEST_TOKEN（测试令牌守卫）, DEBUG（双重守卫）, MOCK_PAYMENT（Mock 支付网关开关）, MOCK_SMS（Mock 短信网关开关）|
 
-### ⌨️ 核心运行命令 — CI 同构十关（CLI 自动调用）
+### ⌨️ 核心运行命令 — CI 同构十一关（CLI 自动调用）
 ```bash
 # ┌─────────────────────────────────────────────────────────────┐
-# │  CI 同构十关 — 每条命令与 .github/workflows/ci.yml 逐字一致 │
+# │  CI 同构十一关 — 每条命令与 .github/workflows/ci.yml 逐字一致 │
 # │  后续 CI 加关，此处必须同步加                               │
 # └─────────────────────────────────────────────────────────────┘
 
@@ -347,7 +347,7 @@ grep -rn '#4f46e5\|#6b5ce7\|#7c5ce7' backend/ frontend/ --include="*.css" --incl
 echo "--- Token 重定义 ---"
 grep -rn '\-\-accent:' frontend/pages/ --include="*.wxss" | grep -v 'app.wxss' | wc -l
 
-# 6. 测试（CI 同构十关）
+# 6. 测试（CI 同构十一关）
 venv/bin/python -m pytest tests/ -x -q --tb=short 2>&1 | tail -3
 venv/bin/python -m behave features/ --no-capture -q 2>&1 | tail -3
 venv/bin/ruff check backend/ tests/ 2>&1 | tail -3
@@ -424,4 +424,3 @@ backend/templates/admin/
 ├── roles.html             # 角色管理（V3.6 新增 — 权限分配树形 UI）
 └── recycle_bin.html       # 回收站（V3.4 新增）
 ```
-
