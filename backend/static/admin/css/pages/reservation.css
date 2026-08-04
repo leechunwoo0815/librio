@@ -89,6 +89,6 @@ tr:hover td { background: var(--accent-soft); }
 /* B3 代客预约搜索候选列表 */
 .pick-list { border: 1px solid var(--border, #e5e7eb); border-radius: 6px; margin-top: 4px; max-height: 180px; overflow-y: auto; background: #fff; }
 .pick-list:empty { display: none; }
-.pick-item { padding: 8px 12px; cursor: pointer; font-size: 13px; border-bottom: 1px solid #f3f4f6; }
+.pick-item { padding: 8px 12px; cursor: pointer; font-size: 13px; border-bottom: 1px solid #f3f4f6; } /* intentional */
 .pick-item:last-child { border-bottom: none; }
-.pick-item:hover { background: #f0f7ff; }
+.pick-item:hover { background: #f0f7ff; } /* intentional */

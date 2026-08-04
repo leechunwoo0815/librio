@@ -15,9 +15,9 @@
   font-size: 12px;
 }
 
-.badge-success { background: #e6f7e9; color: #1a7f37; }
+.badge-success { background: #e6f7e9; color: #1a7f37; } /* intentional */
 .badge-warning { background: #fff4e0; color: #b26a00; }
-.badge-secondary { background: #eee; color: #666; }
+.badge-secondary { background: #eee; color: #666; } /* intentional */
 
 .form-row {
   display: flex;
