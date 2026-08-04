@@ -300,13 +300,21 @@ class RefundService:
             self.db.query(RefundApplication)
             .filter(
                 RefundApplication.order_id == order.id,
-                RefundApplication.status == RefundApplication.STATUS_APPROVED,
+                RefundApplication.status.in_(
+                    [
+                        RefundApplication.STATUS_APPROVED,
+                        RefundApplication.STATUS_COMPLETED,
+                    ]
+                ),
             )
             .with_for_update()
             .first()
         )
         if not refund:
             raise ConflictError("无待完成的退款申请")
+        if refund.status == RefundApplication.STATUS_COMPLETED:
+            # F12：幂等守卫——重复回调直接返回，不重复置位
+            return RefundResponse.model_validate(refund)
 
         refund.status = RefundApplication.STATUS_COMPLETED
         refund.actual_refund_amount = refund.refund_amount

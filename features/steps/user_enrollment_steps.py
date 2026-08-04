@@ -689,6 +689,12 @@ def step_amount_4860(context):
     assert float(data["amount"]) == 4860.00
 
 
+@then("订单金额为5400元")
+def step_amount_5400(context):
+    data = context.response.json()
+    assert float(data["amount"]) == 5400.00, f"实际金额={data['amount']}"
+
+
 @then('订单类型为"季度会员"')
 def step_order_type_quarterly(context):
     resp = context.client.get(
@@ -825,8 +831,27 @@ def step_upgrade_price_4500(context):
 # ==================== 缓冲期续费 ====================
 
 
-@given("用户的孩子是已过期会员且在缓冲期内")
-def step_child_expired_in_grace(context):
+@given("用户的正式会员已到期且在缓冲期内")
+def step_child_in_grace(context):
+    from datetime import datetime, timedelta
+    from backend.common.types import MemberStatus
+
+    child = Child(
+        user_id=context.user.id,
+        name="小明",
+        age=7,
+        grade="二年级",
+        status=MemberStatus.OFFICIAL,  # F8：缓冲期内状态仍为 OFFICIAL（真实状态，非手工 EXPIRED）
+        member_start_time=datetime.now() - timedelta(days=400),
+        member_expire_time=datetime.now() - timedelta(days=10),
+    )
+    context.db.add(child)
+    context.db.commit()
+    context.child = child
+
+
+@given("用户的正式会员已过期且超过缓冲期")
+def step_child_expired_past_grace(context):
     from datetime import datetime, timedelta
     from backend.common.types import MemberStatus
 
@@ -837,7 +862,7 @@ def step_child_expired_in_grace(context):
         grade="二年级",
         status=MemberStatus.EXPIRED,
         member_start_time=datetime.now() - timedelta(days=400),
-        member_expire_time=datetime.now() - timedelta(days=10),
+        member_expire_time=datetime.now() - timedelta(days=20),
     )
     context.db.add(child)
     context.db.commit()

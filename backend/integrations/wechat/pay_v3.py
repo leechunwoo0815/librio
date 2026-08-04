@@ -249,6 +249,7 @@ class WeChatPayV3(PaymentGateway):
             out_trade_no=data.get("out_trade_no", ""),
             transaction_id=data.get("transaction_id", ""),
             trade_state=data.get("trade_state", ""),
+            refund_status=data.get("refund_status", ""),
             amount=amount,
             raw_body=plaintext.decode(),
         )

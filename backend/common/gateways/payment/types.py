@@ -58,5 +58,8 @@ class PaymentCallbackData:
     out_trade_no: str
     transaction_id: str = ""
     trade_state: str = ""
+    refund_status: str = (
+        ""  # 退款通知状态（微信 v3: SUCCESS/CLOSED/ABNORMAL/PROCESSING）
+    )
     amount: Optional[Decimal] = None
     raw_body: str = ""

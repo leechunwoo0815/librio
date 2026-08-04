@@ -205,7 +205,12 @@ class OrderService:
 
         # 多孩优惠
         final_amount = self._apply_discount(
-            user_id, order_data.type, base_amount, child.status, order_data.child_id
+            user_id,
+            order_data.type,
+            base_amount,
+            child.status,
+            order_data.child_id,
+            child.member_expire_time,
         )
 
         # A6：观察期中途升级 — 按剩余天数抵扣观察期剩余价值（upgrade_deduct_enabled）
@@ -257,6 +262,7 @@ class OrderService:
         amount: Decimal,
         child_status: int = None,
         child_id: int = None,
+        member_expire_time: datetime = None,
     ) -> Decimal:
         """多孩优惠 + 续费折扣（从配置读取，不可叠加，取最低价）"""
         from backend.common.config_service import ConfigService
@@ -272,11 +278,23 @@ class OrderService:
         renewal_price = amount
         multi_child_price = amount
 
-        # 续费折扣（EXPIRED 用户续费）
-        if child_status == MemberStatus.EXPIRED and order_type in (
-            OrderType.OFFICIAL_MEMBER,
-            OrderType.QUARTERLY,
-            OrderType.SEMI_ANNUAL,
+        # 续费折扣（F8：缓冲期内——到期未超 member_grace_days 天，状态可为 OFFICIAL/EXPIRED）
+        # 自然日口径（与 fine_policy 一致）：到期日当天=0，次日=1，缓冲期内=1..grace_days
+        days_expired = (
+            (datetime.now().date() - member_expire_time.date()).days
+            if member_expire_time is not None
+            else None
+        )
+        grace_days = ConfigService.get_int(self.db, "member_grace_days", 15)
+        if (
+            days_expired is not None
+            and 0 < days_expired <= grace_days
+            and order_type
+            in (
+                OrderType.OFFICIAL_MEMBER,
+                OrderType.QUARTERLY,
+                OrderType.SEMI_ANNUAL,
+            )
         ):
             renewal_disc = ConfigService.get_decimal(
                 self.db, "renewal_discount", Decimal("0.9")

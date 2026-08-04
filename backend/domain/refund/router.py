@@ -2,6 +2,7 @@
 """退款域 API 路由"""
 
 import json
+import logging
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request
 
@@ -13,6 +14,8 @@ from backend.middleware.auth import get_current_user
 from backend.middleware.ownership import GetOwnedRefund
 from backend.domain.refund.schemas import RefundCreate, RefundAudit, RefundResponse
 from backend.domain.refund.service import RefundService
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/refund", tags=["退款"])
 
@@ -114,6 +117,20 @@ async def refund_callback(
         nonce=encrypted.get("nonce", ""),
         associated_data=encrypted.get("associated_data", ""),
     )
+
+    # F12：退款回调必须校验 refund_status——微信通知"退款关闭/异常"等非成功状态
+    # 不得标记已退款（钱未出去，标记会致财务与业务状态双错）
+    refund_status = callback_data.refund_status
+    if refund_status and refund_status != "SUCCESS":
+        logger.warning(
+            "退款回调非成功状态: out_trade_no=%s refund_status=%s",
+            callback_data.out_trade_no,
+            refund_status,
+        )
+        return {
+            "code": "SUCCESS",
+            "message": f"退款状态已记录（{refund_status}），未标记完成",
+        }
 
     try:
         service.mark_refunded(callback_data.out_trade_no)
