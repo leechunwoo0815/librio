@@ -91,3 +91,15 @@ class TestRenewalDiscountWindow:
         user, child = _mk_user_child(db, status=MemberStatus.EXPIRED)
         price = _discount(db, user, child, datetime.now() - timedelta(days=16))
         assert price == Decimal("5400.00")
+
+    def test_expiry_day_itself_gets_discount(self, db):
+        """到期日当天（day 0，已过到期时刻）→ 9 折 4860（缓冲期从到期时刻起算）"""
+        user, child = _mk_user_child(db)
+        price = _discount(db, user, child, datetime.now() - timedelta(minutes=5))
+        assert price == Decimal("4860.00")
+
+    def test_not_yet_expired_same_day_no_discount(self, db):
+        """到期日当天但未到到期时刻（今晚才到期）→ 原价 5400（day-0 守卫）"""
+        user, child = _mk_user_child(db)
+        price = _discount(db, user, child, datetime.now() + timedelta(hours=1))
+        assert price == Decimal("5400.00")

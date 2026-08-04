@@ -341,6 +341,56 @@ class RefundService:
         self.db.commit()
         return RefundResponse.model_validate(refund)
 
+    def handle_refund_failed(self, order_no: str, status: str) -> None:
+        """F12-P2：微信退款非成功终态（CLOSED/ABNORMAL）→ 回退 PENDING + 管理端告警
+
+        照抄 _execute_wechat_refund 失败分支：退款单回 PENDING（可重试）、订单标记 FAILED、
+        写 user_id=0 系统告警。PROCESSING 等非终态不调用本方法。
+        """
+        from backend.domain.message.models import SystemMessage
+
+        order = (
+            self.db.query(Order)
+            .filter(Order.order_no == order_no, Order.is_deleted == 0)
+            .with_for_update()
+            .first()
+        )
+        if not order:
+            return
+
+        order.refund_status = 3  # FAILED
+        order.pay_status = PayStatus.PAID
+        order.refund_remark = f"微信退款回调状态={status}"
+
+        refund = (
+            self.db.query(RefundApplication)
+            .filter(
+                RefundApplication.order_id == order.id,
+                RefundApplication.status == RefundApplication.STATUS_APPROVED,
+            )
+            .with_for_update()
+            .first()
+        )
+        if refund:
+            refund.status = RefundApplication.STATUS_PENDING
+            refund.review_comment = (
+                f"微信退款回调状态={status}，已回退待重试，请管理员处理"
+            )
+
+        self.db.add(
+            SystemMessage(
+                user_id=0,
+                title="退款异常告警",
+                content=(
+                    f"订单 {order_no} 微信退款状态={status}，"
+                    "已回退待审核，请管理员尽快处理"
+                ),
+                msg_type=1,  # 系统通知
+                priority=2,
+            )
+        )
+        self.db.commit()
+
     def _calculate(self, order: Order, used_days: int) -> Decimal:
         """退款计算 — 从配置读取天数；前 refund_free_days 天无理由全退（A4）"""
         from backend.common.config_service import ConfigService

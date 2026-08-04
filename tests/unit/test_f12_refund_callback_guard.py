@@ -126,16 +126,18 @@ class TestMarkRefundedIdempotent:
 
 class TestRefundCallbackStatusGate:
     def test_non_success_status_not_marked(self, http_db, monkeypatch):
+        """空/未知 refund_status：不标记完成、不回退、不告警（留待对账人工处理）"""
         from fastapi.testclient import TestClient
 
         from backend.common.dependencies import get_payment_gateway
+        from backend.domain.message.models import SystemMessage
 
         db = http_db
         user, child, order, refund = _seed_order_refund(db)
         monkeypatch.setitem(
             app.dependency_overrides,
             get_payment_gateway,
-            lambda: StubRefundGateway(refund_status="ABNORMAL"),
+            lambda: StubRefundGateway(refund_status=""),
         )
         client = TestClient(app)
 
@@ -151,6 +153,12 @@ class TestRefundCallbackStatusGate:
         db.refresh(order)
         assert refund.status == RefundApplication.STATUS_APPROVED  # 未标记完成
         assert order.pay_status == PayStatus.PAID  # 订单未置 REFUNDED
+        alerts = (
+            db.query(SystemMessage)
+            .filter(SystemMessage.user_id == 0, SystemMessage.title == "退款异常告警")
+            .count()
+        )
+        assert alerts == 0
 
     def test_success_status_marks_refunded(self, http_db, monkeypatch):
         from fastapi.testclient import TestClient
@@ -178,3 +186,74 @@ class TestRefundCallbackStatusGate:
         db.refresh(order)
         assert refund.status == RefundApplication.STATUS_COMPLETED
         assert order.pay_status == PayStatus.REFUNDED
+
+    def test_terminal_failure_rolls_back_to_pending_with_alert(
+        self, http_db, monkeypatch
+    ):
+        """ABNORMAL/CLOSED 终态：回退 PENDING + 管理端告警，订单保持 PAID 可重试"""
+        from fastapi.testclient import TestClient
+
+        from backend.common.dependencies import get_payment_gateway
+        from backend.domain.message.models import SystemMessage
+
+        db = http_db
+        user, child, order, refund = _seed_order_refund(db)
+        monkeypatch.setitem(
+            app.dependency_overrides,
+            get_payment_gateway,
+            lambda: StubRefundGateway(refund_status="ABNORMAL"),
+        )
+        client = TestClient(app)
+
+        r = client.post(
+            "/refund/callback",
+            json={
+                "resource": {"ciphertext": "x", "nonce": "y", "associated_data": "z"}
+            },
+        )
+
+        assert r.status_code == 200
+        db.refresh(refund)
+        db.refresh(order)
+        assert refund.status == RefundApplication.STATUS_PENDING  # 回退可重试
+        assert order.pay_status == PayStatus.PAID
+        assert order.refund_status == 3  # FAILED
+        alerts = (
+            db.query(SystemMessage)
+            .filter(SystemMessage.user_id == 0, SystemMessage.title == "退款异常告警")
+            .count()
+        )
+        assert alerts == 1
+
+    def test_processing_status_keeps_approved(self, http_db, monkeypatch):
+        """PROCESSING（进行中）不回退不告警，退款单保持 APPROVED 等待最终回调"""
+        from fastapi.testclient import TestClient
+
+        from backend.common.dependencies import get_payment_gateway
+        from backend.domain.message.models import SystemMessage
+
+        db = http_db
+        user, child, order, refund = _seed_order_refund(db)
+        monkeypatch.setitem(
+            app.dependency_overrides,
+            get_payment_gateway,
+            lambda: StubRefundGateway(refund_status="PROCESSING"),
+        )
+        client = TestClient(app)
+
+        r = client.post(
+            "/refund/callback",
+            json={
+                "resource": {"ciphertext": "x", "nonce": "y", "associated_data": "z"}
+            },
+        )
+
+        assert r.status_code == 200
+        db.refresh(refund)
+        assert refund.status == RefundApplication.STATUS_APPROVED
+        alerts = (
+            db.query(SystemMessage)
+            .filter(SystemMessage.user_id == 0, SystemMessage.title == "退款异常告警")
+            .count()
+        )
+        assert alerts == 0

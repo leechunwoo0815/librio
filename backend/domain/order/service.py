@@ -278,17 +278,21 @@ class OrderService:
         renewal_price = amount
         multi_child_price = amount
 
-        # 续费折扣（F8：缓冲期内——到期未超 member_grace_days 天，状态可为 OFFICIAL/EXPIRED）
-        # 自然日口径（与 fine_policy 一致）：到期日当天=0，次日=1，缓冲期内=1..grace_days
+        # 续费折扣（F8：缓冲期内——到期时刻起算（含 day 0）至 member_grace_days 天）
+        # 自然日口径（与 fine_policy 一致）：到期日当天=0，次日=1，缓冲期内=0..grace_days
+        now = datetime.now()
         days_expired = (
-            (datetime.now().date() - member_expire_time.date()).days
+            (now.date() - member_expire_time.date()).days
             if member_expire_time is not None
             else None
         )
         grace_days = ConfigService.get_int(self.db, "member_grace_days", 15)
         if (
-            days_expired is not None
-            and 0 < days_expired <= grace_days
+            member_expire_time is not None
+            and member_expire_time
+            <= now  # 到期时刻已过（防止"今晚才到期"未过期误入窗口）
+            and days_expired is not None
+            and 0 <= days_expired <= grace_days
             and order_type
             in (
                 OrderType.OFFICIAL_MEMBER,

@@ -121,15 +121,18 @@ async def refund_callback(
     # F12：退款回调必须校验 refund_status——微信通知"退款关闭/异常"等非成功状态
     # 不得标记已退款（钱未出去，标记会致财务与业务状态双错）
     refund_status = callback_data.refund_status
-    if refund_status and refund_status != "SUCCESS":
+    if refund_status != "SUCCESS":
         logger.warning(
             "退款回调非成功状态: out_trade_no=%s refund_status=%s",
             callback_data.out_trade_no,
             refund_status,
         )
+        if refund_status in ("CLOSED", "ABNORMAL"):
+            # F12-P2：终态失败回退 PENDING + 管理端告警（照抄退款执行失败分支），可重试
+            service.handle_refund_failed(callback_data.out_trade_no, refund_status)
         return {
             "code": "SUCCESS",
-            "message": f"退款状态已记录（{refund_status}），未标记完成",
+            "message": f"退款状态已记录（{refund_status or '未知'}），未标记完成",
         }
 
     try:
