@@ -26,7 +26,7 @@ DmkWords 是一个儿童英语阅读管理平台：
 
 | 检查项 | 状态 |
 |--------|------|
-| pytest | ✅ 611 collected（本机 606 passed + 5 skipped；CI sqlite 596 + 15 skipped；无 MySQL 沙箱 602 passed + 9 failed） |
+| pytest | ✅ 614 collected（本机 609 passed + 5 skipped；CI sqlite 599 + 15 skipped；无 MySQL 沙箱 605 passed + 9 failed） |
 | behave | ✅ 211 scenarios / 1368 steps（无 MySQL 沙箱 171 passed + 40 error / 0 failed） |
 | ruff check `backend/ tests/` | ✅ 0 errors |
 | ruff check `features/ scripts/` | ✅ 0 errors |

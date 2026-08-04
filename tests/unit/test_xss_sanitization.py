@@ -55,6 +55,7 @@ def test_observation_report_autoescape_child_name(db):
         status=Child.STATUS_OBSERVATION,
         create_time=datetime.now() - timedelta(days=46),
         member_start_time=datetime.now() - timedelta(days=46),
+        member_expire_time=datetime.now() - timedelta(days=1),  # F14 单口径：已到期
     )
     db.add(child)
     db.commit()
@@ -91,6 +92,7 @@ def test_observation_report_autoescape_teacher_comment(db):
         status=Child.STATUS_OBSERVATION,
         create_time=datetime.now() - timedelta(days=46),
         member_start_time=datetime.now() - timedelta(days=46),
+        member_expire_time=datetime.now() - timedelta(days=1),  # F14 单口径：已到期
     )
     db.add(child)
     db.commit()

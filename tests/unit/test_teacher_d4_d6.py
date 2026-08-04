@@ -51,6 +51,7 @@ def _mk(db):
         grade="二年级",
         status=1,
         member_start_time=datetime.now() - timedelta(days=46),
+        member_expire_time=datetime.now() - timedelta(days=1),  # F14 单口径：已到期
     )
     db.add(child)
     db.commit()

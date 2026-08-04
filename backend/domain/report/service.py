@@ -134,16 +134,15 @@ class ReportService:
 
     def generate_due_reports(self) -> list:
         """为所有到期的观察期孩子生成报告（返回 list[dict]，向后兼容）"""
-        # 从配置读取观察期天数
-        from backend.common.config_service import ConfigService
-
-        obs_days = ConfigService.get_int(self.db, "observation_days", OBSERVATION_DAYS)
-        cutoff = datetime.now() - timedelta(days=obs_days)
+        # F14：到期判定统一用 member_expire_time 单口径（废掉 member_start_time +
+        # observation_days 推算口径——运营改配置或管理员手改到期时间时双口径分叉）
+        now = datetime.now()
         children = (
             self.db.query(Child)
             .filter(
                 Child.status == MemberStatus.OBSERVATION,
-                Child.member_start_time <= cutoff,
+                Child.member_expire_time.isnot(None),
+                Child.member_expire_time < now,
                 Child.is_deleted == 0,
             )
             .all()

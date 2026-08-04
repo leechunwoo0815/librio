@@ -14,6 +14,9 @@ from backend.domain.report.service import ReportService as ObservationReportServ
 def step_observation_45_days(context):
     context.child.create_time = datetime.now() - timedelta(days=46)
     context.child.member_start_time = datetime.now() - timedelta(days=46)
+    context.child.member_expire_time = datetime.now() - timedelta(
+        days=1
+    )  # F14 单口径：已到期
     context.child.status = Child.STATUS_OBSERVATION
     context.db.commit()
 
@@ -22,6 +25,9 @@ def step_observation_45_days(context):
 def step_observation_15_days(context):
     context.child.create_time = datetime.now() - timedelta(days=15)
     context.child.member_start_time = datetime.now() - timedelta(days=15)
+    context.child.member_expire_time = datetime.now() + timedelta(
+        days=30
+    )  # F14 单口径：未到期
     context.child.status = Child.STATUS_OBSERVATION
     context.db.commit()
 
@@ -54,6 +60,9 @@ def step_no_new_report(context):
 def step_reading_stats(context):
     context.child.create_time = datetime.now() - timedelta(days=46)
     context.child.member_start_time = datetime.now() - timedelta(days=46)
+    context.child.member_expire_time = datetime.now() - timedelta(
+        days=1
+    )  # F14 单口径：已到期
     context.child.status = Child.STATUS_OBSERVATION
     context.db.commit()
 
@@ -105,6 +114,9 @@ def step_report_words(context, words):
 def step_quiz_passed(context):
     context.child.create_time = datetime.now() - timedelta(days=46)
     context.child.member_start_time = datetime.now() - timedelta(days=46)
+    context.child.member_expire_time = datetime.now() - timedelta(
+        days=1
+    )  # F14 单口径：已到期
     context.child.status = Child.STATUS_OBSERVATION
     context.db.commit()
 
@@ -143,6 +155,9 @@ def step_report_quizzes(context, count):
 def step_teacher_comment_exists(context):
     context.child.create_time = datetime.now() - timedelta(days=46)
     context.child.member_start_time = datetime.now() - timedelta(days=46)
+    context.child.member_expire_time = datetime.now() - timedelta(
+        days=1
+    )  # F14 单口径：已到期
     context.child.status = Child.STATUS_OBSERVATION
     context.db.commit()
 
@@ -166,6 +181,9 @@ def step_report_has_comment(context):
 def step_has_report(context):
     context.child.create_time = datetime.now() - timedelta(days=46)
     context.child.member_start_time = datetime.now() - timedelta(days=46)
+    context.child.member_expire_time = datetime.now() - timedelta(
+        days=1
+    )  # F14 单口径：已到期
     context.child.status = Child.STATUS_OBSERVATION
     context.db.commit()
     svc = ObservationReportService(context.db)

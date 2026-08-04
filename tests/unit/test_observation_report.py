@@ -39,6 +39,10 @@ def _setup(db, observation_days=46):
         status=Child.STATUS_OBSERVATION,
         create_time=datetime.now() - timedelta(days=observation_days),
         member_start_time=datetime.now() - timedelta(days=observation_days),
+        # F14：到期判定统一 member_expire_time（start + 45 天）
+        member_expire_time=datetime.now()
+        - timedelta(days=observation_days)
+        + timedelta(days=45),
     )
     db.add(child)
     db.commit()

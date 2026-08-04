@@ -1609,17 +1609,13 @@ def check_observation_expiry(db: Session | None = None):
         if not expired:
             return
 
-        # 1. 生成观察期报告（在状态变更前，因为 generate_due_reports 查询 OBSERVATION 状态）
-        try:
-            from backend.domain.report.service import ReportService
+        # 1. 生成观察期报告（F14：失败即整批回滚、下轮重试——杜绝"状态已 EXPIRED 而报告永久丢失"）
+        from backend.domain.report.service import ReportService
 
-            report_svc = ReportService(db)
-            generated = report_svc.generate_due_reports()
-            logger.info(
-                f"Observation reports generated: {len(generated)} for {len(expired)} expired children"
-            )
-        except Exception as e:
-            logger.exception(f"Failed to generate observation reports: {e}")
+        generated = ReportService(db).generate_due_reports()
+        logger.info(
+            f"Observation reports generated: {len(generated)} for {len(expired)} expired children"
+        )
 
         # 2. 状态变更
         for child in expired:
