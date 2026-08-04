@@ -292,7 +292,6 @@
     document.getElementById('editUserId').value = userId;
     document.getElementById('editParentName').value = parentName;
     document.getElementById('editPhone').value = phone;
-    document.getElementById('editChildStatus').value = String(childStatus || 0);
     var el = document.getElementById('editModal');
     if (el) el.classList.add('show');
   }
@@ -311,7 +310,6 @@
     const body = {
       parent_name: document.getElementById('editParentName').value.trim(),
       phone: document.getElementById('editPhone').value.trim(),
-      child_status: parseInt(document.getElementById('editChildStatus').value, 10),
     };
     try {
       await api.put('/admin/api/users/' + userId, body);

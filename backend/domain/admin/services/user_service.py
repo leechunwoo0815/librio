@@ -351,7 +351,7 @@ class AdminUserService:
         }
 
     def update_user(self, user_id: int, data) -> dict:
-        """更新用户/家长信息，允许同步更新首个孩子的状态"""
+        """更新用户/家长信息（F4：child_status 后门已移除，孩子状态变更一律走 PUT /child/{id}/status 状态机）"""
         user = (
             self.db.query(User).filter(User.id == user_id, User.is_deleted == 0).first()
         )
@@ -359,7 +359,6 @@ class AdminUserService:
             raise NotFoundError("用户不存在")
 
         update_data = data.model_dump(exclude_unset=True)
-        child_status = update_data.pop("child_status", None)
 
         if "parent_name" in update_data:
             user.parent_name = update_data["parent_name"]
@@ -373,16 +372,6 @@ class AdminUserService:
             if existing:
                 raise ValidationError("手机号已被其他用户使用")
             user.phone = update_data["phone"]
-
-        if child_status is not None:
-            first_child = (
-                self.db.query(Child)
-                .filter(Child.user_id == user_id, Child.is_deleted == 0)
-                .order_by(Child.id.asc())
-                .first()
-            )
-            if first_child:
-                first_child.status = child_status
 
         self.db.commit()
         return {"success": True, "message": "用户信息更新成功"}

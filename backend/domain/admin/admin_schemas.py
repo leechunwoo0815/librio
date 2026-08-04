@@ -92,12 +92,6 @@ class UpdateUserRequest(BaseModel):
 
     parent_name: str | None = Field(None, min_length=1, max_length=50)
     phone: str | None = Field(None, min_length=1, max_length=11)
-    child_status: int | None = Field(
-        None,
-        ge=0,
-        le=4,
-        description="主孩子状态: 0=体验课 1=观察期 2=正式会员 3=已过期 4=已退出",
-    )
 
 
 class UpdateUserStatusRequest(BaseModel):
