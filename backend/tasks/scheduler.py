@@ -2008,6 +2008,11 @@ def check_paid_not_activated(db: Session | None = None):
             )
             activated = (
                 child is not None
+                and child.status
+                in (
+                    MemberStatus.OBSERVATION,
+                    MemberStatus.OFFICIAL,
+                )  # 状态守卫防 EXITED 残留
                 and child.member_expire_time is not None
                 and order.pay_time is not None
                 and child.member_expire_time > order.pay_time
@@ -2029,7 +2034,9 @@ def check_paid_not_activated(db: Session | None = None):
                     .filter(
                         SystemMessage.user_id == 0,
                         SystemMessage.title == "支付未激活告警",
-                        SystemMessage.content.like(f"%order={order.id}%"),
+                        SystemMessage.content.like(
+                            f"%（order={order.id}）%"
+                        ),  # 右括号防前缀碰撞
                         SystemMessage.create_time > datetime.now() - timedelta(days=7),
                     )
                     .count()

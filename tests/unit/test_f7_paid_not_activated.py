@@ -173,6 +173,29 @@ class TestReconcileTask:
         )
         assert alerts == 0
 
+    def test_exited_child_with_future_expire_not_resolved(self, db):
+        """P2 反例：EXITED 孩子残留未来 expire（EXITED 不清 member 时间）不得判定已激活——
+        否则"付了钱没开通"的典型竞态单会被自动解除逻辑静默埋掉"""
+        from backend.domain.message.models import SystemMessage
+        from backend.tasks.scheduler import check_paid_not_activated
+
+        user, child = _mk_user_child(db, status=MemberStatus.EXITED)
+        order = _mk_paid_order(db, user, child)
+        child.member_expire_time = datetime.now() + timedelta(days=300)  # 残留未来到期
+        db.commit()
+        self._flag_order(db, order)
+
+        check_paid_not_activated(db)
+
+        db.refresh(order)
+        assert order.activation_issue == 1  # 不得自动解除
+        alerts = (
+            db.query(SystemMessage)
+            .filter(SystemMessage.user_id == 0, SystemMessage.title == "支付未激活告警")
+            .count()
+        )
+        assert alerts == 1
+
     def test_alert_dedup_within_7_days(self, db):
         """7 天内同单不重复告警"""
         from backend.domain.message.models import SystemMessage

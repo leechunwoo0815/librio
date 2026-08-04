@@ -44,7 +44,7 @@ Gateways → Mock支付网关 / Mock短信网关 / 真实支付网关（依赖�
 | 前端 | 微信小程序原生（34 页，4 子包） |
 | 后端 | Python 3.13 + FastAPI + SQLAlchemy 2.0 + Pydantic V2 |
 | 数据库 | MySQL 8.0 (utf8mb4)，测试用 SQLite :memory: |
-| 测试 | pytest (610 collected，通过数随环境) + behave (211 scenarios / 1368 steps) |
+| 测试 | pytest (611 collected，通过数随环境) + behave (211 scenarios / 1368 steps) |
 | 管理端 | 39 个 PC 后台模板（含 base.html）+ 35 页面级 CSS + 36 page JS（IIFE） |
 | 设计系统 | --accent: #5560cf + 31/31 class 对齐 ≥95% + 0 hardcoded + 0 oklch |
 | 定时 | APScheduler（23 个任务） |
@@ -258,7 +258,7 @@ frontend/                # 微信小程序（34 个页面，4 子包）
 
 ```bash
 # pytest
-610 collected（通过数随环境：本机 605+5 skip / CI 595+15 skip / 无 MySQL 沙箱 601+9 err）
+611 collected（通过数随环境：本机 606+5 skip / CI 596+15 skip / 无 MySQL 沙箱 602+9 err）
 
 # 架构验证
 ✅ Router 层 ORM 操作：0 处

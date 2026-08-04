@@ -68,6 +68,7 @@ class Order(BaseModel):
         SmallInteger,
         default=0,
         server_default="0",
+        nullable=False,
         comment="支付成功但会员未激活标记: 0=正常 1=待人工处理（F7 对账任务扫描）",
     )
 
