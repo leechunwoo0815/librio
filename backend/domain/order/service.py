@@ -110,6 +110,20 @@ class OrderService:
         # 权益转让校验：非亲子课订单检查转让锁定
         if order_data.type != OrderType.PARENT_COURSE:
             assert_no_pending_transfer(self.db, order_data.child_id)
+            # F22：同孩子同类型 PENDING 订单拦截（此前可重复下单，超时关闭前堆叠）
+            existing_pending = (
+                self.db.query(Order)
+                .filter(
+                    Order.child_id == order_data.child_id,
+                    Order.type == order_data.type,
+                    Order.pay_status == PayStatus.PENDING,
+                    Order.is_deleted == 0,
+                )
+                .with_for_update()
+                .first()
+            )
+            if existing_pending:
+                raise ConflictError("该孩子已有同类型的待支付订单，请先完成支付或取消")
 
         # 亲子课不可重复（带行锁防止并发重复报名）
         if order_data.type == OrderType.PARENT_COURSE:
@@ -411,6 +425,19 @@ class OrderService:
         if order.pay_status == PayStatus.PAID:
             logger.warning(f"Order {callback.order_no} already paid")
             return OrderResponse.model_validate(order)
+
+        # F26：trade_no 重复 = 同一笔支付被两次入账（DB 唯一索引兜底 + 服务层前置检查）
+        dup_trade = (
+            self.db.query(Order.id)
+            .filter(
+                Order.trade_no == callback.trade_no,
+                Order.id != order.id,
+                Order.is_deleted == 0,
+            )
+            .first()
+        )
+        if dup_trade:
+            raise PaymentError(f"交易流水号 {callback.trade_no} 已关联其他订单")
 
         # F75-③：回调 trade_state 消费——非 SUCCESS 不标记已支付（纵深防御）
         if callback.trade_state and callback.trade_state != "SUCCESS":

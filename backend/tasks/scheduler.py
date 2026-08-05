@@ -1204,7 +1204,7 @@ def check_due_date_reminders(db: Session | None = None):
 
 
 @distributed_lock("job:expire_reservations", timeout=120)
-def expire_reservations():
+def expire_reservations(db: Session | None = None):
     """
     [What] 预约过期检查
     [Why] 72小时未取书自动取消预约并释放库存
@@ -1214,7 +1214,8 @@ def expire_reservations():
     from backend.common.types import ReservationStatus
     from backend.domain.reservation.service import ReservationService
 
-    db = _get_db_session()
+    own_session = db is None
+    db = db or _get_db_session()
     try:
         now = datetime.now()
         expired = (
@@ -1231,6 +1232,25 @@ def expire_reservations():
         for r in expired:
             try:
                 svc.expire_reservation(r.id)
+                # F71-⑦：预约过期通知用户本人（此前静默释放库存）
+                from backend.domain.child.models import Child as _Child
+                from backend.domain.message.models import SystemMessage as _Msg
+
+                child = (
+                    db.query(_Child)
+                    .filter(_Child.id == r.child_id, _Child.is_deleted == 0)
+                    .first()
+                )
+                if child:
+                    db.add(
+                        _Msg(
+                            user_id=child.user_id,
+                            title="预约已过期",
+                            content="您预约的图书超过 72 小时未取，预约已自动取消，库存已释放。可重新预约。",
+                            msg_type=2,  # 活动/预约通知
+                            priority=1,
+                        )
+                    )
                 logger.info(
                     f"RESERVATION_EXPIRED: id={r.id}, child={r.child_id}, book={r.book_id}"
                 )
@@ -1244,7 +1264,8 @@ def expire_reservations():
         db.rollback()
         logger.exception(f"expire_reservations failed: {e}")
     finally:
-        db.close()
+        if own_session:
+            db.close()
 
 
 @distributed_lock("job:remind_reservation_pickup", timeout=300)

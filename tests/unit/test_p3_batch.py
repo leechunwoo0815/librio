@@ -293,3 +293,86 @@ class TestF25F21F28:
             AdminOrderService(db).update_order_status(
                 "MW-P3-078", {"pay_status": PayStatus.PAID}
             )
+
+
+class TestF22F26F71:
+    def test_f22_duplicate_pending_order_rejected(self, db):
+        """F22：同孩子同类型 PENDING 订单拦截"""
+        from backend.common.exceptions import ConflictError
+        from backend.domain.order.schemas import OrderCreate
+        from backend.domain.order.service import OrderService
+
+        user, child = _mk_user_child(db, status=MemberStatus.TRIAL)
+        OrderService(db).create_order(
+            user.id,
+            OrderCreate(child_id=child.id, type=OrderType.OBSERVATION),
+        )
+        with pytest.raises(ConflictError, match="待支付订单"):
+            OrderService(db).create_order(
+                user.id,
+                OrderCreate(child_id=child.id, type=OrderType.OBSERVATION),
+            )
+
+    def test_f26_duplicate_trade_no_rejected(self, db):
+        """F26：trade_no 重复（同一笔支付两次入账）服务层拦截"""
+        from backend.common.exceptions import PaymentError
+        from backend.domain.order.schemas import OrderPayCallback
+        from backend.domain.order.service import OrderService
+
+        user, child = _mk_user_child(db)
+        o1 = Order(
+            order_no="MW-P3-080",
+            user_id=user.id,
+            child_id=child.id,
+            type=OrderType.OBSERVATION,
+            amount=Decimal("500.00"),
+            pay_status=PayStatus.PAID,
+            trade_no="TX-DUP-001",
+        )
+        db.add(o1)
+        db.commit()
+        o2 = Order(
+            order_no="MW-P3-081",
+            user_id=user.id,
+            child_id=child.id,
+            type=OrderType.OFFICIAL_MEMBER,
+            amount=Decimal("5400.00"),
+            pay_status=PayStatus.PENDING,
+        )
+        db.add(o2)
+        db.commit()
+        with pytest.raises(PaymentError, match="已关联"):
+            OrderService(db).handle_payment_callback(
+                OrderPayCallback(
+                    order_no="MW-P3-081",
+                    trade_no="TX-DUP-001",
+                    amount=Decimal("5400.00"),
+                )
+            )
+
+    def test_f71_7_expire_sends_user_notification(self, db):
+        """F71-⑦：预约过期通知用户本人"""
+        from backend.domain.message.models import SystemMessage
+        from backend.domain.reservation.models import Reservation
+        from backend.tasks.scheduler import expire_reservations
+
+        user, child = _mk_user_child(db)
+        db.add(
+            Reservation(
+                child_id=child.id,
+                book_id=1,
+                status=0,  # PENDING
+                expire_time=datetime.now() - timedelta(hours=1),
+            )
+        )
+        db.commit()
+        expire_reservations(db=db)
+        msg = (
+            db.query(SystemMessage)
+            .filter(
+                SystemMessage.user_id == user.id,
+                SystemMessage.title == "预约已过期",
+            )
+            .first()
+        )
+        assert msg is not None

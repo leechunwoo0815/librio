@@ -16,17 +16,3 @@ class ReservationRepository(BaseRepository[Reservation]):
         return self.list_all(
             limit=50, child_id=child_id, status=ReservationStatus.PENDING
         )
-
-    def get_expired_pending(self) -> list[Reservation]:
-        """获取所有已过期但仍为 PENDING 状态的预约"""
-        from datetime import datetime
-
-        return (
-            self.db.query(Reservation)
-            .filter(
-                Reservation.status == ReservationStatus.PENDING,
-                Reservation.expire_time < datetime.now(),
-                Reservation.is_deleted == 0,
-            )
-            .all()
-        )

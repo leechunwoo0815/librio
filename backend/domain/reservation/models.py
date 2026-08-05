@@ -5,7 +5,15 @@
 过期：72小时未取书 → 自动释放库存
 """
 
-from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, SmallInteger
+from sqlalchemy import (
+    BigInteger,
+    Column,
+    Computed,
+    DateTime,
+    ForeignKey,
+    Index,
+    SmallInteger,
+)
 from sqlalchemy.orm import relationship
 
 from backend.common.base_model import BaseModel
@@ -52,7 +60,14 @@ class BookWaitlist(BaseModel):
     """图书等候名单 — F4：库存为 0 时家长可加入等候，到货/释放自动通知（先到先得）"""
 
     __tablename__ = "book_waitlist"
-    __table_args__ = {"extend_existing": True}
+    __table_args__ = (
+        Index(
+            "uq_book_waitlist_active",
+            "active_child_book",
+            unique=True,
+        ),
+        {"extend_existing": True},
+    )
 
     STATUS_WAITING = 0
     STATUS_NOTIFIED = 1
@@ -67,6 +82,15 @@ class BookWaitlist(BaseModel):
     )
     status = Column(SmallInteger, default=STATUS_WAITING, comment="等候状态")
     notify_time = Column(DateTime, nullable=True, comment="到货通知时间")
+    active_child_book = Column(
+        BigInteger,
+        Computed(
+            "CASE WHEN status IN (0,1) THEN child_id * 1000000 + book_id ELSE NULL END",
+            persisted=True,
+        ),
+        nullable=True,
+        comment="F71-⑥：活跃等候唯一键（WAITING/NOTIFIED 时 child×book，防并发重复入队）",
+    )
 
     # 关系
     child = relationship("Child", foreign_keys=[child_id])

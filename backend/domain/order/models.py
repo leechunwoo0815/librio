@@ -6,6 +6,7 @@ from sqlalchemy import (
     Column,
     DateTime,
     ForeignKey,
+    Index,
     Numeric,
     SmallInteger,
     String,
@@ -30,7 +31,10 @@ class Order(BaseModel):
     REFUND_DONE = 2
     REFUND_FAILED = 3
     __tablename__ = "order"
-    __table_args__ = {"extend_existing": True}
+    __table_args__ = (
+        Index("uq_order_trade_no", "trade_no", unique=True),
+        {"extend_existing": True},
+    )
 
     order_no = Column(
         String(32), nullable=False, unique=True, index=True, comment="订单编号"

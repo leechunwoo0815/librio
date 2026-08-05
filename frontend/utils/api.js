@@ -126,8 +126,6 @@ module.exports = {
   createReservation(childId, bookId) { return req.post('/reservation/', { child_id: childId, book_id: bookId }) },
   getReservations(childId) { return req.get(`/reservation/${childId}`) },
   cancelReservation(reservationId) { return req.post(`/reservation/${reservationId}/cancel`) },
-  fulfillReservation(reservationId, childId) { return req.post('/reservation/fulfill', { reservation_id: reservationId, child_id: childId }) },
-
   // 转让记录
   getTransferRecords() { return req.get('/child/transfer/records') },
   deleteChild(childId) { return req.del(`/child/${childId}`) },
