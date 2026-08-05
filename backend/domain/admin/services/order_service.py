@@ -400,7 +400,7 @@ class AdminOrderService:
         return f"MW{ts}{rand}"
 
     def update_order_status(self, order_no: str, data: dict) -> dict:
-        """更新订单状态"""
+        """更新订单状态（F28：状态方向校验，防非法回退/跳变）"""
         order = (
             self.db.query(Order)
             .filter(Order.order_no == order_no, Order.is_deleted == 0)
@@ -411,6 +411,18 @@ class AdminOrderService:
 
         new_status = data.get("pay_status")
         if new_status is not None:
+            allowed = {
+                PayStatus.PENDING: {PayStatus.PAID, PayStatus.FAILED, PayStatus.CLOSED},
+                PayStatus.PAID: {PayStatus.REFUNDING, PayStatus.REFUNDED},
+                PayStatus.FAILED: {PayStatus.PAID, PayStatus.CLOSED},
+                PayStatus.CLOSED: {PayStatus.PAID},  # F5 迟到支付
+                PayStatus.REFUNDING: {PayStatus.REFUNDED},
+                PayStatus.REFUNDED: set(),
+            }
+            if new_status not in allowed.get(order.pay_status, set()):
+                raise ValidationError(
+                    f"订单状态不允许 {order.pay_status} → {new_status}"
+                )
             order.pay_status = new_status
             if new_status == PayStatus.PAID:
                 order.pay_time = datetime.now()

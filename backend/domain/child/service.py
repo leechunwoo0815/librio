@@ -244,6 +244,7 @@ class ChildService:
             MemberStatus.OBSERVATION,
             MemberStatus.OFFICIAL,
             MemberStatus.EXPIRED,
+            MemberStatus.ALUMNI,  # F21：目标校验漏 ALUMNI——毕业终态不可接收转让
         ):
             raise ForbiddenError("目标孩子已有会员权益，无法转让")
 

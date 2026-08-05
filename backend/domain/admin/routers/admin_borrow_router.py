@@ -411,6 +411,7 @@ def admin_deduct_deposit(
 @router.get("/reservations", response_model=AdminActionResponse)
 def list_reservations(
     child_id: int | None = None,
+    status: int | None = Query(None, description="预约状态筛选（F65：服务端筛选）"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     admin=Depends(require_perm("reservation.list")),
@@ -419,7 +420,9 @@ def list_reservations(
 ):
     """获取预约列表 — 带分页"""
     child_ids = AdminAccountService(db).get_scoped_child_ids(admin)
-    return service.list_reservations(page, page_size, child_ids=child_ids)
+    return service.list_reservations(
+        page, page_size, status=status, child_ids=child_ids
+    )
 
 
 @router.post("/reservations/fulfill", response_model=AdminActionResponse)
@@ -429,11 +432,21 @@ def fulfill_reservation(
     db: Session = Depends(get_db),
 ):
     """完成预约"""
+    from backend.domain.child.models import Child
+
     service = ReservationService(db)
     req = ReservationFulfillRequest(
         reservation_id=data.reservation_id, barcode=data.barcode
     )  # F43：扫码路径透传 barcode
     result = service.fulfill_reservation(req)
+    # F66：响应带预约孩子名，供店员核对到店人
+    child = (
+        db.query(Child)
+        .filter(Child.id == result.child_id, Child.is_deleted == 0)
+        .first()
+    )
+    payload = result.model_dump()
+    payload["child_name"] = child.name if child else None
     from backend.domain.admin.services.system_service import AdminSystemService
 
     system_service = AdminSystemService(db)
@@ -443,7 +456,7 @@ def fulfill_reservation(
         operation="fulfill",
         content=f"完成预约: reservation #{data.reservation_id}",
     )
-    return result
+    return payload
 
 
 @router.put("/reservations/{reservation_id}/cancel", response_model=AdminActionResponse)

@@ -8,7 +8,11 @@
 
   async function loadReservations() {
     try {
-      var data = await api.get('/admin/api/reservations');
+      var url = '/admin/api/reservations';
+      if (currentFilter === 'ACTIVE') url += '?status=0';
+      else if (currentFilter === 'EXPIRED') url += '?status=2';
+      else if (currentFilter === 'PICKED') url += '?status=1';
+      var data = await api.get(url);
       allReservations = data.items || data || [];
       updateStats(allReservations);
       renderReservations(allReservations);
@@ -36,13 +40,8 @@
     currentFilter = status;
     document.querySelectorAll('.tabs .tab').forEach(function(t) { t.classList.remove('active'); });
     btn.classList.add('active');
-    var filtered = status ? allReservations.filter(function(r) {
-      if (status === 'ACTIVE') return r.status === 0;
-      if (status === 'EXPIRED') return r.status === 2;
-      if (status === 'PICKED') return r.status === 1;
-      return true;
-    }) : allReservations;
-    renderReservations(filtered);
+    // F65：筛选走服务端（此前只过滤第 1 页，统计恒 0）
+    loadReservations();
   }
 
   function renderReservations(items) {
@@ -131,8 +130,9 @@
       lastScanAt = now;
       scanInput.value = '';
       scanInput.disabled = true;
-      api.post('/admin/api/reservations/fulfill', { barcode: barcode }).then(function() {
-        showToast('取书成功（' + barcode + '）');
+      api.post('/admin/api/reservations/fulfill', { barcode: barcode }).then(function(resp) {
+        var who = (resp && resp.child_name) ? ' - ' + resp.child_name : '';
+        showToast('取书成功（' + barcode + '）' + who);
         loadReservations();
       }).catch(function(err) {
         showToast('取书失败: ' + (err.message || '未知错误'), 'error');

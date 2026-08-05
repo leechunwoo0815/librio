@@ -3,7 +3,7 @@
 
 import logging
 import uuid
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal, ROUND_HALF_UP
 
 from sqlalchemy.exc import SQLAlchemyError
@@ -69,7 +69,8 @@ class RefundService:
         # P2-7: 365天内同一孩子仅可退款1次（防滥用循环退款）
         from sqlalchemy import func
 
-        one_year_ago = datetime.now().replace(year=datetime.now().year - 1)
+        # F25：闰年安全——replace(year=now.year-1) 在 2/29 抛 ValueError，改用 timedelta(365)
+        one_year_ago = datetime.now() - timedelta(days=365)
         year_count = (
             self.db.query(func.count(RefundApplication.id))
             .filter(

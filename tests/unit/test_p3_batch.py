@@ -207,3 +207,89 @@ class TestF75:
         )
         db.refresh(order)
         assert order.pay_status == PayStatus.PENDING  # 未被标记已支付
+
+
+class TestF25F21F28:
+    def test_f25_leap_day_refund_window(self, db, monkeypatch):
+        """F25：2/29 申请退款不再 crash（timedelta 而非 replace(year)）"""
+        from datetime import datetime as dt
+
+        from backend.domain.refund.schemas import RefundCreate
+        from backend.domain.refund.service import RefundService
+
+        user, child = _mk_user_child(db)
+        order = Order(
+            order_no="MW-P3-077",
+            user_id=user.id,
+            child_id=child.id,
+            type=OrderType.OBSERVATION,
+            amount=Decimal("500.00"),
+            pay_status=PayStatus.PAID,
+            pay_time=datetime.now(),
+        )
+        db.add(order)
+        db.commit()
+        monkeypatch.setattr(
+            "backend.domain.refund.service.datetime",
+            type(
+                "FakeDT",
+                (),
+                {
+                    "now": staticmethod(lambda: dt(2028, 2, 29, 10, 0, 0)),
+                    "today": staticmethod(dt.today),
+                },
+            ),
+        )
+        # 不应抛 ValueError（2/29 replace 一年前崩溃）
+        RefundService(db).apply_refund(
+            user.id, RefundCreate(order_id=order.id, used_days=5, reason="x")
+        )
+
+    def test_f21_transfer_target_alumni_rejected(self, db):
+        """F21：ALUMNI/TRIAL 目标孩子不可作为转让接收方"""
+        from backend.common.exceptions import ForbiddenError
+        from backend.domain.child.service import ChildService
+
+        user = User(openid="f21u", phone="13800009230")
+        db.add(user)
+        db.commit()
+        source = Child(
+            user_id=user.id,
+            name="源",
+            age=7,
+            grade="二年级",
+            status=MemberStatus.OFFICIAL,
+        )
+        db.add(source)
+        target = Child(
+            user_id=user.id,
+            name="目标",
+            age=16,
+            grade="高中",
+            status=MemberStatus.ALUMNI,
+        )
+        db.add(target)
+        db.commit()
+        with pytest.raises(ForbiddenError, match="无法转让"):
+            ChildService(db)._validate_transfer(source.id, target.id)
+
+    def test_f28_order_status_direction_guard(self, db):
+        """F28：REFUNDED 订单不可再改状态（方向校验）"""
+        from backend.common.exceptions import ValidationError
+        from backend.domain.admin.services.order_service import AdminOrderService
+
+        user, child = _mk_user_child(db)
+        order = Order(
+            order_no="MW-P3-078",
+            user_id=user.id,
+            child_id=child.id,
+            type=OrderType.OBSERVATION,
+            amount=Decimal("500.00"),
+            pay_status=PayStatus.REFUNDED,
+        )
+        db.add(order)
+        db.commit()
+        with pytest.raises(ValidationError, match="不允许"):
+            AdminOrderService(db).update_order_status(
+                "MW-P3-078", {"pay_status": PayStatus.PAID}
+            )

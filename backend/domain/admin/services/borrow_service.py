@@ -259,6 +259,7 @@ class AdminBorrowService:
                     "book_title": books.get(r.book_id),
                     "status": r.status,
                     "create_time": r.create_time.isoformat() if r.create_time else None,
+                    "expire_time": r.expire_time.isoformat() if r.expire_time else None,
                 }
             )
 
