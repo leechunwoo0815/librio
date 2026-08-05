@@ -36,6 +36,30 @@ def _admin_headers(context, perms):
     return {"Authorization": f"Bearer {token}"}
 
 
+def _super_admin_headers(context):
+    """F13：复活等会员状态操作仅限超管，behave 用真实超管角色"""
+    from backend.domain.admin.models import Admin
+    from backend.domain.admin.rbac_models import Role
+
+    import uuid
+
+    role = Role(code="super_admin", name="FG超管", is_system=True)
+    context.db.add(role)
+    context.db.flush()
+    admin = Admin(
+        username=f"fg_super_{uuid.uuid4().hex[:8]}",
+        password_hash="x",
+        name="FG超管",
+        role=0,
+        status=1,
+        admin_role_id=role.id,
+    )
+    context.db.add(admin)
+    context.db.commit()
+    token = create_admin_token(admin_id=admin.id, role=0)
+    return {"Authorization": f"Bearer {token}"}
+
+
 # ==================== F5 复活 ====================
 
 
@@ -56,9 +80,11 @@ def step_exited_child(context):
 
 @when("管理员复活该孩子")
 def step_admin_revive(context):
-    headers = _admin_headers(context, ["child.edit"])
+    headers = _super_admin_headers(context)
     context.response = context.client.post(
-        f"/admin/api/children/{context.child.id}/revive", headers=headers
+        f"/admin/api/children/{context.child.id}/revive",
+        json={"confirmed": True},
+        headers=headers,
     )
     assert context.response.status_code == 200, context.response.text
 

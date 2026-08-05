@@ -41,3 +41,29 @@ def require_perm(*perm_codes: str):
         return admin
 
     return perm_checker
+
+
+def require_super_admin():
+    """仅超级管理员可执行的依赖注入（F13：会员状态变更/复活等高权限操作）
+
+    与 require_perm 的区别：super_admin 是角色级判定，不依赖具体权限码——
+    staff/teacher 即使被授予 child.edit 也不得执行本类操作。
+    """
+
+    def super_checker(
+        admin: Admin = Depends(get_current_admin),
+        db: Session = Depends(get_db),
+    ) -> Admin:
+        from backend.domain.admin.services.account_service import AdminAccountService
+
+        if not AdminAccountService(db).is_super_admin(admin):
+            logger.warning(
+                "Super admin only: admin_id=%d, username=%s, role_code=%s",
+                admin.id,
+                admin.username,
+                AdminAccountService(db).get_role_code(admin),
+            )
+            raise ForbiddenError("仅超级管理员可执行此操作")
+        return admin
+
+    return super_checker

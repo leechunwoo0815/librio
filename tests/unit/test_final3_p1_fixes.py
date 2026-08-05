@@ -88,7 +88,8 @@ class TestExitedAtHooks:
         _, child = _mk_user_child(db)
         assert child.exited_at is None
         ChildService(db).update_status(
-            child.id, ChildStatusUpdate(status=MemberStatus.EXITED)
+            child.id,
+            ChildStatusUpdate(status=MemberStatus.EXITED, confirmed=True),
         )
         db.refresh(child)
         assert child.exited_at is not None
@@ -100,13 +101,17 @@ class TestExitedAtHooks:
 
         _, child = _mk_user_child(db)
         svc = ChildService(db)
-        svc.update_status(child.id, ChildStatusUpdate(status=MemberStatus.EXITED))
+        svc.update_status(
+            child.id, ChildStatusUpdate(status=MemberStatus.EXITED, confirmed=True)
+        )
         first = child.exited_at
         assert first is not None
         # 直接改回 OBSERVATION（绕过状态机模拟数据修正场景），再次 EXITED
         child.status = MemberStatus.OBSERVATION
         db.commit()
-        svc.update_status(child.id, ChildStatusUpdate(status=MemberStatus.EXITED))
+        svc.update_status(
+            child.id, ChildStatusUpdate(status=MemberStatus.EXITED, confirmed=True)
+        )
         db.refresh(child)
         assert child.exited_at == first  # 未重置
 
@@ -117,7 +122,7 @@ class TestExitedAtHooks:
         child.status = MemberStatus.EXITED
         child.exited_at = datetime.now()
         db.commit()
-        GuardianService(db).revive_child(child.id, admin_id=1)
+        GuardianService(db).revive_child(child.id, admin_id=1, confirmed=True)
         db.refresh(child)
         assert child.status == MemberStatus.TRIAL
         assert child.exited_at is None

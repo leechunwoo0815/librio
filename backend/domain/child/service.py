@@ -150,9 +150,15 @@ class ChildService:
         return ChildResponse.model_validate(child)
 
     def update_status(
-        self, child_id: int, status_data: ChildStatusUpdate
+        self,
+        child_id: int,
+        status_data: ChildStatusUpdate,
+        admin_id: int | None = None,
     ) -> ChildResponse:
-        """更新会员状态 — 校验迁移合法性"""
+        """更新会员状态 — 校验迁移合法性（F13：超管 + 二次确认 + from→to 审计）"""
+        if not status_data.confirmed:
+            raise ValidationError("会员状态变更需二次确认（confirmed=true）")
+
         child = (
             self.db.query(Child)
             .filter(Child.id == child_id, Child.is_deleted == 0)
@@ -181,7 +187,30 @@ class ChildService:
             child.member_expire_time = status_data.member_expire_time
 
         self.child_repo.update(child)
-        self.db.commit()
+        if admin_id is not None:
+            # 与状态变更同事务写入审计（write_operation_log 的 commit 一并落库）
+            from backend.domain.admin.services.system_service import AdminSystemService
+
+            content = (
+                f"会员状态变更: child {child_id}（{child.name}）"
+                f"{old_status} → {new_status}"
+            )
+            if (
+                status_data.member_start_time is not None
+                or status_data.member_expire_time is not None
+            ):
+                content += (
+                    f"；start={status_data.member_start_time}, "
+                    f"expire={status_data.member_expire_time}"
+                )
+            AdminSystemService(self.db).write_operation_log(
+                admin_id=admin_id,
+                module="child",
+                operation="update_status",
+                content=content,
+            )
+        else:
+            self.db.commit()
         logger.info(f"Child {child_id} status changed: {old_status} -> {new_status}")
         return ChildResponse.model_validate(child)
 

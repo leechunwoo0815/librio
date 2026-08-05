@@ -117,7 +117,7 @@ class TestRevive:
         child.member_expire_time = datetime.now() - timedelta(days=35)
         db.commit()
         svc = GuardianService(db)
-        result = svc.revive_child(child.id, admin_id=1)
+        result = svc.revive_child(child.id, admin_id=1, confirmed=True)
         assert result["status"] == 0
         db.refresh(child)
         assert child.status == MemberStatus.TRIAL
@@ -128,7 +128,7 @@ class TestRevive:
         child = _child(db, u, "小明", status=MemberStatus.OFFICIAL)
         svc = GuardianService(db)
         with pytest.raises(ConflictError, match="EXITED"):
-            svc.revive_child(child.id, admin_id=1)
+            svc.revive_child(child.id, admin_id=1, confirmed=True)
 
     def test_historical_paid_child_counts_multi_child(self, db):
         """F5：复活后的孩子（历史有已付订单）计入多孩优惠资格"""

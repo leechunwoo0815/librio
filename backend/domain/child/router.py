@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from backend.common.dependencies import get_child_service
-from backend.middleware.admin_rbac import require_perm
+from backend.middleware.admin_rbac import require_super_admin
 from backend.middleware.auth import get_current_user
 from backend.middleware.ownership import GetOwnedChild, verify_child_ownership
 from backend.domain.child.schemas import (
@@ -67,10 +67,10 @@ def update_child_status(
     child_id: int,
     status_data: ChildStatusUpdate,
     child_service: ChildService = Depends(get_child_service),
-    admin=Depends(require_perm("child.edit")),
+    admin=Depends(require_super_admin()),
 ):
-    """更新会员状态（管理员操作）"""
-    return child_service.update_status(child_id, status_data)
+    """更新会员状态（F13：仅超管，二次确认，from→to 审计）"""
+    return child_service.update_status(child_id, status_data, admin_id=admin.id)
 
 
 @router.post("/transfer", response_model=dict)

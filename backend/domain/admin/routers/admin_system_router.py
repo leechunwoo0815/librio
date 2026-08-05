@@ -22,7 +22,7 @@ from backend.common.dependencies import (
 )
 from backend.common.exceptions import ConflictError, ForbiddenError, ValidationError
 from backend.common.gateways.payment import PaymentGateway
-from backend.middleware.admin_rbac import require_perm
+from backend.middleware.admin_rbac import require_perm, require_super_admin
 from backend.domain.admin.admin_schemas import (
     SuccessResponse,
     AdminActionResponse,
@@ -385,6 +385,12 @@ class ChangeGuardianRequest(BaseModel):
     confirmed: bool = False
 
 
+class ReviveChildRequest(BaseModel):
+    """F5 复活请求（F13：二次确认强制）"""
+
+    confirmed: bool = False
+
+
 @router.post("/users/{user_id}/migrate-account", response_model=AdminActionResponse)
 def migrate_account(
     user_id: int,
@@ -416,13 +422,14 @@ def change_guardian(
 @router.post("/children/{child_id}/revive", response_model=AdminActionResponse)
 def revive_child(
     child_id: int,
-    admin=Depends(require_perm("child.edit")),
+    data: ReviveChildRequest,
+    admin=Depends(require_super_admin()),
     db: Session = Depends(get_db),
 ):
-    """F5 复活：EXITED → TRIAL（历史数据保留，权益清零重来）"""
+    """F5 复活：EXITED → TRIAL（F13：仅超管 + 二次确认，历史数据保留，权益清零重来）"""
     from backend.domain.admin.services.guardian_service import GuardianService
 
-    return GuardianService(db).revive_child(child_id, admin.id)
+    return GuardianService(db).revive_child(child_id, admin.id, data.confirmed)
 
 
 @router.put("/children/{child_id}", response_model=AdminActionResponse)

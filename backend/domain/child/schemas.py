@@ -56,6 +56,10 @@ class ChildStatusUpdate(BaseSchema):
     status: int = Field(..., description="新状态")
     member_start_time: datetime | None = Field(None, description="会员开始时间")
     member_expire_time: datetime | None = Field(None, description="会员到期时间")
+    confirmed: bool = Field(
+        False,
+        description="F13 二次确认：会员状态变更影响权益与资金，必须显式确认",
+    )
 
 
 class ChildUpdate(BaseSchema):

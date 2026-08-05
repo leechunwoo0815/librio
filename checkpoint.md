@@ -1,7 +1,7 @@
 # DmkWords (librio) 项目检查点
 
-> 更新时间：2026-08-04 GMT+8 (v12)
-> 状态：✅ V3.23 — 52 题需求决策 + 四轮外部审查全闭环 + 终极全量审查 P0/P1 修复（F1-F5/F7/F8/F11/F12/F14）+ 623 pytest collected（通过数随环境）/ 211/1368 behave + 56 表 + 65 配置 + 23 定时任务 + CI 同构十一关全绿（含 Gate 11）
+> 更新时间：2026-08-05 GMT+8 (v13)
+> 状态：✅ V3.23 — 52 题需求决策 + 四轮外部审查全闭环 + 终极全量审查 P0/P1 修复（F1-F5/F7/F8/F11/F12/F13/F14）+ 632 pytest collected（开发机 632 passed，通过数随环境）/ 211/1368 behave + 56 表 + 65 配置 + 23 定时任务 + CI 同构十一关全绿（含 Gate 11）
 
 ---
 
@@ -26,11 +26,11 @@ DmkWords 是一个儿童英语阅读管理平台：
 
 | 检查项 | 状态 |
 |--------|------|
-| pytest | ✅ 623 collected（本机 618 passed + 5 skipped；CI sqlite 608 + 15 skipped；无 MySQL 沙箱 614 passed + 9 failed） |
+| pytest | ✅ 632 collected（开发机 632 passed；CI sqlite 617 + 15 skipped；无 MySQL 沙箱 623 passed + 9 failed） |
 | behave | ✅ 211 scenarios / 1368 steps（无 MySQL 沙箱 171 passed + 40 error / 0 failed） |
 | ruff check `backend/ tests/` | ✅ 0 errors |
 | ruff check `features/ scripts/` | ✅ 0 errors |
-| ruff format `--check .` | ✅ 346 files formatted |
+| ruff format `--check .` | ✅ 425 files formatted |
 | verify_api_contract | ✅ OK |
 | check_model_consistency | ✅ 56 tables |
 | alembic check (MySQL only) | ✅ No new upgrade operations detected |

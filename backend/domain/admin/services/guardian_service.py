@@ -138,8 +138,13 @@ class GuardianService:
         )
         return {"success": True, "child_id": child_id, "new_user_id": new_user_id}
 
-    def revive_child(self, child_id: int, admin_id: int) -> dict:
-        """F5 复活：EXITED → TRIAL（历史阅读数据保留，权益清零重来）"""
+    def revive_child(
+        self, child_id: int, admin_id: int, confirmed: bool = False
+    ) -> dict:
+        """F5 复活：EXITED → TRIAL（F13：需二次确认，历史数据保留，权益清零重来）"""
+        if not confirmed:
+            raise ValidationError("复活操作需二次确认（confirmed=true）")
+
         child = (
             self.db.query(Child)
             .filter(Child.id == child_id, Child.is_deleted == 0)
