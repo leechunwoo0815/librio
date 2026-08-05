@@ -163,6 +163,34 @@ def test_start_quiz(db):
     assert quiz.total_questions == 1
 
 
+def test_start_quiz_expires_previous_in_progress(db):
+    """P3：放弃的进行中测验在下次开始时置 EXPIRED（防僵尸记录堆积）"""
+    _, child, book, _, _, _ = _create_test_data(db)
+    q1 = QuestionBank(
+        book_id=book.id,
+        question_text="Q1",
+        option_a="A",
+        option_b="B",
+        correct_answer="A",
+    )
+    db.add(q1)
+    db.commit()
+
+    from backend.domain.advancement.schemas import QuizStartRequest
+    from backend.domain.advancement.models import Quiz
+
+    svc = AdvancementService(db)
+    first = svc.start_quiz(child.id, QuizStartRequest(book_id=book.id))
+    # 不提交，直接再次开始（冷却只查 COMPLETED，允许重开）
+    second = svc.start_quiz(child.id, QuizStartRequest(book_id=book.id))
+    assert second.id != first.id
+    db.expire_all()
+    stale = db.query(Quiz).filter(Quiz.id == first.id).first()
+    assert stale.status == Quiz.STATUS_EXPIRED
+    fresh = db.query(Quiz).filter(Quiz.id == second.id).first()
+    assert fresh.status == Quiz.STATUS_IN_PROGRESS
+
+
 def test_submit_answers_all_correct(db):
     """答题全部正确"""
     _, child, book, _, _, _ = _create_test_data(db)

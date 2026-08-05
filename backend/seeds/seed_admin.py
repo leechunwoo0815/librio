@@ -25,11 +25,22 @@ def seed():
             logger.info(f"管理员已存在: id={existing.id}, username={existing.username}")
             return
 
+        # F34：初始超管直接关联 super_admin 角色（admin_role_id）——
+        # is_super_admin 只认 RBAC 角色（admin_rbac.py），依赖 seed_rbac
+        # migrate_admin_roles 手动回填会把超管锁在门外且排查路径隐晦
+        from backend.domain.admin.models import Role
+
+        super_role = (
+            db.query(Role)
+            .filter(Role.code == "super_admin", Role.is_deleted == 0)
+            .first()
+        )
         admin = Admin(
             username="admin",
             name="超级管理员",
-            role=0,  # ROLE_ADMIN
+            role=0,  # ROLE_ADMIN（@deprecated，兼容旧逻辑）
             status=1,
+            admin_role_id=super_role.id if super_role else None,
         )
         default_password = os.environ.get("ADMIN_PASSWORD")
         if not default_password:

@@ -159,7 +159,8 @@ class TestStatusUpdateServiceGuard:
         )
         assert log is not None
         assert log.module == "child"
-        assert "0" in log.content and "1" in log.content
+        # F33：审计 from→to 用状态名（TRIAL → OBSERVATION），裸 int 需查表才能读
+        assert "TRIAL" in log.content and "OBSERVATION" in log.content
         assert "→" in log.content
 
     def test_status_update_without_admin_id_skips_log(self, db):

@@ -164,6 +164,16 @@ class AdvancementService:
             minutes = int(remaining.total_seconds() / 60)
             raise ConflictError(f"测验冷却中，请 {minutes} 分钟后重试")
 
+        # P3：清理历史未提交的进行中测验（防止僵尸 IN_PROGRESS 记录堆积——
+        # 冷却判定只查 COMPLETED，孩子放弃后再开不影响；但旧记录会残留在
+        # 管理端"进行中"列表且无过期机制）
+        self.db.query(Quiz).filter(
+            Quiz.child_id == child_id,
+            Quiz.book_id == data.book_id,
+            Quiz.status == Quiz.STATUS_IN_PROGRESS,
+            Quiz.is_deleted == 0,
+        ).update({Quiz.status: Quiz.STATUS_EXPIRED}, synchronize_session=False)
+
         quiz = Quiz(
             child_id=child_id,
             book_id=data.book_id,

@@ -191,9 +191,17 @@ class ChildService:
             # 与状态变更同事务写入审计（write_operation_log 的 commit 一并落库）
             from backend.domain.admin.services.system_service import AdminSystemService
 
+            # F33：审计 from→to 用状态名而非裸 int（OperationLog 是事后追责凭证，
+            # int 需查表才能读；与 revive 日志"EXITED → TRIAL"口径一致）
+            def _status_name(v):
+                try:
+                    return MemberStatus(v).name
+                except (TypeError, ValueError):
+                    return str(v)
+
             content = (
                 f"会员状态变更: child {child_id}（{child.name}）"
-                f"{old_status} → {new_status}"
+                f"{_status_name(old_status)} → {_status_name(new_status)}"
             )
             if (
                 status_data.member_start_time is not None
