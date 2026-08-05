@@ -146,7 +146,14 @@ def step_refund_amount_formula(context, amount, formula):
         assert resp.status_code == 200
         actual = resp.json()["refund_amount"]
 
-    assert abs(float(actual) - float(amount)) < 1.0, f"Expected {amount}, got {actual}"
+    # T1：±1 元容差让 466.67 与 467 不可区分——改为精确金额断言
+    from decimal import Decimal
+
+    expected = Decimal(str(amount))
+    actual_dec = Decimal(str(actual))
+    assert actual_dec == expected, (
+        f"退款金额不匹配：期望 {expected}，实际 {actual_dec}（used_days={used_days}）"
+    )
 
 
 @given("用户为第二个孩子购买观察期（实付{amount:d}元，9折）")

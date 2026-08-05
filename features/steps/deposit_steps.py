@@ -87,8 +87,10 @@ def step_already_paid_msg(context):
 
 @then('提示"请先归还所有图书并结清罚款"')
 def step_cannot_refund_msg(context):
+    # T1：恒真断言清零——真实端点必须 4xx 且 detail 含提示
     assert context.response is not None
-    assert context.response.status_code in (400, 403, 200)
+    assert context.response.status_code in (400, 403), context.response.text
+    assert "请先归还所有图书" in (context.response.text or "")
 
 
 @then('押金状态显示"已缴纳"')
@@ -251,6 +253,18 @@ def step_has_overdue_borrow(context):
             context.db.refresh(book)
         context.book = book
     # 创建逾期借阅记录
+    # 真实 fine_policy 有首次免罚——先造历史逾期记录使本场景罚款真实生效
+    context.db.add(
+        BorrowRecord(
+            child_id=context.child.id,
+            book_id=context.book.id,
+            status=BorrowStatus.RETURNED,
+            borrow_time=datetime.now() - timedelta(days=60),
+            due_date=datetime.now() - timedelta(days=50),
+            return_time=datetime.now() - timedelta(days=40),
+            overdue_days=5,
+        )
+    )
     borrow = BorrowRecord(
         child_id=context.child.id,
         book_id=context.book.id,
@@ -316,28 +330,21 @@ def step_parent_view_deposit(context):
 @when("系统计算逾期罚款")
 @when("系统计算罚款（定价 x 1.5 = {amount:d}元）")
 def step_calc_fine(context, amount=0):
-    # 计算罚款并更新孩子状态
-    if hasattr(context, "child") and context.child:
-        # 如果没有指定金额，计算逾期罚款（默认1元/天）
-        if amount == 0:
-            from backend.domain.borrow.models import BorrowRecord
-            from backend.common.types import BorrowStatus
+    # T1：禁自写公式——逾期罚款走真实任务（fine_policy 统一口径）；
+    # 丢失罚款走真实 deduct_deposit（押金扣除是独立管理操作，B11 记账语义）
+    if amount == 0:
+        from backend.tasks.scheduler import mark_overdue_books
 
-            overdue = (
-                context.db.query(BorrowRecord)
-                .filter(
-                    BorrowRecord.child_id == context.child.id,
-                    BorrowRecord.status == BorrowStatus.OVERDUE,
-                )
-                .first()
+        mark_overdue_books(db=context.db)
+    else:
+        from backend.domain.deposit.schemas import DepositDeductRequest
+        from backend.domain.deposit.service import DepositService
+
+        DepositService(context.db).deduct_deposit(
+            DepositDeductRequest(
+                child_id=context.child.id, amount=amount, reason="丢失赔偿"
             )
-            if overdue and overdue.due_date:
-                days = (datetime.now() - overdue.due_date).days
-                amount = days * 1  # 1元/天
-        context.child.outstanding_fines = (
-            context.child.outstanding_fines or 0
-        ) + amount
-        context.db.commit()
+        )
     context.fine_amount = amount
 
 
@@ -378,8 +385,9 @@ def step_deposit_refunding(context):
 
 @then("退款申请不创建")
 def step_no_refund(context):
+    # T1：恒真断言清零——真实端点必须 4xx（此前含 200 恒真）
     assert context.response is not None
-    assert context.response.status_code in (400, 403, 422, 200)
+    assert context.response.status_code in (400, 403, 422), context.response.text
 
 
 @then('显示押金状态为"已缴纳"')
@@ -399,8 +407,13 @@ def step_show_balance(context):
 
 @then("显示未结罚款金额")
 def step_show_fines(context):
+    # T1：空断言清零——押金状态接口返回 fine 字段，须与孩子实际未缴一致
     assert context.response.status_code == 200
-    # 押金状态接口可能不包含罚款信息，此处验证响应正常即可
+    data = context.response.json()
+    context.db.refresh(context.child)
+    assert float(data.get("fine", 0)) == float(context.child.outstanding_fines or 0), (
+        f"接口 fine={data.get('fine')} 与孩子 outstanding={context.child.outstanding_fines} 不一致"
+    )
 
 
 @then("从押金中扣除逾期罚款")
@@ -418,19 +431,60 @@ def step_fines_increased(context, amount):
 
 @then("押金余额更新为{amount:d}元")
 def step_balance_updated(context, amount):
+    # T1：空断言清零——有效余额 = amount - deduct_amount（真实 deduct 语义）
     record = (
         context.db.query(DepositRecord)
         .filter(DepositRecord.child_id == context.child.id)
         .first()
     )
     assert record is not None
+    effective = (record.amount or 0) - (record.deduct_amount or 0)
+    assert float(effective) == float(amount), (
+        f"押金有效余额应为 {amount}，实际 {effective}（amount={record.amount}, deduct={record.deduct_amount}）"
+    )
 
 
-@then("押金余额相应减少")
-def step_balance_decreased(context):
-    # 验证罚款已记录（押金减少的体现）
+@then("押金扣除罚款{amount:d}元")
+def step_deposit_deducted_amount(context, amount):
+    # T1：真实 deduct_deposit 断言——记录置 DEDUCTED 且 deduct_amount 匹配
+    record = (
+        context.db.query(DepositRecord)
+        .filter(DepositRecord.child_id == context.child.id)
+        .first()
+    )
+    assert record is not None
+    assert float(record.deduct_amount or 0) == float(amount), (
+        f"押金应扣除 {amount}，实际 deduct_amount={record.deduct_amount}"
+    )
+    from backend.common.types import DepositStatus
+
+    assert record.status == DepositStatus.DEDUCTED
+
+
+@then("押金足额抵扣未结罚款不变")
+def step_fines_unchanged(context):
+    # T1：押金足额抵扣时 outstanding 不增加（B11 记账语义）
     context.db.refresh(context.child)
-    assert float(context.child.outstanding_fines or 0) >= 0
+    assert float(context.child.outstanding_fines or 0) == 0
+
+
+@then("未结罚款已更新")
+def step_fines_updated(context):
+    # T1：真实任务计算后 outstanding 反映罚款
+    context.db.refresh(context.child)
+    assert float(context.child.outstanding_fines or 0) > 0
+
+
+@then("押金余额保持不变")
+def step_balance_unchanged(context):
+    record = (
+        context.db.query(DepositRecord)
+        .filter(DepositRecord.child_id == context.child.id)
+        .first()
+    )
+    assert record is not None
+    assert float(record.amount or 0) == 1200.0
+    assert float(record.deduct_amount or 0) == 0.0
 
 
 @then("退款金额自动抵扣未结罚款{amount:d}元")

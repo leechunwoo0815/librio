@@ -748,8 +748,9 @@ def step_deduct_deposit(context):
 
 @then("更新未结罚款金额")
 def step_update_fines(context):
+    # T1：空断言清零——真实任务/服务已把罚款计入 outstanding
     context.db.refresh(context.child)
-    assert float(context.child.outstanding_fines) >= 0
+    assert float(context.child.outstanding_fines or 0) > 0, "未结罚款未更新"
 
 
 @then('系统发送提醒消息"{msg}"')

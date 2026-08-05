@@ -275,7 +275,8 @@ class DamageAdminService:
             .first()
         )
         waived = Decimal("0")
-        charged = report is not None and report.status != (
+        # 无报告（mark_book_lost 路径直接计费）→ 应冲正；仅 PENDING_REVIEW（未入账）跳过
+        charged = report is None or report.status != (
             BookDamageReport.STATUS_PENDING_REVIEW
         )
         # F48：待复核报告从未入账（confirm 才计 outstanding）——找回不得冲销孩子其他合法罚款
@@ -373,7 +374,7 @@ class DamageAdminService:
             .first()
         )
         waived = Decimal("0")
-        charged = report is not None and report.status != (
+        charged = report is None or report.status != (
             BookDamageReport.STATUS_PENDING_REVIEW
         )
         # F48：同 mark_book_found——待复核报告不得冲销其他罚款
