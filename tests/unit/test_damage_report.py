@@ -225,9 +225,16 @@ class TestAppeal:
         )
         svc.confirm_report(report.id, admin_id=1)  # B9 双人复核
         # 模拟超过7天
+        # F62：申诉期从双人复核通过（reviewed_at）起算——模拟超期须前移 reviewed_at，
+        # 仅改 create_time 已不足以构成"复核通过 8 天"（复核时间仍是现在）
         db_session.query(BookDamageReport).filter(
             BookDamageReport.id == report.id
-        ).update({BookDamageReport.create_time: datetime.now() - timedelta(days=8)})
+        ).update(
+            {
+                BookDamageReport.create_time: datetime.now() - timedelta(days=8),
+                BookDamageReport.reviewed_at: datetime.now() - timedelta(days=8),
+            }
+        )
         db_session.commit()
         db_session.refresh(report)
 

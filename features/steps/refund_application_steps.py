@@ -271,7 +271,8 @@ def step_auto_refund(context):
 
 @then('退款状态变为"审核拒绝"')
 def step_refund_rejected(context):
-    assert context.response.status_code in (200, 201, 403)
+    # T1：403 为死分支（审核端点正常返回 201，管理员有权限）——收窄避免宽断言
+    assert context.response.status_code in (200, 201)
     data = context.response.json()
     assert data.get("status") in (2, "rejected", "审核拒绝")
 

@@ -486,7 +486,10 @@ class DamageAdminService:
         report = self._get_report_or_raise(report_id)
         if report.status != BookDamageReport.STATUS_PENDING:
             raise ValidationError("当前状态不允许申诉")
-        days_since = (datetime.now().date() - report.create_time.date()).days
+        # F62：申诉期从进入 PENDING（双人复核通过 reviewed_at）起算，而非报告创建日——
+        # 与 confirm_expired/batch_confirm_expired 同口径（复核通过前家长无法申诉）
+        baseline = report.reviewed_at or report.create_time
+        days_since = (datetime.now().date() - baseline.date()).days
         if days_since > 7:
             raise ValidationError(f"已超过7天申诉期（{days_since}天），无法申诉")
 

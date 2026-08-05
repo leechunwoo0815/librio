@@ -234,6 +234,30 @@ class TestF62AppealWindowFromReview:
         result = svc.confirm_expired(report.id)
         assert result.status == BookDamageReport.STATUS_CONFIRMED
 
+    def test_appeal_allowed_within_reviewed_window(self, db):
+        """F62：创建 10 天但复核通过仅 2 天 → 家长申诉应允许（申诉期从 reviewed_at 起算）"""
+        _, child, book, copy, record = _mk_lost(db)
+        report = _mk_report(db, record, status=BookDamageReport.STATUS_PENDING)
+        report.create_time = datetime.now() - timedelta(days=10)
+        report.reviewed_at = datetime.now() - timedelta(days=2)
+        db.commit()
+        svc = DamageAdminService(db)
+        result = svc.appeal(report.id, "想申诉")
+        assert result.status == BookDamageReport.STATUS_DISPUTED
+
+    def test_appeal_rejected_8_days_since_review(self, db):
+        """对照：复核通过已 8 天 → 家长申诉被拒"""
+        from backend.common.exceptions import ValidationError
+
+        _, child, book, copy, record = _mk_lost(db)
+        report = _mk_report(db, record, status=BookDamageReport.STATUS_PENDING)
+        report.create_time = datetime.now() - timedelta(days=10)
+        report.reviewed_at = datetime.now() - timedelta(days=8)
+        db.commit()
+        svc = DamageAdminService(db)
+        with pytest.raises(ValidationError, match="已超过7天申诉期"):
+            svc.appeal(report.id, "想申诉")
+
 
 class TestLostFineMarkerInteraction:
     def test_mark_book_lost_subsumes_overdue_fine(self, db):
