@@ -59,6 +59,12 @@ class BorrowRecord(BaseModel):
     fine_waived = Column(
         SmallInteger, default=0, comment="首次逾期免罚: 0=否 1=是（B7）"
     )
+    fine_in_outstanding = Column(
+        Numeric(10, 2),
+        nullable=False,
+        default=0,
+        comment="已计入 child.outstanding_fines 的金额（F35/F36 差额增量防双计）",
+    )
 
     # 测评去重标记
     quiz_passed = Column(SmallInteger, default=0, comment="是否已通过测评: 0=否 1=是")

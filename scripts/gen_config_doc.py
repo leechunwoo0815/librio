@@ -85,6 +85,7 @@ SECTIONS: list[tuple[str, list[str]]] = [
             "deposit_refund_auto_approve",
             "deposit_partial_refund_amount",
             "deposit_partial_refund_books",
+            "deposit_pending_expire_minutes",
         ],
     ),
     (

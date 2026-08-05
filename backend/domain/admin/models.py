@@ -122,6 +122,11 @@ class SystemConfig(BaseModel):
             "bool",
             "观察期中途升级按剩余天数抵扣会员费（A6决策）",
         ),
+        "deposit_pending_expire_minutes": (
+            "30",
+            "int",
+            "押金支付单超时未回调的复位分钟数（F39：废弃 PENDING 复位 UNPAID 允许重缴）",
+        ),
         # ── 借阅规则 ──
         "borrow_limit": ("10", "int", "每个孩子最大同时借阅数（B14决策：10本）"),
         "borrow_period_days": ("21", "int", "单次借阅期限（天）"),

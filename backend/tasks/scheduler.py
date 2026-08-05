@@ -211,6 +211,14 @@ def init_scheduler(app):
         replace_existing=True,
     )
 
+    # 每天凌晨1:30：废弃押金支付单（PENDING 超时未回调）复位 UNPAID
+    scheduler.add_job(
+        reset_stale_pending_deposits,
+        CronTrigger(hour=1, minute=30),
+        id="reset_stale_pending_deposits",
+        replace_existing=True,
+    )
+
     scheduler.start()
     logger.info("Scheduler started with 23 jobs")
 
@@ -1481,7 +1489,7 @@ def graduate_children(db: Session | None = None):
 
 
 @distributed_lock("job:mark_overdue_books", timeout=600)
-def mark_overdue_books():
+def mark_overdue_books(db: Session | None = None):
     """
     [What] 逾期检测 + 服务费按日累计（B7：宽限期/上限/首次免罚走 fine_policy）
     [Why] 超过21天未还的借阅记录标记为逾期，已逾期的更新服务费
@@ -1491,7 +1499,8 @@ def mark_overdue_books():
     from backend.domain.child.models import Child
     from backend.common.types import BorrowStatus
 
-    db = _get_db_session()
+    own_session = db is None
+    db = db or _get_db_session()
     try:
         now = datetime.now()
         from backend.common.fine_policy import (
@@ -1536,35 +1545,23 @@ def mark_overdue_books():
             if current_days > (record.overdue_days or 0):
                 apply_fine(db, record, current_days, policy)
 
-        # 按孩子汇总 outstanding_fines（用 GROUP BY 一次查询，避免 N+1 + O(N²)）
+        # 按孩子差额增量维护 outstanding_fines（F35：只动逾期服务费部分，
+        # 不覆写损坏/丢失/手工罚款；标记列防双计）
+        from backend.common.fine_policy import sync_outstanding_fine
 
         all_overdue = new_overdue + existing_overdue
         if all_overdue:
-            # 一次查询每个孩子的总罚款
-            fine_rows = (
-                db.query(
-                    BorrowRecord.child_id,
-                    sql_func.coalesce(sql_func.sum(BorrowRecord.fine_amount), 0),
-                )
-                .filter(
-                    BorrowRecord.child_id.in_({r.child_id for r in all_overdue}),
-                    BorrowRecord.status == BorrowStatus.OVERDUE,
-                    BorrowRecord.is_deleted == 0,
-                )
-                .group_by(BorrowRecord.child_id)
-                .all()
-            )
-            fine_map = {cid: total for cid, total in fine_rows}
-
-            # 批量查 Child
-            child_ids = list(fine_map.keys())
-            children = (
-                db.query(Child)
+            child_ids = {r.child_id for r in all_overdue}
+            children = {
+                c.id: c
+                for c in db.query(Child)
                 .filter(Child.id.in_(child_ids), Child.is_deleted == 0)
                 .all()
-            )
-            for child in children:
-                child.outstanding_fines = fine_map.get(child.id, Decimal("0"))
+            }
+            for record in all_overdue:
+                child = children.get(record.child_id)
+                if child is not None:
+                    sync_outstanding_fine(db, child, record)
 
         total = len(new_overdue) + len(existing_overdue)
         if total:
@@ -1576,7 +1573,8 @@ def mark_overdue_books():
         db.rollback()
         logger.exception(f"mark_overdue_books failed: {e}")
     finally:
-        db.close()
+        if own_session:
+            db.close()
 
 
 @distributed_lock("job:check_observation_expiry", timeout=600)
@@ -2082,6 +2080,32 @@ def check_paid_not_activated(db: Session | None = None):
     except Exception as e:
         db.rollback()
         logger.exception(f"check_paid_not_activated failed: {e}")
+    finally:
+        if own_session:
+            db.close()
+
+
+@distributed_lock("job:reset_stale_pending_deposits", timeout=300)
+def reset_stale_pending_deposits(db: Session | None = None):
+    """F39：废弃押金支付单（PENDING 超时未回调）复位 UNPAID，允许重新缴纳
+
+    用户调起微信支付后放弃支付，PENDING 记录若不复位将永久阻塞再次缴纳
+    （get_active_by_child 把 PENDING 视为活跃）。超时窗口由配置
+    deposit_pending_expire_minutes 控制（默认 30 分钟）。
+    """
+    from backend.domain.deposit.service import DepositService
+
+    own_session = db is None
+    db = db or _get_db_session()
+    try:
+        count = DepositService(db).reset_stale_pending_deposits()
+        if count:
+            logger.info(
+                f"reset_stale_pending_deposits: {count} records reset to UNPAID"
+            )
+    except Exception as e:
+        db.rollback()
+        logger.exception(f"reset_stale_pending_deposits failed: {e}")
     finally:
         if own_session:
             db.close()

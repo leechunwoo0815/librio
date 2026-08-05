@@ -89,3 +89,29 @@ def apply_fine(db: Session, record, days_overdue: int, policy: OverduePolicy) ->
         record.fine_waived = 1
     else:
         record.fine_amount = fine
+
+
+def sync_outstanding_fine(db: Session, child, record) -> Decimal:
+    """按差额增量把借阅罚款同步到 child.outstanding_fines（F35/F36）
+
+    增量口径：delta = record.fine_amount - record.fine_in_outstanding。
+    record.fine_in_outstanding 为已入账标记列（迁移 046），已入账部分绝不重复加；
+    罚款增长/归零都正确反映。只动"逾期服务费"这部分，不触碰损坏/丢失/手工罚款
+    （那些路径维持 += 语义），修复 F35 覆写丢失损坏罚款与 F36 还书不入账。
+    调用方须已对 child 加行锁（与记录更新同事务）。
+    """
+    counted = (
+        Decimal(str(record.fine_in_outstanding))
+        if record.fine_in_outstanding
+        else Decimal("0")
+    )
+    current = Decimal(str(record.fine_amount)) if record.fine_amount else Decimal("0")
+    delta = current - counted
+    if delta != 0:
+        child.outstanding_fines = (
+            Decimal(str(child.outstanding_fines))
+            if child.outstanding_fines
+            else Decimal("0")
+        ) + delta
+        record.fine_in_outstanding = current
+    return delta

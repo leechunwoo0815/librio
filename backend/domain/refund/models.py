@@ -54,6 +54,12 @@ class RefundApplication(BaseModel):
 
     actual_refund_amount = Column(Numeric(10, 2), nullable=True, comment="实际退款金额")
     refund_time = Column(DateTime, nullable=True, comment="退款完成时间")
+    out_refund_no = Column(
+        String(64),
+        nullable=True,
+        index=True,
+        comment="微信商户退款单号（F38：申请时生成持久化，重试复用防重复退款）",
+    )
     fine_deducted = Column(
         Numeric(10, 2),
         default=0,

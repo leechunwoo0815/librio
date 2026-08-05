@@ -1,6 +1,6 @@
 # DmkWords — 架构文档
 
-> 版本：V3.13（2026-08-04 更新：52 题决策 + 四轮审查闭环 — 56 表/65 配置/fine_policy/config_levels/guardian/teacher_workbench）
+> 版本：V3.13（2026-08-05 更新：52 题决策 + 四轮审查闭环 + 二批 P0 修复 — 56 表/66 配置/fine_policy/config_levels/guardian/teacher_workbench）
 > 零粉饰，只写事实
 
 ---
@@ -44,10 +44,10 @@ Gateways → Mock支付网关 / Mock短信网关 / 真实支付网关（依赖�
 | 前端 | 微信小程序原生（34 页，4 子包） |
 | 后端 | Python 3.13 + FastAPI + SQLAlchemy 2.0 + Pydantic V2 |
 | 数据库 | MySQL 8.0 (utf8mb4)，测试用 SQLite :memory: |
-| 测试 | pytest (632 collected，通过数随环境) + behave (211 scenarios / 1368 steps) |
+| 测试 | pytest (647 collected，通过数随环境) + behave (211 scenarios / 1368 steps) |
 | 管理端 | 39 个 PC 后台模板（含 base.html）+ 35 页面级 CSS + 36 page JS（IIFE） |
 | 设计系统 | --accent: #5560cf + 31/31 class 对齐 ≥95% + 0 hardcoded + 0 oklch |
-| 定时 | APScheduler（23 个任务） |
+| 定时 | APScheduler（24 个任务） |
 | 认证 | JWT (python-jose) + bcrypt 密码哈希 |
 | 缓存 | Redis（access_token 缓存，带内存降级） |
 | 查词词库 | ECDICT（338 万词条，本地离线） |
@@ -124,7 +124,7 @@ backend/
 │   ├── rate_limit.py    #   速率限制
 │   ├── request_log.py   #   请求日志（输出到 logs/admin_requests.log）
 │   └── trace.py         #   请求追踪
-├── tasks/               # APScheduler 定时任务（23 个，V3.23 +2：purge_expired_data 数据保留清理 + check_paid_not_activated 支付未激活对账）
+├── tasks/               # APScheduler 定时任务（24 个，V3.23 +3：purge_expired_data 数据保留清理 + check_paid_not_activated 支付未激活对账 + reset_stale_pending_deposits 废弃押金复位）
 ├── templates/admin/     # 管理端 Jinja2 模板（39 个页面，含 base.html）
 ├── static/admin/        # 管理端静态资源（CSS/JS）
 ├── seeds/               # 种子数据脚本
@@ -134,7 +134,7 @@ scripts/                 # CI 脚本
 └── verify_api_contract.py    # 前后端 API 契约验证
 .github/workflows/ci.yml     # CI 配置
 features/                # BDD feature 文件（20 个，210 场景，1361 步骤）
-tests/unit/              # pytest 单元测试（632 个 collected，通过数随环境）
+tests/unit/              # pytest 单元测试（647 个 collected，通过数随环境）
 scripts/integration_test.py  # 全链路集成测试（867 行，6 主流程 + 7 异常场景）
 frontend/                # 微信小程序（34 个页面，4 子包）
 ```
@@ -258,7 +258,7 @@ frontend/                # 微信小程序（34 个页面，4 子包）
 
 ```bash
 # pytest
-632 collected（通过数随环境：开发机 632 passed / CI 617+15 skip / 无 MySQL 沙箱 623+9 err）
+647 collected（通过数随环境：开发机 647 passed / CI 632+15 skip / 无 MySQL 沙箱 638+9 err）
 
 # 架构验证
 ✅ Router 层 ORM 操作：0 处

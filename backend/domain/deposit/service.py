@@ -153,15 +153,16 @@ class DepositService:
         if is_instant:
             record.status = DepositStatus.PAID
             record.pay_time = datetime.now()
-
-        event_bus.publish(
-            DepositPaidEvent(
-                child_id=data.child_id,
-                deposit_id=record.id,
-                amount=deposit_amount,
-            ),
-            db=self.db,
-        )
+            # F39：DepositPaidEvent 仅在即时支付路径发布——生产网关 prepay 成功≠已付款，
+            # 借书资格必须等微信回调（handle_callback）才生效
+            event_bus.publish(
+                DepositPaidEvent(
+                    child_id=data.child_id,
+                    deposit_id=record.id,
+                    amount=deposit_amount,
+                ),
+                db=self.db,
+            )
 
         self.db.commit()
         return DepositPayResponse(
@@ -576,6 +577,9 @@ class DepositService:
         # B11：refund_amount 已在申请时按（押金-未缴罚款）预设，此处尊重预设值
         record.status = DepositStatus.REFUNDING
         record.refund_time = datetime.now()
+        if not record.out_refund_no:
+            # F38：审核通过时生成并持久化退款单号，失败重试复用（微信幂等键）
+            record.out_refund_no = f"DPRF{uuid.uuid4().hex[:16]}"
         record.refund_amount = (
             record.refund_amount if record.refund_amount is not None else record.amount
         )
@@ -593,6 +597,7 @@ class DepositService:
                         out_trade_no=str(record.pay_order_id)
                         if record.pay_order_id
                         else "",
+                        out_refund_no=str(record.out_refund_no),
                         total_amount=Decimal(yuan_to_cents(record.amount)),  # F2 修复
                         refund_amount=Decimal(yuan_to_cents(record.refund_amount)),
                         reason="押金退款（审核通过）",
@@ -742,6 +747,9 @@ class DepositService:
         # Phase 1: 先落库（扣减押金余额 + 标记），commit 释放行锁
         record.amount = record.amount - refund_amt
         record.partial_refunded = 1
+        if not record.out_refund_no:
+            # F38：600 奖励退款同样持久化退款单号，重试复用
+            record.out_refund_no = f"DPRF{uuid.uuid4().hex[:16]}"
         self.deposit_repo.update(record)
         self.db.commit()
 
@@ -753,6 +761,7 @@ class DepositService:
                         out_trade_no=str(record.pay_order_id)
                         if record.pay_order_id
                         else "",
+                        out_refund_no=str(record.out_refund_no),
                         total_amount=Decimal(
                             yuan_to_cents(record.amount + refund_amt)
                         ),  # F2 修复
@@ -908,6 +917,33 @@ class DepositService:
             f"Fine settled: child={record.child_id}, amount={record.amount}, "
             f"order={record.pay_order_no}"
         )
+
+    def reset_stale_pending_deposits(self, expire_minutes: int | None = None) -> int:
+        """F39：废弃 PENDING 押金（超时未回调）复位 UNPAID，允许重新缴纳
+
+        生产网关 prepay 成功≠已付款，用户放弃支付后 PENDING 记录若不复位，
+        get_active_by_child 会把该记录视为活跃 → 永久阻塞再次缴纳。
+        超时窗口默认 30 分钟（配置 deposit_pending_expire_minutes）。
+        """
+        from backend.common.config_service import ConfigService
+
+        minutes = expire_minutes or ConfigService.get_int(
+            self.db, "deposit_pending_expire_minutes", 30
+        )
+        cutoff = datetime.now() - timedelta(minutes=minutes)
+        stale = (
+            self.db.query(DepositRecord)
+            .filter(
+                DepositRecord.status == DepositStatus.PENDING,
+                DepositRecord.create_time < cutoff,
+                DepositRecord.is_deleted == 0,
+            )
+            .all()
+        )
+        for rec in stale:
+            rec.status = DepositStatus.UNPAID
+        self.db.commit()
+        return len(stale)
 
     def get_deposit_status(self, child_id: int) -> dict:
         """查询押金状态"""

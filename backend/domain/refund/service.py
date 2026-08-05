@@ -2,6 +2,7 @@
 """退款域业务逻辑 — 退款申请、审核、退款计算"""
 
 import logging
+import uuid
 from datetime import date, datetime
 from decimal import Decimal, ROUND_HALF_UP
 
@@ -143,6 +144,7 @@ class RefundService:
             used_days=used_days,  # 使用服务端计算值
             reason=data.reason,
             fine_deducted=fine_deducted,
+            out_refund_no=f"RF{uuid.uuid4().hex[:16]}",  # F38：申请时生成，重试复用
         )
 
         # E1：小额退款自动审核通过（默认 ≤500 元，配置 refund_auto_approve_max）
@@ -189,6 +191,9 @@ class RefundService:
 
         # 审核通过 → 标记订单退款状态（pay_status 保持 PAID，退款由 refund_status 跟踪）
         if audit.status == RefundApplication.STATUS_APPROVED:
+            if not refund.out_refund_no:
+                # F38：存量/直建退款单兜底——审核通过时生成并持久化
+                refund.out_refund_no = f"RF{uuid.uuid4().hex[:16]}"
             order = (
                 self.db.query(Order)
                 .filter(Order.id == refund.order_id, Order.is_deleted == 0)
@@ -206,8 +211,12 @@ class RefundService:
     async def _execute_wechat_refund(
         refund_id: int, order_no: str, amount: Decimal, reason: str
     ):
-        """调用退款 API（独立 session，供 BackgroundTasks 调用）"""
-        import uuid
+        """调用退款 API（独立 session，供 BackgroundTasks 调用）
+
+        F37：total_amount 必须为订单原额（微信 V3 校验 268892183）；result.success=False
+        必须走失败回退，不再当"已提交"静默吞掉。
+        F38：out_refund_no 持久化复用（申请时生成），重试不新生成，防重复退款。
+        """
         from backend.database import get_session
 
         db = get_session()()
@@ -232,58 +241,90 @@ class RefundService:
                 db.close()
                 return
 
+            # F38：复用持久化退款单号（微信幂等键）；缺失则生成并先落库
+            refund = (
+                db.query(RefundApplication)
+                .filter(RefundApplication.id == refund_id)
+                .first()
+            )
+            out_refund_no = getattr(refund, "out_refund_no", None) if refund else None
+            if not out_refund_no:
+                out_refund_no = f"RF{uuid.uuid4().hex[:16]}"
+                if refund:
+                    refund.out_refund_no = out_refund_no
+                    db.commit()
+
             gateway = get_payment_gateway()
-            out_refund_no = f"RF{uuid.uuid4().hex[:16]}"
+            total_amount = order.amount or amount  # F37：原单实付额（微信 V3 语义）
 
             result = await gateway.refund(
                 PaymentRefundRequest(
                     out_trade_no=order_no,
                     out_refund_no=out_refund_no,
-                    total_amount=Decimal(yuan_to_cents(amount)),  # 元入分出（F2 修复）
+                    total_amount=Decimal(
+                        yuan_to_cents(total_amount)
+                    ),  # 元入分出（F2 修复）
                     refund_amount=Decimal(yuan_to_cents(amount)),
                     reason=reason or "管理员审核通过",
                 )
             )
+            if not result.success:
+                error_msg = getattr(result, "error_message", "微信退款接口拒绝")
+                logger.error(
+                    f"WeChat refund rejected: order={order_no}, error={error_msg}"
+                )
+                RefundService._rollback_refund_failure(
+                    db, refund_id, order_no, error_msg
+                )
+                return
             logger.info(f"WeChat refund submitted: order={order_no}, result={result}")
-            # 微信退款是异步的，状态由回调或定时任务更新
         except Exception as e:
             logger.error(f"WeChat refund failed: order={order_no}, error={e}")
-            # 退款失败：回退 refund 为 PENDING（E1 自动审核可重试）+ 订单状态 + 管理端告警
-            try:
-                order = db.query(Order).filter(Order.order_no == order_no).first()
-                if order:
-                    order.refund_status = 3  # FAILED
-                    order.pay_status = PayStatus.PAID
-                    order.refund_remark = str(e)[:200]
-
-                refund = (
-                    db.query(RefundApplication)
-                    .filter(RefundApplication.id == refund_id)
-                    .first()
-                )
-                if refund and refund.status == RefundApplication.STATUS_APPROVED:
-                    refund.status = RefundApplication.STATUS_PENDING
-                    refund.review_comment = (
-                        f"退款执行失败已回退待审核，请管理员重试。错误: {str(e)[:150]}"
-                    )
-
-                from backend.domain.message.models import SystemMessage
-
-                msg = SystemMessage(
-                    user_id=0,
-                    title="退款执行失败",
-                    content=f"订单 {order_no} 退款执行失败，请手动处理。错误: {str(e)[:200]}",
-                    msg_type=1,  # 系统通知
-                    priority=2,
-                )
-                db.add(msg)
-                db.commit()
-            except SQLAlchemyError as e2:
-                logger.error(
-                    f"Failed to save refund failure state for order {order_no}: {e2}"
-                )
+            RefundService._rollback_refund_failure(db, refund_id, order_no, str(e))
         finally:
             db.close()
+
+    @staticmethod
+    def _rollback_refund_failure(
+        db: Session, refund_id: int, order_no: str, error: str
+    ) -> None:
+        """退款执行失败：退款单回 PENDING（可重试）+ 订单 FAILED + 管理端告警
+
+        供网关拒绝（success=False，F37）与异常两条路径共用。
+        """
+        try:
+            order = db.query(Order).filter(Order.order_no == order_no).first()
+            if order:
+                order.refund_status = 3  # FAILED
+                order.pay_status = PayStatus.PAID
+                order.refund_remark = str(error)[:200]
+
+            refund = (
+                db.query(RefundApplication)
+                .filter(RefundApplication.id == refund_id)
+                .first()
+            )
+            if refund and refund.status == RefundApplication.STATUS_APPROVED:
+                refund.status = RefundApplication.STATUS_PENDING
+                refund.review_comment = (
+                    f"退款执行失败已回退待审核，请管理员重试。错误: {str(error)[:150]}"
+                )
+
+            from backend.domain.message.models import SystemMessage
+
+            msg = SystemMessage(
+                user_id=0,
+                title="退款执行失败",
+                content=f"订单 {order_no} 退款执行失败，请手动处理。错误: {str(error)[:200]}",
+                msg_type=1,  # 系统通知
+                priority=2,
+            )
+            db.add(msg)
+            db.commit()
+        except SQLAlchemyError as e2:
+            logger.error(
+                f"Failed to save refund failure state for order {order_no}: {e2}"
+            )
 
     def mark_refunded(self, order_no: str) -> RefundResponse:
         """微信退款回调 — 标记退款完成"""

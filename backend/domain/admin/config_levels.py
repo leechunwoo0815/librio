@@ -95,6 +95,7 @@ CONFIG_RANGES: dict[str, tuple[float, float]] = {
     "deposit_amount": (1, 100000),
     "deposit_partial_refund_amount": (0, 100000),
     "deposit_partial_refund_books": (1, 100),
+    "deposit_pending_expire_minutes": (1, 1440),
     "refund_auto_approve_max": (0, 10000),
     "review_sla_hours": (1, 168),
     "reservation_expire_hours": (1, 720),

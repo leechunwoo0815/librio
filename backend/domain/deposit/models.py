@@ -53,6 +53,11 @@ class DepositRecord(BaseModel):
         default=0,
         comment="已减半退还: 0=否 1=是（A2：借满N本无逾期可退一半）",
     )
+    out_refund_no = Column(
+        String(64),
+        nullable=True,
+        comment="微信商户退款单号（F38：审核通过时生成持久化，重试复用防重复退款）",
+    )
 
     # 关系
     child = relationship("Child", foreign_keys=[child_id])

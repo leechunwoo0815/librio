@@ -58,6 +58,18 @@ class CapturingGateway:
         return SimpleNamespace(success=True, refund_id="RF-TEST")
 
 
+class RejectingRefundGateway:
+    """F37：模拟微信拒绝（success=False，pay_v3 对被拒不抛异常）"""
+
+    def __init__(self, error_message="订单或退款金额不一致"):
+        self.error_message = error_message
+        self.refund_requests = []
+
+    async def refund(self, request):
+        self.refund_requests.append(request)
+        return SimpleNamespace(success=False, error_message=self.error_message)
+
+
 @pytest.fixture
 def db():
     engine = create_engine("sqlite:///:memory:")
@@ -124,7 +136,7 @@ class TestOrderPaymentCents:
 
 
 class TestOrderRefundCents:
-    """F2：订单退款 _execute_wechat_refund 传分（500 元 → 50000 分）"""
+    """F2/F37：订单退款 _execute_wechat_refund 传分 + total=原单语义"""
 
     def test_execute_wechat_refund_passes_cents(self, db, monkeypatch):
         from backend.domain.refund.service import RefundService
@@ -159,6 +171,112 @@ class TestOrderRefundCents:
         assert gw.refund_requests
         assert gw.refund_requests[0].total_amount == 50000
         assert gw.refund_requests[0].refund_amount == 50000
+
+    def test_partial_refund_total_is_original_amount(self, db, monkeypatch):
+        """F37：部分退款 total=原单 50000 分、refund=46667 分（微信 V3 语义）"""
+        from backend.domain.refund.service import RefundService
+
+        user, child = _mk_user_child(db)
+        _mk_order(
+            db,
+            user,
+            child,
+            amount=Decimal("500"),
+            order_no="MW-REF-PART-001",
+            pay_status=PayStatus.PAID,
+        )
+
+        gw = CapturingGateway()
+        monkeypatch.setattr("backend.database.get_session", lambda: lambda: db)
+        monkeypatch.setattr(
+            "backend.common.dependencies.get_payment_gateway", lambda: gw
+        )
+
+        class FakeSettings:
+            DEBUG = False
+
+        monkeypatch.setattr("backend.config.get_settings", lambda: FakeSettings())
+
+        asyncio.run(
+            RefundService._execute_wechat_refund(
+                1, "MW-REF-PART-001", Decimal("466.67"), "部分退款"
+            )
+        )
+
+        assert gw.refund_requests
+        assert gw.refund_requests[0].total_amount == 50000  # 原单 500 元
+        assert gw.refund_requests[0].refund_amount == 46667  # 部分退款
+
+    def test_refund_rejection_is_not_swallowed(self, db, monkeypatch):
+        """F37：网关拒绝（success=False）→ 退款单回 PENDING + 管理端告警，不再静默挂 APPROVED"""
+        from backend.domain.message.models import SystemMessage
+        from backend.domain.refund.models import RefundApplication
+        from backend.domain.refund.service import RefundService
+
+        user, child = _mk_user_child(db)
+        order = _mk_order(
+            db,
+            user,
+            child,
+            amount=Decimal("500"),
+            order_no="MW-REF-REJ-001",
+            pay_status=PayStatus.PAID,
+        )
+        refund = RefundApplication(
+            order_id=order.id,
+            user_id=user.id,
+            child_id=child.id,
+            refund_amount=Decimal("466.67"),
+            status=RefundApplication.STATUS_APPROVED,
+            out_refund_no="RF-REJ-001",
+        )
+        db.add(refund)
+        db.commit()
+
+        gw = RejectingRefundGateway()
+
+        class _NoCloseSession:
+            """共享测试会话代理：close() 空操作，避免 _execute_wechat_refund finally 关闭会话"""
+
+            def __init__(self, session):
+                self.__session = session
+
+            def __getattr__(self, name):
+                return getattr(self.__session, name)
+
+            def close(self):
+                pass
+
+        monkeypatch.setattr(
+            "backend.database.get_session",
+            lambda: lambda: _NoCloseSession(db),
+        )
+        monkeypatch.setattr(
+            "backend.common.dependencies.get_payment_gateway", lambda: gw
+        )
+
+        class FakeSettings:
+            DEBUG = False
+
+        monkeypatch.setattr("backend.config.get_settings", lambda: FakeSettings())
+
+        asyncio.run(
+            RefundService._execute_wechat_refund(
+                refund.id, order.order_no, Decimal("466.67"), "部分退款"
+            )
+        )
+
+        db.expire_all()
+        db.refresh(refund)
+        db.refresh(order)
+        assert refund.status == RefundApplication.STATUS_PENDING
+        assert order.refund_status == 3  # FAILED
+        alert = (
+            db.query(SystemMessage)
+            .filter(SystemMessage.user_id == 0, SystemMessage.title == "退款执行失败")
+            .first()
+        )
+        assert alert is not None
 
 
 class TestDepositRefundCents:

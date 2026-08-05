@@ -241,6 +241,18 @@ class BorrowService:
         overdue_days = calc_overdue_days(now, record.due_date)
         apply_fine(self.db, record, overdue_days, get_overdue_policy(self.db))
 
+        # F36：逾期服务费计入未缴罚款（差额增量，标记列防双计）
+        from backend.common.fine_policy import sync_outstanding_fine
+
+        child = (
+            self.db.query(Child)
+            .filter(Child.id == record.child_id, Child.is_deleted == 0)
+            .with_for_update()
+            .first()
+        )
+        if child is not None:
+            sync_outstanding_fine(self.db, child, record)
+
         self.borrow_repo.update(record)
 
         # 发布还书事件

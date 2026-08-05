@@ -2,7 +2,7 @@
 
 > **生成时间**: 2026-08-04 GMT+8 (v19)
 > **项目版本**: V3.23 — 52 题需求决策 + 四轮外部审查全闭环（FINAL-3.0 专家签署放行）+ 隐私合规 + 目录清理
-> **测试状态**: pytest 632 collected（通过数随环境：开发机 632 passed / CI 617+15 skip / 无 MySQL 沙箱 623+9 err）· behave 211/1368 · ruff 0 · API契约 OK · 模型一致 56 tables · CI 同构十一关（含 Gate 11）· 集成全绿 · alembic head=e9f8a7b6c5d4
+> **测试状态**: pytest 647 collected（通过数随环境：开发机 647 passed / CI 632+15 skip / 无 MySQL 沙箱 638+9 err）· behave 211/1368 · ruff 0 · API契约 OK · 模型一致 56 tables · CI 同构十一关（含 Gate 11）· 集成全绿 · alembic head=f3a2b1c0d9e8
 > **权威基线与机制定案**：以《专家意见/K3-执行中任务交接-20260726.md》为准（其 §四 关键机制定案含 P3-④ 决策、F5 快照四入口等）
 
 ---
@@ -10,7 +10,7 @@
 ## 一、项目一句话
 
 OMO 儿童英文阅读平台：线下实体书借阅 + 线上音频伴读 + 手动查词 + 异步测评。
-微信小程序 34 页（家长端）+ PC 管理后台 39 模板（35 业务页面，运营端）+ FastAPI 后端 28 领域模块（56 表 / 332 API（37 页面路由） / 23 定时任务）。
+微信小程序 34 页（家长端）+ PC 管理后台 39 模板（35 业务页面，运营端）+ FastAPI 后端 28 领域模块（56 表 / 332 API（37 页面路由） / 24 定时任务）。
 管理后台全员已迁移到 `data-action` 事件委托模式（0 inline handler），36 JS 文件全部 IIFE 隔离，XSS 表面向量清零。
 
 ---
@@ -331,7 +331,7 @@ CI 十关全绿: ruff check/format, pytest 418/0, behave 189/1240, api contract,
 | 支付 | PaymentGateway ABC → MockPaymentGateway / WeChatPayV3（配置开关） |
 | 短信 | SmsGateway ABC → MockSmsGateway / 腾讯云/阿里云（配置开关） |
 | 查词 | ECDICT 本地 338 万词条 + Free Dictionary API 兜底 |
-| 定时 | APScheduler（23 个任务，含每日0点损坏定责过期确认与 5:00 支付未激活对账） |
+| 定时 | APScheduler（24 个任务，含每日0点损坏定责过期确认、5:00 支付未激活对账、1:30 废弃押金复位） |
 | 端口 | 后端 8002 / 前端 3002 |
 
 ---
@@ -504,7 +504,7 @@ python -m alembic check
 
 ```markdown
 1. 读取 CLAUDE.md（宪法）、HANDOFF.md（本交接文档）、.ai/context/CONTEXT.md（业务知识）、ARCHITECTURE.md（架构）
-2. 运行 CI 同构十一关确认项目状态（pytest 632 collected，通过数随环境；behave 211/1368；ruff 0；api contract；model 56 tables；integration 全绿；alembic check；action wiring --strict；gen_config_doc --check）——权威基线与机制以《专家意见/K3-执行中任务交接-20260726.md》为准
+2. 运行 CI 同构十一关确认项目状态（pytest 647 collected，通过数随环境；behave 211/1368；ruff 0；api contract；model 56 tables；integration 全绿；alembic check；action wiring --strict；gen_config_doc --check）——权威基线与机制以《专家意见/K3-执行中任务交接-20260726.md》为准
 3. 按剩余工作清单优先级开始：
    P0: 外部输入项（appid/服务协议/隐私政策）
    P1: iconfont woff2 下载 + nginx rate limit
