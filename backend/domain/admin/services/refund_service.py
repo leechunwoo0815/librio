@@ -6,11 +6,10 @@ from decimal import Decimal
 
 from sqlalchemy.orm import Session
 
-from backend.common.exceptions import NotFoundError, ValidationError
-from backend.common.types import AdminRole, PayStatus
+from backend.common.exceptions import NotFoundError
+from backend.common.types import AdminRole
 from backend.domain.order.models import Order
 from backend.domain.refund.models import RefundApplication
-from backend.domain.refund.service import RefundService
 
 
 class AdminRefundService:
@@ -71,40 +70,6 @@ class AdminRefundService:
             "has_next": page * page_size < total,
         }
 
-    def approve_refund(self, refund_id: int, data) -> dict:
-        """批准退款"""
-        refund = (
-            self.db.query(RefundApplication)
-            .filter(
-                RefundApplication.id == refund_id, RefundApplication.is_deleted == 0
-            )
-            .first()
-        )
-        if not refund:
-            raise NotFoundError("退款申请不存在")
-
-        if refund.status != RefundApplication.STATUS_PENDING:
-            raise ValidationError("退款申请已处理")
-
-        order = (
-            self.db.query(Order)
-            .filter(Order.id == refund.order_id, Order.is_deleted == 0)
-            .first()
-        )
-        if not order:
-            raise NotFoundError("关联订单不存在")
-
-        # 更新退款状态
-        refund.status = RefundApplication.STATUS_APPROVED
-        refund.review_comment = data.get("comment", "")
-        refund.review_time = datetime.now()
-
-        # 更新订单状态
-        order.pay_status = PayStatus.REFUNDED
-
-        self.db.commit()
-        return {"success": True, "message": "退款已批准"}
-
     def get_refund_and_order(self, refund_id: int) -> tuple:
         """获取退款申请和关联订单"""
         refund = (
@@ -133,15 +98,12 @@ class AdminRefundService:
 
         reason = data.get("reason", "管理员代发起退款")
         used_days = data.get("used_days", 0)
-        refund_service = RefundService(self.db)
 
-        refund_amount = (
-            refund_service.calculate_refund(order.id, used_days)
-            if hasattr(refund_service, "calculate_refund")
-            else order.amount
-        )
-        if not refund_amount:
-            refund_amount = order.amount
+        # F52：金额公式在 OrderService.calculate_refund（此前 hasattr 恒 False 退回全额的死代码）
+        from backend.domain.order.service import OrderService
+
+        calc = OrderService(self.db).calculate_refund(order.id, used_days)
+        refund_amount = calc.get("refund_amount") or order.amount
 
         is_admin = admin and getattr(admin, "role", None) == AdminRole.ADMIN
         refund = RefundApplication(
@@ -160,8 +122,16 @@ class AdminRefundService:
         )
         self.db.add(refund)
         if is_admin:
-            order.pay_status = PayStatus.REFUNDED
+            # F52：审核通过≠钱已退——只置"退款中"，实际打款由网关执行链路完成
+            order.refund_status = 1
         self.db.commit()
         self.db.refresh(refund)
-        msg = "退款已自动通过" if is_admin else "退款申请已提交，等待管理员审核"
-        return {"success": True, "refund_id": refund.id, "message": msg}
+        msg = (
+            "退款已自动通过，正在打款" if is_admin else "退款申请已提交，等待管理员审核"
+        )
+        return {
+            "success": True,
+            "refund_id": refund.id,
+            "message": msg,
+            "status": refund.status,
+        }

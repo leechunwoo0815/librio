@@ -612,6 +612,7 @@ class DepositService:
                         ),  # F54：原支付单金额
                         refund_amount=Decimal(yuan_to_cents(record.refund_amount)),
                         reason="押金退款（审核通过）",
+                        notify_url=self._refund_notify_url(),
                     )
                 )
                 if hasattr(result, "success") and not result.success:
@@ -700,6 +701,21 @@ class DepositService:
         self.db.commit()
         return DepositResponse.model_validate(record)
 
+    def mark_refunded_by_order_no(self, order_no: str) -> DepositResponse:
+        """F55：微信退款回调按支付单号标记押金到账（DP 前缀）"""
+        record = (
+            self.db.query(DepositRecord)
+            .filter(
+                DepositRecord.pay_order_id == order_no,
+                DepositRecord.is_deleted == 0,
+            )
+            .with_for_update()
+            .first()
+        )
+        if not record:
+            raise NotFoundError(f"未找到押金支付单 {order_no}")
+        return self.mark_refunded(record.child_id)
+
     async def partial_refund_deposit(
         self, child_id: int, payment_gateway: PaymentGateway | None = None
     ) -> DepositResponse:
@@ -780,6 +796,7 @@ class DepositService:
                         ),  # F54：原支付单金额
                         refund_amount=Decimal(yuan_to_cents(refund_amt)),
                         reason="押金减半退还（10本无逾期奖励）",
+                        notify_url=self._refund_notify_url(),
                     )
                 )
                 if hasattr(result, "success") and not result.success:
@@ -958,6 +975,12 @@ class DepositService:
         from backend.common.config_service import ConfigService
 
         return ConfigService.get_int(self.db, "deposit_pending_expire_minutes", 150)
+
+    def _refund_notify_url(self) -> str:
+        """F55：微信退款结果通知 URL（配置 WECHAT_REFUND_NOTIFY_URL）"""
+        from backend.config import get_settings
+
+        return getattr(get_settings(), "WECHAT_REFUND_NOTIFY_URL", "")
 
     def _is_pending_stale(self, record, expire_minutes: int | None = None) -> bool:
         """PENDING 记录是否超过失效窗口（未回调）"""

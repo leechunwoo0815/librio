@@ -71,6 +71,7 @@ class Settings(BaseSettings):
     WECHAT_PRIVATE_KEY_PATH: str = ""  # 商户私钥 PEM 文件路径
     WECHAT_PLATFORM_CERT_PATH: str = ""  # 微信平台证书 PEM 文件路径
     WECHAT_PAY_NOTIFY_URL: str = ""  # 支付回调通知 URL
+    WECHAT_REFUND_NOTIFY_URL: str = ""  # 微信退款结果通知 URL（F55）
 
     # 服务器配置
     SERVER_HOST: str = ""

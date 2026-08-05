@@ -116,6 +116,7 @@ class TestAlertStaleRefunds:
 
     def test_stale_refund_creates_alert(self, monkeypatch):
         from backend.tasks import scheduler
+        from backend.domain.refund.models import RefundApplication
 
         refund = MagicMock()
         refund.id = 7
@@ -125,14 +126,25 @@ class TestAlertStaleRefunds:
         refund.review_time = datetime.now() - timedelta(days=8)
 
         db = MagicMock()
-        db.query.return_value.filter.return_value.all.return_value = [refund]
+
+        def _fake_query(model):
+            q = MagicMock()
+            if model is RefundApplication:
+                rows = [refund]
+            else:
+                rows = []  # DepositRecord 等其余查询返回空（F55 押金巡检分支）
+            q.filter.return_value.all.return_value = rows
+            return q
+
+        db.query.side_effect = _fake_query
         monkeypatch.setattr(scheduler, "_get_db_session", lambda: db)
 
         with patch.object(scheduler, "_create_message") as mock_create:
             scheduler.alert_stale_refunds()
             assert mock_create.call_count == 1
             call = mock_create.call_args
-            assert call.kwargs["title"] == "退款超时告警"
+            assert call.kwargs["title"] == "退款超时告警（运营）"  # F72：告警发运营
+            assert call.kwargs["user_id"] == 0
             assert call.kwargs["msg_type"] == 1
             assert call.kwargs["priority"] == 2
             assert "#7" in call.kwargs["content"]

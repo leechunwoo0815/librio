@@ -384,8 +384,6 @@ class ActivityService:
             if child and not activity.is_free and activity.price and activity.price > 0:
                 eid = e.id
                 try:
-                    from datetime import datetime as _dt
-
                     from backend.domain.refund.models import RefundApplication
                     from backend.common.base_repo import BaseRepository
 
@@ -396,12 +394,26 @@ class ActivityService:
                         refund_amount=activity.price,
                         used_days=0,
                         reason=f"活动「{activity.title}」被组织者取消，自动退款",
-                        status=RefundApplication.STATUS_APPROVED,
-                        review_time=_dt.now(),
-                        review_comment="活动取消自动退款（E5决策：无需人工审核）",
+                        # F53：活动不产生支付单，微信网关无单可退——转人工处理队列，
+                        # 不再"置 APPROVED 不动钱"（家长端文案同步修正）
+                        status=RefundApplication.STATUS_PENDING,
+                        review_comment="活动取消退款（E5）：无支付单，转门店人工退款",
                     )
                     refund_repo = BaseRepository(self.db, RefundApplication)
                     refund_repo.create(refund)
+                    from backend.domain.message.models import SystemMessage
+
+                    db_alert = SystemMessage(
+                        user_id=0,
+                        title="活动退款待人工处理",
+                        content=(
+                            f"活动「{activity.title}」取消，孩子 {e.child_id} 需人工退款 "
+                            f"{activity.price} 元（无支付单，微信网关无法自动退）"
+                        ),
+                        msg_type=1,  # 系统通知
+                        priority=2,
+                    )
+                    self.db.add(db_alert)
                     refund_count += 1
                 except Exception as ex:
                     logger.warning(f"Auto refund failed for enrollment {eid}: {ex}")
@@ -414,7 +426,7 @@ class ActivityService:
                     msg = SystemMessage(
                         user_id=child.user_id,
                         title="活动取消通知",
-                        content=f"活动「{activity.title}」已被取消。{'退款将自动处理，请留意。' if not activity.is_free else ''}",
+                        content=f"活动「{activity.title}」已被取消。{'退款将由门店人工处理，请留意到账。' if not activity.is_free else ''}",
                         msg_type=2,  # 活动通知
                         priority=1,
                     )

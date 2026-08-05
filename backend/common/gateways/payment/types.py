@@ -44,6 +44,7 @@ class PaymentRefundRequest:
     total_amount: Decimal
     reason: str = ""
     out_refund_no: str = ""
+    notify_url: str = ""  # 微信 V3 退款结果通知 URL（F55）
 
 
 @dataclass

@@ -261,6 +261,7 @@ class BorrowService:
                 child_id=record.child_id,
                 book_id=record.book_id,
                 borrow_record_id=record.id,
+                book_copy_id=record.book_copy_id,  # F44：副本归还后必须回 AVAILABLE
                 reason="manual",
             ),
             db=self.db,

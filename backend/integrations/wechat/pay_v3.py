@@ -286,6 +286,8 @@ class WeChatPayV3(PaymentGateway):
             },
             "reason": request.reason or "用户申请退款",
         }
+        if request.notify_url:
+            body["notify_url"] = request.notify_url
         body_str = json.dumps(body, ensure_ascii=False)
 
         async with httpx.AsyncClient(base_url=self.BASE_URL, timeout=10) as client:

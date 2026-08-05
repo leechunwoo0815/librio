@@ -11,7 +11,7 @@ from backend.common.dependencies import (
     get_admin_message_service,
     get_admin_borrow_service,
 )
-from backend.common.exceptions import ForbiddenError
+from backend.common.exceptions import ForbiddenError, NotFoundError, ValidationError
 from backend.common.gateways.payment import PaymentGateway
 from backend.middleware.admin_rbac import require_perm
 from backend.domain.admin.admin_schemas import (
@@ -307,9 +307,23 @@ async def admin_pay_deposit(
     payment_gateway: PaymentGateway = Depends(get_payment_gateway),
 ):
     """管理员代缴押金"""
+    from backend.domain.child.models import Child
+    from backend.domain.user.models import User
+
+    # F56：代缴必须取孩子监护人的 openid 发起支付（此前不传 current_user → 500，
+    # 且即便传入 admin 也是用管理员的 openid 支付，语义错误）
+    child = (
+        db.query(Child).filter(Child.id == data.child_id, Child.is_deleted == 0).first()
+    )
+    if not child:
+        raise NotFoundError("孩子不存在")
+    user = db.query(User).filter(User.id == child.user_id, User.is_deleted == 0).first()
+    if not user or not user.openid:
+        raise ValidationError("该孩子监护人无 openid，无法线上代缴押金")
+
     service = DepositService(db)
     req = DepositPayRequest(child_id=data.child_id)
-    result = await service.pay_deposit(req, payment_gateway)
+    result = await service.pay_deposit(req, payment_gateway, current_user=user)
     from backend.domain.admin.services.system_service import AdminSystemService
 
     system_service = AdminSystemService(db)

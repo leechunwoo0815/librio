@@ -5,8 +5,9 @@ import json
 import logging
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request
+from sqlalchemy.orm import Session
 
-from backend.common.dependencies import get_payment_gateway, get_refund_service
+from backend.common.dependencies import get_db, get_payment_gateway, get_refund_service
 from backend.common.exceptions import ConflictError, NotFoundError
 from backend.common.gateways.payment import PaymentGateway
 from backend.middleware.admin_rbac import require_perm
@@ -96,6 +97,7 @@ async def refund_callback(
     request: Request,
     service: RefundService = Depends(get_refund_service),
     payment_gateway: PaymentGateway = Depends(get_payment_gateway),
+    db: Session = Depends(get_db),
 ):
     """微信退款结果通知"""
     body = await request.body()
@@ -121,22 +123,32 @@ async def refund_callback(
     # F12：退款回调必须校验 refund_status——微信通知"退款关闭/异常"等非成功状态
     # 不得标记已退款（钱未出去，标记会致财务与业务状态双错）
     refund_status = callback_data.refund_status
+    out_trade_no = callback_data.out_trade_no
     if refund_status != "SUCCESS":
         logger.warning(
             "退款回调非成功状态: out_trade_no=%s refund_status=%s",
-            callback_data.out_trade_no,
+            out_trade_no,
             refund_status,
         )
-        if refund_status in ("CLOSED", "ABNORMAL"):
+        if refund_status in ("CLOSED", "ABNORMAL") and not out_trade_no.startswith(
+            "DP"
+        ):
             # F12-P2：终态失败回退 PENDING + 管理端告警（照抄退款执行失败分支），可重试
-            service.handle_refund_failed(callback_data.out_trade_no, refund_status)
+            service.handle_refund_failed(out_trade_no, refund_status)
+        # 押金退款非成功终态由 alert_stale_refunds 巡检回退（F55）
         return {
             "code": "SUCCESS",
             "message": f"退款状态已记录（{refund_status or '未知'}），未标记完成",
         }
 
     try:
-        service.mark_refunded(callback_data.out_trade_no)
+        if out_trade_no.startswith("DP"):
+            # F55：押金退款回调按支付单号分发（此前只查 Order → DP 单号 404 → 微信重试风暴）
+            from backend.domain.deposit.service import DepositService
+
+            DepositService(db).mark_refunded_by_order_no(out_trade_no)
+        else:
+            service.mark_refunded(out_trade_no)
     except NotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except ConflictError as e:

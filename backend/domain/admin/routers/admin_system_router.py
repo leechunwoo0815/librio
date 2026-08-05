@@ -4,7 +4,7 @@
 import csv
 import io
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -514,11 +514,26 @@ def get_order_refund(
 def admin_create_refund(
     order_no: str,
     data: AdminCreateRefundRequest,
+    background_tasks: BackgroundTasks,
     admin=Depends(require_perm("order.refund")),
     service: AdminRefundService = Depends(get_admin_refund_service),
 ):
-    """管理员代客发起退款申请（超级管理员自动审核通过）"""
+    """管理员代客发起退款申请（超管自动审核通过 + 网关执行，F52）"""
     result = service.create_refund(order_no, data.model_dump(), admin)
+    if result.get("status") == 1 and result.get("refund_id"):
+        from backend.domain.refund.service import RefundService
+
+        refund_order = service.get_refund_and_order(result["refund_id"])
+        if refund_order:
+            refund, order = refund_order
+            if refund and order:
+                background_tasks.add_task(
+                    RefundService._execute_wechat_refund,
+                    refund.id,
+                    order.order_no,
+                    refund.refund_amount,
+                    refund.review_comment or "",
+                )
     system_service = AdminSystemService(service.db)
     system_service.write_operation_log(
         admin_id=admin.id,

@@ -70,17 +70,22 @@ class RefundService:
         from sqlalchemy import func
 
         one_year_ago = datetime.now().replace(year=datetime.now().year - 1)
-        approved_count = (
+        year_count = (
             self.db.query(func.count(RefundApplication.id))
             .filter(
                 RefundApplication.child_id == order.child_id,
-                RefundApplication.status == RefundApplication.STATUS_APPROVED,
+                RefundApplication.status.in_(
+                    [
+                        RefundApplication.STATUS_APPROVED,
+                        RefundApplication.STATUS_COMPLETED,
+                    ]
+                ),  # F51：COMPLETED 也计数，防"买→全退→再买→再全退"循环滥用
                 RefundApplication.create_time >= one_year_ago,
                 RefundApplication.is_deleted == 0,
             )
             .scalar()
         )
-        if approved_count and approved_count > 0:
+        if year_count and year_count > 0:
             raise ValidationError("同一孩子 365 天内仅可退款 1 次，已超出年度上限")
 
         # B3 亲子课开始后不退：课程日当天及以后不可退款
@@ -256,6 +261,7 @@ class RefundService:
 
             gateway = get_payment_gateway()
             total_amount = order.amount or amount  # F37：原单实付额（微信 V3 语义）
+            settings = get_settings()
 
             result = await gateway.refund(
                 PaymentRefundRequest(
@@ -266,6 +272,7 @@ class RefundService:
                     ),  # 元入分出（F2 修复）
                     refund_amount=Decimal(yuan_to_cents(amount)),
                     reason=reason or "管理员审核通过",
+                    notify_url=getattr(settings, "WECHAT_REFUND_NOTIFY_URL", ""),
                 )
             )
             if not result.success:

@@ -1050,7 +1050,7 @@ def remind_pending_submissions():
 
 
 @distributed_lock("job:alert_stale_refunds", timeout=120)
-def alert_stale_refunds():
+def alert_stale_refunds(db: Session | None = None):
     """
     [What] 退款7天未到账告警
     [Why] 审核通过超过7天仍未退款成功时告警
@@ -1058,7 +1058,8 @@ def alert_stale_refunds():
     """
     from backend.domain.refund.models import RefundApplication
 
-    db = _get_db_session()
+    own_session = db is None
+    db = db or _get_db_session()
     try:
         cutoff = datetime.now() - timedelta(days=7)
         stale = (
@@ -1077,20 +1078,51 @@ def alert_stale_refunds():
             )
             _create_message(
                 db,
-                user_id=r.user_id,
-                title="退款超时告警",
-                content=f"退款申请 #{r.id} 已审核通过超过7天仍未到账，金额 {r.refund_amount} 元",
+                user_id=0,  # F72：告警发给运营而非家长（E2 升级超管语义）
+                title="退款超时告警（运营）",
+                content=(
+                    f"退款申请 #{r.id}（用户 {r.user_id}）已审核通过超过7天仍未到账，"
+                    f"金额 {r.refund_amount} 元"
+                ),
                 msg_type=1,  # 系统通知
                 priority=2,
             )
-        if stale:
+
+        # F55：押金 REFUNDING 超时巡检——回退 REFUND_PENDING（可重试）+ 运营告警
+        from backend.domain.deposit.models import DepositRecord
+        from backend.common.types import DepositStatus
+
+        stale_deposits = (
+            db.query(DepositRecord)
+            .filter(
+                DepositRecord.status == DepositStatus.REFUNDING,
+                DepositRecord.refund_time < cutoff,
+                DepositRecord.is_deleted == 0,
+            )
+            .all()
+        )
+        for dr in stale_deposits:
+            dr.status = DepositStatus.REFUND_PENDING
+            _create_message(
+                db,
+                user_id=0,
+                title="押金退款超时告警（运营）",
+                content=(
+                    f"押金退款（child {dr.child_id}，单 {dr.pay_order_id}）超7天未到账，"
+                    "已回退待审核可重试"
+                ),
+                msg_type=1,
+                priority=2,
+            )
+        if stale or stale_deposits:
             db.commit()
             logger.info(f"Stale refunds alert: {len(stale)}")
     except Exception as e:
         db.rollback()
         logger.exception(f"alert_stale_refunds failed: {e}")
     finally:
-        db.close()
+        if own_session:
+            db.close()
 
 
 @distributed_lock("job:check_due_date_reminders", timeout=600)

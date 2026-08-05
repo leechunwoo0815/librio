@@ -239,6 +239,23 @@ class TestF36ReturnBookFineAccounting:
         db.refresh(child)
         assert child.outstanding_fines == outstanding_before
 
+    def test_return_book_restores_copy_available(self, db):
+        """F44：还书事件携带 book_copy_id，绑定副本的借阅归还后副本回 AVAILABLE"""
+        from backend.domain.book.models import BookCopyStatus
+        from backend.domain.borrow.schemas import ReturnBookRequest
+        from backend.domain.borrow.service import BorrowService
+
+        _, child = _mk_user_child(db)
+        book, copy = _mk_book(db)
+        copy.status = 0  # BORROWED
+        db.commit()
+        rec = _mk_overdue_record(db, child, book, copy, status=BorrowStatus.BORROWING)
+        db.commit()
+
+        BorrowService(db).return_book(ReturnBookRequest(borrow_record_id=rec.id))
+        db.refresh(copy)
+        assert copy.status == BookCopyStatus.AVAILABLE
+
 
 # ============================================================ F37
 class TestF37RefundTotalAndSuccess:
