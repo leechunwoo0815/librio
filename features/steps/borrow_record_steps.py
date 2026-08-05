@@ -48,13 +48,68 @@ def step_barcode_not_exists(context, barcode):
 def step_scan_barcode(context, barcode=None):
     if barcode is None:
         barcode = getattr(context, "barcode", "978-0-06-112495-1-001")
+    context.barcode = barcode
     copy = context.db.query(BookCopy).filter(BookCopy.barcode == barcode).first()
     context.found_copy = copy
-    if copy:
-        book = context.db.query(Book).filter(Book.id == copy.book_id).first()
-        context.book = book
-        # 检查是否已有该孩子的借阅记录（还书场景）
-        existing = (
+    if not copy:
+        if getattr(context, "barcode_not_found", False):
+            # T1：首次扫码缺图书信息 → 真实调用，服务端应拦截提示输入图书信息
+            context.response = context.client.post(
+                "/borrow/scan",
+                json={"child_id": context.child.id, "barcode": barcode},
+                headers=_staff_borrow_headers(context),
+            )
+        return
+
+    book = context.db.query(Book).filter(Book.id == copy.book_id).first()
+    context.book = book
+    existing = (
+        context.db.query(BorrowRecord)
+        .filter(
+            BorrowRecord.child_id == context.child.id,
+            BorrowRecord.book_id == book.id,
+            BorrowRecord.status == BorrowStatus.BORROWING,
+            BorrowRecord.is_deleted == 0,
+        )
+        .first()
+    )
+    from backend.domain.reservation.models import Reservation
+    from backend.common.types import ReservationStatus
+
+    reservation = (
+        context.db.query(Reservation)
+        .filter(
+            Reservation.child_id == context.child.id,
+            Reservation.book_id == book.id,
+            Reservation.status == ReservationStatus.PENDING,
+            Reservation.is_deleted == 0,
+        )
+        .first()
+    )
+    if existing:
+        # 还书：真实端点（scan-return 按副本条码匹配活跃借阅）
+        context._stock_before = book.available_stock or 0
+        context.response = context.client.post(
+            "/borrow/scan-return",
+            json={"barcode": barcode},
+            headers=_staff_borrow_headers(context),
+        )
+        assert context.response.status_code == 200, context.response.text
+        context.borrow_record = (
+            context.db.query(BorrowRecord)
+            .filter(BorrowRecord.id == existing.id)
+            .first()
+        )
+    elif reservation:
+        # 预约取书：真实端点（F43：{barcode} 直通）
+        context.response = context.client.post(
+            "/admin/api/reservations/fulfill",
+            json={"barcode": barcode},
+            headers=_staff_borrow_headers(context),
+        )
+        assert context.response.status_code == 200, context.response.text
+        context.reservation = reservation
+        context.borrow_record = (
             context.db.query(BorrowRecord)
             .filter(
                 BorrowRecord.child_id == context.child.id,
@@ -63,84 +118,68 @@ def step_scan_barcode(context, barcode=None):
             )
             .first()
         )
-        if existing:
-            # 还书
-            existing.status = BorrowStatus.RETURNED
-            existing.return_time = datetime.now()
-            # 逾期还书：计算逾期天数和罚款
-            if existing.due_date and datetime.now() > existing.due_date:
-                overdue_days = (datetime.now() - existing.due_date).days
-                existing.overdue_days = overdue_days
-                existing.fine_amount = float(getattr(book, "price", 0) or 0) * 1.5
-                # 更新孩子未结罚款
-                context.child.outstanding_fines = (
-                    context.child.outstanding_fines or 0
-                ) + existing.fine_amount
-            context.db.commit()
-            context.borrow_record = existing
-        else:
-            # 检查是否有预约（预约取书场景）
-            try:
-                from backend.domain.reservation.models import Reservation
-                from backend.common.types import ReservationStatus
-
-                reservation = (
-                    context.db.query(Reservation)
-                    .filter(
-                        Reservation.child_id == context.child.id,
-                        Reservation.book_id == book.id,
-                        Reservation.status == ReservationStatus.PENDING,
-                    )
-                    .first()
+    else:
+        # 借书：真实端点
+        context.response = context.client.post(
+            "/borrow/scan",
+            json={"child_id": context.child.id, "barcode": barcode},
+            headers=_staff_borrow_headers(context),
+        )
+        if context.response.status_code == 201:
+            context.borrow_record = (
+                context.db.query(BorrowRecord)
+                .filter(
+                    BorrowRecord.child_id == context.child.id,
+                    BorrowRecord.book_id == book.id,
+                    BorrowRecord.status == BorrowStatus.BORROWING,
                 )
-                if reservation:
-                    reservation.status = ReservationStatus.FULFILLED
-                    context.db.commit()
-            except Exception:
-                reservation = None
-            # 借书
-            record = BorrowRecord(
-                child_id=context.child.id,
-                book_id=book.id,
-                borrow_time=datetime.now(),
-                due_date=datetime.now() + timedelta(days=21),
-                status=BorrowStatus.BORROWING,
+                .first()
             )
-            context.db.add(record)
-            context.db.commit()
-            context.borrow_record = record
-            if reservation:
-                reservation.borrow_record_id = record.id
-                context.db.commit()
-                context.reservation = reservation
-    # 条码不存在时，标记为待创建
-    if not copy and getattr(context, "barcode_not_found", False):
-        context.response = type("R", (), {"status_code": 200})()
 
 
 def _staff_borrow_headers(context):
-    """工作人员（管理员）借书凭证 — 含 borrow.create 权限（POST /borrow/ 为管理员端点）"""
+    """工作人员（管理员）借书/还书/取书/丢失凭证 — T1：steps 调真实端点"""
     from backend.domain.admin.models import Admin
     from backend.domain.admin.rbac_models import Role, RolePermission
     from backend.middleware.admin_auth import create_admin_token
 
-    role = Role(code="test_borrow_role", name="借书测试角色", is_system=False)
-    context.db.add(role)
+    # 同一场景内多次调用复用角色/管理员（behave context 跨场景复用，不能缓存 token）
+    role = context.db.query(Role).filter(Role.code == "test_borrow_role").first()
+    if not role:
+        role = Role(code="test_borrow_role", name="借书测试角色", is_system=False)
+        context.db.add(role)
+        context.db.flush()
+    for code in (
+        "borrow.create",
+        "borrow.return",
+        "reservation.fulfill",
+        "borrow.mark_lost",
+        "book_damage.review",
+    ):
+        existing_perm = (
+            context.db.query(RolePermission)
+            .filter(
+                RolePermission.role_id == role.id,
+                RolePermission.permission_code == code,
+            )
+            .first()
+        )
+        if not existing_perm:
+            context.db.add(RolePermission(role_id=role.id, permission_code=code))
     context.db.flush()
-    context.db.add(RolePermission(role_id=role.id, permission_code="borrow.create"))
-    context.db.add(
-        RolePermission(role_id=role.id, permission_code="book_damage.review")
+    admin = (
+        context.db.query(Admin).filter(Admin.username == "test_borrow_admin").first()
     )
-    context.db.flush()
-    admin = Admin(
-        username="test_borrow_admin",
-        password_hash="x",
-        name="借书测试管理员",
-        role=0,
-        status=1,
-        admin_role_id=role.id,
-    )
-    context.db.add(admin)
+    if not admin:
+        admin = Admin(
+            username="test_borrow_admin",
+            password_hash="x",
+            name="借书测试管理员",
+            role=0,
+            status=1,
+            admin_role_id=role.id,
+        )
+        context.db.add(admin)
     context.db.commit()
     token = create_admin_token(admin_id=admin.id, role=0)
     return {"Authorization": f"Bearer {token}"}
@@ -177,24 +216,32 @@ def step_scan_to_borrow(context):
 @when('工作人员扫描该书的新条码"{barcode}"')
 def step_scan_new_barcode(context, barcode):
     context.barcode = barcode
-    # 同ISBN不同条码场景：已有图书，只创建新副本
-    if hasattr(context, "book") and context.book:
-        context.new_book_isbn = context.book.isbn
-        # 直接创建新副本
-        new_copy = BookCopy(book_id=context.book.id, barcode=barcode)
-        context.db.add(new_copy)
-        context.db.commit()
-        # 创建借阅记录
-        record = BorrowRecord(
-            child_id=context.child.id,
-            book_id=context.book.id,
-            borrow_time=datetime.now(),
-            due_date=datetime.now() + timedelta(days=21),
-            status=BorrowStatus.BORROWING,
+    # T1：同ISBN不同条码 → 真实调用 scan（按 ISBN 找已有图书，仅新建副本）
+    context.new_book_isbn = context.book.isbn
+    context.response = context.client.post(
+        "/borrow/scan",
+        json={
+            "child_id": context.child.id,
+            "barcode": barcode,
+            "title": context.book.title,
+            "author": context.book.author,
+            "isbn": context.book.isbn,
+            "ar_value": float(context.book.ar_value),
+            "age_min": context.book.age_min,
+            "age_max": context.book.age_max,
+        },
+        headers=_staff_borrow_headers(context),
+    )
+    assert context.response.status_code == 201, context.response.text
+    context.borrow_record = (
+        context.db.query(BorrowRecord)
+        .filter(
+            BorrowRecord.child_id == context.child.id,
+            BorrowRecord.book_id == context.book.id,
+            BorrowRecord.status == BorrowStatus.BORROWING,
         )
-        context.db.add(record)
-        context.db.commit()
-        context.borrow_record = record
+        .first()
+    )
 
 
 @when('工作人员输入书名"{title}"和ISBN"{isbn}"')
@@ -205,73 +252,64 @@ def step_input_book_info(context, title, isbn):
 
 @when("确认创建")
 def step_confirm_create(context):
-    # 首次扫码场景：创建 Book + BookCopy + BorrowRecord
+    # T1/F47：首次扫码建档 + 借阅一体走真实端点（author 必填）
     title = getattr(context, "new_book_title", "New Book")
     isbn = getattr(context, "new_book_isbn", "978-0-06-112495-2")
     barcode = getattr(context, "barcode", "978-0-06-112495-2-001")
-    book = Book(
-        isbn=isbn,
-        title=title,
-        author="Unknown",
-        ar_value=2.0,
-        age_min=5,
-        age_max=9,
-        word_count=1000,
-        price=80,
+    context.response = context.client.post(
+        "/borrow/scan",
+        json={
+            "child_id": context.child.id,
+            "barcode": barcode,
+            "title": title,
+            "author": "E.B. White",
+            "isbn": isbn,
+            "ar_value": 2.0,
+            "age_min": 5,
+            "age_max": 9,
+        },
+        headers=_staff_borrow_headers(context),
     )
-    context.db.add(book)
-    context.db.commit()
-    context.db.refresh(book)
-    context.book = book
-    context.new_book_title = title
-    copy = BookCopy(book_id=book.id, barcode=barcode)
-    context.db.add(copy)
-    context.db.commit()
-    record = BorrowRecord(
-        child_id=context.child.id,
-        book_id=book.id,
-        borrow_time=datetime.now(),
-        due_date=datetime.now() + timedelta(days=21),
-        status=BorrowStatus.BORROWING,
+    assert context.response.status_code == 201, context.response.text
+    context.book = context.db.query(Book).filter(Book.isbn == isbn).first()
+    context.borrow_record = (
+        context.db.query(BorrowRecord)
+        .filter(
+            BorrowRecord.child_id == context.child.id,
+            BorrowRecord.book_id == context.book.id,
+            BorrowRecord.status == BorrowStatus.BORROWING,
+        )
+        .first()
     )
-    context.db.add(record)
-    context.db.commit()
-    context.borrow_record = record
 
 
 @when("工作人员扫描条码完成还书")
 def step_scan_to_return(context):
-    if hasattr(context, "borrow_record") and context.borrow_record:
-        record = context.borrow_record
-        record.status = BorrowStatus.RETURNED
-        record.return_time = datetime.now()
-        # 逾期还书：计算逾期天数和罚款
-        if record.due_date and datetime.now() > record.due_date:
-            overdue_days = (datetime.now() - record.due_date).days
-            record.overdue_days = overdue_days
-            book = context.db.query(Book).filter(Book.id == record.book_id).first()
-            fine = float(getattr(book, "price", 0) or 0) * 1.5
-            record.fine_amount = fine
-            context.child.outstanding_fines = (
-                context.child.outstanding_fines or 0
-            ) + fine
-        context.db.commit()
+    # T1：还书走真实端点（fine 由 return_book 按 fine_policy 计算）
+    barcode = getattr(context, "barcode", "978-0-06-112495-1-001")
+    context.response = context.client.post(
+        "/borrow/scan-return",
+        json={"barcode": barcode},
+        headers=_staff_borrow_headers(context),
+    )
+    assert context.response.status_code == 200, context.response.text
+    context.borrow_record = (
+        context.db.query(BorrowRecord)
+        .filter(BorrowRecord.id == context.borrow_record.id)
+        .first()
+    )
 
 
 @when('工作人员标记该书为"{status}"')
 def step_mark_book_status(context, status):
     if status == "丢失" and hasattr(context, "borrow_record") and context.borrow_record:
-        record = context.borrow_record
-        record.status = BorrowStatus.LOST
-        # 丢失罚款：定价 × 1.5
-        book = context.db.query(Book).filter(Book.id == record.book_id).first()
-        if book and book.price:
-            fine = float(book.price) * 1.5
-            record.fine_amount = fine
-            context.child.outstanding_fines = (
-                context.child.outstanding_fines or 0
-            ) + fine
-        context.db.commit()
+        # T1：标记丢失走真实端点（mark_book_lost：定价×1.5 计入 outstanding）
+        context.response = context.client.post(
+            f"/admin/api/borrows/{context.borrow_record.id}/mark-lost",
+            headers=_staff_borrow_headers(context),
+        )
+        assert context.response.status_code == 200, context.response.text
+        context.db.refresh(context.borrow_record)
 
 
 @given('孩子有"{title}"的借阅记录')
@@ -301,6 +339,7 @@ def step_child_has_borrow(context, title):
     record = BorrowRecord(
         child_id=context.child.id,
         book_id=book.id,
+        book_copy_id=copy.id,
         borrow_time=datetime.now() - timedelta(days=10),
         due_date=datetime.now() + timedelta(days=11),
         status=BorrowStatus.BORROWING,
@@ -333,9 +372,22 @@ def step_child_has_overdue_borrow(context, title):
         copy = BookCopy(book_id=book.id, barcode="978-0-06-112495-1-001")
         context.db.add(copy)
         context.db.commit()
+    # 真实 fine_policy 有"首次免罚"：先造一条历史逾期记录，使本场景非首次、罚款真实生效
+    prior = BorrowRecord(
+        child_id=context.child.id,
+        book_id=book.id,
+        book_copy_id=copy.id,
+        status=BorrowStatus.RETURNED,
+        borrow_time=datetime.now() - timedelta(days=60),
+        due_date=datetime.now() - timedelta(days=50),
+        return_time=datetime.now() - timedelta(days=40),
+        overdue_days=5,
+    )
+    context.db.add(prior)
     record = BorrowRecord(
         child_id=context.child.id,
         book_id=book.id,
+        book_copy_id=copy.id,
         borrow_time=datetime.now() - timedelta(days=30),
         due_date=datetime.now() - timedelta(days=9),
         status=BorrowStatus.BORROWING,
@@ -349,6 +401,7 @@ def step_child_has_overdue_borrow(context, title):
 def step_borrow_due_date(context, date):
     from datetime import datetime as dt
 
+    context._feature_due_date = dt.strptime(date, "%Y-%m-%d").date()
     if not hasattr(context, "book") or not context.book:
         book = context.db.query(Book).filter(Book.title == "Charlotte's Web").first()
         if not book:
@@ -370,6 +423,9 @@ def step_borrow_due_date(context, date):
     record = BorrowRecord(
         child_id=context.child.id,
         book_id=context.book.id,
+        book_copy_id=getattr(context, "found_copy", None).id
+        if getattr(context, "found_copy", None)
+        else None,
         borrow_time=due - timedelta(days=21),
         due_date=due,
         status=BorrowStatus.BORROWING,
@@ -389,29 +445,30 @@ def step_book_price(context, price):
 @when('定时任务在"{date}"执行')
 @when('定时任务在"{date}"执行逾期检测')
 def step_scheduled_task_at(context, date):
-    # 使用测试数据库会话执行逾期检测逻辑
-    from backend.common.types import BorrowStatus
+    """T1：调真实任务（mark_overdue_books 统一 fine_policy 口径，不再自写公式）
 
-    now = datetime.now()
-    overdue = (
-        context.db.query(BorrowRecord)
-        .filter(
-            BorrowRecord.status == BorrowStatus.BORROWING,
-            BorrowRecord.due_date < now,
-            BorrowRecord.is_deleted == 0,
-        )
-        .all()
+    到期提醒场景：feature 里的日期是相对剧本日期（如到期 06-15、任务 06-10），
+    此处把记录 due_date 换算成相对 now 的偏移再跑真实 check_due_date_reminders。
+    """
+    from datetime import datetime as _dt
+
+    from backend.tasks.scheduler import (
+        check_due_date_reminders,
+        mark_overdue_books,
     )
-    for record in overdue:
-        overdue_days = (now - record.due_date).days
-        record.status = BorrowStatus.OVERDUE
-        record.overdue_days = overdue_days
-        record.fine_amount = overdue_days * 1  # 1元/天
-    context.db.commit()
-    # 也执行提醒逻辑
-    from backend.tasks.scheduler import check_due_date_reminders
 
-    check_due_date_reminders()
+    feature_due = getattr(context, "_feature_due_date", None)
+    if feature_due is not None and hasattr(context, "borrow_record"):
+        task_day = _dt.strptime(date, "%Y-%m-%d").date()
+        delta = (feature_due - task_day).days
+        # delta=0（当天到期）：加 5 分钟缓冲，避免 mark_overdue 的 now 微秒级晚于 due 抢先标逾期
+        context.borrow_record.due_date = datetime.now() + timedelta(
+            days=delta, minutes=5 if delta == 0 else 0
+        )
+        context.db.commit()
+
+    mark_overdue_books(db=context.db)
+    check_due_date_reminders(db=context.db)
 
 
 # ==================== Then 步骤 ====================
@@ -617,7 +674,13 @@ def step_return_time(context):
 def step_stock_released(context):
     if hasattr(context, "book") and context.book:
         context.db.refresh(context.book)
-        assert context.book is not None
+        before = getattr(context, "_stock_before", None)
+        if before is not None:
+            assert context.book.available_stock == before + 1, (
+                f"库存未释放: before={before}, after={context.book.available_stock}"
+            )
+        else:
+            assert (context.book.available_stock or 0) >= 1
 
 
 @then('该借阅记录标记为"OVERDUE"')
@@ -632,20 +695,22 @@ def step_borrow_marked_overdue(context):
 
 @then("该孩子的在线音频伴读功能锁定")
 def step_audio_locked(context):
-    # 音频锁定通过 OVERDUE 状态实现
-    record = (
-        context.db.query(BorrowRecord)
-        .filter(BorrowRecord.child_id == context.child.id)
-        .first()
-    )
-    assert record.status == BorrowStatus.OVERDUE
+    # T1：真实调用音频锁定校验（B8：逾期超宽限期才锁）
+    from backend.common.exceptions import ForbiddenError
+    from backend.domain.reading.service import ReadingService
+
+    try:
+        ReadingService(context.db)._check_overdue_audio(context.child.id)
+    except ForbiddenError:
+        return
+    raise AssertionError("音频锁定未生效：逾期超宽限期仍可访问音频")
 
 
 @then("系统计算逾期天数")
 def step_calc_overdue_days(context):
     record = (
         context.db.query(BorrowRecord)
-        .filter(BorrowRecord.child_id == context.child.id)
+        .filter(BorrowRecord.id == context.borrow_record.id)
         .first()
     )
     assert record.overdue_days is not None and record.overdue_days > 0
@@ -655,10 +720,14 @@ def step_calc_overdue_days(context):
 def step_overdue_fine_created(context):
     record = (
         context.db.query(BorrowRecord)
-        .filter(BorrowRecord.child_id == context.child.id)
+        .filter(BorrowRecord.id == context.borrow_record.id)
         .first()
     )
-    assert record.fine_amount is not None and record.fine_amount > 0
+    assert record.fine_amount is not None and record.fine_amount > 0, (
+        f"逾期罚款未生成: fine_amount={record.fine_amount}, "
+        f"overdue_days={record.overdue_days}, fine_waived={record.fine_waived}, "
+        f"due={record.due_date}, book_price={record.book.price if record.book else None}"
+    )
 
 
 @then("罚款金额为定价的1.5倍（120元）")
@@ -685,9 +754,21 @@ def step_update_fines(context):
 
 @then('系统发送提醒消息"{msg}"')
 def step_send_reminder(context, msg):
-    # 验证提醒消息已生成（通过 SystemMessage 表）
-    # SystemMessage 表在测试环境中可能未创建，验证不抛异常
-    assert hasattr(context, "child") and context.child is not None
+    # T1：真实断言提醒消息已入库且内容匹配
+    from backend.domain.message.models import SystemMessage
+
+    rows = (
+        context.db.query(SystemMessage)
+        .filter(
+            SystemMessage.user_id == context.user.id,
+            SystemMessage.title == "借阅到期提醒",
+        )
+        .all()
+    )
+    assert rows, f"未找到借阅到期提醒消息: {msg}"
+    assert any(msg in (r.content or "") for r in rows), (
+        f"提醒内容不匹配: 期望「{msg}」，实际 {[r.content for r in rows]}"
+    )
 
 
 # ==================== B10 丢失找回 ====================

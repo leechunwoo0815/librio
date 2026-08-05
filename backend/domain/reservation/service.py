@@ -78,6 +78,23 @@ class ReservationService:
         if existing:
             raise ConflictError("该孩子已预约同一本书，请等待取书或取消后再预约")
 
+        # F46：已有同书未还借阅 → 拦截（状态流转图 9.3；避免库存白锁最长 72h）
+        from backend.domain.borrow.models import BorrowRecord
+        from backend.common.types import BorrowStatus
+
+        active_borrow = (
+            self.db.query(BorrowRecord.id)
+            .filter(
+                BorrowRecord.child_id == data.child_id,
+                BorrowRecord.book_id == data.book_id,
+                BorrowRecord.status.in_([BorrowStatus.BORROWING, BorrowStatus.OVERDUE]),
+                BorrowRecord.is_deleted == 0,
+            )
+            .first()
+        )
+        if active_borrow:
+            raise ValidationError("该孩子已有同一本书的未还借阅，请先归还")
+
         # 从配置读取预约过期时间
         from backend.common.config_service import ConfigService
 
@@ -181,9 +198,52 @@ class ReservationService:
         if active_count >= max_borrow:
             raise ValidationError("小书架满啦！先还一本，再借新的吧～")
 
-        reservation.status = ReservationStatus.FULFILLED
-        reservation.fulfilled_time = datetime.now()
-        self.reservation_repo.update(reservation)
+        # F42：手动取书（无条码）强制绑定一本 AVAILABLE 副本，杜绝 book_copy_id=None 孤儿借阅
+        if book_copy_id is None:
+            copy = (
+                self.db.query(BookCopy)
+                .filter(
+                    BookCopy.book_id == reservation.book_id,
+                    BookCopy.status == BookCopyStatus.AVAILABLE,
+                    BookCopy.is_deleted == 0,
+                )
+                .order_by(BookCopy.id)
+                .first()
+            )
+            if not copy:
+                raise ValidationError("该书暂无可用副本，请先扫码入库")
+            book_copy_id = copy.id
+
+        # F45：条件 UPDATE（WHERE id=? AND status=PENDING AND 未过期），按 affected rows 判定
+        now = datetime.now()
+        affected = (
+            self.db.query(Reservation)
+            .filter(
+                Reservation.id == reservation.id,
+                Reservation.status == ReservationStatus.PENDING,
+                Reservation.expire_time > now,
+                Reservation.is_deleted == 0,
+            )
+            .update(
+                {
+                    Reservation.status: ReservationStatus.FULFILLED,
+                    Reservation.fulfilled_time: now,
+                },
+                synchronize_session=False,
+            )
+        )
+        if affected != 1:
+            fresh = (
+                self.db.query(Reservation)
+                .filter(Reservation.id == reservation.id)
+                .first()
+            )
+            if fresh and fresh.status != ReservationStatus.PENDING:
+                raise ConflictError("预约状态已变化，无法取书")
+            raise ValidationError("预约已过期")
+        self.db.refresh(
+            reservation
+        )  # 条件 UPDATE 后同步 ORM 状态（synchronize_session=False）
 
         # 发布取书事件（borrow 域创建借阅记录）
         event_bus.publish(
@@ -200,13 +260,31 @@ class ReservationService:
         return ReservationResponse.model_validate(reservation)
 
     def expire_reservation(self, reservation_id: int) -> None:
-        """过期预约 — 释放库存（定时任务调用，不自行 commit）"""
-        reservation = self.reservation_repo.get_by_id(reservation_id)
-        if not reservation or reservation.status != ReservationStatus.PENDING:
-            return
+        """过期预约 — 释放库存（定时任务调用，不自行 commit）
 
-        reservation.status = ReservationStatus.EXPIRED
-        self.reservation_repo.update(reservation)
+        F45：条件 UPDATE（WHERE id=? AND status=PENDING），按 affected rows 判定——
+        与取书/取消同锁口径，杜绝并发下"已取书/已取消仍被过期释放库存"。
+        """
+        affected = (
+            self.db.query(Reservation)
+            .filter(
+                Reservation.id == reservation_id,
+                Reservation.status == ReservationStatus.PENDING,
+                Reservation.is_deleted == 0,
+            )
+            .update(
+                {Reservation.status: ReservationStatus.EXPIRED},
+                synchronize_session=False,
+            )
+        )
+        if affected != 1:
+            return  # 已过期/已取书/已取消，不重复释放
+
+        reservation = (
+            self.db.query(Reservation).filter(Reservation.id == reservation_id).first()
+        )
+        if not reservation:
+            return
 
         event_bus.publish(
             ReservationExpiredEvent(
@@ -450,8 +528,9 @@ class ReservationService:
         )
         if not record:
             raise NotFoundError("预约不存在")
-        if record.status == 3:  # 已取消
-            raise ConflictError("预约已取消")
+        if record.status != ReservationStatus.PENDING:
+            # F40：仅 PENDING→CANCELLED——EXPIRED/FULFILLED 取消会致库存双重释放/幻影库存
+            raise ConflictError(f"仅待取预约可取消（当前状态 {record.status}）")
 
         if user_id is not None:
             child = (
@@ -462,8 +541,20 @@ class ReservationService:
             if not child or child.user_id != user_id:
                 raise ForbiddenError("无权操作该预约")
 
-        record.status = ReservationStatus.CANCELLED
-        self.reservation_repo.update(record)
+        affected = (
+            self.db.query(Reservation)
+            .filter(
+                Reservation.id == reservation_id,
+                Reservation.status == ReservationStatus.PENDING,
+                Reservation.is_deleted == 0,
+            )
+            .update(
+                {Reservation.status: ReservationStatus.CANCELLED},
+                synchronize_session=False,
+            )
+        )
+        if affected != 1:
+            raise ConflictError("预约状态已变化，无法取消")
 
         event_bus.publish(
             ReservationCancelledEvent(

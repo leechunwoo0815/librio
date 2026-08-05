@@ -341,6 +341,7 @@ def step_click_reserve(context):
         context.db.commit()
         context.db.refresh(book)
         context.book = book
+    context._stock_before_reservation = context.book.available_stock or 0
     context.response = context.client.post(
         "/reservation/",
         json={"child_id": context.child.id, "book_id": context.book.id},

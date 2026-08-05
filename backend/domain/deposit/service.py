@@ -10,7 +10,6 @@ import uuid
 from datetime import datetime, timedelta
 from decimal import Decimal
 
-from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from backend.common.events import DepositPaidEvent, event_bus
@@ -496,13 +495,9 @@ class DepositService:
             )
 
         if book:
-            self.db.query(Book).filter(Book.id == record.book_id).update(
-                {
-                    Book.total_stock: func.greatest(Book.total_stock - 1, 0),
-                    Book.available_stock: func.greatest(Book.available_stock - 1, 0),
-                },
-                synchronize_session="fetch",
-            )
+            # F70：改用 Python 侧 max——func.greatest 在 SQLite 不存在（端点此前零测试）
+            book.total_stock = max((book.total_stock or 0) - 1, 0)
+            book.available_stock = max((book.available_stock or 0) - 1, 0)
 
         self.db.commit()
         logger.info(

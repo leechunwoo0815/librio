@@ -293,6 +293,7 @@ class BorrowService:
         barcode: str,
         operator_id: int | None = None,
         title: str | None = None,
+        author: str | None = None,
         isbn: str | None = None,
         ar_value: float | None = None,
         age_min: int | None = None,
@@ -313,9 +314,9 @@ class BorrowService:
             book_copy_id = copy.id
         else:
             # 条码不存在，需创建 Book + BookCopy
-            if not all([title, isbn, ar_value, age_min, age_max]):
+            if not all([title, author, isbn, ar_value, age_min, age_max]):
                 raise ValidationError(
-                    "新书条码，需提供 title/isbn/ar_value/age_min/age_max"
+                    "新书条码，需提供 title/author/isbn/ar_value/age_min/age_max"
                 )
 
             # 查找是否已有同 ISBN 的 Book
@@ -328,6 +329,7 @@ class BorrowService:
                 book = Book(
                     isbn=isbn,
                     title=title,
+                    author=author,  # F47：NOT NULL 列必须显式写入
                     ar_value=ar_value,
                     age_min=age_min,
                     age_max=age_max,

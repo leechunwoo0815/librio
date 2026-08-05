@@ -1126,7 +1126,7 @@ def alert_stale_refunds(db: Session | None = None):
 
 
 @distributed_lock("job:check_due_date_reminders", timeout=600)
-def check_due_date_reminders():
+def check_due_date_reminders(db: Session | None = None):
     """
     [What] 借阅到期提醒
     [Why] 到期前5/3/1/当天发送提醒
@@ -1137,7 +1137,8 @@ def check_due_date_reminders():
     from backend.domain.book.models import Book
     from backend.common.types import BorrowStatus
 
-    db = _get_db_session()
+    own_session = db is None
+    db = db or _get_db_session()
     try:
         from backend.common.config_service import ConfigService
 
@@ -1147,7 +1148,8 @@ def check_due_date_reminders():
         # 一次查询所有即将到期的记录（避免 4 × 全表遍历）
         # 加 due_date 上界过滤，防生产全量加载
         max_remind_days = max(remind_days) if remind_days else 0
-        due_date_upper = today + timedelta(days=max_remind_days)
+        # 开区间上界 = 最后提醒日次日零点：due 当天任意时刻都应收（此前 <= 当日零点漏当天到期）
+        due_date_upper = today + timedelta(days=max_remind_days + 1)
         # 使用 JOIN 一次查询，避免 N+1
         records = (
             db.query(BorrowRecord, Child, Book)
@@ -1197,7 +1199,8 @@ def check_due_date_reminders():
         db.rollback()
         logger.exception(f"check_due_date_reminders failed: {e}")
     finally:
-        db.close()
+        if own_session:
+            db.close()
 
 
 @distributed_lock("job:expire_reservations", timeout=120)

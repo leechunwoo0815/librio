@@ -592,12 +592,12 @@ class AdminPayDepositRequest(BaseModel):
 
 
 class FulfillReservationRequest(BaseModel):
-    """完成预约请求"""
+    """完成预约请求（F43：扫码枪只提交 barcode，手动取书提交 reservation_id）"""
 
     model_config = ConfigDict(extra="forbid")
 
-    reservation_id: int
-    child_id: int
+    reservation_id: int | None = None
+    barcode: str | None = None
 
 
 class AdminCreateReservationRequest(BaseModel):

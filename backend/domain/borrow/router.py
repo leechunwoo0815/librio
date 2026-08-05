@@ -40,6 +40,7 @@ def scan_and_borrow(
         barcode=data.barcode,
         operator_id=data.operator_id or admin.id,
         title=data.title,
+        author=data.author,  # F47：新书建档必填
         isbn=data.isbn,
         ar_value=data.ar_value,
         age_min=data.age_min,

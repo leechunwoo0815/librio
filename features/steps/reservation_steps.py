@@ -27,6 +27,7 @@ def step_request_reservation(context, title):
 
     svc = ReservationService(context.db)
     if hasattr(context, "book") and context.book:
+        context._stock_before_reservation = context.book.available_stock or 0
         try:
             result = svc.create_reservation(
                 ReservationCreateRequest(
@@ -63,14 +64,23 @@ def step_view_reservations(context):
 @then("库存锁定（可借数量减1）")
 def step_stock_locked(context):
     context.db.refresh(context.book)
-    assert context.book.available_stock == 0
+    # T1：真实断言——预约事件已扣减（不再硬编码 0，支持任意起始库存）
+    before = getattr(context, "_stock_before_reservation", None)
+    if before is not None:
+        assert context.book.available_stock == before - 1, (
+            f"预约未扣库存: before={before}, after={context.book.available_stock}"
+        )
+    else:
+        assert context.book.available_stock == 0
 
 
 @then('提示"缴纳押金后即可借阅实体书哦～"')
 @then('提示"请先缴纳1200元押金"')
 def step_prompt_deposit(context):
+    # T1：恒真断言清零——真实端点必须 4xx 且 detail 含押金提示
     assert context.response is not None
-    assert context.response.status_code in (400, 403, 200)
+    assert context.response.status_code in (400, 403), context.response.text
+    assert "押金" in (context.response.text or "")
 
 
 @then('提示"该书暂无可借库存"')
@@ -253,6 +263,7 @@ def step_expire_check(context):
     )
     for r in expired:
         svc.expire_reservation(r.id)
+    context.db.commit()  # 真实调度器 expire_reservations 在循环后统一 commit
 
 
 @then('预约状态为"RESERVED"')
@@ -302,12 +313,14 @@ def step_no_reservation_created(context):
 def step_stock_locked_specific(context):
     if hasattr(context, "book") and context.book:
         context.db.refresh(context.book)
-        # 预约会通过事件扣减库存，这里验证库存已减少
-        # 如果事件处理器未触发，则手动模拟
-        if context.book.available_stock > 0:
-            context.book.available_stock -= 1
-            context.db.commit()
-        assert context.book.available_stock >= 0
+        # T1：真实断言——事件处理器已扣减，禁止手动模拟
+        before = getattr(context, "_stock_before_reservation", None)
+        if before is not None:
+            assert context.book.available_stock == before - 1, (
+                f"预约未扣库存: before={before}, after={context.book.available_stock}"
+            )
+        else:
+            assert context.book.available_stock == 0
 
 
 @then("该书库存释放（可借数量加1）")

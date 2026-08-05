@@ -430,7 +430,9 @@ def fulfill_reservation(
 ):
     """完成预约"""
     service = ReservationService(db)
-    req = ReservationFulfillRequest(reservation_id=data.reservation_id)
+    req = ReservationFulfillRequest(
+        reservation_id=data.reservation_id, barcode=data.barcode
+    )  # F43：扫码路径透传 barcode
     result = service.fulfill_reservation(req)
     from backend.domain.admin.services.system_service import AdminSystemService
 

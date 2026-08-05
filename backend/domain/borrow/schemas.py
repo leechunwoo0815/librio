@@ -25,6 +25,7 @@ class ScanAndBorrowRequest(BaseSchema):
     operator_id: int | None = None
     # 以下字段仅在条码不存在时需要（首次扫码创建新书）
     title: str | None = None
+    author: str | None = None  # F47：Book.author NOT NULL，建档必须提供
     isbn: str | None = None
     ar_value: float | None = None
     age_min: int | None = None

@@ -136,7 +136,7 @@ class TestFulfillWithBarcode:
             )
 
     def test_manual_fulfill_still_works(self, db, seed):
-        """备用路径：不带 barcode 手动取书，book_copy_id 为 None"""
+        """F42：手动取书（不带 barcode）强制绑定一本 AVAILABLE 副本，不再产生孤儿借阅"""
         svc = ReservationService(db)
         resp = svc.fulfill_reservation(ReservationFulfillRequest(reservation_id=1))
         assert resp.status == ReservationStatus.FULFILLED
@@ -144,7 +144,15 @@ class TestFulfillWithBarcode:
 
         record = db.query(BorrowRecord).filter(BorrowRecord.child_id == 1).first()
         assert record is not None
-        assert record.book_copy_id is None
+        assert record.book_copy_id == 1  # F42：自动绑定可用副本，杜绝 None 孤儿
+
+    def test_manual_fulfill_no_available_copy_rejected(self, db, seed):
+        """F42：无可用副本时手动取书必须拦截（不能制造无副本借阅）"""
+        seed["copy"].status = BookCopyStatus.BORROWED
+        db.commit()
+        svc = ReservationService(db)
+        with pytest.raises(ValidationError, match="暂无可用副本"):
+            svc.fulfill_reservation(ReservationFulfillRequest(reservation_id=1))
 
     def test_barcode_only_auto_matches_reservation(self, db, seed):
         """扫码枪流程：仅扫条码（无 reservation_id）自动匹配最早待取预约"""
