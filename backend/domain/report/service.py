@@ -161,9 +161,16 @@ class ReportService:
             if child.id in existing_report_ids:
                 continue
 
-            report = self._generate_for_child(child)
-            if report:
-                generated.append({"child_id": child.id, "report_id": report.id})
+            # F14 P2：per-child 隔离——单个孩子生成失败只跳过该孩子并留痕，
+            # 不整批回滚（防队头阻塞：一个持续失败的孩子拖住全体观察期孩子转 EXPIRED）
+            try:
+                report = self._generate_for_child(child)
+                if report:
+                    generated.append({"child_id": child.id, "report_id": report.id})
+            except Exception:
+                logger.exception(
+                    f"观察期报告生成失败（保留 OBSERVATION 下轮重试）: child_id={child.id}"
+                )
 
         logger.info(f"Generated {len(generated)} observation reports")
         return generated

@@ -113,6 +113,7 @@ CONFIG_RANGES: dict[str, tuple[float, float]] = {
     "daily_checkin_limit": (1, 10),
     "bookshelf_limit": (0, 500),
     "order_expire_minutes": (5, 1440),
+    "amount_override_alert_ratio": (0.01, 1),
     "activity_cancel_hours": (0, 168),
     "admin_token_expire_hours": (1, 72),
     "data_retention_finance_years": (1, 10),

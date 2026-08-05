@@ -203,11 +203,14 @@ class AdminOrderService:
         if not child:
             raise NotFoundError("孩子不存在")
 
+        # F11：金额范围校验前置（越界直接 422，不落孤儿 PENDING 单）
+        amount = data.get("amount")
+        self._validate_amount(amount)
+
         service = DomainOrderService(self.db)
         order_data = OrderCreate(child_id=child_id, type=order_type, remark=remark)
         result = service.create_order(child.user_id, order_data)
         # 管理员输入的金额始终覆盖打折价（F11：覆盖须走审计——范围校验+明细日志+超阈值告警）
-        amount = data.get("amount")
         pay_type = data.get("pay_type")
         system_price = (
             result.get("amount")
@@ -227,7 +230,7 @@ class AdminOrderService:
             )
             if order:
                 if amount is not None:
-                    self._apply_amount_override(
+                    self._audit_amount_override(
                         order,
                         amount,
                         system_price,
@@ -241,10 +244,21 @@ class AdminOrderService:
                     order.pay_time = datetime.now()
                     # F5 快照：管理员手动标记已支付同样计入多孩资格
                     DomainOrderService(self.db)._mark_paid_member_ever(order)
-                self.db.commit()
+        self.db.commit()
         return result.model_dump() if hasattr(result, "model_dump") else result
 
-    def _apply_amount_override(
+    @staticmethod
+    def _validate_amount(amount) -> None:
+        """F11：金额范围校验（0 < amount ≤ 100000），越界抛 422"""
+        from backend.common.exceptions import ValidationError
+
+        if amount is None:
+            return
+        amount_dec = Decimal(str(amount))
+        if amount_dec <= 0 or amount_dec > Decimal("100000"):
+            raise ValidationError(f"实收金额超出允许范围(0, 100000]: {amount}")
+
+    def _audit_amount_override(
         self,
         order: Order,
         amount,
@@ -253,14 +267,12 @@ class AdminOrderService:
         child_id: int,
         order_no: str,
     ) -> None:
-        """F11：代客下单金额覆盖审计——范围校验 + 明细日志 + 偏离系统价 ±50% 告警"""
-        from backend.common.exceptions import ValidationError
+        """F11：金额覆盖审计——明细日志 + 偏离系统价超阈值告警（阈值配置化）"""
+        from backend.common.config_service import ConfigService
         from backend.domain.admin.models import OperationLog
         from backend.domain.message.models import SystemMessage
 
         amount_dec = Decimal(str(amount))
-        if amount_dec <= 0 or amount_dec > Decimal("100000"):
-            raise ValidationError(f"实收金额超出允许范围(0, 100000]: {amount}")
         order.amount = amount_dec
 
         self.db.add(
@@ -279,7 +291,10 @@ class AdminOrderService:
             sys_dec = Decimal(str(system_price))
             if sys_dec > 0:
                 ratio = abs(amount_dec - sys_dec) / sys_dec
-                if ratio > Decimal("0.5"):
+                alert_ratio = ConfigService.get_decimal(
+                    self.db, "amount_override_alert_ratio", Decimal("0.5")
+                )
+                if ratio > alert_ratio:
                     self.db.add(
                         SystemMessage(
                             user_id=0,
@@ -287,16 +302,20 @@ class AdminOrderService:
                             content=(
                                 f"管理员(#{admin_id})为订单 {order_no} 覆盖金额 "
                                 f"{amount_dec} 元，偏离系统价 {sys_dec} 元"
-                                f"（{ratio * 100:.0f}%），请核对"
+                                f"（{ratio * 100:.0f}%，阈值 {alert_ratio * 100:.0f}%），请核对"
                             ),
                             msg_type=1,  # 系统通知
                             priority=2,
                         )
                     )
 
-    def create_offline_order(self, data: dict) -> dict:
+    def create_offline_order(self, data: dict, admin_id: int = None) -> dict:
         """线下创建用户+订单（兜底场景）"""
         from passlib.context import CryptContext
+
+        # F11：金额范围校验前置（越界直接 422，不落用户/孩子/订单）
+        amount_in = data.get("amount")
+        self._validate_amount(amount_in)
 
         # 检查手机号
         existing = (
@@ -350,6 +369,16 @@ class AdminOrderService:
         if order.pay_status == PayStatus.PAID:
             # F5 快照：线下订单已收款同样计入多孩资格
             DomainOrderService(self.db)._mark_paid_member_ever(order)
+            # F11：线下建单金额覆盖审计（系统价取订单类型基价）
+            system_price = DomainOrderService(self.db)._get_price(data["order_type"])
+            self._audit_amount_override(
+                order,
+                amount_in,
+                system_price,
+                admin_id,
+                child.id,
+                order.order_no,
+            )
         self.db.commit()
         return {
             "success": True,

@@ -100,3 +100,28 @@ class TestReportFailureAbortsStatusChange:
         db.refresh(child)
         assert child.status == MemberStatus.EXPIRED
         assert ReportService(db).get_report(child.id) is not None
+
+    def test_one_child_failure_does_not_block_others(self, db, monkeypatch):
+        """P2：per-child 隔离——单个孩子报告生成失败只留 OBSERVATION 下轮重试，
+        不影响其他到期孩子转 EXPIRED（防队头阻塞）"""
+        from backend.domain.report.service import ReportService
+        from backend.tasks.scheduler import check_observation_expiry
+
+        user_a, child_a = _mk_observation_child(db, "f14failA", timedelta(days=-1))
+        user_b, child_b = _mk_observation_child(db, "f14failB", timedelta(days=-1))
+
+        orig = ReportService._generate_for_child
+
+        def failing_only_a(self, child):
+            if child.id == child_a.id:
+                raise RuntimeError("child A 报告生成失败（模拟）")
+            return orig(self, child)
+
+        monkeypatch.setattr(ReportService, "_generate_for_child", failing_only_a)
+        check_observation_expiry(db)
+
+        db.refresh(child_a)
+        db.refresh(child_b)
+        assert child_a.status == MemberStatus.OBSERVATION  # 失败者保留重试
+        assert child_b.status == MemberStatus.EXPIRED  # 成功者不受阻塞
+        assert ReportService(db).get_report(child_b.id) is not None

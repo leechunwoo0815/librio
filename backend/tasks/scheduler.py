@@ -1609,21 +1609,44 @@ def check_observation_expiry(db: Session | None = None):
         if not expired:
             return
 
-        # 1. 生成观察期报告（F14：失败即整批回滚、下轮重试——杜绝"状态已 EXPIRED 而报告永久丢失"）
+        # 1. 生成观察期报告（F14：per-child 隔离——单孩失败只留 OBSERVATION 下轮重试，
+        #    不队头阻塞；生成成功或已有报告的孩子才转 EXPIRED）
         from backend.domain.report.service import ReportService
+        from backend.domain.report.models import ObservationReport
 
+        expired_ids = [c.id for c in expired]
+        existing_report_ids = {
+            r[0]
+            for r in db.query(ObservationReport.child_id)
+            .filter(ObservationReport.child_id.in_(expired_ids))
+            .all()
+        }
         generated = ReportService(db).generate_due_reports()
+        ready_ids = existing_report_ids | {g["child_id"] for g in generated}
         logger.info(
-            f"Observation reports generated: {len(generated)} for {len(expired)} expired children"
+            f"Observation reports ready: {len(ready_ids)}/{len(expired)} "
+            f"(new={len(generated)}, existing={len(existing_report_ids)})"
         )
 
         # 2. 状态变更
+        expired_count = 0
         for child in expired:
-            child.status = MemberStatus.EXPIRED
-            logger.info(f"Observation expired: child_id={child.id}, name={child.name}")
+            if child.id in ready_ids:
+                child.status = MemberStatus.EXPIRED
+                expired_count += 1
+                logger.info(
+                    f"Observation expired: child_id={child.id}, name={child.name}"
+                )
+            else:
+                logger.warning(
+                    f"Observation report not ready, keep OBSERVATION for retry: "
+                    f"child_id={child.id}"
+                )
 
         db.commit()
-        logger.info(f"Observation expiry: {len(expired)} children expired")
+        logger.info(
+            f"Observation expiry: {expired_count}/{len(expired)} children expired"
+        )
     except Exception as e:
         db.rollback()
         logger.exception(f"check_observation_expiry failed: {e}")

@@ -137,6 +137,7 @@ SECTIONS: list[tuple[str, list[str]]] = [
         "十一、订单与价格",
         [
             "order_expire_minutes",
+            "amount_override_alert_ratio",
             "price_parent_course",
             "price_observation",
             "price_official_member",

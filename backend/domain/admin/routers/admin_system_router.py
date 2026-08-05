@@ -590,13 +590,16 @@ def admin_create_offline_order(
     service: AdminOrderService = Depends(get_admin_order_service),
 ):
     """管理员线下创建用户+订单（兜底场景）"""
-    result = service.create_offline_order(data.model_dump())
+    result = service.create_offline_order(data.model_dump(), admin.id)
     system_service = AdminSystemService(service.db)
     system_service.write_operation_log(
         admin_id=admin.id,
         module="order",
         operation="create",
-        content="线下创建用户+订单",
+        content=(
+            f"线下创建用户+订单: {result.get('order_no', '')}, "
+            f"金额={result.get('amount', '')}"
+        ),
     )
     return result
 

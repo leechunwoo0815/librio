@@ -268,6 +268,11 @@ class SystemConfig(BaseModel):
         ),
         # ── 订单 ──
         "order_expire_minutes": ("30", "int", "订单未支付自动关闭时间（分钟）"),
+        "amount_override_alert_ratio": (
+            "0.5",
+            "string",
+            "代客下单/线下建单金额覆盖偏离系统价告警阈值（F11：|实收-系统|/系统 > 阈值即告警）",
+        ),
         "price_parent_course": ("99", "string", "亲子课价格（元）"),
         "price_observation": ("500", "string", "观察期价格（元）"),
         "price_official_member": ("5400", "string", "正式会员年费（元）"),
