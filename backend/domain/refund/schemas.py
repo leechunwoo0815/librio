@@ -13,7 +13,6 @@ class RefundCreate(BaseSchema):
     order_id: int = Field(..., description="订单ID")
     used_days: int = Field(..., ge=0, description="已使用天数")
     reason: str = Field(..., max_length=255, description="退款原因")
-    damage_amount: Decimal | None = Field(None, ge=0, description="图书损坏赔偿金额")
 
 
 class RefundAudit(BaseSchema):

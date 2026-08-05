@@ -181,12 +181,11 @@ class DepositService:
     def handle_callback(
         self, order_no: str, amount: Decimal | None = None
     ) -> DepositResponse:
-        """支付回调 — PENDING → PAID"""
+        """支付回调 — PENDING → PAID（F74：幂等——重复回调已 PAID 直接返回）"""
         record = (
             self.db.query(DepositRecord)
             .filter(
                 DepositRecord.pay_order_id == order_no,
-                DepositRecord.status == DepositStatus.PENDING,
                 DepositRecord.is_deleted == 0,
             )
             .with_for_update()
@@ -194,6 +193,12 @@ class DepositService:
         )
         if not record:
             raise NotFoundError(f"未找到押金记录 order_no={order_no}")
+        if record.status == DepositStatus.PAID:
+            return DepositResponse.model_validate(record)  # 重复回调幂等
+        if record.status != DepositStatus.PENDING:
+            raise ConflictError(
+                f"押金状态({record.status})不允许支付回调，仅 PENDING 可确认"
+            )
 
         if amount is not None and amount != record.amount:
             from backend.common.exceptions import PaymentError

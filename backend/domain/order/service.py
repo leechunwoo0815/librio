@@ -412,6 +412,13 @@ class OrderService:
             logger.warning(f"Order {callback.order_no} already paid")
             return OrderResponse.model_validate(order)
 
+        # F75-③：回调 trade_state 消费——非 SUCCESS 不标记已支付（纵深防御）
+        if callback.trade_state and callback.trade_state != "SUCCESS":
+            logger.warning(
+                f"Order callback non-SUCCESS: {callback.order_no}, trade_state={callback.trade_state}"
+            )
+            return OrderResponse.model_validate(order)
+
         if callback.amount != order.amount:
             raise PaymentError(
                 f"支付金额不一致: 回调{callback.amount}, 订单{order.amount}"

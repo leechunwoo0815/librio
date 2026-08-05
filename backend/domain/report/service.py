@@ -171,6 +171,34 @@ class ReportService:
                 logger.exception(
                     f"观察期报告生成失败（保留 OBSERVATION 下轮重试）: child_id={child.id}"
                 )
+                # F31：持续失败的孩子加 user_id=0 告警（7 天去重，F7 模式）——
+                # 否则静默卡在 OBSERVATION 无人处理
+                from backend.domain.message.models import SystemMessage
+
+                alert_content = (
+                    f"观察期报告生成持续失败: child_id={child.id}，请人工处理"
+                )
+                recent = (
+                    self.db.query(SystemMessage)
+                    .filter(
+                        SystemMessage.user_id == 0,
+                        SystemMessage.title == "观察期报告生成失败",
+                        SystemMessage.content == alert_content,
+                        SystemMessage.create_time
+                        > datetime.now() - timedelta(days=7),
+                    )
+                    .count()
+                )
+                if not recent:
+                    self.db.add(
+                        SystemMessage(
+                            user_id=0,
+                            title="观察期报告生成失败",
+                            content=alert_content,
+                            msg_type=1,
+                            priority=2,
+                        )
+                    )
 
         logger.info(f"Generated {len(generated)} observation reports")
         return generated

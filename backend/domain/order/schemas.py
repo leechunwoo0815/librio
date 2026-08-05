@@ -49,6 +49,7 @@ class OrderPayCallback(BaseSchema):
     trade_no: str = Field(..., description="交易流水号")
     pay_type: int = Field(default=1, description="支付方式: 1=微信支付")
     amount: Decimal = Field(..., gt=0, description="实际支付金额")
+    trade_state: str = Field(default="", description="微信支付回调交易状态（F75-③ 纵深防御）")
 
 
 class RefundPreviewResponse(BaseSchema):

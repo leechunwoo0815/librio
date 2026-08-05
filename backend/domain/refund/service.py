@@ -145,6 +145,7 @@ class RefundService:
             order_id=data.order_id,
             user_id=user_id,
             child_id=order.child_id,
+            amount=order.amount,  # F75-②：订单原额写入（对账缺原额此前从未落库）
             refund_amount=final_amount,
             used_days=used_days,  # 使用服务端计算值
             reason=data.reason,

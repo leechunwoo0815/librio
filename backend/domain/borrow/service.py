@@ -110,7 +110,15 @@ class BorrowService:
 
             # 校验副本状态（§7.3：仅"在馆"副本可借；P1 补缺）
             if data.book_copy_id:
-                copy = self.copy_repo.get_by_id(data.book_copy_id)
+                copy = (
+                    self.db.query(BookCopy)
+                    .filter(
+                        BookCopy.id == data.book_copy_id,
+                        BookCopy.is_deleted == 0,
+                    )
+                    .with_for_update()  # F69：副本状态检查加行锁，防并发双借
+                    .first()
+                )
                 if copy and copy.status != BookCopyStatus.AVAILABLE:
                     if copy.status == BookCopyStatus.BORROWED:
                         active = (
