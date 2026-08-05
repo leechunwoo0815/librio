@@ -89,7 +89,7 @@ engine.echo = False
 Base.metadata.create_all(bind=engine)
 
 from backend.domain.admin.models import Admin  # noqa: E402
-from backend.domain.book.models import Book  # noqa: E402
+from backend.domain.book.models import Book, BookCopy  # noqa: E402
 from backend.domain.child.models import Child  # noqa: E402
 from backend.domain.order.models import Order  # noqa: E402
 from backend.domain.borrow.models import BorrowRecord  # noqa: E402
@@ -224,6 +224,15 @@ def seed_all():
         is_published=1,
     )
     db.add_all([book1, book2])
+    db.flush()
+
+    # F42：手动取书需绑定 AVAILABLE 副本——种子补实体副本
+    db.add_all(
+        [
+            BookCopy(book_id=book1.id, barcode="BC-IT-001", status=0),
+            BookCopy(book_id=book2.id, barcode="BC-IT-002", status=0),
+        ]
+    )
     db.flush()
 
     for bk_id in [book1.id, book2.id]:
@@ -541,7 +550,7 @@ callback_order_no = f"DP{uuid.uuid4().hex[:24].upper()}"
 cb_db = get_db_session()
 try:
     pending_dep = DepositRecord(
-        child_id=child1_id,
+        child_id=child2_id,  # F68：活跃唯一索引——回调模拟用 child2（child1 已有 PAID）
         amount=Decimal("1200.00"),
         status=DepositStatus.PENDING,
         pay_order_id=callback_order_no,

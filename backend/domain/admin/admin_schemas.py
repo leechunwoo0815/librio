@@ -674,7 +674,9 @@ class AdminOfflineCreateOrderRequest(BaseModel):
     def _amount_pay_type_pair(self):
         """F32：线下建单 amount/pay_type 必须成对——单给金额会落 PENDING 且审计不触发"""
         if (self.amount is None) != (self.pay_type is None):
-            raise ValueError("amount 与 pay_type 必须成对提供（线下收款需同时指定实收金额与付款方式）")
+            raise ValueError(
+                "amount 与 pay_type 必须成对提供（线下收款需同时指定实收金额与付款方式）"
+            )
         return self
 
 

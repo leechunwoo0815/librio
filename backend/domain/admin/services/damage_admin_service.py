@@ -315,7 +315,9 @@ class DamageAdminService:
         record.status = BorrowStatus.RETURNED
         record.return_time = datetime.now()
         record.fine_amount = Decimal("0")
-        record.fine_in_outstanding = Decimal("0")  # 找回后本记录无已入账罚款（F48-F50 交互）
+        record.fine_in_outstanding = Decimal(
+            "0"
+        )  # 找回后本记录无已入账罚款（F48-F50 交互）
         record.lost_search_deadline = None
 
         self.db.commit()
@@ -546,8 +548,7 @@ class DamageAdminService:
                             )
                             record_price = book.price if book else None
                     override_fine = (
-                        (record_price or Decimal("0"))
-                        * self.LEVEL_MULTIPLIERS[2]
+                        (record_price or Decimal("0")) * self.LEVEL_MULTIPLIERS[2]
                     ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                 else:
                     override_fine = Decimal("0")

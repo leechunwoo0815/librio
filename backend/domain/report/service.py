@@ -184,8 +184,7 @@ class ReportService:
                         SystemMessage.user_id == 0,
                         SystemMessage.title == "观察期报告生成失败",
                         SystemMessage.content == alert_content,
-                        SystemMessage.create_time
-                        > datetime.now() - timedelta(days=7),
+                        SystemMessage.create_time > datetime.now() - timedelta(days=7),
                     )
                     .count()
                 )

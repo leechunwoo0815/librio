@@ -74,7 +74,9 @@ def _mk_book(db, price=Decimal("100.00")):
     )
     db.add(book)
     db.commit()
-    copy = BookCopy(book_id=book.id, barcode="BC-P2-001", status=BookCopyStatus.AVAILABLE)
+    copy = BookCopy(
+        book_id=book.id, barcode="BC-P2-001", status=BookCopyStatus.AVAILABLE
+    )
     db.add(copy)
     db.commit()
     return book, copy

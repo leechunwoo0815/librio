@@ -101,9 +101,7 @@ def _mk_report(db, record, level=3, status=BookDamageReport.STATUS_PENDING_REVIE
 class TestF48FoundNoCrossWaive:
     def test_found_pending_review_does_not_waive_other_fines(self, db):
         """F48：待复核丢失找回只物理回滚，不冲销孩子其他合法罚款"""
-        _, child, book, copy, record = _mk_lost(
-            db, outstanding=Decimal("50.00")
-        )
+        _, child, book, copy, record = _mk_lost(db, outstanding=Decimal("50.00"))
         _mk_report(db, record, status=BookDamageReport.STATUS_PENDING_REVIEW)
         svc = DamageAdminService(db)
         result = svc.mark_book_found(record.id, admin_id=1)
@@ -115,9 +113,7 @@ class TestF48FoundNoCrossWaive:
 
     def test_found_charged_report_waives(self, db):
         """对照：已入账（PENDING/CONFIRMED）报告找回正常冲正"""
-        _, child, book, copy, record = _mk_lost(
-            db, outstanding=Decimal("150.00")
-        )
+        _, child, book, copy, record = _mk_lost(db, outstanding=Decimal("150.00"))
         _mk_report(db, record, status=BookDamageReport.STATUS_PENDING)
         svc = DamageAdminService(db)
         result = svc.mark_book_found(record.id, admin_id=1)

@@ -40,6 +40,7 @@ cp .env.example .env
 | `WECHAT_PRIVATE_KEY_PATH` | 商户私钥 PEM 绝对路径 | 证书转换后存放路径 |
 | `WECHAT_PLATFORM_CERT_PATH` | 微信平台证书 PEM 绝对路径 | 证书存放路径 |
 | `WECHAT_PAY_NOTIFY_URL` | 支付回调 URL | `https://<domain>/order/payment-callback` |
+| `WECHAT_REFUND_NOTIFY_URL` | 退款结果通知 URL（F55） | `https://<domain>/refund/callback`（微信 V3 退款接口 notify_url，不配置则收不到退款回调） |
 | `SMS_PROVIDER` | `tencent` 或 `aliyun` | 根据所选服务商 |
 | `SMS_APP_ID` / `SMS_APP_KEY` | 短信 SDK 凭据 | 腾讯云/Aliyun 控制台 |
 | `SMS_SIGN_NAME` | 短信签名 | 审核通过的签名名称 |
@@ -54,6 +55,12 @@ cp .env.example .env
 - [ ] 多实例部署必须 `REDIS_LOCK_FAIL_OPEN=false`（默认 true 为单实例/开发降级；多实例下 Redis 宕机若无锁执行，定时任务会在各实例并发重复跑）
 - [ ] 迁移 043（check_in 唯一约束）含历史去重 DELETE：大表执行前评估锁表时长，建议低峰执行
 - [ ] 迁移 044（child.exited_at / user.paid_member_ever）含存量回填 UPDATE：同上低峰执行
+- [ ] 迁移 045（order.activation_issue）纯加列，低峰执行
+- [ ] 迁移 046（borrow_record.fine_in_outstanding + refund_application/deposit_record.out_refund_no）纯加列
+- [ ] 迁移 047（original_amount/partial_refund_no + 存量回填 UPDATE）低峰执行
+- [ ] 迁移 048（deposit_record.active_child_id 生成列 + 唯一索引）含存量重复活跃押金修复 UPDATE；上线前先核对重复活跃押金
+- [ ] 迁移 049（book_waitlist.active_child_book 生成列唯一 + order.trade_no 唯一）低峰执行
+- [ ] 上线前在微信商户平台核对「退款结果通知」地址已配置为 `WECHAT_REFUND_NOTIFY_URL`（代码层无法确认，F55）
 - [ ] 上线前对生产库跑一次 P3-① 核对 SQL（应得 0 行；非零则执行幂等回填，与迁移 044 同逻辑）：
       ```sql
       -- 核对：应得 0
@@ -103,7 +110,7 @@ python -c "import weasyprint; print('WeasyPrint OK:', weasyprint.__version__)"
 venv/bin/python -m alembic upgrade head
 ```
 
-- [ ] 迁移 head: `d9d508402c87`
+- [ ] 迁移 head: `d8e9f0a1b2c3`
 - [ ] 迁移无报错
 - [ ] 种子数据已导入（如需要）: `venv/bin/python -m backend.seeds.seed_test_data`
 
