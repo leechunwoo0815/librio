@@ -365,14 +365,18 @@ def step_reservation_created(context):
 def step_stock_locked(context):
     if hasattr(context, "book") and context.book:
         context.db.refresh(context.book)
-        # 库存锁定通过预约事件实现
-        assert context.book is not None
+        # T1：真实断言——预约事件已扣减（bookshelf 流程同样经 step_click_reserve）
+        before = getattr(context, "_stock_before_reservation", None)
+        if before is not None:
+            assert context.book.available_stock == before - 1, (
+                f"预约未扣库存: before={before}, after={context.book.available_stock}"
+            )
+        else:
+            assert (context.book.available_stock or 0) == 0
 
 
 @then('显示"预约成功，请72小时内到店取书"')
 def step_reserve_success_msg(context):
-    # 预约成功消息由前端展示
-    if hasattr(context, "response") and context.response is not None:
-        assert context.response.status_code in (200, 201)
-    else:
-        assert hasattr(context, "child") and context.child is not None
+    # T1：真实端点必须成功（预约成功文案由前端展示，此处校验请求成功）
+    assert context.response is not None
+    assert context.response.status_code in (200, 201), context.response.text
