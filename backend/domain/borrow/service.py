@@ -496,7 +496,8 @@ class BorrowService:
             db=self.db,
         )
 
-        self.db.commit()
+        # F64：事件处理器链路内不自提交——由调用方（fulfill_reservation 等）统一提交，
+        # 避免中途落库后失败无法整体回滚
 
     def get_child_borrows(
         self,

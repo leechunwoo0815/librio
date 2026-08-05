@@ -63,6 +63,25 @@ class DamageAdminService:
         if not book:
             raise NotFoundError("图书不存在")
         book_price = book.price or Decimal("0")
+        # F59：同一借阅存在未终结报告时禁止重复登记（此前可重复计费）
+        active_report = (
+            self.db.query(BookDamageReport)
+            .filter(
+                BookDamageReport.borrow_record_id == borrow_record_id,
+                BookDamageReport.status.in_(
+                    [
+                        BookDamageReport.STATUS_PENDING,
+                        BookDamageReport.STATUS_PENDING_REVIEW,
+                        BookDamageReport.STATUS_DISPUTED,
+                    ]
+                ),
+                BookDamageReport.is_deleted == 0,
+            )
+            .first()
+        )
+        if active_report:
+            raise ValidationError("该借阅已有未终结的损坏报告，请先处理")
+
         multiplier = self.LEVEL_MULTIPLIERS.get(damage_level, Decimal("0"))
         fine_amount = (book_price * multiplier).quantize(
             Decimal("0.01"), rounding=ROUND_HALF_UP

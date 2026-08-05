@@ -134,23 +134,26 @@ class ReadingService:
 
     def _check_overdue_audio(self, child_id: int):
         """逾期音频锁定 — 逾期超过宽限期（overdue_grace_days，默认3天）才锁（B8决策）"""
-        from datetime import timedelta
-
         from backend.common.fine_policy import get_overdue_policy
 
         grace_days = get_overdue_policy(self.db).grace_days
-        cutoff = datetime.now() - timedelta(days=grace_days)
-        overdue_count = (
+        # F60：音频锁定改自然日口径（与 fine_policy 一致）——按 calc_overdue_days 判定，
+        # 修复"宽限第 3 天傍晚即锁（比 B8 提前数小时）"且仅依赖任务状态的窗口问题
+        from backend.common.fine_policy import calc_overdue_days
+
+        overdue_rows = (
             self.db.query(BorrowRecord)
             .filter(
                 BorrowRecord.child_id == child_id,
                 BorrowRecord.status == BorrowStatus.OVERDUE,
-                BorrowRecord.due_date < cutoff,
                 BorrowRecord.is_deleted == 0,
             )
-            .count()
+            .all()
         )
-        if overdue_count > 0:
+        if any(
+            calc_overdue_days(datetime.now(), r.due_date) > grace_days
+            for r in overdue_rows
+        ):
             raise ForbiddenError("借阅已逾期，请先归还图书")
 
     def get_book_page(self, book_id: int, page_number: int) -> BookPageResponse | None:

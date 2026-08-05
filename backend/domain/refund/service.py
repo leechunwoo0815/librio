@@ -381,10 +381,15 @@ class RefundService:
                 .first()
             )
             if child:
-                child.outstanding_fines = max(
-                    Decimal("0"),
-                    (child.outstanding_fines or Decimal("0")) - refund.fine_deducted,
-                )
+                # F67：核销按 min(抵扣额, 当前 outstanding)——家长在退款窗口内已线上缴清罚款时，
+                # 差额回补给退款金额，避免"罚两遍"（申请时已扣、到账时再扣）
+                current = child.outstanding_fines or Decimal("0")
+                actual_deduct = min(refund.fine_deducted, current)
+                child.outstanding_fines = current - actual_deduct
+                if actual_deduct < refund.fine_deducted:
+                    refund.actual_refund_amount = (
+                        refund.refund_amount or Decimal("0")
+                    ) + (refund.fine_deducted - actual_deduct)
 
         self.db.commit()
         return RefundResponse.model_validate(refund)

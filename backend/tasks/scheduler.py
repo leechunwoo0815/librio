@@ -1558,6 +1558,19 @@ def mark_overdue_books(db: Session | None = None):
         )
 
         for record in new_overdue:
+            # F58：任务内逐条加行锁重取 + 状态守卫（防与还书并发把 RETURNED 覆盖回 OVERDUE）
+            record = (
+                db.query(BorrowRecord)
+                .filter(
+                    BorrowRecord.id == record.id,
+                    BorrowRecord.status == BorrowStatus.BORROWING,
+                    BorrowRecord.is_deleted == 0,
+                )
+                .with_for_update()
+                .first()
+            )
+            if record is None:
+                continue
             overdue_days = calc_overdue_days(now, record.due_date)
             record.status = BorrowStatus.OVERDUE
             apply_fine(db, record, overdue_days, policy)
@@ -1576,6 +1589,19 @@ def mark_overdue_books(db: Session | None = None):
         )
 
         for record in existing_overdue:
+            # F58：同新逾期——行锁重取 + 状态守卫
+            record = (
+                db.query(BorrowRecord)
+                .filter(
+                    BorrowRecord.id == record.id,
+                    BorrowRecord.status == BorrowStatus.OVERDUE,
+                    BorrowRecord.is_deleted == 0,
+                )
+                .with_for_update()
+                .first()
+            )
+            if record is None:
+                continue
             current_days = calc_overdue_days(now, record.due_date)
             if current_days > (record.overdue_days or 0):
                 apply_fine(db, record, current_days, policy)

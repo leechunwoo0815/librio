@@ -41,8 +41,11 @@ def db():
     session.close()
 
 
-def _mk_user_child(db, status=2):
-    user = User(openid=f"p0b3_{id(db)}", phone="13800007777")
+def _mk_user_child(db, status=2, phone=None):
+    user = User(
+        openid=f"p0b3_{id(db)}_{phone or 'a'}",
+        phone=phone or "13800007777",
+    )
     db.add(user)
     db.commit()
     child = Child(
@@ -739,8 +742,9 @@ class TestF39DepositPaidEventInstantOnly:
             create_time=datetime.now() - timedelta(hours=3),
         )
         db.add(old)
+        _, second_child = _mk_user_child(db, phone="13800007778")
         fresh = DepositRecord(
-            child_id=1,
+            child_id=second_child.id,
             amount=Decimal("1200.00"),
             status=DepositStatus.PENDING,
             pay_order_id="DP-FRESH-1",
