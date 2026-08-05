@@ -123,9 +123,9 @@ class SystemConfig(BaseModel):
             "观察期中途升级按剩余天数抵扣会员费（A6决策）",
         ),
         "deposit_pending_expire_minutes": (
-            "30",
+            "150",
             "int",
-            "押金支付单超时未回调的复位分钟数（F39：废弃 PENDING 复位 UNPAID 允许重缴）",
+            "押金支付单超时未回调的复位分钟数（F39/F78：默认 150 分钟 > 微信支付单有效期约 2h）",
         ),
         # ── 借阅规则 ──
         "borrow_limit": ("10", "int", "每个孩子最大同时借阅数（B14决策：10本）"),

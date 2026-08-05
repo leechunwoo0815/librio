@@ -73,7 +73,15 @@ class DepositService:
 
         existing = self.deposit_repo.get_active_by_child_for_update(data.child_id)
         if existing:
-            raise ConflictError("押金已缴纳")
+            # F78：废弃 PENDING 支付单（超时未回调）先复位 UNPAID，允许重新缴纳——
+            # 否则用户放弃支付后永久被"押金已缴纳"拦截
+            from backend.common.types import DepositStatus as _DS
+
+            if existing.status == _DS.PENDING and self._is_pending_stale(existing):
+                existing.status = _DS.UNPAID
+                self.db.commit()
+            else:
+                raise ConflictError("押金已缴纳")
 
         deposit_amount = ConfigService.get_decimal(
             self.db, "deposit_amount", DEFAULT_DEPOSIT_AMOUNT
@@ -89,6 +97,7 @@ class DepositService:
         record = DepositRecord(
             child_id=data.child_id,
             amount=deposit_amount,
+            original_amount=deposit_amount,  # F54：原支付单金额快照
             status=DepositStatus.PENDING,
             pay_order_id=order_no,
         )
@@ -598,7 +607,9 @@ class DepositService:
                         if record.pay_order_id
                         else "",
                         out_refund_no=str(record.out_refund_no),
-                        total_amount=Decimal(yuan_to_cents(record.amount)),  # F2 修复
+                        total_amount=Decimal(
+                            yuan_to_cents(record.original_amount or record.amount)
+                        ),  # F54：原支付单金额
                         refund_amount=Decimal(yuan_to_cents(record.refund_amount)),
                         reason="押金退款（审核通过）",
                     )
@@ -747,9 +758,9 @@ class DepositService:
         # Phase 1: 先落库（扣减押金余额 + 标记），commit 释放行锁
         record.amount = record.amount - refund_amt
         record.partial_refunded = 1
-        if not record.out_refund_no:
-            # F38：600 奖励退款同样持久化退款单号，重试复用
-            record.out_refund_no = f"DPRF{uuid.uuid4().hex[:16]}"
+        if not record.partial_refund_no:
+            # F76：600 奖励退款独立单号（与全额退款 out_refund_no 分列，防微信幂等冲突）
+            record.partial_refund_no = f"DPRF{uuid.uuid4().hex[:16]}"
         self.deposit_repo.update(record)
         self.db.commit()
 
@@ -761,10 +772,12 @@ class DepositService:
                         out_trade_no=str(record.pay_order_id)
                         if record.pay_order_id
                         else "",
-                        out_refund_no=str(record.out_refund_no),
+                        out_refund_no=str(record.partial_refund_no),
                         total_amount=Decimal(
-                            yuan_to_cents(record.amount + refund_amt)
-                        ),  # F2 修复
+                            yuan_to_cents(
+                                record.original_amount or (record.amount + refund_amt)
+                            )
+                        ),  # F54：原支付单金额
                         refund_amount=Decimal(yuan_to_cents(refund_amt)),
                         reason="押金减半退还（10本无逾期奖励）",
                     )
@@ -923,27 +936,34 @@ class DepositService:
 
         生产网关 prepay 成功≠已付款，用户放弃支付后 PENDING 记录若不复位，
         get_active_by_child 会把该记录视为活跃 → 永久阻塞再次缴纳。
-        超时窗口默认 30 分钟（配置 deposit_pending_expire_minutes）。
+        超时窗口默认 150 分钟（配置 deposit_pending_expire_minutes，须大于微信支付单有效期）。
         """
-        from backend.common.config_service import ConfigService
-
-        minutes = expire_minutes or ConfigService.get_int(
-            self.db, "deposit_pending_expire_minutes", 30
-        )
-        cutoff = datetime.now() - timedelta(minutes=minutes)
+        minutes = expire_minutes or self._pending_expire_minutes()
         stale = (
             self.db.query(DepositRecord)
             .filter(
                 DepositRecord.status == DepositStatus.PENDING,
-                DepositRecord.create_time < cutoff,
                 DepositRecord.is_deleted == 0,
             )
             .all()
         )
+        stale = [rec for rec in stale if self._is_pending_stale(rec, minutes)]
         for rec in stale:
             rec.status = DepositStatus.UNPAID
         self.db.commit()
         return len(stale)
+
+    def _pending_expire_minutes(self) -> int:
+        """F78：废弃 PENDING 押金判定窗口（默认 150 分钟 > 微信支付单有效期约 2 小时）"""
+        from backend.common.config_service import ConfigService
+
+        return ConfigService.get_int(self.db, "deposit_pending_expire_minutes", 150)
+
+    def _is_pending_stale(self, record, expire_minutes: int | None = None) -> bool:
+        """PENDING 记录是否超过失效窗口（未回调）"""
+        minutes = expire_minutes or self._pending_expire_minutes()
+        cutoff = datetime.now() - timedelta(minutes=minutes)
+        return record.create_time < cutoff
 
     def get_deposit_status(self, child_id: int) -> dict:
         """查询押金状态"""

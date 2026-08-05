@@ -459,7 +459,201 @@ class TestF38OutRefundNoPersistence:
         asyncio.run(DepositService(db).partial_refund_deposit(child.id, gw))
         assert gw.refund_requests[0].out_refund_no
         db.refresh(rec)
-        assert rec.out_refund_no == gw.refund_requests[0].out_refund_no
+        assert rec.partial_refund_no == gw.refund_requests[0].out_refund_no
+
+
+# ============================================================ F54/F76
+class TestF54F76DepositRefundSequence:
+    def test_partial_then_full_refund_no_single_number_conflict(self, db):
+        """F76/F54：600 奖励退款后全额退押金——单号分列且 total 用原额（120000 分）"""
+        from backend.domain.deposit.service import DepositService
+        from backend.domain.borrow.models import BorrowRecord
+
+        user, child = _mk_user_child(db)
+        book, _ = _mk_book(db)
+        rec = DepositRecord(
+            child_id=child.id,
+            amount=Decimal("1200.00"),
+            original_amount=Decimal("1200.00"),
+            status=DepositStatus.PAID,
+            pay_order_id="DP-P0B3-003",
+        )
+        db.add(rec)
+        db.commit()
+        for i in range(10):
+            db.add(
+                BorrowRecord(
+                    child_id=child.id,
+                    book_id=book.id,
+                    status=BorrowStatus.RETURNED,
+                    borrow_time=datetime.now() - timedelta(days=30 - i),
+                    due_date=datetime.now() - timedelta(days=9 - i),
+                    return_time=datetime.now() - timedelta(days=8 - i),
+                )
+            )
+        db.commit()
+
+        import asyncio
+
+        gw1 = CapturingRefundGateway()
+        asyncio.run(DepositService(db).partial_refund_deposit(child.id, gw1))
+        db.refresh(rec)
+        assert rec.partial_refunded == 1
+        assert rec.amount == Decimal("600.00")
+        assert rec.partial_refund_no
+        assert gw1.refund_requests[0].total_amount == 120000  # 原额
+        assert gw1.refund_requests[0].refund_amount == 60000
+
+        # 全额退剩余 600：必须用新的 out_refund_no（≠ 600 奖励单号），total 仍 120000
+        rec.status = DepositStatus.REFUND_PENDING
+        db.commit()
+        gw2 = CapturingRefundGateway()
+        asyncio.run(DepositService(db).audit_refund(child.id, "approve", 1, gw2))
+        db.refresh(rec)
+        assert rec.out_refund_no
+        assert rec.out_refund_no != rec.partial_refund_no  # F76：两笔退款单号不冲突
+        assert gw2.refund_requests[0].out_refund_no == rec.out_refund_no
+        assert gw2.refund_requests[0].total_amount == 120000  # F54：原支付单金额
+        assert gw2.refund_requests[0].refund_amount == 60000
+
+    def test_full_refund_direct_uses_original_amount(self, db):
+        """F54：未走 600 奖励的直接全额退款 total=原额 120000 分"""
+        from backend.domain.deposit.service import DepositService
+
+        user, child = _mk_user_child(db)
+        rec = DepositRecord(
+            child_id=child.id,
+            amount=Decimal("1200.00"),
+            original_amount=Decimal("1200.00"),
+            status=DepositStatus.REFUND_PENDING,
+            pay_order_id="DP-P0B3-004",
+        )
+        db.add(rec)
+        db.commit()
+
+        gw = CapturingRefundGateway()
+        import asyncio
+
+        asyncio.run(DepositService(db).audit_refund(child.id, "approve", 1, gw))
+        assert gw.refund_requests[0].total_amount == 120000
+        assert gw.refund_requests[0].refund_amount == 120000
+
+
+# ============================================================ F77
+class TestF77BackfillNoDoubleCount:
+    def test_backfilled_marker_prevents_double_count(self, db):
+        """F77：迁移回填 marker=fine 后，首跑任务不再把老罚款重复计入"""
+        from sqlalchemy import text
+
+        from backend.tasks.scheduler import mark_overdue_books
+
+        _, child = _mk_user_child(db)
+        book, copy = _mk_book(db)
+        rec = _mk_overdue_record(db, child, book, copy)
+        # 模拟旧逻辑状态：任务已把 3 元计入 outstanding，但标记列=0
+        from backend.common.fine_policy import calc_fine, get_overdue_policy
+
+        fine = calc_fine(6, book.price, get_overdue_policy(db))  # (6-3)×1 = 3
+        rec.fine_amount = fine
+        rec.fine_in_outstanding = Decimal("0")
+        child.outstanding_fines = fine
+        db.commit()
+
+        # 执行迁移 047 的回填 UPDATE
+        db.execute(
+            text(
+                "UPDATE borrow_record SET fine_in_outstanding = fine_amount "
+                "WHERE status = 2 AND fine_in_outstanding = 0 AND is_deleted = 0"
+            )
+        )
+        db.commit()
+        db.refresh(rec)
+        assert rec.fine_in_outstanding == fine
+
+        mark_overdue_books(db=db)
+        db.refresh(child)
+        assert child.outstanding_fines == fine  # 不双计
+
+
+# ============================================================ F78
+class TestF78StalePendingOnDemandReset:
+    def test_pay_deposit_resets_stale_pending(self, db):
+        """F78：废弃 PENDING（超窗口）再次缴纳自动复位 UNPAID 并新开支付单"""
+        from unittest.mock import AsyncMock, MagicMock
+
+        from backend.domain.deposit.schemas import DepositPayRequest
+        from backend.domain.deposit.service import DepositService
+
+        user, child = _mk_user_child(db)
+        old = DepositRecord(
+            child_id=child.id,
+            amount=Decimal("1200.00"),
+            original_amount=Decimal("1200.00"),
+            status=DepositStatus.PENDING,
+            pay_order_id="DP-STALE-2",
+            create_time=datetime.now() - timedelta(hours=3),
+        )
+        db.add(old)
+        db.commit()
+
+        gw = MagicMock()
+        gw.supports_instant_payment = True
+        gw.create_order = AsyncMock(
+            return_value=MagicMock(success=True, pay_params={"prepay_id": "x"})
+        )
+        import asyncio
+
+        asyncio.run(
+            DepositService(db).pay_deposit(
+                DepositPayRequest(child_id=child.id), gw, current_user=user
+            )
+        )
+        db.refresh(old)
+        assert old.status == DepositStatus.UNPAID
+        new_rec = (
+            db.query(DepositRecord)
+            .filter(
+                DepositRecord.child_id == child.id,
+                DepositRecord.status == DepositStatus.PAID,
+            )
+            .first()
+        )
+        assert new_rec is not None
+        assert new_rec.id != old.id
+
+    def test_pay_deposit_fresh_pending_still_conflicts(self, db):
+        """F78：未超窗口的 PENDING 仍按"已缴纳"拦截（防重复开单）"""
+        from unittest.mock import AsyncMock, MagicMock
+
+        from backend.common.exceptions import ConflictError
+        from backend.domain.deposit.schemas import DepositPayRequest
+        from backend.domain.deposit.service import DepositService
+
+        user, child = _mk_user_child(db)
+        fresh = DepositRecord(
+            child_id=child.id,
+            amount=Decimal("1200.00"),
+            original_amount=Decimal("1200.00"),
+            status=DepositStatus.PENDING,
+            pay_order_id="DP-FRESH-2",
+            create_time=datetime.now(),
+        )
+        db.add(fresh)
+        db.commit()
+
+        gw = MagicMock()
+        gw.supports_instant_payment = True
+        gw.create_order = AsyncMock(
+            return_value=MagicMock(success=True, pay_params={"prepay_id": "x"})
+        )
+        import asyncio
+
+        with pytest.raises(ConflictError):
+            asyncio.run(
+                DepositService(db).pay_deposit(
+                    DepositPayRequest(child_id=child.id), gw, current_user=user
+                )
+            )
 
 
 # ============================================================ F39

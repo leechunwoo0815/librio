@@ -220,7 +220,7 @@ def init_scheduler(app):
     )
 
     scheduler.start()
-    logger.info("Scheduler started with 23 jobs")
+    logger.info(f"Scheduler started with {len(scheduler.get_jobs())} jobs")
 
 
 def stop_scheduler():
@@ -1556,6 +1556,7 @@ def mark_overdue_books(db: Session | None = None):
                 c.id: c
                 for c in db.query(Child)
                 .filter(Child.id.in_(child_ids), Child.is_deleted == 0)
+                .with_for_update()  # F80：任务内持行锁，防与还书/退款并发丢更新
                 .all()
             }
             for record in all_overdue:

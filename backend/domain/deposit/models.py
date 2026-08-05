@@ -46,6 +46,11 @@ class DepositRecord(BaseModel):
 
     refund_time = Column(DateTime, nullable=True, comment="退款时间")
     refund_amount = Column(Numeric(10, 2), nullable=True, comment="退款金额")
+    original_amount = Column(
+        Numeric(10, 2),
+        nullable=True,
+        comment="原支付单金额快照（F54：600 奖励退款后 amount 被扣减，退款 total 一律用原额）",
+    )
     deduct_amount = Column(Numeric(10, 2), nullable=True, comment="扣除金额")
     deduct_reason = Column(String(255), nullable=True, comment="扣除原因")
     partial_refunded = Column(
@@ -57,6 +62,11 @@ class DepositRecord(BaseModel):
         String(64),
         nullable=True,
         comment="微信商户退款单号（F38：审核通过时生成持久化，重试复用防重复退款）",
+    )
+    partial_refund_no = Column(
+        String(64),
+        nullable=True,
+        comment="600 奖励退款单号（F76：与全额退款 out_refund_no 分列，避免微信幂等键冲突）",
     )
 
     # 关系
