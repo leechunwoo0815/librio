@@ -2,7 +2,7 @@
 
 > **生成时间**: 2026-08-04 GMT+8 (v19)
 > **项目版本**: V3.23 — 52 题需求决策 + 四轮外部审查全闭环（FINAL-3.0 专家签署放行）+ 隐私合规 + 目录清理
-> **测试状态**: pytest 661 collected（通过数随环境：开发机 661 passed / CI 646+15 skip / 无 MySQL 沙箱 652+9 err）· behave 211/1368 · ruff 0 · API契约 OK · 模型一致 56 tables · CI 同构十一关（含 Gate 11）· 集成全绿 · alembic head=b4c5d6e7f8a9
+> **测试状态**: pytest 671 collected（通过数随环境：开发机 671 passed / CI 656+15 skip / 无 MySQL 沙箱 662+9 err）· behave 211/1369 · ruff 0 · API契约 OK · 模型一致 56 tables · CI 同构十一关（含 Gate 11）· 集成全绿 · alembic head=b4c5d6e7f8a9
 > **权威基线与机制定案**：以《专家意见/K3-执行中任务交接-20260726.md》为准（其 §四 关键机制定案含 P3-④ 决策、F5 快照四入口等）
 
 ---
@@ -504,7 +504,7 @@ python -m alembic check
 
 ```markdown
 1. 读取 CLAUDE.md（宪法）、HANDOFF.md（本交接文档）、.ai/context/CONTEXT.md（业务知识）、ARCHITECTURE.md（架构）
-2. 运行 CI 同构十一关确认项目状态（pytest 661 collected，通过数随环境；behave 211/1368；ruff 0；api contract；model 56 tables；integration 全绿；alembic check；action wiring --strict；gen_config_doc --check）——权威基线与机制以《专家意见/K3-执行中任务交接-20260726.md》为准
+2. 运行 CI 同构十一关确认项目状态（pytest 671 collected，通过数随环境；behave 211/1369；ruff 0；api contract；model 56 tables；integration 全绿；alembic check；action wiring --strict；gen_config_doc --check）——权威基线与机制以《专家意见/K3-执行中任务交接-20260726.md》为准
 3. 按剩余工作清单优先级开始：
    P0: 外部输入项（appid/服务协议/隐私政策）
    P1: iconfont woff2 下载 + nginx rate limit
