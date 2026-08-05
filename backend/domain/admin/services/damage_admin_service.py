@@ -81,7 +81,14 @@ class DamageAdminService:
         )
         if child and not needs_review:
             # 无需复核（轻度 或 复核开关关闭）→ 即时计入未缴罚款
-            child.outstanding_fines = (child.outstanding_fines or 0) + fine_amount
+            # F61 交互：丢失（level 3）覆盖已入账逾期费——只补差额并同步标记
+            if damage_level == 3:
+                prior_marker = record.fine_in_outstanding or Decimal("0")
+                delta = fine_amount - prior_marker
+                child.outstanding_fines = (child.outstanding_fines or 0) + delta
+                record.fine_in_outstanding = fine_amount
+            else:
+                child.outstanding_fines = (child.outstanding_fines or 0) + fine_amount
 
         if damage_level == 3:
             # D05 联动：丢失定级 → BookCopy.status = LOST
@@ -111,6 +118,16 @@ class DamageAdminService:
         else:
             # 非丢失定级，标记借阅为损坏状态（保留借阅记录）
             record.fine_amount = (record.fine_amount or 0) + fine_amount
+            if damage_level == 2 and record.book_copy_id:
+                # F50：重度损坏（level 2）同步标记副本 DAMAGED（此前三级定级名存实亡）
+                copy = (
+                    self.db.query(BookCopy)
+                    .filter(BookCopy.id == record.book_copy_id)
+                    .with_for_update()
+                    .first()
+                )
+                if copy:
+                    copy.status = BookCopyStatus.DAMAGED
 
         report = BookDamageReport(
             borrow_record_id=borrow_record_id,
@@ -232,19 +249,6 @@ class DamageAdminService:
             book.total_stock = (book.total_stock or 0) + 1
             book.available_stock = (book.available_stock or 0) + 1
 
-        # 财务回滚：冲正丢失罚款（含关联损坏报告）
-        fine = record.fine_amount or Decimal("0")
-        child = (
-            self.db.query(Child)
-            .filter(Child.id == record.child_id, Child.is_deleted == 0)
-            .with_for_update()
-            .first()
-        )
-        waived = Decimal("0")
-        if child and fine > 0:
-            waived = min(fine, child.outstanding_fines or Decimal("0"))
-            child.outstanding_fines = (child.outstanding_fines or 0) - waived
-
         report = (
             self.db.query(BookDamageReport)
             .filter(
@@ -261,6 +265,24 @@ class DamageAdminService:
             )
             .first()
         )
+
+        # 财务回滚：冲正丢失罚款（含关联损坏报告）
+        fine = record.fine_amount or Decimal("0")
+        child = (
+            self.db.query(Child)
+            .filter(Child.id == record.child_id, Child.is_deleted == 0)
+            .with_for_update()
+            .first()
+        )
+        waived = Decimal("0")
+        charged = report is not None and report.status != (
+            BookDamageReport.STATUS_PENDING_REVIEW
+        )
+        # F48：待复核报告从未入账（confirm 才计 outstanding）——找回不得冲销孩子其他合法罚款
+        if child and fine > 0 and charged:
+            waived = min(fine, child.outstanding_fines or Decimal("0"))
+            child.outstanding_fines = (child.outstanding_fines or 0) - waived
+
         if report:
             report.override_fine = Decimal("0")
             report.status = BookDamageReport.STATUS_OVERRIDDEN
@@ -273,6 +295,7 @@ class DamageAdminService:
         record.status = BorrowStatus.RETURNED
         record.return_time = datetime.now()
         record.fine_amount = Decimal("0")
+        record.fine_in_outstanding = Decimal("0")  # 找回后本记录无已入账罚款（F48-F50 交互）
         record.lost_search_deadline = None
 
         self.db.commit()
@@ -324,19 +347,6 @@ class DamageAdminService:
             book.total_stock = (book.total_stock or 0) + 1
             book.available_stock = (book.available_stock or 0) + 1
 
-        # 全额免赔
-        fine = record.fine_amount or Decimal("0")
-        child = (
-            self.db.query(Child)
-            .filter(Child.id == record.child_id, Child.is_deleted == 0)
-            .with_for_update()
-            .first()
-        )
-        waived = Decimal("0")
-        if child and fine > 0:
-            waived = min(fine, child.outstanding_fines or Decimal("0"))
-            child.outstanding_fines = (child.outstanding_fines or 0) - waived
-
         report = (
             self.db.query(BookDamageReport)
             .filter(
@@ -353,6 +363,24 @@ class DamageAdminService:
             )
             .first()
         )
+
+        # 全额免赔
+        fine = record.fine_amount or Decimal("0")
+        child = (
+            self.db.query(Child)
+            .filter(Child.id == record.child_id, Child.is_deleted == 0)
+            .with_for_update()
+            .first()
+        )
+        waived = Decimal("0")
+        charged = report is not None and report.status != (
+            BookDamageReport.STATUS_PENDING_REVIEW
+        )
+        # F48：同 mark_book_found——待复核报告不得冲销其他罚款
+        if child and fine > 0 and charged:
+            waived = min(fine, child.outstanding_fines or Decimal("0"))
+            child.outstanding_fines = (child.outstanding_fines or 0) - waived
+
         if report:
             report.override_fine = Decimal("0")
             report.status = BookDamageReport.STATUS_OVERRIDDEN
@@ -363,6 +391,7 @@ class DamageAdminService:
         record.status = BorrowStatus.RETURNED
         record.return_time = datetime.now()
         record.fine_amount = Decimal("0")
+        record.fine_in_outstanding = Decimal("0")  # 替代赔偿后本记录无已入账罚款
         record.lost_search_deadline = None
 
         self.db.commit()
@@ -467,7 +496,41 @@ class DamageAdminService:
             if override_level is None and override_fine is None:
                 raise ValidationError("冲正必须指定 override_level 或 override_fine")
             if override_fine is None and override_level is not None:
-                override_fine = Decimal("0")
+                if override_level == 2:
+                    # F49：改判重度未填金额 → 按 0.5×定价计算默认值（此前直接清零）
+                    record_price = None
+                    if report.book_copy_id:
+                        copy = (
+                            self.db.query(BookCopy)
+                            .filter(BookCopy.id == report.book_copy_id)
+                            .first()
+                        )
+                        if copy:
+                            book = (
+                                self.db.query(Book)
+                                .filter(Book.id == copy.book_id)
+                                .first()
+                            )
+                            record_price = book.price if book else None
+                    if record_price is None:
+                        br = (
+                            self.db.query(BorrowRecord)
+                            .filter(BorrowRecord.id == report.borrow_record_id)
+                            .first()
+                        )
+                        if br:
+                            book = (
+                                self.db.query(Book)
+                                .filter(Book.id == br.book_id)
+                                .first()
+                            )
+                            record_price = book.price if book else None
+                    override_fine = (
+                        (record_price or Decimal("0"))
+                        * self.LEVEL_MULTIPLIERS[2]
+                    ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                else:
+                    override_fine = Decimal("0")
             original_level = report.damage_level
             report.override_level = override_level
             report.override_fine = override_fine
@@ -524,7 +587,9 @@ class DamageAdminService:
                 )
                 if book:
                     book.total_stock = (book.total_stock or 0) + 1
-                    book.available_stock = (book.available_stock or 0) + 1
+                    # F49：改判→重度（DAMAGED）不可借，available 不得 +1（附录 D 口径）
+                    if override_level == 1:
+                        book.available_stock = (book.available_stock or 0) + 1
                 # 恢复借阅状态
                 if record:
                     now = datetime.now()
@@ -548,7 +613,9 @@ class DamageAdminService:
         report = self._get_report_or_raise(report_id)
         if report.status != BookDamageReport.STATUS_PENDING:
             raise ValidationError("当前状态不允许自动确认")
-        days_since = (datetime.now().date() - report.create_time.date()).days
+        # F62：申诉期从进入 PENDING（双人复核通过 reviewed_at）起算，而非报告创建日
+        baseline = report.reviewed_at or report.create_time
+        days_since = (datetime.now().date() - baseline.date()).days
         if days_since <= 7:
             raise ValidationError(f"申诉期未过（{days_since}天），不能自动确认")
         report.status = BookDamageReport.STATUS_CONFIRMED
@@ -569,7 +636,8 @@ class DamageAdminService:
         )
         count = 0
         for report in expired:
-            days_since = (cutoff - report.create_time.date()).days
+            baseline = report.reviewed_at or report.create_time
+            days_since = (cutoff - baseline.date()).days
             if days_since > 7:
                 report.status = BookDamageReport.STATUS_CONFIRMED
                 count += 1

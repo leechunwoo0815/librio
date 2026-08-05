@@ -485,7 +485,12 @@ class DepositService:
             .first()
         )
         if child:
-            child.outstanding_fines = (child.outstanding_fines or 0) + fine_amount
+            # F61/F48-F50 交互：丢失罚款覆盖已入账逾期费——outstanding 只补差额，
+            # fine_in_outstanding 同步为丢失罚款额，防后续 sync delta 失真
+            prior_marker = record.fine_in_outstanding or Decimal("0")
+            delta = fine_amount - prior_marker
+            child.outstanding_fines = (child.outstanding_fines or 0) + delta
+            record.fine_in_outstanding = fine_amount
 
         # D05 联动：丢失标记 → BookCopy.status = LOST
         if record.book_copy_id:
