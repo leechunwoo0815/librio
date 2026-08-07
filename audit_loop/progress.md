@@ -38,6 +38,9 @@
 | R1 | 2026-08-07 | 8.2 索引覆盖 | 0 | 0 | clean（高频列全有索引；低基数枚举无索引合理） |
 | R1 | 2026-08-07 | 8.3 软删一致性 | 1 | 0 | F-016 refund 两处查询缺软删过滤（P3） |
 | R1 | 2026-08-07 | 8.4 迁移漂移 | 0 | 0 | clean（alembic check + model consistency 均通过） |
+| R1 | 2026-08-07 | 9.1 文档漂移 | 0 | 0 | clean（gen_config_doc --check 通过；level_of 66 键全覆盖） |
+| R1 | 2026-08-07 | 9.2 fallback 漂移 | 1 | 0 | F-018 DEFAULTS 类型元数据漂移 4 键（P3） |
+| R1 | 2026-08-07 | 9.3 TTL 缓存/审计 | 1 | 0 | F-017 ConfigAuditLog 生产零写入（P3）；缓存失效链完整 |
 
 ## 维度轮换表（15 维，按序循环，深度递增）
 
@@ -54,7 +57,8 @@
 - [x] 维度 6：管理后台（6.1-6.3 clean / 6.4 F-012 种子超集 P3 观察）
 - [x] 维度 7：定时任务（7.1 F-013 无锁 P3 / 7.2 clean / 7.3 F-014+F-015 P3 / 7.4 clean）
 - [x] 维度 8：数据库（8.1-8.2 clean / 8.3 F-016 软删过滤 P3 / 8.4 clean）
-- [ ] 维度 9：配置中心（9.1 gen_config_doc 四方漂移 / 9.2 fallback vs DEFAULTS / 9.3 TTL 缓存失效）
+- [x] 维度 9：配置中心（9.1 clean / 9.2 F-018 类型漂移 P3 / 9.3 F-017 审计缺口 P3）
+- [ ] 维度 10：测试质量（10.1 check_fake_assertions / 10.2 抽 10 测试文件 / 10.3 behave 真实性 / 10.4 RED→GREEN 抽样）
 - [ ] 维度 4：API 契约（4.1 verify_api_contract / 4.2 api.js vs Schema / 4.3 response_model）
 - [ ] 维度 5：小程序端（5.1 data null / 5.2 清理 / 5.3 网络兜底 / 5.4 iOS 支付）
 - [ ] 维度 6：管理后台（6.1 全局泄漏 / 6.2 innerHTML / 6.3 wiring / 6.4 权限码）
