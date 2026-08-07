@@ -116,6 +116,7 @@ class MockPaymentGateway(PaymentGateway):
             )
             return PaymentCallbackData(
                 out_trade_no=data.get("out_trade_no", ""),
+                out_refund_no=data.get("out_refund_no", ""),
                 transaction_id=data.get(
                     "transaction_id", f"mock_txn_{uuid.uuid4().hex[:16]}"
                 ),

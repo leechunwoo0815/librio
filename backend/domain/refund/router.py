@@ -142,6 +142,43 @@ async def refund_callback(
         }
 
     try:
+        # F76-P2：按退款单号精确分发——600 奖励部分退款回调（partial_refund_no）
+        # 与全额退款回调（out_refund_no）的 out_trade_no 相同（同一押金支付单），
+        # 仅靠 DP 前缀会把部分退款误送 mark_refunded → 状态非 REFUNDING → 409 → 微信重试风暴
+        out_refund_no = callback_data.out_refund_no
+        if out_refund_no:
+            from backend.domain.deposit.models import DepositRecord
+            from sqlalchemy import or_
+
+            deposit = (
+                db.query(DepositRecord)
+                .filter(
+                    or_(
+                        DepositRecord.partial_refund_no == out_refund_no,
+                        DepositRecord.out_refund_no == out_refund_no,
+                    ),
+                    DepositRecord.is_deleted == 0,
+                )
+                .first()
+            )
+            if deposit:
+                if deposit.partial_refund_no == out_refund_no:
+                    # 600 奖励部分退款到账确认——申请时已扣余额并置 partial_refunded，
+                    # 此处幂等确认（不改状态），停止微信重试
+                    logger.info(
+                        f"Partial deposit refund confirmed: child={deposit.child_id}, "
+                        f"refund_no={out_refund_no}"
+                    )
+                    return {
+                        "code": "SUCCESS",
+                        "message": "部分退款到账确认",
+                    }
+                # 全额押金退款回调：按支付单号分发（REFUNDING → REFUNDED）
+                from backend.domain.deposit.service import DepositService
+
+                DepositService(db).mark_refunded_by_order_no(out_trade_no)
+                return {"code": "SUCCESS", "message": "退款处理完成"}
+
         if out_trade_no.startswith("DP"):
             # F55：押金退款回调按支付单号分发（此前只查 Order → DP 单号 404 → 微信重试风暴）
             from backend.domain.deposit.service import DepositService

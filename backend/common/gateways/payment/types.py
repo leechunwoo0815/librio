@@ -57,6 +57,9 @@ class PaymentRefundResponse:
 @dataclass
 class PaymentCallbackData:
     out_trade_no: str
+    out_refund_no: str = (
+        ""  # 退款结果通知的退款单号（F76-P2：区分部分退款/全额退款回调）
+    )
     transaction_id: str = ""
     trade_state: str = ""
     refund_status: str = (
