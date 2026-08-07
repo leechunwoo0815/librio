@@ -101,11 +101,11 @@
 
 ## 当前进度
 
-- **当前维度子项**：第五轮定时任务×资金纵深 Z.1-Z.3 完成（F-055 + C-098）→ R5 完结
-- **本圈发现数**：1（R5：P3×1）
-- **累计发现数**：54（P2×10 + P3×44 观察）+ 95 clean 记录
-- **下次从哪开始**：R6 建议继续 P2 聚集区——"并发×资金"剩余面：cancel_order 修复（F-053 P2）后复验 + 定时任务无守卫写（F-046 P2）各点修复后复验；或按用户指定维度
-- **上一圈结束时 HEAD**：98b7ff7（R4 并发×资金）
+- **当前维度子项**：第六轮借阅/预约并发面 R6 完成（F-056 + C-099）→ R6 完结
+- **本圈发现数**：1（R6：P3×1）
+- **累计发现数**：55（P2×10 + P3×45 观察）+ 96 clean 记录
+- **下次从哪开始**：R7 建议继续 P2 聚集区——"并发×资金"剩余面：cancel_order 修复（F-053 P2）后复验 + 定时任务无守卫写（F-046 P2）各点修复后复验；或按用户指定维度
+- **上一圈结束时 HEAD**：1d61bbb（R5 完结汇总）
 
 ## 第三轮（R3）交叉维度接缝清单
 
@@ -142,6 +142,17 @@
 3. 其余资金相关任务（alert_stale_refunds/check_paid_not_activated/check_member_expiry/reconcile_stock/reconcile_child_stats/reset_stale_pending_deposits）→ ✓ C-098 内（无资金写/已修/已排重）
 
 **R5 进度**：Z.1-Z.3 完成，发现 F-055（P3）+ clean C-098，累计 54 发现 / 95 clean。R5 完结。
+
+## 第六轮（R6）借阅/预约并发面清单
+
+> R5 完结建议：R6 继续 P2 聚集区——"并发×资金"剩余面或按用户指定维度。本轮选 R4 资金链未覆盖的借阅/预约路径并发面（P2 聚集区新面：预约创建/取书/过期锁覆盖 + F4 候补队列状态机）。
+
+1. 预约创建/取书/过期全链锁覆盖：create_reservation（Book 行锁 + F46 拦截）/ fulfill_reservation（F45 条件 UPDATE 防并发双取）/ expire_reservation（F45 同口径）→ ✓ C-099 内（全 F45 条件 UPDATE，affected==1 判定）
+2. 借阅上限并发口径：fulfill 无锁预检 vs borrow_from_reservation 权威锁 → ✓ C-099 内（权威校验 with_for_update 锁 active_records，空集无超限风险）
+3. F4 候补队列状态机：join/notify/fulfill/cancel 全链 + NOTIFIED 回归路径 → ✓ F-056（P3）NOTIFIED 无回归路径，通知未抢到者永久失格
+4. 事件 handler 注册顺序：book.returned 先库存 +1 再候补通知 → ✓ C-099 内（registry.py:64-65 顺序正确）
+
+**R6 进度**：完成，发现 F-056（P3）+ clean C-099，累计 55 发现 / 96 clean。R6 完结。
 
 ## 待甲方 / 需人工
 
