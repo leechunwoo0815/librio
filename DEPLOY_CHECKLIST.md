@@ -41,6 +41,7 @@ cp .env.example .env
 | `WECHAT_PLATFORM_CERT_PATH` | 微信平台证书 PEM 绝对路径 | 证书存放路径 |
 | `WECHAT_PAY_NOTIFY_URL` | 支付回调 URL | `https://<domain>/order/payment-callback` |
 | `WECHAT_REFUND_NOTIFY_URL` | 退款结果通知 URL（F55） | `https://<domain>/refund/callback`（微信 V3 退款接口 notify_url，不配置则收不到退款回调） |
+| `WECHAT_SUBSCRIBE_ENABLED` | 订阅消息推送总开关（P1 触达闭环） | `true`（仅生产；`backend/integrations/wechat/config.py` 模板 ID 填好后再开，防误发） |
 | `SMS_PROVIDER` | `tencent` 或 `aliyun` | 根据所选服务商 |
 | `SMS_APP_ID` / `SMS_APP_KEY` | 短信 SDK 凭据 | 腾讯云/Aliyun 控制台 |
 | `SMS_SIGN_NAME` | 短信签名 | 审核通过的签名名称 |
@@ -63,6 +64,7 @@ cp .env.example .env
 - [ ] 种子幂等重跑：`venv/bin/python -m backend.seeds.seed_rbac`（含 migrate_admin_roles——
     F34：旧 admin.role 需回填到 admin_role_id，否则初始超管无法执行会员状态变更/复活）
 - [ ] 上线前在微信商户平台核对「退款结果通知」地址已配置为 `WECHAT_REFUND_NOTIFY_URL`（代码层无法确认，F55）
+- [ ] 订阅消息（P1 触达闭环）：小程序后台申请模板 ID（会员续费提醒/借阅到期提醒/逾期提醒/预约取书/预约即将过期/退款审核结果/活动提醒），填入 `backend/integrations/wechat/config.py` SubscribeTemplate 与 `frontend/utils/subscribe.js` TEMPLATE_IDS；生产环境变量 `WECHAT_SUBSCRIBE_ENABLED=true`
 - [ ] 上线前对生产库跑一次 P3-① 核对 SQL（应得 0 行；非零则执行幂等回填，与迁移 044 同逻辑）：
       ```sql
       -- 核对：应得 0

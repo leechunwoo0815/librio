@@ -187,6 +187,8 @@ Page({
       await api.applyRefund(selectedOrder.id, usedDays, reason.trim())
       storage.clearDraft('refund')
       wx.showToast({ title: '退款申请已提交', icon: 'success' })
+      // 订阅消息：退款审核结果通知（模板未配置时静默跳过）
+      require('../../../utils/subscribe').requestSubscribe('refundResult')
       this._navTimer = setTimeout(() => {
         wx.navigateBack()
       }, 1500)

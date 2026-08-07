@@ -14,6 +14,8 @@ class SubscribeTemplate:
     ACTIVITY_REMIND = ""  # 活动提醒
     RESERVATION_READY = ""  # 预约取书通知
     RESERVATION_EXPIRING = ""  # 预约即将过期
+    MEMBER_EXPIRE_REMIND = ""  # 会员续费提醒（到期前 30/15/7/3/2/1/当天）
+    REFUND_RESULT = ""  # 退款审核结果通知
 
 
 # 支付描述模板

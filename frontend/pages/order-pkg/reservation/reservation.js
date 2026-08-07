@@ -83,6 +83,8 @@ Page({
         try {
           await api.fulfillReservation(id, child.id)
           wx.showToast({ title: '取书成功', icon: 'success' })
+          // 订阅消息：预约取书/到货提醒（模板未配置时静默跳过）
+          require('../../../utils/subscribe').requestSubscribe('reservationReady')
           this.loadReservations()
         } catch (err) {
           wx.showToast({ title: err.message || '取书失败', icon: 'none' })

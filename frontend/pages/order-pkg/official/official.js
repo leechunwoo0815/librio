@@ -133,6 +133,8 @@ Page({
         })
       })
       wx.showToast({ title: '开通成功', icon: 'success' })
+      // 订阅消息：会员到期续费提醒（模板未配置时静默跳过）
+      require('../../../utils/subscribe').requestSubscribe('memberExpire')
       this._navTimer = setTimeout(() => {
         wx.navigateBack()
       }, 1500)

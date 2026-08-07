@@ -3,13 +3,85 @@
 
 import asyncio
 import logging
+import threading
+from datetime import datetime
 
 import httpx
 
 from backend.common.exceptions import PaymentError, ValidationError
+from backend.integrations.wechat.config import SubscribeTemplate
 from backend.domain.wechat.service import WeChatService
 
 logger = logging.getLogger(__name__)
+
+# 高价值消息标题 → 模板映射（订阅消息为"一次授权一次推送"稀缺通道，只推需及时触达的消息；
+# 标题未命中或模板未配置 → 降级只落库，不推送）
+_TITLE_TEMPLATE_RULES: list[tuple[str, str]] = [
+    ("会员续费提醒", "MEMBER_EXPIRE_REMIND"),
+    ("借阅到期提醒", "RETURN_REMIND"),
+    ("预约取书提醒", "RESERVATION_READY"),
+    ("预约已过期", "RESERVATION_EXPIRING"),
+    ("您等候的图书到货啦", "RESERVATION_READY"),
+    ("活动取消通知", "ACTIVITY_REMIND"),
+    ("退款审核通过", "REFUND_RESULT"),
+    ("退款审核拒绝", "REFUND_RESULT"),
+    ("图书损坏通知", "LEVEL_UP"),  # 复用晋级通知模板位，按实际申请调整
+]
+
+
+def get_template_for_title(title: str) -> str:
+    """按消息标题匹配订阅模板 ID（未配置/未命中返回空串 → 调用方降级）"""
+    for keyword, attr in _TITLE_TEMPLATE_RULES:
+        if keyword in title:
+            return getattr(SubscribeTemplate, attr, "") or ""
+    return ""
+
+
+def push_subscribe_message(openid: str, title: str, content: str) -> bool:
+    """SystemMessage 落库后调用 — 触发微信订阅消息推送（异步、失败静默）
+
+    条件：总开关开启（WECHAT_SUBSCRIBE_ENABLED）+ openid 有效 +
+    标题命中高价值映射 + 模板 ID 已配置。任一不满足 → 降级只落库，返回 False。
+    发送在 daemon 线程执行 asyncio.run（避免在请求/事件循环线程内冲突），
+    网络失败/微信拒发均不阻塞主流程。
+    """
+    from backend.config import get_settings
+
+    if not get_settings().WECHAT_SUBSCRIBE_ENABLED:
+        return False
+    if not openid:
+        return False
+    template_id = get_template_for_title(title)
+    if not template_id:
+        return False
+
+    def _runner():
+        try:
+            asyncio.run(
+                WeChatSubscribe.send(
+                    openid, template_id, _build_template_data(title, content)
+                )
+            )
+        except Exception:
+            logger.exception(f"Subscribe push failed: title={title[:20]}")
+
+    threading.Thread(target=_runner, daemon=True).start()
+    logger.info(f"Subscribe push queued: template={template_id}, title={title[:20]}")
+    return True
+
+
+def _build_template_data(title: str, content: str) -> dict:
+    """构建订阅消息模板字段
+
+    thing1=标题 / thing2=内容 / time3=时间 为微信订阅消息最常见字段结构；
+    实际模板字段名因模板而异，模板申请后若字段不符在此微调。
+    """
+    now = datetime.now().strftime("%Y-%m-%d %H:%M")
+    return {
+        "thing1": {"value": title[:20]},
+        "thing2": {"value": content[:20]},
+        "time3": {"value": now},
+    }
 
 
 class WeChatSubscribe:

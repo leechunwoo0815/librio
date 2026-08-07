@@ -72,6 +72,9 @@ class Settings(BaseSettings):
     WECHAT_PLATFORM_CERT_PATH: str = ""  # 微信平台证书 PEM 文件路径
     WECHAT_PAY_NOTIFY_URL: str = ""  # 支付回调通知 URL
     WECHAT_REFUND_NOTIFY_URL: str = ""  # 微信退款结果通知 URL（F55）
+    WECHAT_SUBSCRIBE_ENABLED: bool = (
+        False  # 订阅消息推送总开关（生产填好模板 ID 后设为 True，防误发）
+    )
 
     # 服务器配置
     SERVER_HOST: str = ""
