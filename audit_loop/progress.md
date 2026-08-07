@@ -101,11 +101,11 @@
 
 ## 当前进度
 
-- **当前维度子项**：第七轮安全×文件链路纵深 R7 完成（F-023 rmtree 补充 + C-100）→ R7 完结
-- **本圈发现数**：0 新编号（F-023 补充证据并入；clean C-100）
-- **累计发现数**：55（P2×10 + P3×45 观察）+ 97 clean 记录
-- **下次从哪开始**：R8 需用户在"修复 P2 项后复验"（F-053/F-046/F-023/024）与"继续新维度"间抉择——持续只报不修导致 10 项 P2 积压无收敛
-- **上一圈结束时 HEAD**：48ae387（R6 借阅/预约并发面）
+- **当前维度子项**：第八轮晋级链路（advancement）纵深 R8 完成（F-057 答案泄漏 + F-058 审核并发 + C-101）→ R8 完结
+- **本圈发现数**：2（R8：P3×2）
+- **累计发现数**：57（P2×10 + P3×47 观察）+ 98 clean 记录
+- **下次从哪开始**：R9 建议优先修 F-057（答案泄漏，低成本高影响）后复验；或继续新维度（reading 打卡链 / report 只读链）
+- **上一圈结束时 HEAD**：6f0bf9a（R7 文件链路）
 
 ## 第三轮（R3）交叉维度接缝清单
 
@@ -163,6 +163,17 @@
 3. 全库文件写/删/移动点枚举（os.remove/unlink/rename/move/rmtree/write_bytes/open wb）→ ✓ C-100（除 F-023/024 外全部安全：safe_name=uuid+basename、deletion_service 防穿越版、CSV 固定名、cert_path 配置固定）
 
 **R7 进度**：完成，无新编号（F-023 补充）+ clean C-100，累计 55 发现 / 97 clean。R7 完结。
+
+## 第八轮（R8）晋级链路（advancement）纵深清单
+
+> 用户选择"继续新维度"。R8 深挖最大 service（advancement 1170 行，R1-R7 未系统覆盖）：测验/晋级/审核/计数全链。
+
+1. quiz 全链路：start_quiz / submit_answers / 取题端点权限与答案下发 → ✓ F-057（P3）GET /quiz/questions/{book_id} 无校验返回 correct_answer，任意登录用户可拉答案刷满分
+2. 晋级检测：check_and_advance 并发安全 + 计数 increment 锁覆盖 → ✓ C-101 内（submit 行锁+守卫、三个 increment 全带锁、check_and_advance 并发重取跳过）
+3. 读书提交审核：review_submission 读-改-写锁覆盖 → ✓ F-058（P3）无锁先查后改，并发审核双计已读书数
+4. 事件链：quiz.passed 五 handler + registry 注册 → ✓ C-101 内（无重复 commit、计数全锁）
+
+**R8 进度**：完成，发现 F-057（P3）+ F-058（P3）+ clean C-101，累计 57 发现 / 98 clean。R8 完结。
 
 ## 待甲方 / 需人工
 
