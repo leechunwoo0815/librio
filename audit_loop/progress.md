@@ -69,6 +69,7 @@
 | R7 | 2026-08-07 | 安全×文件链路纵深（F-023/024 同类枚举） | 0 | 0 | F-023 rmtree 删除面补充（不新建编号）+ C-100 文件操作点全枚举 |
 | R8 | 2026-08-07 | 晋级链路（advancement）纵深 | 2 | 0 | F-057 取题端点泄漏 correct_answer（P3）+ F-058 审核无锁读-改-写（P3）+ C-101 |
 | R9 | 2026-08-08 | reading 打卡链纵深（R8 建议路线） | 2 | 0 | F-059 end_session 重复结算时长膨胀（P3）+ F-060 试读页数限制单次 end 绕过（P3）+ C-102 |
+| R10 | 2026-08-08 | report 只读链纵深（R9 建议路线） | 1 | 0 | F-061 generate_due_reports 双入口并发双生成（P3）+ C-103 |
 
 ## 维度轮换表（15 维，按序循环，深度递增）
 
@@ -105,11 +106,14 @@
 
 ## 当前进度
 
-- **当前维度子项**：第九轮 reading 打卡链纵深 R9 完成（F-059 重复结算 + F-060 试读绕过 + C-102）→ R9 完结
-- **本圈发现数**：2（R9：P3×2）
-- **累计发现数**：59（P2×10 + P3×49 观察）+ 99 clean 记录
-- **下次从哪开始**：R10 建议优先修 F-057（答案泄漏，低成本高影响）+ F-059（状态守卫）后复验；或继续新维度（report 759 行只读链）
-- **上一圈结束时 HEAD**：f26f4ef（R9 reading 打卡链）
+- **当前维度子项**：第十轮 report 只读链纵深 R10 完成（F-061 双入口并发 + C-103）→ R10 完结
+- **本圈发现数**：1（R10：P3×1）
+- **累计发现数**：60（P2×10 + P3×50 观察）+ 100 clean 记录
+- **下次从哪开始**：R11 建议继续新维度（管理后台补面：权限码/全局泄漏/事件绑定，维度 6 第二轮）
+- **上一圈结束时 HEAD**：R10 完结后最新提交（见轮次表下方说明）
+
+> 轮次报告文件拆分（用户指令 2026-08-08 起）：每轮一个独立 md 文件存 `audit_loop/rounds/Rxx-<维度>.md`，
+> 编号跨文件连续（F-061 起 / C-103 起），findings-20260807.md 冻结不再追加。本表只做索引。
 
 ## 第三轮（R3）交叉维度接缝清单
 
@@ -190,6 +194,18 @@
 5. save_recording：逾期锁定 + voice_consent 校验 → ✓ C-102 内（audio_url 直存为 F-024 已知入口，排重不重报）
 
 **R9 进度**：完成，发现 F-059（P3）+ F-060（P3）+ clean C-102，累计 59 发现 / 99 clean。R9 完结。
+
+## 第十轮（R10）report 只读链纵深清单
+
+> 用户选择"继续新维度"（R9 完结建议路线）。R10 深挖 report service（759 行）：观察期报告生成/查看/评语/HTML/PDF + 阅读统计 + 双入口生成链路。
+
+1. 观察期报告生成链路：generate_due_reports + _generate_for_child + scheduler/admin 双入口 → ✓ F-061（P3）双入口并发双生成（scheduler 持 Redis 锁 / admin 手动无锁，ObservationReport 无 child_id 唯一约束）
+2. 报告查看/评语/标记：mark_viewed（F-042 已报排重）+ add_teacher_comment（require_perm 校验）→ ✓ C-103 内
+3. HTML/PDF 渲染：Jinja2 autoescape + asyncio.to_thread → ✓ C-103 内（无 XSS、不阻塞事件循环）
+4. 阅读统计五端点：summary/today/trend/weekly/monthly → ✓ C-103 内（单孩子过滤 + days 上限 + 无软删影响）
+5. 异常隔离与口径：per-child try/except + F14 member_expire_time 单口径 → ✓ C-103 内
+
+**R10 进度**：完成，发现 F-061（P3）+ clean C-103，累计 60 发现 / 100 clean。R10 完结。
 
 ## 待甲方 / 需人工
 
