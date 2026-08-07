@@ -68,6 +68,7 @@
 | R6 | 2026-08-07 | 借阅/预约并发面（R4 资金链未覆盖路径） | 1 | 0 | F-056 候补 NOTIFIED 无回归路径（P3）+ C-099 锁分层完整 |
 | R7 | 2026-08-07 | 安全×文件链路纵深（F-023/024 同类枚举） | 0 | 0 | F-023 rmtree 删除面补充（不新建编号）+ C-100 文件操作点全枚举 |
 | R8 | 2026-08-07 | 晋级链路（advancement）纵深 | 2 | 0 | F-057 取题端点泄漏 correct_answer（P3）+ F-058 审核无锁读-改-写（P3）+ C-101 |
+| R9 | 2026-08-08 | reading 打卡链纵深（R8 建议路线） | 2 | 0 | F-059 end_session 重复结算时长膨胀（P3）+ F-060 试读页数限制单次 end 绕过（P3）+ C-102 |
 
 ## 维度轮换表（15 维，按序循环，深度递增）
 
@@ -104,11 +105,11 @@
 
 ## 当前进度
 
-- **当前维度子项**：第八轮晋级链路（advancement）纵深 R8 完成（F-057 答案泄漏 + F-058 审核并发 + C-101）→ R8 完结
-- **本圈发现数**：2（R8：P3×2）
-- **累计发现数**：57（P2×10 + P3×47 观察）+ 98 clean 记录
-- **下次从哪开始**：R9 建议优先修 F-057（答案泄漏，低成本高影响）后复验；或继续新维度（reading 打卡链 / report 只读链）
-- **上一圈结束时 HEAD**：214e3dc（R8 晋级链路）
+- **当前维度子项**：第九轮 reading 打卡链纵深 R9 完成（F-059 重复结算 + F-060 试读绕过 + C-102）→ R9 完结
+- **本圈发现数**：2（R9：P3×2）
+- **累计发现数**：59（P2×10 + P3×49 观察）+ 99 clean 记录
+- **下次从哪开始**：R10 建议优先修 F-057（答案泄漏，低成本高影响）+ F-059（状态守卫）后复验；或继续新维度（report 759 行只读链）
+- **上一圈结束时 HEAD**：待更新（R9 完结后为最新提交）
 
 ## 第三轮（R3）交叉维度接缝清单
 
@@ -177,6 +178,18 @@
 4. 事件链：quiz.passed 五 handler + registry 注册 → ✓ C-101 内（无重复 commit、计数全锁）
 
 **R8 进度**：完成，发现 F-057（P3）+ F-058（P3）+ clean C-101，累计 57 发现 / 98 clean。R8 完结。
+
+## 第九轮（R9）reading 打卡链纵深清单
+
+> 用户选择"继续新维度"（R8 完结建议路线）。R9 深挖 reading service（595 行）：打卡/进度/会话/录音全链。
+
+1. save_progress：ReadingProgress 行锁 + ReadingSubmission 防重 + Child 行锁 + first_finish 幂等 → ✓ C-102 内（双行锁 + 唯一约束 uq_child_book_progress）
+2. start_session 试读限制 + end_session 结算 → ✓ F-060（P3）试读页数限制只在 start 查历史累计，end 无上限无复核可单次绕过；F-059（P3）end_session 无 end_time 守卫可重复结算时长膨胀
+3. 三处打卡（auto/voice/finish_book）：查重 + 每日上限 + add_with_unique_fallback → ✓ C-102 内（唯一约束 uq_checkin_child_date_type + SAVEPOINT 兜底）
+4. streak 事件链 + 统计链（misc_handlers / reading_handlers / child update_reading_stats）→ ✓ C-102 内（Child 行锁 + 自然日幂等重算 + 全勤消息幂等）
+5. save_recording：逾期锁定 + voice_consent 校验 → ✓ C-102 内（audio_url 直存为 F-024 已知入口，排重不重报）
+
+**R9 进度**：完成，发现 F-059（P3）+ F-060（P3）+ clean C-102，累计 59 发现 / 99 clean。R9 完结。
 
 ## 待甲方 / 需人工
 
