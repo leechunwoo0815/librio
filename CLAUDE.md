@@ -382,7 +382,7 @@ echo "===== 自检完成 ====="
 | `specs/architecture-refactor/` | 架构重构方案 (13个文件，1900行) |
 | `.mcp.json` / `mcp-server.js` | 微信开发者工具 MCP 服务端配置 |
 
-### 管理端页面目录（V3.12，共 37 个页面含 base.html）
+### 管理端页面目录（V3.23，共 39 个模板含 base.html）
 
 ```
 backend/templates/admin/
@@ -396,6 +396,7 @@ backend/templates/admin/
 ├── borrow.html            # 扫码借还（孩子搜索+状态校验）
 ├── activities.html        # 活动管理（批量签到+导出报名名单）
 ├── activity_checkin.html  # 活动签到
+├── benefit_transfers.html # 权益转让审核（T3.3）
 ├── damage_reports.html    # 图书损坏定责（T3.6a 新增 — 三级定级/拍照/申诉/冲正）
 ├── questions.html         # 题库管理（书名搜索+批量导入+编辑弹窗）
 ├── submissions.html       # 审核队列
@@ -417,10 +418,11 @@ backend/templates/admin/
 ├── macros.html            # Jinja2 宏组件库
 ├── message_manage.html    # 消息管理（V3.4 新增）
 ├── operation_logs.html    # 操作日志（V3.4 新增）
-├── page_template.html     # 通用页面模板
+├── parent_course_time.html # 亲子课时段管理（B3 新增）
 ├── profile.html           # 管理员个人资料（V3.4 新增）
 ├── quiz.html              # 出卷管理（V3.4 新增）
 ├── reading_data.html      # 阅读数据分析（V3.4 新增）
 ├── roles.html             # 角色管理（V3.6 新增 — 权限分配树形 UI）
-└── recycle_bin.html       # 回收站（V3.4 新增）
+├── recycle_bin.html       # 回收站（V3.4 新增）
+└── teacher_workbench.html # 老师工作台+课后反馈（D1/D2）
 ```

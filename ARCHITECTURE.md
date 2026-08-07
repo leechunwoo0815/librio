@@ -1,6 +1,6 @@
 # DmkWords — 架构文档
 
-> 版本：V3.13（2026-08-05 更新：52 题决策 + 四轮审查闭环 + 二批 P0 修复 — 56 表/66 配置/fine_policy/config_levels/guardian/teacher_workbench）
+> 版本：V3.23（2026-08-05 更新：52 题决策 + 四轮审查闭环 + 二批 P0 修复 — 56 表/66 配置/fine_policy/config_levels/guardian/teacher_workbench）
 > 零粉饰，只写事实
 
 ---
@@ -71,13 +71,13 @@ backend/
 │   ├── events.py        #   领域事件总线（共享/独立双模式事务）
 │   ├── exceptions.py    #   统一异常体系（7 个异常类）
 │   └── types.py         #   枚举类型定义
-├── domain/              # 领域模块（26 个域）
+├── domain/              # 领域模块（28 个域）
 │   ├── activity/        #   活动域
 │   ├── admin/           #   管理域（含 SystemConfig、Teacher、Venue、
 │   │                    #     config_levels.py 配置三级管控、
 │   │                    #     guardian_service.py 迁移/监护人/复活、
 │   │                    #     teacher_workbench_service.py 工作台/课后反馈）
-│   │   └── routers/     #     管理端路由（8 个领域路由文件）
+│   │   └── routers/     #     管理端路由（12 个领域路由文件）
 │   ├── advancement/     #   晋级域（含 LeaderboardService 独立拆分）
 │   ├── book/            #   图书域（Book + BookCopy）
 │   ├── bookshelf/       #   书架域（收藏夹 + 想读清单）
@@ -133,7 +133,7 @@ scripts/                 # CI 脚本
 ├── check_fake_assertions.py  # 禁止 assert True 假绿
 └── verify_api_contract.py    # 前后端 API 契约验证
 .github/workflows/ci.yml     # CI 配置
-features/                # BDD feature 文件（20 个，210 场景，1361 步骤）
+features/                # BDD feature 文件（20 个，211 场景，1369 步骤）
 tests/unit/              # pytest 单元测试（730 个 collected，通过数随环境）
 scripts/integration_test.py  # 全链路集成测试（867 行，6 主流程 + 7 异常场景）
 frontend/                # 微信小程序（34 个页面，4 子包）
@@ -163,7 +163,7 @@ frontend/                # 微信小程序（34 个页面，4 子包）
 
 - **Router 层**：不写业务逻辑，不直接操作 ORM
 - **Service 层**：所有业务逻辑和数据库操作
-- **Schema 层**：统一使用 `admin_schemas.py`（52 个 Schema，全部有 `extra="forbid"`）
+- **Schema 层**：统一使用 `admin_schemas.py`（67 个 Schema，全部有 `extra="forbid"`）
 - **分页**：所有列表接口使用 `{items, total, page, page_size, has_next}` 格式
 - **N+1 查询**：全部使用批量查询 + dict 映射
 - **SQL 聚合**：reading-data 使用 `func.sum/func.count/func.distinct`
@@ -174,7 +174,7 @@ frontend/                # 微信小程序（34 个页面，4 子包）
 
 ### RBAC 权限域（Phase 1-2）
 - `role` — 角色（3 个种子: super_admin/staff/teacher）
-- `permission` — 权限码（128 个种子）
+- `permission` — 权限码（136 个种子）
 - `role_permission` — 角色-权限关联
 
 ### 用户域
@@ -233,7 +233,7 @@ frontend/                # 微信小程序（34 个页面，4 子包）
 - `guidance_record` — 指导课记录
 
 ### 系统域
-- `system_config` — 动态配置（59 项，三级管控 config_levels.py）
+- `system_config` — 动态配置（66 项，三级管控 config_levels.py）
 - `system_message` — 站内信
 - `operation_log` — 操作日志
 - `observation_report` — 观察期报告
@@ -340,9 +340,9 @@ frontend/                # 微信小程序（34 个页面，4 子包）
 
 ### 新增测试
 
-- 并发测试：13 个（borrow deposit/refund/deduction 并发场景）
+- 并发测试：5 个（test_concurrency.py：预约防超卖/借书去重/还书去重/押金非法转移/防刷分）
 - 状态机测试：押金 FULFILLED 状态校验
-- 集成测试：`scripts/integration_test.py` 867 行，6 主流程 + 7 异常场景，45/45 step pass
+- 集成测试：`scripts/integration_test.py` 6 主流程 + 7 异常场景，56/56 step pass
 
 ### 当前验证状态
 
@@ -411,22 +411,24 @@ behave:  ✅ 138/138 passed
 ## 十二、2026-07-13 专家审计
 
 > 7 P0 + 系统级 P1 经代码核验全部确认。Phase 5 已规划至 TASK_PLAN.md。
+> **复核（2026-08-07）**：Task 11-23 逐项代码核验，除 Task 17 部分残留
+> （首页 FAB"99 元亲子课"硬编码文案，随 D 档亲子课前端决策处理）外，全部已修复。
 
 | # | 问题 | 优先级 | 状态 |
 |---|------|--------|------|
-| B-P0-3 | Deposit 绕过支付网关直接 PAID | P0 | 待修复（Task 11） |
-| B-P0-1 | Reservation/cancel 无认证 | P0 | 待修复（Task 12） |
-| B-P0-2 | Refund/apply 无锁+重复校验 | P0 | 待修复（Task 13） |
-| A-P0-1 | Admin oplogs 无 Authorization | P0 | 待修复（Task 14） |
-| F-P0-3 | Books categories 未定义崩溃 | P0 | 待修复（Task 15） |
-| F-P0-2 | Deposit amount.indexOf 类型崩溃 | P0 | 待修复（Task 16） |
-| — | 前端硬编码金额 | P0/P1 | 待修复（Task 17） |
-| — | 字段契约 9 页不一致 | P0/P1 | 待修复（Task 18） |
-| F-P0-1 | Member 页 child null 守卫 | P1 | 待修复（Task 19） |
-| — | Admin XSS innerHTML | P1 | 待修复（Task 20） |
+| B-P0-3 | Deposit 绕过支付网关直接 PAID | P0 | ✅ 已修复（F39：DepositPaidEvent 仅即时支付路径） |
+| B-P0-1 | Reservation/cancel 无认证 | P0 | ✅ 已修复（get_current_user + require_perm） |
+| B-P0-2 | Refund/apply 无锁+重复校验 | P0 | ✅ 已修复（with_for_update + 重复申请拦截） |
+| A-P0-1 | Admin oplogs 无 Authorization | P0 | ✅ 已修复（require_perm("log.list")） |
+| F-P0-3 | Books categories 未定义崩溃 | P0 | ✅ 已修复（Book.theme 字段，前端无 categories 引用） |
+| F-P0-2 | Deposit amount.indexOf 类型崩溃 | P0 | ✅ 已修复（模板字符串 + 兜底） |
+| — | 前端硬编码金额 | P0/P1 | ⚠️ 部分修复（FAB 文案残留，D 档亲子课决策阻塞） |
+| — | 字段契约 9 页不一致 | P0/P1 | ✅ 已修复（表结构.md 56 表 + API 契约校验通过） |
+| F-P0-1 | Member 页 child null 守卫 | P1 | ✅ 已修复（loadError + "请先添加孩子"守卫） |
+| — | Admin XSS innerHTML | P1 | ✅ 已修复（XSS 审查 20260721 闭环） |
 | — | Alembic 漂移 | P1 | ✅ 已修复（021/022/023） |
-| — | 管理后台列表无分页 | P2/P1 | 待修复（Task 22） |
-| — | 测试覆盖补全 | P0 parallel | 待修复（Task 23） |
+| — | 管理后台列表无分页 | P2/P1 | ✅ 已修复（PaginatedResponse 全量继承） |
+| — | 测试覆盖补全 | P0 parallel | ✅ 已修复（730 测试 + 真实断言 + MySQL 并发脚本） |
 
 ---
 

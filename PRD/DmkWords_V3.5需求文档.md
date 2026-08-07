@@ -1502,8 +1502,9 @@ def reconcile_stock():
 | graduate_children | 每天 04:00 | 满 15 岁毕业（F2：转 ALUMNI + 14 岁毕业提醒） |
 | purge_expired_data | 每天 04:30 | 数据保留期到期清理（H5：消息1年/行为退出后2年/财务5年/语音6个月，consent_record 豁免） |
 | check_paid_not_activated | 每天 05:00 | 支付成功但会员未激活对账（F7：扫描 activation_issue 订单，告警超管+人工队列，PRD §1.2 定时修复） |
+| reset_stale_pending_deposits | 每天 01:30 | 废弃押金支付单（PENDING 超时未回调）复位 UNPAID（F78，150 分钟超窗） |
 
-> 合计 23 个任务（全部带 @distributed_lock 分布式锁）。
+> 合计 24 个任务（全部带 @distributed_lock 分布式锁）。
 
 ---
 

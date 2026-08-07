@@ -20,7 +20,7 @@ ROLES = [
     {"code": "teacher", "name": "教师", "is_system": True, "sort_order": 2},
 ]
 
-# ── 权限定义（82 个）──
+# ── 权限定义（136 个）──
 PERMISSIONS = [
     # dashboard
     {"code": "dashboard.view", "name": "数据概览", "group_name": "dashboard"},
