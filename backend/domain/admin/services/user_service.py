@@ -33,7 +33,11 @@ class AdminUserService:
         self.order_repo = BaseRepository(db, Order)
 
     def list_users_with_children(
-        self, search: str = None, page: int = 1, page_size: int = 20
+        self,
+        search: str = None,
+        page: int = 1,
+        page_size: int = 20,
+        child_status: int | None = None,
     ) -> dict:
         """分页查询用户+孩子列表 — 支持家长姓名、手机号、孩子姓名搜索"""
         q = self.db.query(User).filter(User.is_deleted == 0)
@@ -54,6 +58,18 @@ class AdminUserService:
                     User.id.in_(user_ids_with_matching_child),
                 )
             )
+        if child_status is not None:
+            # P3：孩子状态筛选（此前前端传参被忽略——"筛选摆设"）
+            user_ids_with_status = (
+                self.db.query(Child.user_id)
+                .filter(
+                    Child.is_deleted == 0,
+                    Child.status == child_status,
+                )
+                .distinct()
+                .subquery()
+            )
+            q = q.filter(User.id.in_(user_ids_with_status))
         total = q.count()
         users = (
             q.order_by(User.create_time.desc())

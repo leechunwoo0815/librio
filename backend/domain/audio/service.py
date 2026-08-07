@@ -31,7 +31,11 @@ class AudioService:
         query = self.db.query(AudioFile).filter(AudioFile.is_deleted == 0)
 
         if keyword:
-            query = query.filter(AudioFile.filename.contains(keyword))
+            from backend.common.sql_utils import escape_like
+
+            query = query.filter(
+                AudioFile.filename.like(f"%{escape_like(keyword)}%", escape="\\")
+            )
         if reader:
             query = query.filter(AudioFile.reader == reader)
 

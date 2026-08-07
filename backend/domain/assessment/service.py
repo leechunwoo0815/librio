@@ -41,9 +41,14 @@ class AssessmentService:
 
         # 关键词搜索（按孩子姓名）
         if keyword:
+            from backend.common.sql_utils import escape_like
+
             child_ids = (
                 self.db.query(Child.id)
-                .filter(Child.name.contains(keyword), Child.is_deleted == 0)
+                .filter(
+                    Child.name.like(f"%{escape_like(keyword)}%", escape="\\"),
+                    Child.is_deleted == 0,
+                )
                 .all()
             )
             child_ids = [c.id for c in child_ids]

@@ -240,13 +240,18 @@ def export_users_csv(
 @router.get("/users", response_model=UserListResponse)
 def list_users(
     search: str = None,
+    child_status: int | None = Query(
+        None, description="孩子状态筛选（P3 修复：此前摆设）"
+    ),
     page: int = 1,
     page_size: int = 20,
     service: AdminUserService = Depends(get_admin_user_service),
     admin=Depends(require_perm("user.list")),
 ):
     """分页查询用户+孩子列表"""
-    return service.list_users_with_children(search, page, page_size)
+    return service.list_users_with_children(
+        search, page, page_size, child_status=child_status
+    )
 
 
 @router.post("/users", response_model=AdminActionResponse)

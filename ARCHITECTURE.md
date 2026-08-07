@@ -44,7 +44,7 @@ Gateways → Mock支付网关 / Mock短信网关 / 真实支付网关（依赖�
 | 前端 | 微信小程序原生（34 页，4 子包） |
 | 后端 | Python 3.13 + FastAPI + SQLAlchemy 2.0 + Pydantic V2 |
 | 数据库 | MySQL 8.0 (utf8mb4)，测试用 SQLite :memory: |
-| 测试 | pytest (719 collected，通过数随环境) + behave (211 scenarios / 1369 steps) |
+| 测试 | pytest (723 collected，通过数随环境) + behave (211 scenarios / 1369 steps) |
 | 管理端 | 39 个 PC 后台模板（含 base.html）+ 35 页面级 CSS + 36 page JS（IIFE） |
 | 设计系统 | --accent: #5560cf + 31/31 class 对齐 ≥95% + 0 hardcoded + 0 oklch |
 | 定时 | APScheduler（24 个任务） |
@@ -134,7 +134,7 @@ scripts/                 # CI 脚本
 └── verify_api_contract.py    # 前后端 API 契约验证
 .github/workflows/ci.yml     # CI 配置
 features/                # BDD feature 文件（20 个，210 场景，1361 步骤）
-tests/unit/              # pytest 单元测试（719 个 collected，通过数随环境）
+tests/unit/              # pytest 单元测试（723 个 collected，通过数随环境）
 scripts/integration_test.py  # 全链路集成测试（867 行，6 主流程 + 7 异常场景）
 frontend/                # 微信小程序（34 个页面，4 子包）
 ```
@@ -258,7 +258,7 @@ frontend/                # 微信小程序（34 个页面，4 子包）
 
 ```bash
 # pytest
-719 collected（通过数随环境：开发机 719 passed / CI 704+15 skip / 无 MySQL 沙箱 710+9 err）
+723 collected（通过数随环境：开发机 723 passed / CI 708+15 skip / 无 MySQL 沙箱 714+9 err）
 
 # 架构验证
 ✅ Router 层 ORM 操作：0 处

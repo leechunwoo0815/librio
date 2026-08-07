@@ -31,9 +31,12 @@ class DictionaryService:
         query = self.db.query(DictionaryWord).filter(DictionaryWord.is_deleted == 0)
 
         if keyword:
+            from backend.common.sql_utils import escape_like
+
+            esc = escape_like(keyword)
             query = query.filter(
-                (DictionaryWord.word.contains(keyword))
-                | (DictionaryWord.chinese_meaning.contains(keyword))
+                (DictionaryWord.word.like(f"%{esc}%", escape="\\"))
+                | (DictionaryWord.chinese_meaning.like(f"%{esc}%", escape="\\"))
             )
         if level:
             query = query.filter(DictionaryWord.level == level)

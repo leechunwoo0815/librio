@@ -959,6 +959,10 @@ class DepositService:
         生产网关 prepay 成功≠已付款，用户放弃支付后 PENDING 记录若不复位，
         get_active_by_child 会把该记录视为活跃 → 永久阻塞再次缴纳。
         超时窗口默认 150 分钟（配置 deposit_pending_expire_minutes，须大于微信支付单有效期）。
+
+        20260807 扩展：顺带清理超时未回调的 PENDING 罚款缴款单（FinePayment）——
+        pay_fines 网关调用失败/用户放弃支付会残留 PENDING 单，金额变化后旧单
+        无法复用也无过期机制（P3 观察项闭环）。
         """
         minutes = expire_minutes or self._pending_expire_minutes()
         stale = (
@@ -972,8 +976,25 @@ class DepositService:
         stale = [rec for rec in stale if self._is_pending_stale(rec, minutes)]
         for rec in stale:
             rec.status = DepositStatus.UNPAID
+
+        # P3：罚款缴款单同窗口清理（复用同一超时配置）
+        from backend.domain.deposit.models import FinePayment
+
+        stale_fines = (
+            self.db.query(FinePayment)
+            .filter(
+                FinePayment.status == FinePayment.STATUS_PENDING,
+                FinePayment.is_deleted == 0,
+            )
+            .all()
+        )
+        stale_fines = [fp for fp in stale_fines if self._is_pending_stale(fp, minutes)]
+        for fp in stale_fines:
+            # 超时缴款单无"废弃"状态（仅 PENDING/PAID），软删除——
+            # 金额变化后旧单不复用，保留 PENDING 只会残留且阻塞不了新单
+            fp.is_deleted = 1
         self.db.commit()
-        return len(stale)
+        return len(stale) + len(stale_fines)
 
     def _pending_expire_minutes(self) -> int:
         """F78：废弃 PENDING 押金判定窗口（默认 150 分钟 > 微信支付单有效期约 2 小时）"""

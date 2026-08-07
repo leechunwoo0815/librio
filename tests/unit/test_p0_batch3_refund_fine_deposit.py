@@ -676,6 +676,38 @@ class TestF78StalePendingOnDemandReset:
             )
 
 
+class TestStaleFinePaymentCleanup:
+    def test_reset_task_soft_deletes_stale_pending_fine(self, db):
+        """P3：超时 PENDING 缴款单被清理（软删除）；新缴款单不受影响"""
+        from backend.domain.deposit.models import FinePayment
+        from backend.domain.deposit.service import DepositService
+
+        user, child = _mk_user_child(db)
+        stale = FinePayment(
+            child_id=child.id,
+            amount=Decimal("10.00"),
+            status=FinePayment.STATUS_PENDING,
+            pay_order_no="FINE-STALE-1",
+            create_time=datetime.now() - timedelta(hours=3),
+        )
+        fresh = FinePayment(
+            child_id=child.id,
+            amount=Decimal("20.00"),
+            status=FinePayment.STATUS_PENDING,
+            pay_order_no="FINE-FRESH-1",
+            create_time=datetime.now() - timedelta(minutes=10),
+        )
+        db.add_all([stale, fresh])
+        db.commit()
+
+        cleared = DepositService(db).reset_stale_pending_deposits()
+        db.refresh(stale)
+        db.refresh(fresh)
+        assert stale.is_deleted == 1  # 超时清理
+        assert fresh.is_deleted == 0  # 未超时保留
+        assert cleared >= 1
+
+
 # ============================================================ F39
 class TestF39DepositPaidEventInstantOnly:
     def _pay(self, db, gw, user, child):
