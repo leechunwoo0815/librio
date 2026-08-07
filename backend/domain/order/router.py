@@ -37,6 +37,7 @@ router = APIRouter(prefix="/order", tags=["订单"])
 def get_product_tiers(
     order_service: OrderService = Depends(get_order_service),
 ):
+    obs_days = order_service.get_observation_days()
     tiers = [
         TierInfo(
             type=1,
@@ -58,7 +59,7 @@ def get_product_tiers(
             type=2,
             name="观察期",
             price=order_service.get_price_for_type(OrderType.OBSERVATION),
-            unit="30天",
+            unit=f"{obs_days}天",
             original_price=None,
             discount_tag=None,
             sort_order=2,
@@ -84,7 +85,7 @@ def get_product_tiers(
                 TierFeature(
                     icon="📋",
                     title="观察期结束报告",
-                    desc="30天后生成个性化阅读能力分析报告",
+                    desc=f"{obs_days}天后生成个性化阅读能力分析报告",
                 ),
             ],
             cta="立即报名",

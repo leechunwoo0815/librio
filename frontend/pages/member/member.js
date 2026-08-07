@@ -1,6 +1,7 @@
 // frontend/pages/member/member.js
 const api = require('../../utils/api')
 const auth = require('../../utils/auth')
+const platform = require('../../utils/platform')
 const app = getApp()
 
 Page({
@@ -15,9 +16,11 @@ Page({
     tiers: [],
     loadError: false,
     loading: true,
+    isIOS: false,
   },
 
   onShow() {
+    this.setData({ isIOS: platform.isIOS() })
     this.loadData()
   },
 
@@ -111,6 +114,12 @@ Page({
   goTier(e) {
     const type = e.currentTarget.dataset.type
     // type: 1亲子课 2观察期 3正式 4季度 5半年 — 均走对应报名页
+    if (this.data.isIOS) {
+      // A5/终审 P1-4：iOS 虚拟服务不展示价格/购买按钮，仅引导门店/客服办理
+      const names = { 1: '亲子课', 2: '观察期', 3: '正式会员', 4: '季度会员', 5: '半年会员' }
+      platform.showIOSContactGuide(names[type] || '会员服务')
+      return
+    }
     if (type === 1 || type === 2) {
       wx.navigateTo({ url: '/pages/order-pkg/observation/observation' })
     } else {

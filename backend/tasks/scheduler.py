@@ -1454,7 +1454,6 @@ def graduate_children(db: Session | None = None):
     参数 db：可选的 session 注入（测试用），不传则自行创建。
     """
     from backend.domain.child.models import Child
-    from backend.domain.message.models import SystemMessage
 
     own_session = db is None
     if own_session:
@@ -1503,20 +1502,11 @@ def graduate_children(db: Session | None = None):
             .all()
         )
         remind_count = 0
-        one_year_ago = datetime.now() - timedelta(days=365)
+        current_year = datetime.now().year
         for child in pre_grads:
-            already = (
-                db.query(SystemMessage)
-                .filter(
-                    SystemMessage.user_id == child.user_id,
-                    SystemMessage.title == "毕业提醒",
-                    SystemMessage.content.contains(child.name),
-                    SystemMessage.create_time >= one_year_ago,
-                    SystemMessage.is_deleted == 0,
-                )
-                .count()
-            )
-            if already:
+            # F23：独立留痕字段按自然年去重——消息表防重会被 purge（1 年保留期）
+            # 物理删除，静态 age 下会导致提醒反复发送
+            if child.grad_remind_year == current_year:
                 continue
             _create_message(
                 db,
@@ -1529,6 +1519,7 @@ def graduate_children(db: Session | None = None):
                 msg_type=1,
                 priority=1,
             )
+            child.grad_remind_year = current_year
             remind_count += 1
 
         db.commit()

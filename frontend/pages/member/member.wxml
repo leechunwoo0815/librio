@@ -79,11 +79,12 @@
       >
         <view class="tier-tag" wx:if="{{item.tag}}">{{item.tag}}</view>
         <text class="tier-name">{{item.name}}</text>
-        <text class="tier-price">¥{{item.price}}<text class="tier-unit">/{{item.unit}}</text></text>
+        <text class="tier-price" wx:if="{{!isIOS}}">¥{{item.price}}<text class="tier-unit">/{{item.unit}}</text></text>
+        <text class="tier-price tier-ios-note" wx:else>iOS 端请联系门店/客服办理</text>
         <view class="tier-features">
           <text class="tier-feature" wx:for="{{item.features}}" wx:key="title">{{item.title}}</text>
         </view>
-        <button class="tier-cta">{{item.cta || '立即开通'}}</button>
+        <button class="tier-cta" wx:if="{{!isIOS}}">{{item.cta || '立即开通'}}</button>
       </view>
     </view>
   </view>

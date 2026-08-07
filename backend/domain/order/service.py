@@ -82,6 +82,12 @@ class OrderService:
                 return val
         return self._DEFAULT_ORIGINAL_PRICES.get(order_type)
 
+    def get_observation_days(self) -> int:
+        """观察期天数（A3，从配置读取，供 tiers 文案动态生成，禁硬编码）"""
+        from backend.common.config_service import ConfigService
+
+        return ConfigService.get_int(self.db, "observation_days", 45)
+
     def _get_price(self, order_type: OrderType) -> Decimal:
         """从 ConfigService 读取价格，支持动态配置"""
         from backend.common.config_service import ConfigService
@@ -609,8 +615,9 @@ class OrderService:
         remaining_days = max(0, (child.member_expire_time - datetime.now()).days)
 
         options = []
-        # 计算当前剩余价值
-        current_price = self._get_price(current_type)
+        # 计算当前剩余价值（F16：按当前周期订单实付金额，而非现价——现价会
+        # 在折扣/多孩优惠后高估剩余价值，导致升级差价少收）
+        current_price = current_order.amount
         remaining_value = (
             current_price
             * Decimal(str(remaining_days))

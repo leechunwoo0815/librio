@@ -18,7 +18,7 @@ from backend.common.base_model import BaseModel
 
 
 class ObservationReport(BaseModel):
-    """观察期报告 — 30天自动生成"""
+    """观察期报告 — 到期自动生成（天数取 observation_days 配置）"""
 
     __tablename__ = "observation_report"
     __table_args__ = {"extend_existing": True}

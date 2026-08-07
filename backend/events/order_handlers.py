@@ -96,7 +96,18 @@ def handle_order_paid_for_child(event, db: Session):
             days = ConfigService.get_int(db, "member_days", 365)
 
         child.status = MemberStatus.OFFICIAL
-        if child.member_expire_time and child.member_expire_time > now:
+        # F16：升级/抵扣单（upgrade_deduct>0）差额已按剩余价值抵扣（A6），
+        # 会员期重置起算，禁止"抵扣+叠加"双重受益；普通购买/续费仍叠加。
+        is_upgrade = False
+        if event.order_id:
+            from backend.domain.order.models import Order
+
+            paid_order = db.query(Order).filter(Order.id == event.order_id).first()
+            is_upgrade = paid_order is not None and (paid_order.upgrade_deduct or 0) > 0
+        if is_upgrade:
+            child.member_start_time = now
+            child.member_expire_time = now + timedelta(days=days)
+        elif child.member_expire_time and child.member_expire_time > now:
             child.member_expire_time += timedelta(days=days)
         else:
             child.member_start_time = now

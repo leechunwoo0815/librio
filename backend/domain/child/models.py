@@ -84,6 +84,11 @@ class Child(BaseModel):
         nullable=True,
         comment="退出时间（H5 数据保留计时基准，EXITED 迁移时写入，复活清空）",
     )
+    grad_remind_year = Column(
+        Integer,
+        nullable=True,
+        comment="F23：14岁毕业提醒最近发送年份（自然年去重，独立于消息保留期）",
+    )
 
     user = relationship("User", back_populates="children", foreign_keys=[user_id])
 

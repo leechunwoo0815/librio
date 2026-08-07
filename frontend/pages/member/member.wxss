@@ -199,6 +199,11 @@
   font-weight: 400;
   color: var(--muted);
 }
+.tier-ios-note {
+  font-size: 24rpx;
+  font-weight: 400;
+  color: var(--muted);
+}
 .tier-features {
   margin: 16rpx 0;
 }
