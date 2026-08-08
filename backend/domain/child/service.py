@@ -316,7 +316,8 @@ class ChildService:
 
         self.child_repo.update(source)
         self.child_repo.update(target)
-        self.db.commit()
+        # F-100：不再内部 commit——由调用方（审核 approve）统一提交，
+        # 保证"权益转移 + 申请状态更新"单事务原子（防转移已落库而申请卡死）
         logger.info(
             f"Benefit transferred: {source_id} -> {target_id}, status={old_status}"
         )

@@ -80,7 +80,9 @@ class AdminDashboardService:
             self.db.query(func.count(Child.id))
             .filter(
                 Child.status == MemberStatus.EXPIRED,
-                Child.update_time >= week_ago,
+                # F-105：用精确退出时间（update_time 是任意字段更新戳——
+                # 误计：本周改备注的 EXPIRED 被算流失；漏计：上周退出本周无更新的漏算）
+                Child.exited_at >= week_ago,
                 Child.is_deleted == 0,
             )
             .scalar()

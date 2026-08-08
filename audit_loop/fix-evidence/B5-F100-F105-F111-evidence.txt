@@ -1,0 +1,12 @@
+批次5-F-100/F-105/F-111 — 2026-08-09
+F-100: transfer_benefit 移除内部 commit——approve 单事务（权益转移+申请状态更新原子，
+  防"转移已落库而申请卡死"）；唯一调用方 approve 统一提交
+F-105: week_lost_members 改 Child.exited_at >= week_ago（update_time 是任意字段更新戳——
+  误计本周改备注的 EXPIRED / 漏计上周退出本周无更新的）；两处 EXPIRED 迁移点补写 exited_at
+  （purge 有 status==EXITED 过滤不受影响）
+F-111: graduate_children 毕业消息按活跃借阅数（BORROWING/OVERDUE）附加还书提醒，
+  无借阅则保留押金引导
+测试: test_b5_transfer_lost_grad.py 5 passed
+  - F-105 测试首版设计缺陷：两种口径 count 恰好相同（互补数据）→ 重构为
+    上周退出+本周刷字段（修复=0/旧=1）与本周退出+上周刷字段（修复=1/旧=0）两个独立用例
+RED→GREEN: 改回 update_time 口径 → 2 failed；恢复 exited_at → 5 passed

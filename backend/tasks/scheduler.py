@@ -677,6 +677,9 @@ def check_grace_period_shutdown():
                 continue
             old_status = child.status
             child.status = MemberStatus.EXPIRED
+            if child.exited_at is None:
+                # F-105：EXPIRED 也写退出时间（流失统计口径；purge 有 status 过滤不受影响）
+                child.exited_at = datetime.now()
             logger.info(
                 f"GRACE_SHUTDOWN: child={child.id}, name={child.name}, {old_status} -> {MemberStatus.EXPIRED}"
             )
@@ -1567,6 +1570,26 @@ def graduate_children(db: Session | None = None):
             )
             if child is None:
                 continue
+            # F-111：毕业前检查活跃借阅（BORROWING/OVERDUE）——毕业消息须提醒还书
+            # （未还书将悬空：罚款持续累计 + 押金退还与未还书冲突）
+            from backend.common.types import BorrowStatus
+            from backend.domain.borrow.models import BorrowRecord
+
+            active_borrows = (
+                db.query(BorrowRecord)
+                .filter(
+                    BorrowRecord.child_id == child.id,
+                    BorrowRecord.status.in_([BorrowStatus.BORROWING, BorrowStatus.OVERDUE]),
+                    BorrowRecord.is_deleted == 0,
+                )
+                .count()
+            )
+            return_hint = (
+                f"您有 {active_borrows} 本图书尚未归还，请先办理还书手续，"
+                "归还后方可退还押金。"
+                if active_borrows
+                else "如尚有押金未退，请在小程序「会员中心-押金」申请退还。"
+            )
             child.status = MemberStatus.ALUMNI
             _create_message(
                 db,
@@ -1574,8 +1597,8 @@ def graduate_children(db: Session | None = None):
                 title="毕业快乐",
                 content=(
                     f"{child.name}已经 15 岁啦，从 DmkWords 正式毕业！"
-                    "历史阅读数据将永久保留。如尚有押金未退，"
-                    "请在小程序「会员中心-押金」申请退还，或联系门店办理。"
+                    "历史阅读数据将永久保留。"
+                    + return_hint
                 ),
                 msg_type=1,
                 priority=1,
@@ -1809,6 +1832,9 @@ def check_observation_expiry(db: Session | None = None):
                 if child is None:
                     continue
                 child.status = MemberStatus.EXPIRED
+                if child.exited_at is None:
+                    # F-105：观察期到期转 EXPIRED 同样记录退出时间
+                    child.exited_at = datetime.now()
                 expired_count += 1
                 logger.info(
                     f"Observation expired: child_id={child.id}, name={child.name}"
