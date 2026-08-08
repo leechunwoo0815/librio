@@ -22,8 +22,8 @@ def test_monthly_report_offset_from_weekly(monkeypatch):
     weekly_minute = _field(weekly, "minute").expressions[0]
     monthly_minute = _field(monthly, "minute").expressions[0]
 
-    assert weekly_hour.value == 8
-    assert monthly_hour.value == 8
+    assert weekly_hour.first == 8
+    assert monthly_hour.first == 8
     # F-037：月报 8:15，与周报 8:00 错开 15 分钟
-    assert monthly_minute.value == 15
-    assert monthly_minute.value != weekly_minute.value
+    assert monthly_minute.first == 15
+    assert monthly_minute.first != weekly_minute.first
