@@ -115,7 +115,7 @@ python -c "import weasyprint; print('WeasyPrint OK:', weasyprint.__version__)"
 venv/bin/python -m alembic upgrade head
 ```
 
-- [ ] 迁移 head: `b1c2d3e4f506`（053 = order.duration_days 会员时长快照，纯加列无回填，低峰执行）
+- [ ] 迁移 head: `d3e4f5061728`（053-055：duration_days/提醒去重三列/venue.name 唯一，纯加列+唯一约束，低峰执行）
 - [ ] 迁移无报错
 - [ ] 种子数据已导入（如需要）: `venv/bin/python -m backend.seeds.seed_test_data`
 
