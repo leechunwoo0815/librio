@@ -57,6 +57,7 @@ def main():
     results.append(("E 取消订单 vs 支付（行锁）", _scenario_cancel_vs_paid(Session)))
     results.append(("F 库存并发双报损（行锁）", _scenario_stock_double_lost(Session)))
     results.append(("G 缓冲期关停 vs 续费（行锁）", _scenario_grace_vs_renew(Session)))
+    results.append(("H 首次免罚并发（行锁）", _scenario_first_free_concurrent(Session)))
 
     if "--keep" not in sys.argv:
         _cleanup(engine)
@@ -620,6 +621,78 @@ def _scenario_grace_vs_renew(Session):
         f"续费成功 {renewed_ok}/15，被任务覆盖 EXPIRED {corrupted}（应 0），"
         f"结果样本: {outcomes[:2]}",
     )
+
+
+def _scenario_first_free_concurrent(Session):
+    """F-047：并发双逾期记录首次免罚——child 行锁串行化后每孩子免罚恰 1 次
+
+    10 个孩子 × 2 条计费逾期记录，每条记录一个线程 apply_fine。
+    缺陷特征：某孩子 2 条记录都 fine_waived=1（双免）。
+    """
+    from datetime import datetime, timedelta
+
+    from backend.common.fine_policy import apply_fine, get_overdue_policy
+    from backend.domain.borrow.models import BorrowRecord
+
+    s = Session()
+    policy = get_overdue_policy(s)
+    record_ids = []
+    child_ids = []
+    for _ in range(10):
+        _, cid = _make_user_child(s, f"ffc_{uuid.uuid4().hex[:8]}")
+        child_ids.append(cid)
+        for i in range(2):
+            rec = BorrowRecord(
+                child_id=cid,
+                book_id=1,
+                borrow_time=datetime.now() - timedelta(days=30),
+                due_date=datetime.now() - timedelta(days=10 + i),
+                status=2,  # OVERDUE
+            )
+            s.add(rec)
+            s.flush()
+            record_ids.append(rec.id)
+    s.commit()
+    s.close()
+
+    lock = threading.Lock()
+    errors = []
+
+    def try_fine(rid):
+        sess = Session()
+        try:
+            rec = sess.query(BorrowRecord).filter(BorrowRecord.id == rid).first()
+            apply_fine(sess, rec, days_overdue=11, policy=policy)
+            sess.commit()
+        except Exception as e:
+            with lock:
+                errors.append(str(e)[:60])
+        finally:
+            sess.close()
+
+    threads = [threading.Thread(target=try_fine, args=(rid,)) for rid in record_ids]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    s = Session()
+    double_free = 0
+    for cid in child_ids:
+        waives = (
+            s.query(BorrowRecord)
+            .filter(
+                BorrowRecord.child_id == cid,
+                BorrowRecord.fine_waived == 1,
+            )
+            .count()
+        )
+        if waives > 1:
+            double_free += 1
+    s.close()
+
+    passed = double_free == 0
+    return passed, f"双免孩子 {double_free}/10（应 0），错误样本: {errors[:2]}"
 
 
 def _cleanup(engine):

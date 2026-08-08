@@ -240,8 +240,10 @@ class DepositService:
             raise NotFoundError("孩子不存在")
 
         existing = self.deposit_repo.get_active_by_child_for_update(child_id)
-        if existing and existing.status == DepositStatus.PAID:
-            raise ConflictError("押金已缴纳，无需重复缴纳")
+        if existing:
+            # F-054：PENDING/PAID/REFUNDING/REFUND_PENDING 一律拦截（仅 UNPAID 可建单），
+            # 防重复建单撞活跃唯一索引或双记录
+            raise ConflictError("押金处理中，请稍后再试")
 
         deposit_amount = ConfigService.get_decimal(
             self.db, "deposit_amount", DEFAULT_DEPOSIT_AMOUNT

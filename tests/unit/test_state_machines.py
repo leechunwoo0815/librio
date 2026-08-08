@@ -192,7 +192,7 @@ class TestBorrowStateMachine:
             due_date=datetime.now() - timedelta(days=40),
             return_time=datetime.now() - timedelta(days=39),
             status=BorrowStatus.RETURNED,
-            overdue_days=1,
+            overdue_days=10,  # F-055：计费逾期（>grace=3）才消耗免罚额度
             fine_waived=1,
         )
         db.add(prior)

@@ -1,0 +1,10 @@
+批次2-F047/054/055 证据
+===========================
+
+F-047: apply_fine 免罚判定加 child 行锁 + is_first_overdue count 改当前读（FOR UPDATE）
+      MySQL 实证：修复前双免孩子 10/10，修复后 0/10
+F-054: repay_deposit 拦截全部活跃态（PENDING/PAID/REFUNDING/REFUND_PENDING）
+F-055: is_first_overdue 仅统计计费逾期（overdue_days > grace），宽限期不消耗免罚额度
+      （既有状态机测试 fixture 同步修正：prior 记录改真实计费逾期）
+
+[单测] test_batch2_f047_054_055.py 3 passed + 状态机/罚款/押金域回归 155 passed

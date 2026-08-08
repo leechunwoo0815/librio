@@ -55,18 +55,29 @@ def calc_fine(
     return fine.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 
-def is_first_overdue(db: Session, child_id: int, exclude_id: int | None = None) -> bool:
-    """是否该孩子的首次逾期（无其他逾期过/被免罚过的记录）"""
+def is_first_overdue(
+    db: Session,
+    child_id: int,
+    exclude_id: int | None = None,
+    grace_days: int = 0,
+) -> bool:
+    """是否该孩子的首次逾期（无其他计费逾期记录）
+
+    F-055：宽限期内的逾期（overdue_days <= grace_days）不计费、不消耗免罚额度——
+    只有真正计费的逾期（overdue_days > grace_days）才算"用过一次免罚"。
+    """
     from backend.domain.borrow.models import BorrowRecord
 
     q = db.query(BorrowRecord).filter(
         BorrowRecord.child_id == child_id,
         BorrowRecord.is_deleted == 0,
-        (BorrowRecord.overdue_days > 0) | (BorrowRecord.fine_waived == 1),
+        BorrowRecord.overdue_days > grace_days,
     )
     if exclude_id is not None:
         q = q.filter(BorrowRecord.id != exclude_id)
-    return q.count() == 0
+    # F-047：当前读（FOR UPDATE）——child 锁串行化后仍需读到并发已提交的
+    # fine_waived=1；REPEATABLE READ 下普通 count 用事务快照会漏看（双免根因）
+    return q.with_for_update().count() == 0
 
 
 def apply_fine(db: Session, record, days_overdue: int, policy: OverduePolicy) -> None:
@@ -82,11 +93,27 @@ def apply_fine(db: Session, record, days_overdue: int, policy: OverduePolicy) ->
     elif record.fine_waived == 1:
         # 已被免罚的记录保持免罚
         record.fine_amount = Decimal("0")
-    elif policy.first_free and is_first_overdue(
-        db, record.child_id, exclude_id=record.id
-    ):
-        record.fine_amount = Decimal("0")
-        record.fine_waived = 1
+    elif policy.first_free:
+        # F-047：child 行锁串行化首次免罚判定——并发两条记录同时处理同一孩子时，
+        # 第二个会看到第一个已写 fine_waived=1 → 不再免罚（防双免）
+        from backend.domain.child.models import Child
+
+        child = (
+            db.query(Child)
+            .filter(Child.id == record.child_id, Child.is_deleted == 0)
+            .with_for_update()
+            .first()
+        )
+        if child and is_first_overdue(
+            db,
+            record.child_id,
+            exclude_id=record.id,
+            grace_days=policy.grace_days,
+        ):
+            record.fine_amount = Decimal("0")
+            record.fine_waived = 1
+        else:
+            record.fine_amount = fine
     else:
         record.fine_amount = fine
 
