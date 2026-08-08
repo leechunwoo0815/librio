@@ -6,7 +6,7 @@ import secrets
 from decimal import Decimal
 
 from sqlalchemy import func, or_
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, contains_eager, joinedload
 
 from backend.common.base_repo import BaseRepository
 from backend.common.exceptions import NotFoundError, ValidationError
@@ -155,7 +155,12 @@ class AdminUserService:
         self, limit: int = 500, child_ids: list[int] | None = None
     ) -> list[dict]:
         """获取孩子列表 — 借还场景下拉框专用"""
-        query = self.db.query(Child).filter(Child.is_deleted == 0)
+        # F-025：joinedload(Child.user) 消除每行一次 User 懒加载（limit 500/1000 时 N+1）
+        query = (
+            self.db.query(Child)
+            .options(joinedload(Child.user))
+            .filter(Child.is_deleted == 0)
+        )
         if child_ids is not None:
             if not child_ids:
                 return []
@@ -201,6 +206,7 @@ class AdminUserService:
         q = (
             self.db.query(Child)
             .join(User, Child.user_id == User.id)
+            .options(contains_eager(Child.user))  # F-025：join 已带 User 列，禁止二次懒加载
             .filter(
                 Child.is_deleted == 0,
                 or_(

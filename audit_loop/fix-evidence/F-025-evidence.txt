@@ -1,0 +1,10 @@
+F-025 N+1 修复 — 2026-08-08
+报告定位: user_service.py list_children/search_children 循环访问 child.user（懒加载）
+同类漏改枚举（模式1 纪律）: AdminBorrowService.list_children/search_children 同构 2 处
+  （借还下拉真实入口，报告漏记）——一并修复
+修复: joinedload(Child.user)（list）/ contains_eager(Child.user)（search 已 join）
+测试: test_admin_list_children_no_n_plus_one —— SQL 计数守护（expunge_all 防 identity map
+  缓存假绿；正则 \bFROM\s+user\b 匹配换行缩进；排除 JOIN）
+  教训: 初版监听器把 SQLAlchemy 2.x 事件首参 conn 当 statement 导致恒真假绿；
+  空格匹配被 \n 缩进破坏——两处均为测试设计陷阱，已修正
+RED→GREEN: 移除 joinedload → 1 failed；恢复 → 1 passed

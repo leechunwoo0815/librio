@@ -263,6 +263,58 @@ def test_admin_list_children_empty_input(db):
     assert result == []
 
 
+def test_admin_list_children_no_n_plus_one(db):
+    """F-025：list/search 孩子不得对 User 表逐行懒加载（joinedload/contains_eager）"""
+    from sqlalchemy import event
+    from backend.domain.admin.services.borrow_service import AdminBorrowService
+    from backend.domain.admin.services.user_service import AdminUserService
+
+    user = User(openid="parent-n1", phone="13800138002")
+    db.add(user)
+    db.flush()
+    for i in range(3):
+        db.add(
+            Child(
+                user_id=user.id,
+                name=f"N1-孩子{i}",
+                age=5 + i,
+                grade="大班",
+            )
+        )
+    db.commit()
+
+    user_table_queries = []
+
+    def _count(conn, cursor, statement, parameters, context, executemany):
+        import re
+
+        text = str(statement)
+        # 只计独立 SELECT FROM user（懒加载）；JOIN user 属于合并查询，不算
+        if (
+            text.upper().startswith("SELECT")
+            and re.search(r"\bFROM\s+user\b", text, re.IGNORECASE)
+            and " JOIN " not in text.upper()
+        ):
+            user_table_queries.append(text)
+
+    event.listen(db.get_bind(), "before_cursor_execute", _count)
+    try:
+        # 模拟真实 HTTP 请求：每个请求全新 session，identity map 为空，
+        # 否则 User 实例仍在 map 中会掩盖懒加载（F-025 守护必须防缓存假绿）
+        db.expunge_all()
+        borrow_svc = AdminBorrowService(db)
+        assert len(borrow_svc.list_children(limit=10)) == 3
+        assert len(borrow_svc.search_children("N1")) == 3
+        user_svc = AdminUserService(db)
+        assert len(user_svc.list_children(limit=10)) == 3
+        assert len(user_svc.search_children("N1")) == 3
+    finally:
+        event.remove(db.get_bind(), "before_cursor_execute", _count)
+
+    # 4 个入口全程不得出现独立 User 表查询（join 合并到一条 SQL，无逐行 SELECT user）
+    assert user_table_queries == [], f"N+1 泄漏: {user_table_queries}"
+
+
 def test_overdue_reminders_batch_loading(db):
     from backend.domain.admin.services.message_service import AdminMessageService
     from backend.domain.admin.services.system_service import AdminSystemService

@@ -2,7 +2,7 @@
 """管理端借阅/押金/预约 Service — 从 AdminService 拆分出来的独立域服务。"""
 
 from sqlalchemy import func, or_
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, contains_eager, joinedload
 
 from backend.common.exceptions import NotFoundError
 from backend.common.sql_utils import escape_like
@@ -319,7 +319,12 @@ class AdminBorrowService:
         self, limit: int = 500, child_ids: list[int] | None = None
     ) -> list[dict]:
         """列出所有可用孩子 — 用于扫码借还下拉框"""
-        query = self.db.query(Child).filter(Child.is_deleted == 0)
+        # F-025：joinedload(Child.user) 消除每行 User 懒加载（借还下拉 limit 500 时 N+1）
+        query = (
+            self.db.query(Child)
+            .options(joinedload(Child.user))
+            .filter(Child.is_deleted == 0)
+        )
         if child_ids is not None:
             if not child_ids:
                 return []
@@ -336,6 +341,7 @@ class AdminBorrowService:
         q = (
             self.db.query(Child)
             .join(User, Child.user_id == User.id)
+            .options(contains_eager(Child.user))  # F-025：join 已带 User 列，禁止二次懒加载
             .filter(
                 Child.is_deleted == 0,
                 or_(
