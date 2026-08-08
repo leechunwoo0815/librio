@@ -1,7 +1,7 @@
 # DmkWords (librio) 项目检查点
 
 > 更新时间：2026-08-05 GMT+8 (v13)
-> 状态：✅ V3.23 — 52 题需求决策 + 四轮外部审查全闭环 + 终极全量审查 P0/P1 全部修复 + P2/P3 大部（F1-F14 + F35-F56 + F54/F76/F77/F78 + F48-F50/F58-F60/F62/F64-F68/F71部分/F74/F75/F25/F21/F28/F22/F26/F31/F32/F69 + streak 自然日 + 部分退款回调分发 + 订阅消息管线 + 搜索转义/缴款单清理/状态筛选 + F15/F16/F23/F18/F17-FAQ 可推进 P3 批）+ 730 pytest collected（开发机 730 passed，通过数随环境）/ 211/1369 behave + 56 表 + 66 配置 + 24 定时任务 + CI 同构十一关全绿（含 Gate 11）
+> 状态：✅ V3.23 — 52 题需求决策 + 四轮外部审查全闭环 + 终极全量审查 P0/P1 全部修复 + P2/P3 大部（F1-F14 + F35-F56 + F54/F76/F77/F78 + F48-F50/F58-F60/F62/F64-F68/F71部分/F74/F75/F25/F21/F28/F22/F26/F31/F32/F69 + streak 自然日 + 部分退款回调分发 + 订阅消息管线 + 搜索转义/缴款单清理/状态筛选 + F15/F16/F23/F18/F17-FAQ 可推进 P3 批）+ 756 pytest collected（开发机 756 passed，通过数随环境）/ 211/1369 behave + 56 表 + 66 配置 + 24 定时任务 + CI 同构十一关全绿（含 Gate 11）+ 审查批次 1（F-001/002/003/004/023/024/046/053/077/080/084/089 全修）
 
 ---
 
@@ -26,7 +26,7 @@ DmkWords 是一个儿童英语阅读管理平台：
 
 | 检查项 | 状态 |
 |--------|------|
-| pytest | ✅ 730 collected（开发机 730 passed；CI sqlite 708 + 15 skipped；无 MySQL 沙箱 714 passed + 9 failed） |
+| pytest | ✅ 756 collected（开发机 756 passed；CI sqlite 708 + 15 skipped；无 MySQL 沙箱 714 passed + 9 failed） |
 | behave | ✅ 211 scenarios / 1369 steps（无 MySQL 沙箱 171 passed + 40 error / 0 failed） |
 | ruff check `backend/ tests/` | ✅ 0 errors |
 | ruff check `features/ scripts/` | ✅ 0 errors |

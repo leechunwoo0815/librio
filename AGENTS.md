@@ -94,7 +94,7 @@
 
 ## 验证与环境口径（librio）
 
-- pytest 通过数随环境（开发机 730 passed / CI 708+15 skip / 无 MySQL 沙箱 714+9 err）；
+- pytest 通过数随环境（开发机 756 passed / CI 708+15 skip / 无 MySQL 沙箱 714+9 err）；
   "全绿"结论限定开发机。
 - with_for_update 在 SQLite 为 no-op：并发验证用 `scripts/verify_mysql_concurrency.py`
   （独立测试库，MySQL 实测）。
