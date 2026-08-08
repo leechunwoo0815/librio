@@ -52,7 +52,7 @@ class EnrollmentActionResponse(BaseSchema):
     """取消/签到响应（F-010）"""
 
     id: int
-    status: str
+    status: int
 
 
 class EnrollmentItemResponse(BaseSchema):
@@ -64,7 +64,7 @@ class EnrollmentItemResponse(BaseSchema):
     english_name: str = ""
     parent_name: str | None = None
     parent_phone: str | None = None
-    status: str
+    status: int
     ticket_code: str
     checked_in: bool
     sign_in_time: str | None = None
