@@ -91,8 +91,9 @@ class TestF077PhoneOccupied:
         )
 
         resp = asyncio.run(
-            wx_login(UserLogin(code="wx-code", phone_code="wx-phone-code"),
-                     UserService(db))
+            wx_login(
+                UserLogin(code="wx-code", phone_code="wx-phone-code"), UserService(db)
+            )
         )
 
         # B 拿到的是 B 自己的 openid 用户 token，绝非 A
@@ -123,8 +124,9 @@ class TestF077PhoneOccupied:
         )
 
         resp = asyncio.run(
-            wx_login(UserLogin(code="wx-code", phone_code="wx-phone-code"),
-                     UserService(db))
+            wx_login(
+                UserLogin(code="wx-code", phone_code="wx-phone-code"), UserService(db)
+            )
         )
 
         assert resp.phone_occupied is False

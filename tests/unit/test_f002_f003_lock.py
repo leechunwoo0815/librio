@@ -6,7 +6,7 @@ F-003：_mark_paid_member_ever 写 user.paid_member_ever 加行锁（并发双�
 并发串行化与 D/E/F 场景同模式（verify_mysql_concurrency.py），本项验证行为不变。
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime
 from decimal import Decimal
 
 import pytest
@@ -76,7 +76,9 @@ class TestF002RollbackLock:
         db.add(refund)
         db.commit()
 
-        RefundService._rollback_refund_failure(db, refund.id, order.order_no, "测试失败")
+        RefundService._rollback_refund_failure(
+            db, refund.id, order.order_no, "测试失败"
+        )
         db.refresh(order)
         db.refresh(refund)
         assert order.refund_status == 3  # FAILED

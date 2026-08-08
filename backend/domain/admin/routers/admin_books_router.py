@@ -379,7 +379,9 @@ def complete_upload(
 
 @router.get("/upload/status/{upload_id}", response_model=AdminActionResponse)
 def upload_status(
-    upload_id: str = FastAPIPath(..., pattern=r"^[a-zA-Z0-9_-]{8,64}$"),  # F-023：防路径遍历
+    upload_id: str = FastAPIPath(
+        ..., pattern=r"^[a-zA-Z0-9_-]{8,64}$"
+    ),  # F-023：防路径遍历
     service: AdminUploadService = Depends(get_admin_upload_service),
     admin=Depends(require_perm("upload.manage")),
 ):

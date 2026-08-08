@@ -55,7 +55,9 @@ def _mk_book_and_borrow(db, total=2):
     )
     db.add(book)
     db.flush()
-    copy = BookCopy(book_id=book.id, barcode=f"BK-{abs(hash('f001c')) % 10**8}", status=0)
+    copy = BookCopy(
+        book_id=book.id, barcode=f"BK-{abs(hash('f001c')) % 10**8}", status=0
+    )
     db.add(copy)
     db.flush()
     br = BorrowRecord(

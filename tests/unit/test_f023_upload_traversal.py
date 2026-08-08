@@ -33,7 +33,9 @@ class TestF023UploadTraversal:
         )
         svc = UploadService()
         with pytest.raises(ValidationError, match="10MB"):
-            svc.save_chunk("valid-upload-id-0001", 0, 1, "a.pdf", b"x" * (10 * 1024 * 1024 + 1))
+            svc.save_chunk(
+                "valid-upload-id-0001", 0, 1, "a.pdf", b"x" * (10 * 1024 * 1024 + 1)
+            )
 
     def test_normal_upload_works(self, monkeypatch, tmp_path):
         chunks = tmp_path / "_chunks"

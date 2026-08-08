@@ -51,7 +51,9 @@ def main():
     results.append(("A 预约并发超卖（行锁）", _scenario_reservation_oversell(Session)))
     results.append(("B 副本并发双借（行锁）", _scenario_borrow_dedup(Session)))
     results.append(("C 押金活跃唯一索引（DB 兜底）", _scenario_deposit_unique(Session)))
-    results.append(("D 损坏报告并发双确认（行锁）", _scenario_damage_double_confirm(Session)))
+    results.append(
+        ("D 损坏报告并发双确认（行锁）", _scenario_damage_double_confirm(Session))
+    )
     results.append(("E 取消订单 vs 支付（行锁）", _scenario_cancel_vs_paid(Session)))
     results.append(("F 库存并发双报损（行锁）", _scenario_stock_double_lost(Session)))
     results.append(("G 缓冲期关停 vs 续费（行锁）", _scenario_grace_vs_renew(Session)))
@@ -342,10 +344,7 @@ def _scenario_damage_double_confirm(Session):
             sess.close()
 
     for rid in report_ids:
-        threads = [
-            threading.Thread(target=try_confirm, args=(rid, a))
-            for a in (1, 2)
-        ]
+        threads = [threading.Thread(target=try_confirm, args=(rid, a)) for a in (1, 2)]
         for t in threads:
             t.start()
         for t in threads:
@@ -420,10 +419,7 @@ def _scenario_cancel_vs_paid(Session):
         sess = Session()
         try:
             order = (
-                sess.query(Order)
-                .filter(Order.id == order_id)
-                .with_for_update()
-                .first()
+                sess.query(Order).filter(Order.id == order_id).with_for_update().first()
             )
             order.pay_status = PayStatus.PAID
             order.pay_time = datetime.now()
@@ -541,7 +537,10 @@ def _scenario_stock_double_lost(Session):
     s.close()
 
     passed = total == 0
-    return passed, f"双报损后 total_stock={total}（应 0，丢失更新则 1），结果: {outcomes}"
+    return (
+        passed,
+        f"双报损后 total_stock={total}（应 0，丢失更新则 1），结果: {outcomes}",
+    )
 
 
 def _scenario_grace_vs_renew(Session):
@@ -574,12 +573,7 @@ def _scenario_grace_vs_renew(Session):
     def try_renew(cid):
         sess = Session()
         try:
-            child = (
-                sess.query(Child)
-                .filter(Child.id == cid)
-                .with_for_update()
-                .first()
-            )
+            child = sess.query(Child).filter(Child.id == cid).with_for_update().first()
             child.status = MemberStatus.OFFICIAL
             child.member_expire_time = datetime.now() + timedelta(days=365)
             sess.commit()

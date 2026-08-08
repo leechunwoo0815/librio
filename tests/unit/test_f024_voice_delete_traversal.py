@@ -5,8 +5,6 @@
 （deletion_service 同款防御已存在，file_utils 为同类漏改）。
 """
 
-import pytest
-
 from backend.common.file_utils import delete_voice_files
 
 
