@@ -58,7 +58,9 @@ def main():
     results.append(("F 库存并发双报损（行锁）", _scenario_stock_double_lost(Session)))
     results.append(("G 缓冲期关停 vs 续费（行锁）", _scenario_grace_vs_renew(Session)))
     results.append(("H 首次免罚并发（行锁）", _scenario_first_free_concurrent(Session)))
-    results.append(("I 活动并发双报（行锁）", _scenario_activity_double_enroll(Session)))
+    results.append(
+        ("I 活动并发双报（行锁）", _scenario_activity_double_enroll(Session))
+    )
 
     if "--keep" not in sys.argv:
         _cleanup(engine)

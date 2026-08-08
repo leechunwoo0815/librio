@@ -47,8 +47,6 @@ def _mk_user_child(db):
 class TestF030GatewayFailureKeepsPending:
     def test_pay_deposit_gateway_error_keeps_pending(self, db):
         """prepay 抛异常 → 记录保持 PENDING（保留回调窗口，F78 负责超时复位）"""
-        from backend.common.gateways.payment.types import PaymentOrderRequest
-
         user, child = _mk_user_child(db)
         gateway = MagicMock()
         gateway.create_order = AsyncMock(side_effect=RuntimeError("网络超时"))
@@ -62,9 +60,7 @@ class TestF030GatewayFailureKeepsPending:
                 )
             )
         record = (
-            db.query(DepositRecord)
-            .filter(DepositRecord.child_id == child.id)
-            .first()
+            db.query(DepositRecord).filter(DepositRecord.child_id == child.id).first()
         )
         assert record.status == DepositStatus.PENDING
 

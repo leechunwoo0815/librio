@@ -91,11 +91,7 @@ class TestF066FinePaymentReuse:
         req = DepositRefundRequest(child_id=child.id)
         asyncio.run(svc.pay_fines(req, gateway, current_user=user))
         asyncio.run(svc.pay_fines(req, gateway, current_user=user))
-        count = (
-            db.query(FinePayment)
-            .filter(FinePayment.child_id == child.id)
-            .count()
-        )
+        count = db.query(FinePayment).filter(FinePayment.child_id == child.id).count()
         assert count == 1  # 复用同一 PENDING 单（防双单）
 
 
@@ -214,9 +210,7 @@ class TestF107DamageReportDedup:
         db.add(br)
         db.commit()
         svc = DamageAdminService(db)
-        svc.create_report(
-            borrow_record_id=br.id, damage_level=1, description="第一次"
-        )
+        svc.create_report(borrow_record_id=br.id, damage_level=1, description="第一次")
         with pytest.raises(ValidationError, match="未终结"):
             svc.create_report(
                 borrow_record_id=br.id, damage_level=2, description="第二次"

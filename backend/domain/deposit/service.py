@@ -104,7 +104,9 @@ class DepositService:
         self.db.commit()
 
         # Phase 2: 事务外调用支付网关（无DB锁）
-        amount_cent = yuan_to_cents(deposit_amount)  # F-033：四舍五入到分（原 int 截断）
+        amount_cent = yuan_to_cents(
+            deposit_amount
+        )  # F-033：四舍五入到分（原 int 截断）
         order_req = PaymentOrderRequest(
             out_trade_no=order_no,
             amount=amount_cent,
@@ -268,7 +270,9 @@ class DepositService:
         self.db.commit()
 
         # Phase 2: 事务外调用支付网关（无DB锁）
-        amount_cent = yuan_to_cents(deposit_amount)  # F-033：四舍五入到分（原 int 截断）
+        amount_cent = yuan_to_cents(
+            deposit_amount
+        )  # F-033：四舍五入到分（原 int 截断）
         order_req = PaymentOrderRequest(
             out_trade_no=order_no,
             amount=amount_cent,

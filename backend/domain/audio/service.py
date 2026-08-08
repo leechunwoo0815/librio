@@ -215,7 +215,9 @@ class AudioService:
 
         # F-119：合并后的 book/page 查重（exclude 自身）
         new_book_id = data.book_id if data.book_id is not None else audio.book_id
-        new_page = data.page_number if data.page_number is not None else audio.page_number
+        new_page = (
+            data.page_number if data.page_number is not None else audio.page_number
+        )
         if new_book_id and self._find_dup_audio(
             new_book_id, new_page, exclude_id=audio.id
         ):

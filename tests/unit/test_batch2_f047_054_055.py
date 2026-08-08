@@ -99,8 +99,6 @@ class MagicMockGateway:
 class TestF055GraceDoesNotConsumeFree:
     def test_grace_period_overdue_keeps_free_quota(self, db):
         """宽限期内逾期（不产生罚款）不消耗首次免罚额度"""
-        from backend.common.fine_policy import calc_overdue_days
-
         child, records = _mk_child_with_records(db, n=2)
         policy = get_overdue_policy(db)  # grace_days=3
         # 第一条：宽限期内（overdue_days=2 ≤ grace=3）→ 0 罚款，不置 fine_waived

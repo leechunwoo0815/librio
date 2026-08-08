@@ -661,9 +661,7 @@ class OrderService:
                     "target_days": target_days,
                     "remaining_value": str(remaining_value),
                     "upgrade_price": str(
-                        upgrade_price.quantize(
-                            Decimal("0.01"), rounding=ROUND_HALF_UP
-                        )
+                        upgrade_price.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                     ),
                 }
             )

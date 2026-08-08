@@ -50,11 +50,18 @@ class TestF119AudioDedup:
         book = _mk_book(db)
         svc = AudioService(db)
         svc.create_audio(
-            AudioCreateRequest(filename="a.mp3", file_url="/u/a.mp3", book_id=book.id, page_number=1)
+            AudioCreateRequest(
+                filename="a.mp3", file_url="/u/a.mp3", book_id=book.id, page_number=1
+            )
         )
         with pytest.raises(ConflictError, match="已存在音频"):
             svc.create_audio(
-                AudioCreateRequest(filename="b.mp3", file_url="/u/b.mp3", book_id=book.id, page_number=1)
+                AudioCreateRequest(
+                    filename="b.mp3",
+                    file_url="/u/b.mp3",
+                    book_id=book.id,
+                    page_number=1,
+                )
             )
 
     def test_create_duplicate_null_page_rejected(self, db):
@@ -66,17 +73,23 @@ class TestF119AudioDedup:
         )
         with pytest.raises(ConflictError, match="已存在音频"):
             svc.create_audio(
-                AudioCreateRequest(filename="b.mp3", file_url="/u/b.mp3", book_id=book.id)
+                AudioCreateRequest(
+                    filename="b.mp3", file_url="/u/b.mp3", book_id=book.id
+                )
             )
 
     def test_update_to_duplicate_rejected(self, db):
         book = _mk_book(db)
         svc = AudioService(db)
         a1 = svc.create_audio(
-            AudioCreateRequest(filename="a.mp3", file_url="/u/a.mp3", book_id=book.id, page_number=1)
+            AudioCreateRequest(
+                filename="a.mp3", file_url="/u/a.mp3", book_id=book.id, page_number=1
+            )
         )
         svc.create_audio(
-            AudioCreateRequest(filename="b.mp3", file_url="/u/b.mp3", book_id=book.id, page_number=2)
+            AudioCreateRequest(
+                filename="b.mp3", file_url="/u/b.mp3", book_id=book.id, page_number=2
+            )
         )
         with pytest.raises(ConflictError, match="已存在音频"):
             svc.update_audio(
@@ -88,14 +101,14 @@ class TestF119AudioDedup:
         book = _mk_book(db)
         svc = AudioService(db)
         svc.create_audio(
-            AudioCreateRequest(filename="a.mp3", file_url="/u/a.mp3", book_id=book.id, page_number=1)
+            AudioCreateRequest(
+                filename="a.mp3", file_url="/u/a.mp3", book_id=book.id, page_number=1
+            )
         )
         svc.create_audio(
-            AudioCreateRequest(filename="b.mp3", file_url="/u/b.mp3", book_id=book.id, page_number=2)
+            AudioCreateRequest(
+                filename="b.mp3", file_url="/u/b.mp3", book_id=book.id, page_number=2
+            )
         )
-        count = (
-            db.query(AudioFile)
-            .filter(AudioFile.book_id == book.id)
-            .count()
-        )
+        count = db.query(AudioFile).filter(AudioFile.book_id == book.id).count()
         assert count == 2

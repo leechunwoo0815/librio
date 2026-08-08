@@ -6,6 +6,7 @@
   后续被属性赋值（obj.field = x），则列为可疑（可能缺行锁）。
 - 只报不修；输出用于人工核对。SQLite 下行锁为 no-op，结论需 MySQL 实证。
 """
+
 from __future__ import annotations
 
 import re
@@ -16,12 +17,16 @@ ROOT = Path(__file__).resolve().parent.parent
 SCAN_DIRS = [ROOT / "backend" / "domain"]
 SKIP_DIRS = {"__pycache__"}
 
-QUERY_RE = re.compile(r"\b(db|self\.db)\.query\(.*?\)\.filter\(.*?\.(first|one|all)\(\)")
+QUERY_RE = re.compile(
+    r"\b(db|self\.db)\.query\(.*?\)\.filter\(.*?\.(first|one|all)\(\)"
+)
 FOR_UPDATE_RE = re.compile(r"with_for_update")
 ATTR_ASSIGN_RE = re.compile(r"^\s{4,}(\w+)\.([a-zA-Z_]\w*)\s*=")
 
 # 通过 db 直连查询返回的变量名（保守：仅 first/one，all 列表不跟踪）
-RESULT_CALLS = re.compile(r"(\w+)\s*=\s*(self\.)?db\.query\(.*?\)\.filter\(.*?\.(first|one)\(\)")
+RESULT_CALLS = re.compile(
+    r"(\w+)\s*=\s*(self\.)?db\.query\(.*?\)\.filter\(.*?\.(first|one)\(\)"
+)
 
 
 def scan_file(path: Path) -> list[dict]:
