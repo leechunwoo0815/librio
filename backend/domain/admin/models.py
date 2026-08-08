@@ -110,8 +110,8 @@ class SystemConfig(BaseModel):
         "observation_days": ("45", "int", "观察期天数（A3决策：45天）"),
         "member_days": ("365", "int", "正式会员有效期（天）"),
         "member_grace_days": ("15", "int", "会员到期缓冲天数"),
-        "renewal_discount": ("0.9", "string", "缓冲期内续费折扣"),
-        "multi_child_discount": ("0.9", "string", "第2孩起折扣"),
+        "renewal_discount": ("0.9", "decimal", "缓冲期内续费折扣"),
+        "multi_child_discount": ("0.9", "decimal", "第2孩起折扣"),
         "refund_free_days": (
             "7",
             "int",
@@ -132,10 +132,10 @@ class SystemConfig(BaseModel):
         "borrow_period_days": ("21", "int", "单次借阅期限（天）"),
         "due_remind_days": (
             "5,3,1,0",
-            "string",
+            "list",
             "到期前提醒天数列表（逗号分隔，0=当天）",
         ),
-        "overdue_fine_per_day": ("1", "int", "逾期服务费（元/天，B7决策措辞）"),
+        "overdue_fine_per_day": ("1", "decimal", "逾期服务费（元/天，B7决策措辞）"),
         "overdue_grace_days": (
             "3",
             "int",
@@ -143,7 +143,7 @@ class SystemConfig(BaseModel):
         ),
         "overdue_fine_cap_ratio": (
             "0.5",
-            "string",
+            "decimal",
             "单本逾期服务费上限比例（B7决策：≤图书定价×比例）",
         ),
         "first_overdue_free": (
@@ -151,7 +151,7 @@ class SystemConfig(BaseModel):
             "bool",
             "每孩子首次逾期免罚（B7决策：培养习惯优先）",
         ),
-        "lost_book_fine_multiplier": ("1.5", "string", "丢书罚款倍率（图书定价×倍率）"),
+        "lost_book_fine_multiplier": ("1.5", "decimal", "丢书罚款倍率（图书定价×倍率）"),
         "lost_search_days": (
             "7",
             "int",
@@ -163,7 +163,7 @@ class SystemConfig(BaseModel):
             "损坏定责双人复核（B9：重度/丢失财务效应需第二管理员复核）",
         ),
         # ── 押金 ──
-        "deposit_amount": ("1200", "int", "押金金额（元）"),
+        "deposit_amount": ("1200", "decimal", "押金金额（元）"),
         "deposit_refund_auto_approve": (
             "true",
             "bool",
@@ -171,7 +171,7 @@ class SystemConfig(BaseModel):
         ),
         "deposit_partial_refund_amount": (
             "600",
-            "int",
+            "decimal",
             "押金减半退还金额（A2：借满N本无逾期可退，元）",
         ),
         "deposit_partial_refund_books": (
@@ -181,7 +181,7 @@ class SystemConfig(BaseModel):
         ),
         "refund_auto_approve_max": (
             "500",
-            "int",
+            "decimal",
             "退款自动审核通过金额上限（E1决策：≤N元自动通过，元）",
         ),
         "review_sla_hours": (
@@ -207,7 +207,7 @@ class SystemConfig(BaseModel):
             "int",
             "每级默认需读完书数（预留，当前读取 Level.required_books 字段）",
         ),
-        "quiz_pass_rate": ("0.80", "string", "测验最低通过率（每本书5题答对4题=80%）"),
+        "quiz_pass_rate": ("0.80", "decimal", "测验最低通过率（每本书5题答对4题=80%）"),
         "quiz_total_questions": ("5", "int", "每本书测验默认题数"),
         "quiz_pass_count": (
             "5",
@@ -275,14 +275,14 @@ class SystemConfig(BaseModel):
         "order_expire_minutes": ("30", "int", "订单未支付自动关闭时间（分钟）"),
         "amount_override_alert_ratio": (
             "0.5",
-            "string",
+            "decimal",
             "代客下单/线下建单金额覆盖偏离系统价告警阈值（F11：|实收-系统|/系统 > 阈值即告警）",
         ),
-        "price_parent_course": ("99", "string", "亲子课价格（元）"),
-        "price_observation": ("500", "string", "观察期价格（元）"),
-        "price_official_member": ("5400", "string", "正式会员年费（元）"),
-        "price_quarterly": ("1350", "string", "季度会员价格（元）"),
-        "price_semi_annual": ("2700", "string", "半年会员价格（元）"),
+        "price_parent_course": ("99", "decimal", "亲子课价格（元）"),
+        "price_observation": ("500", "decimal", "观察期价格（元）"),
+        "price_official_member": ("5400", "decimal", "正式会员年费（元）"),
+        "price_quarterly": ("1350", "decimal", "季度会员价格（元）"),
+        "price_semi_annual": ("2700", "decimal", "半年会员价格（元）"),
         "original_price_parent_course": (
             "199",
             "int",
@@ -300,10 +300,10 @@ class SystemConfig(BaseModel):
         # ── 通知 ──
         "member_expire_remind_days": (
             "30,15,7,3,2,1,0",
-            "string",
+            "list",
             "会员到期提醒天数列表",
         ),
-        "observation_remind_days": ("7,5,3,2,1,0", "string", "观察期到期提醒天数列表"),
+        "observation_remind_days": ("7,5,3,2,1,0", "list", "观察期到期提醒天数列表"),
         # ── 数据保留（H5 隐私合规，单位见各键说明）──
         "data_retention_finance_years": (
             "5",

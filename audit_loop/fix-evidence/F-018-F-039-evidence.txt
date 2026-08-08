@@ -1,0 +1,16 @@
+F-018/F-039 DEFAULTS 类型元数据对齐 — 2026-08-08
+独立验证: 自写 AST+正则扫描全部 66 键的 get_* 消费方法（多行调用），确认 13 键漂移
+  与报告完全一致（F-018: due_remind_days/overdue_fine_per_day/overdue_fine_cap_ratio/
+  quiz_pass_rate；F-039: amount_override_alert_ratio/multi_child_discount/renewal_discount/
+  lost_book_fine_multiplier/deposit_amount/deposit_partial_refund_amount/
+  refund_auto_approve_max/member_expire_remind_days/observation_remind_days）
+同类漏改新发现: price_parent_course/price_observation/price_official_member/
+  price_quarterly/price_semi_annual 同为 string 声明 + get_decimal 消费
+  （旧报告漏记：消费端 key 为变量，行内扫描抓不到）——本次一并修正为 decimal
+修复: 18 键 DEFAULTS 类型声明对齐（list×3 / decimal×15）
+验证:
+  - 修复后全量扫描漂移数 0
+  - PYTHONPATH=. venv/bin/python scripts/gen_config_doc.py → 66 项重新生成
+  - gen_config_doc.py --check → OK（文档与 DEFAULTS 一致）
+  - pytest test_advancement_integration/test_final_audit_p2/test_review_sla_config: 17 passed
+  - admin get_all_configs 的 type 字段从 DEFAULTS 读，自动跟随修正（settings.js 不读 type）
