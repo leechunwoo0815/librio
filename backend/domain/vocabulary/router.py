@@ -18,6 +18,7 @@ from backend.domain.vocabulary.schemas import (
     AddVocabRequest,
     VocabResponse,
     VocabStatsResponse,
+    VocabMasterResponse,
 )
 from backend.domain.vocabulary.service import VocabularyService
 
@@ -61,7 +62,7 @@ def add_to_vocabulary(
     return service.add_to_vocabulary(child_id, word=data.word, book_id=data.book_id)
 
 
-@router.put("/{vocab_id}/master")
+@router.put("/{vocab_id}/master", response_model=VocabMasterResponse)
 def mark_mastered(
     service: VocabularyService = Depends(get_vocabulary_service),
     result=Depends(GetOwnedVocab()),

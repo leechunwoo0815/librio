@@ -34,3 +34,30 @@ class ReservationResponse(BaseSchema):
     create_time: datetime
     book_title: str | None = None
     book_cover: str | None = None
+
+
+class WaitlistJoinResponse(BaseSchema):
+    """加入等候名单响应（F-010）"""
+
+    success: bool
+    waitlist_id: int
+    message: str
+
+
+class WaitlistEntryResponse(BaseSchema):
+    """等候名单条目（F-010）"""
+
+    id: int
+    book_id: int
+    book_title: str | None = None
+    book_cover: str | None = None
+    status: int
+    notify_time: str | None = None
+    create_time: str | None = None
+
+
+class WaitlistActionResponse(BaseSchema):
+    """候补操作通用响应（F-010）"""
+
+    success: bool
+    message: str

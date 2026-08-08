@@ -65,6 +65,14 @@ class RefundPreviewResponse(BaseSchema):
     total_days: int = 0
 
 
+class PayParamsResponse(BaseSchema):
+    """订单支付参数（F-010，A5 门店收款码）"""
+
+    order_no: str
+    amount: str
+    pay_params: dict
+
+
 OrderListResponse = PaginatedResponse[OrderResponse]
 
 

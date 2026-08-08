@@ -42,3 +42,21 @@ class DepositResponse(BaseSchema):
 class DepositPayResponse(BaseSchema):
     deposit: DepositResponse
     pay_params: dict
+
+
+class DepositStatusResponse(BaseSchema):
+    """押金状态查询（F-010）"""
+
+    status: int
+    amount: str
+    fine: str
+    paid_at: str | None = None
+    message: str | None = None
+
+
+class FinePayResponse(BaseSchema):
+    """线上缴罚款响应（F-010）"""
+
+    fine_payment_id: int
+    amount: str
+    pay_params: dict

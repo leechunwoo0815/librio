@@ -5,7 +5,11 @@ from fastapi import APIRouter, Depends, Query
 
 from backend.common.dependencies import get_message_service
 from backend.middleware.auth import get_current_user
-from backend.domain.message.schemas import MessageListResponse
+from backend.domain.message.schemas import (
+    MessageListResponse,
+    MessageReadResponse,
+    MessageReadAllResponse,
+)
 from backend.domain.message.service import MessageService
 
 router = APIRouter(prefix="/message", tags=["消息"])
@@ -23,7 +27,7 @@ def get_messages(
     return service.get_user_messages(current_user.id, msg_type, page, page_size)
 
 
-@router.put("/{message_id}/read")
+@router.put("/{message_id}/read", response_model=MessageReadResponse)
 def mark_read(
     message_id: int,
     service: MessageService = Depends(get_message_service),
@@ -34,7 +38,7 @@ def mark_read(
     return {"success": ok}
 
 
-@router.put("/read-all")
+@router.put("/read-all", response_model=MessageReadAllResponse)
 def mark_all_read(
     service: MessageService = Depends(get_message_service),
     current_user=Depends(get_current_user),

@@ -53,3 +53,10 @@ class VocabStatsResponse(BaseSchema):
     learning: int
     mastered: int
     total: int
+
+
+class VocabMasterResponse(BaseSchema):
+    """标记掌握响应（F-010）"""
+
+    id: int
+    status: str

@@ -8,6 +8,10 @@ from backend.domain.activity.schemas import (
     ActivityResponse,
     ActivityEnrollRequest,
     BatchCheckinRequest,
+    ActivityEnrollResponse,
+    EnrollmentActionResponse,
+    EnrollmentItemResponse,
+    BatchCheckinResponse,
 )
 from backend.domain.activity.service import ActivityService
 from backend.middleware.admin_rbac import require_perm
@@ -38,7 +42,7 @@ def get_activity(
     return service.get_activity(activity_id, child_id=child_id)
 
 
-@router.post("/enroll", status_code=201)
+@router.post("/enroll", response_model=ActivityEnrollResponse, status_code=201)
 def enroll(
     data: ActivityEnrollRequest,
     service: ActivityService = Depends(get_activity_service),
@@ -47,7 +51,9 @@ def enroll(
     return service.enroll(data)
 
 
-@router.put("/enroll/{enrollment_id}/cancel")
+@router.put(
+    "/enroll/{enrollment_id}/cancel", response_model=EnrollmentActionResponse
+)
 def cancel_enrollment(
     service: ActivityService = Depends(get_activity_service),
     result=Depends(GetOwnedEnrollment()),
@@ -56,7 +62,9 @@ def cancel_enrollment(
     return service.cancel_enrollment(enrollment.id)
 
 
-@router.put("/enroll/{enrollment_id}/sign-in")
+@router.put(
+    "/enroll/{enrollment_id}/sign-in", response_model=EnrollmentActionResponse
+)
 def sign_in(
     service: ActivityService = Depends(get_activity_service),
     result=Depends(GetOwnedEnrollment()),
@@ -65,7 +73,9 @@ def sign_in(
     return service.sign_in(enrollment.id)
 
 
-@router.get("/{activity_id}/enrollments")
+@router.get(
+    "/{activity_id}/enrollments", response_model=list[EnrollmentItemResponse]
+)
 def get_enrollments(
     activity_id: int,
     service: ActivityService = Depends(get_activity_service),
@@ -75,7 +85,7 @@ def get_enrollments(
     return service.get_enrollments(activity_id)
 
 
-@router.post("/{activity_id}/checkin")
+@router.post("/{activity_id}/checkin", response_model=BatchCheckinResponse)
 def batch_checkin(
     activity_id: int,
     data: BatchCheckinRequest,

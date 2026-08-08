@@ -39,3 +39,40 @@ class BatchCheckinRequest(BaseSchema):
 class ActivityEnrollRequest(BaseSchema):
     child_id: int = Field(..., description="孩子ID")
     activity_id: int = Field(..., description="活动ID")
+
+
+class ActivityEnrollResponse(BaseSchema):
+    """报名响应（F-010）"""
+
+    status: str
+    ticket_code: str
+
+
+class EnrollmentActionResponse(BaseSchema):
+    """取消/签到响应（F-010）"""
+
+    id: int
+    status: str
+
+
+class EnrollmentItemResponse(BaseSchema):
+    """活动报名列表项（F-010）"""
+
+    id: int
+    child_id: int
+    child_name: str
+    english_name: str = ""
+    parent_name: str | None = None
+    parent_phone: str | None = None
+    status: str
+    ticket_code: str
+    checked_in: bool
+    sign_in_time: str | None = None
+
+
+class BatchCheckinResponse(BaseSchema):
+    """批量签到响应（F-010）"""
+
+    signed_count: int
+    total: int
+    errors: list[dict] = Field(default_factory=list)

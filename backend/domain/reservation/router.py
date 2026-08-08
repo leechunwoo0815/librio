@@ -8,6 +8,9 @@ from backend.domain.reservation.schemas import (
     ReservationCreateRequest,
     ReservationFulfillRequest,
     ReservationResponse,
+    WaitlistJoinResponse,
+    WaitlistEntryResponse,
+    WaitlistActionResponse,
 )
 from backend.domain.reservation.service import ReservationService
 from backend.middleware.admin_rbac import require_perm
@@ -44,7 +47,9 @@ def get_child_reservations(
     return service.get_child_reservations(child.id)
 
 
-@router.post("/{reservation_id}/cancel")
+@router.post(
+    "/{reservation_id}/cancel", response_model=WaitlistActionResponse
+)
 def cancel_reservation(
     reservation_id: int,
     service: ReservationService = Depends(get_reservation_service),
@@ -56,7 +61,7 @@ def cancel_reservation(
 # ==================== F4 等候名单 ====================
 
 
-@router.post("/waitlist/join", status_code=201)
+@router.post("/waitlist/join", response_model=WaitlistJoinResponse, status_code=201)
 def join_waitlist(
     data: ReservationCreateRequest,
     service: ReservationService = Depends(get_reservation_service),
@@ -66,7 +71,9 @@ def join_waitlist(
     return service.join_waitlist(child.id, data.book_id)
 
 
-@router.get("/waitlist/{child_id}")
+@router.get(
+    "/waitlist/{child_id}", response_model=list[WaitlistEntryResponse]
+)
 def get_child_waitlist(
     child=Depends(GetOwnedChild()),
     service: ReservationService = Depends(get_reservation_service),
@@ -75,7 +82,9 @@ def get_child_waitlist(
     return service.get_child_waitlist(child.id)
 
 
-@router.post("/waitlist/{waitlist_id}/cancel")
+@router.post(
+    "/waitlist/{waitlist_id}/cancel", response_model=WaitlistActionResponse
+)
 def cancel_waitlist(
     waitlist_id: int,
     service: ReservationService = Depends(get_reservation_service),

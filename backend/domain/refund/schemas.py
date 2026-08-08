@@ -6,7 +6,7 @@ from decimal import Decimal
 
 from pydantic import Field
 
-from backend.common.base_schema import BaseSchema
+from backend.common.base_schema import BaseSchema, PaginatedResponse
 
 
 class RefundCreate(BaseSchema):
@@ -36,3 +36,6 @@ class RefundResponse(BaseSchema):
     actual_refund_amount: Decimal | None = None
     fine_deducted: Decimal = Decimal("0")  # E7：退款中抵扣的未缴罚款
     create_time: datetime
+
+
+RefundListResponse = PaginatedResponse[RefundResponse]

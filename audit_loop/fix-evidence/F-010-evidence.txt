@@ -1,0 +1,15 @@
+F-010 16 端点补 response_model — 2026-08-08
+新增 schema（各域 schemas.py）:
+  activity: ActivityEnrollResponse/EnrollmentActionResponse/EnrollmentItemResponse/
+            BatchCheckinResponse（errors 为 list[dict]）
+  deposit: DepositStatusResponse/FinePayResponse
+  order: PayParamsResponse
+  refund: RefundListResponse = PaginatedResponse[RefundResponse]
+  reservation: WaitlistJoinResponse/WaitlistEntryResponse/WaitlistActionResponse
+  message: MessageReadResponse/MessageReadAllResponse（实际返回 dict，非 bool/int）
+  vocabulary: VocabMasterResponse
+逐端点核对返回结构（enroll 双分支/enrollments 字段/get_my_refunds 分页/mark_read dict 等）
+守护测试: test_f010_response_models.py —— OpenAPI 断言 16 端点 200/201 有非空 JSON schema
+  教训: FastAPI 对无 response_model 的 dict 返回也生成 {} 默认契约——守护必须排除空 schema
+RED→GREEN: 移除 vocabulary master response_model → 1 failed；恢复 → 1 passed
+基线影响: F-029 新增 4 个管理端死信端点 → API 装饰器 332→336（批次末统一同步）

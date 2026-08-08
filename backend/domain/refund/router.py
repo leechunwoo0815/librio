@@ -13,7 +13,12 @@ from backend.common.gateways.payment import PaymentGateway
 from backend.middleware.admin_rbac import require_perm
 from backend.middleware.auth import get_current_user
 from backend.middleware.ownership import GetOwnedRefund
-from backend.domain.refund.schemas import RefundCreate, RefundAudit, RefundResponse
+from backend.domain.refund.schemas import (
+    RefundCreate,
+    RefundAudit,
+    RefundResponse,
+    RefundListResponse,
+)
 from backend.domain.refund.service import RefundService
 
 logger = logging.getLogger(__name__)
@@ -46,7 +51,7 @@ def apply_refund(
     return result
 
 
-@router.get("/")
+@router.get("/", response_model=RefundListResponse)
 def get_my_refunds(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),

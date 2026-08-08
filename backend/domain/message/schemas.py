@@ -24,3 +24,16 @@ class MessageListResponse(PaginatedResponse[MessageResponse]):
     """消息列表响应"""
 
     unread_count: int = 0
+
+
+class MessageReadResponse(BaseSchema):
+    """单条已读响应（F-010）"""
+
+    success: bool
+
+
+class MessageReadAllResponse(BaseSchema):
+    """全部已读响应（F-010）"""
+
+    success: bool
+    count: int

@@ -14,6 +14,8 @@ from backend.domain.deposit.schemas import (
     DepositDeductRequest,
     DepositPayResponse,
     DepositResponse,
+    DepositStatusResponse,
+    FinePayResponse,
 )
 from backend.domain.deposit.service import DepositService
 from backend.middleware.admin_rbac import require_perm
@@ -82,7 +84,7 @@ def deduct_deposit(
     return service.deduct_deposit(data)
 
 
-@router.get("/status")
+@router.get("/status", response_model=DepositStatusResponse)
 def get_deposit_status(
     child=Depends(GetOwnedChildFromQuery()),
     service: DepositService = Depends(get_deposit_service),
@@ -91,7 +93,7 @@ def get_deposit_status(
     return service.get_deposit_status(child.id)
 
 
-@router.post("/pay-fines")
+@router.post("/pay-fines", response_model=FinePayResponse)
 async def pay_fines(
     data: DepositRefundRequest,
     service: DepositService = Depends(get_deposit_service),

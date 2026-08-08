@@ -22,6 +22,7 @@ from backend.domain.order.schemas import (
     OrderListResponse,
     ProductTiersResponse,
     RefundPreviewResponse,
+    PayParamsResponse,
     TierInfo,
     TierFeature,
 )
@@ -258,7 +259,7 @@ async def payment_callback(
     return order_service.handle_payment_callback(callback)
 
 
-@router.get("/{order_id}/pay-params")
+@router.get("/{order_id}/pay-params", response_model=PayParamsResponse)
 async def get_pay_params(
     order_id: int,
     request: Request,
