@@ -469,16 +469,24 @@ class DamageAdminService:
         page_size: int = 20,
     ) -> dict:
         """查询损坏报告列表"""
+        from backend.domain.book.damage_schemas import DamageReportResponse
+
         query = self.db.query(BookDamageReport).filter(BookDamageReport.is_deleted == 0)
         if status is not None:
             query = query.filter(BookDamageReport.status == status)
         total = query.count()
-        items = (
+        reports = (
             query.order_by(BookDamageReport.create_time.desc())
             .offset((page - 1) * page_size)
             .limit(page_size)
             .all()
         )
+        # F-089：ORM 对象无法经 AdminActionResponse 序列化（PydanticSerializationError 500），
+        # 转 JSON dict（Decimal→str、datetime→ISO）
+        items = [
+            DamageReportResponse.model_validate(r).model_dump(mode="json")
+            for r in reports
+        ]
         return {"total": total, "items": items, "page": page, "page_size": page_size}
 
     def appeal(self, report_id: int, reason: str) -> BookDamageReport:

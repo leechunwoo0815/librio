@@ -1,0 +1,11 @@
+F-089 损坏报告列表序列化 500 RED→GREEN 证据
+===============================================
+
+[RED] 修复前（手动复现 + 测试）：
+PydanticSerializationError: Unable to serialize unknown type: BookDamageReport
+→ get_list 返回 ORM items，AdminActionResponse 序列化失败（管理端列表 500）
+
+[GREEN] 修复后（items 经 DamageReportResponse.model_dump(mode=json)）：
+test_get_list_response_serializable: 1 passed（fine_amount='100.00' 字符串化）
+
+[回归] damage 域：39 passed
