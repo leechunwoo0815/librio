@@ -321,7 +321,13 @@ class RefundService:
         供网关拒绝（success=False，F37）与异常两条路径共用。
         """
         try:
-            order = db.query(Order).filter(Order.order_no == order_no).first()
+            # F-002：回滚路径写 order.refund_status 必须行锁（与主流程/回调并发防覆盖）
+            order = (
+                db.query(Order)
+                .filter(Order.order_no == order_no)
+                .with_for_update()
+                .first()
+            )
             if order:
                 order.refund_status = 3  # FAILED
                 order.pay_status = PayStatus.PAID

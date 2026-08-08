@@ -1,0 +1,8 @@
+F-002/F-003 行锁修复证据
+==============================
+
+F-002: _rollback_refund_failure 的 order 查询加 with_for_update（与函数内 commit 同事务）
+F-003: _mark_paid_member_ever 的 user 查询加 with_for_update（回调主事务内）
+
+[单测] test_f002_f003_lock.py 2 passed（回滚置 FAILED/PENDING/告警；支付回调置 paid_member_ever=1）
+并发串行化与 D/E/F 场景同模式（verify_mysql_concurrency.py 已覆盖行锁模式族）

@@ -271,7 +271,13 @@ class OrderService:
             return
         from backend.domain.user.models import User
 
-        user = self.db.query(User).filter(User.id == order.user_id).first()
+        # F-003：快照写 user.paid_member_ever 必须行锁（并发双订单同事务防双写）
+        user = (
+            self.db.query(User)
+            .filter(User.id == order.user_id)
+            .with_for_update()
+            .first()
+        )
         if user and not user.paid_member_ever:
             user.paid_member_ever = 1
 
