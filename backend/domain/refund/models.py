@@ -65,5 +65,12 @@ class RefundApplication(BaseModel):
         default=0,
         comment="退款中抵扣的未缴罚款（E7/B11：先扣罚款再退余额）",
     )
+    stale_alerted = Column(
+        SmallInteger,
+        default=0,
+        server_default="0",
+        nullable=False,
+        comment="F-110：退款超时告警已发送标记（0=未告警 1=已告警，去重防轰炸）",
+    )
 
     order = relationship("Order", foreign_keys=[order_id])

@@ -226,6 +226,8 @@ class AdminMessageService:
                 priority=2,  # 高优先级
             )
             self.db.add(msg)
+            for r in records:
+                r.overdue_reminded = 1  # F-098：标记已提醒（同一逾期记录只提醒一次）
             sent_count += 1
 
         self.db.commit()

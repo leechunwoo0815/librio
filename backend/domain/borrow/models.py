@@ -69,6 +69,15 @@ class BorrowRecord(BaseModel):
     # 测评去重标记
     quiz_passed = Column(SmallInteger, default=0, comment="是否已通过测评: 0=否 1=是")
 
+    # F-098：逾期提醒去重标记（管理端手动触发，同一记录只提醒一次）
+    overdue_reminded = Column(
+        SmallInteger,
+        default=0,
+        server_default="0",
+        nullable=False,
+        comment="F-098：逾期提醒已发送标记（0=未提醒 1=已提醒）",
+    )
+
     # B9/B10 损坏丢失流程
     checkout_photos = Column(
         String(500),

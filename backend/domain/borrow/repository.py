@@ -51,6 +51,7 @@ class BorrowRecordRepository(BaseRepository[BorrowRecord]):
                 BorrowRecord.status.in_([BorrowStatus.BORROWING, BorrowStatus.OVERDUE]),
                 BorrowRecord.due_date < datetime.now(),
                 BorrowRecord.is_deleted == 0,
+                BorrowRecord.overdue_reminded == 0,  # F-098：已提醒过不再重复
             )
             .all()
         )

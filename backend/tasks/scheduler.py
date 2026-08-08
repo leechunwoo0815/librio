@@ -1077,6 +1077,7 @@ def remind_pending_submissions():
                 ReadingSubmission.status == ReadingSubmission.STATUS_PENDING,
                 ReadingSubmission.submitted_at < cutoff,
                 ReadingSubmission.is_deleted == 0,  # F-038：软删提交不提醒
+                ReadingSubmission.pending_reminded == 0,  # F-085：已提醒过不再重复
             )
             .all()
         )
@@ -1097,6 +1098,7 @@ def remind_pending_submissions():
                     msg_type=5,
                     priority=1,
                 )
+                s.pending_reminded = 1  # F-085：标记已提醒（同一提交只提醒一次）
             logger.warning(
                 f"STALE_SUBMISSION: id={s.id}, child={s.child_id}, book={s.book_id}"
             )
@@ -1129,6 +1131,7 @@ def alert_stale_refunds(db: Session | None = None):
                 RefundApplication.status == RefundApplication.STATUS_APPROVED,
                 RefundApplication.review_time < cutoff,
                 RefundApplication.is_deleted == 0,
+                RefundApplication.stale_alerted == 0,  # F-110：已告警过不再重复
             )
             .all()
         )
@@ -1148,6 +1151,7 @@ def alert_stale_refunds(db: Session | None = None):
                 msg_type=1,  # 系统通知
                 priority=2,
             )
+            r.stale_alerted = 1  # F-110：标记已告警（同一退款只告警一次）
 
         # F55：押金 REFUNDING 超时巡检——回退 REFUND_PENDING（可重试）+ 运营告警
         from backend.domain.deposit.models import DepositRecord

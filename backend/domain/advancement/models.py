@@ -95,6 +95,13 @@ class ReadingSubmission(BaseModel):
     )
     word_count = Column(Integer, default=0, comment="该本书的单词数（积分用）")
     reviewed_at = Column(DateTime, nullable=True, comment="审核时间")
+    pending_reminded = Column(
+        SmallInteger,
+        default=0,
+        server_default="0",
+        nullable=False,
+        comment="F-085：待审超时提醒已发送标记（0=未提醒 1=已提醒，去重防轰炸）",
+    )
 
 
 class QuestionBank(BaseModel):
