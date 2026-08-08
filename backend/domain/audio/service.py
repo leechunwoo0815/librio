@@ -120,6 +120,9 @@ class AudioService:
 
     def create_audio(self, data: AudioCreateRequest) -> AudioResponse:
         """创建音频"""
+        from backend.common.exceptions import ConflictError
+        from backend.domain.audio.models import AudioFile
+
         # 如果有 book_id，获取书名
         book_title = None
         page_label = "全文"
@@ -133,6 +136,9 @@ class AudioService:
             )
             if book:
                 book_title = book.title
+            # F-119：应用层查重——同书同页（或两者皆 NULL）音频唯一
+            if self._find_dup_audio(data.book_id, data.page_number):
+                raise ConflictError("该书该页已存在音频，请勿重复添加")
         if data.page_number:
             page_label = f"P{data.page_number}"
 
@@ -155,8 +161,27 @@ class AudioService:
 
         return self.get_audio(audio.id)
 
+    def _find_dup_audio(self, book_id, page_number, exclude_id=None):
+        """F-119：同书同页（或两者皆 NULL）查重——DB 唯一约束对 NULL 不生效，应用层为准"""
+        from backend.domain.audio.models import AudioFile
+
+        q = self.db.query(AudioFile).filter(
+            AudioFile.book_id == book_id,
+            AudioFile.is_deleted == 0,
+        )
+        if page_number is None:
+            q = q.filter(AudioFile.page_number.is_(None))
+        else:
+            q = q.filter(AudioFile.page_number == page_number)
+        if exclude_id is not None:
+            q = q.filter(AudioFile.id != exclude_id)
+        return q.first()
+
     def update_audio(self, audio_id: int, data: AudioUpdateRequest) -> AudioResponse:
         """更新音频"""
+        from backend.common.exceptions import ConflictError
+        from backend.domain.audio.models import AudioFile
+
         audio = (
             self.db.query(AudioFile)
             .filter(AudioFile.id == audio_id, AudioFile.is_deleted == 0)
@@ -187,6 +212,14 @@ class AudioService:
         if data.page_number is not None:
             audio.page_number = data.page_number
             audio.page_label = f"P{data.page_number}" if data.page_number else "全文"
+
+        # F-119：合并后的 book/page 查重（exclude 自身）
+        new_book_id = data.book_id if data.book_id is not None else audio.book_id
+        new_page = data.page_number if data.page_number is not None else audio.page_number
+        if new_book_id and self._find_dup_audio(
+            new_book_id, new_page, exclude_id=audio.id
+        ):
+            raise ConflictError("该书该页已存在音频，请勿重复关联")
 
         self.db.commit()
         return self.get_audio(audio_id)
