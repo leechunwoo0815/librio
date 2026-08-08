@@ -1,0 +1,17 @@
+F-050 会员时长快照（下单时冻结） — 2026-08-08
+原缺陷: 订单金额下单时冻结（_get_price），激活时长却回调时实时读 member_days/
+  observation_days——配置变更窗口（尤其迟到支付 CLOSED→PAID）导致旧价新时长
+修复:
+  1. Order.duration_days 快照列 + 迁移 053（b1c2d3e4f506）
+  2. 三处创建点落快照: create_order / create_upgrade_order / admin create_offline_order
+     （_duration_days_for_type: 观察期/年费读配置、季度/半年固定 90/180、亲子课 None）
+  3. handle_order_paid_for_child 激活以快照优先，NULL=存量订单配置兜底
+  4. calculate_refund total_days 同口径（退款与激活侧统一冻结时点）
+  5. OrderResponse 补 duration_days 字段
+验证:
+  - 本机 MySQL alembic upgrade head + check 无漂移（head=b1c2d3e4f506；
+    迁移注释与模型注释一度不一致→对齐后通过；开发库 ALTER 同步列注释）
+  - 测试 8 用例：三创建点快照/亲子课 None/升级单/线下单/配置变更后激活用快照/
+    存量订单配置兜底/退款 total_days 用快照
+  - 订单域回归 41 passed（test_models_order/enroll_dual_track/f7/refund/p0_batch3b）
+RED→GREEN: handler 忽略快照改回实时读配置 → 1 failed；恢复 → 8 passed

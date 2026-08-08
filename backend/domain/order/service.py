@@ -88,6 +88,23 @@ class OrderService:
 
         return ConfigService.get_int(self.db, "observation_days", 45)
 
+    def _duration_days_for_type(self, order_type: OrderType) -> int | None:
+        """F-050：下单时冻结时长快照（与金额冻结同一时点，防配置变更窗口错配）
+
+        观察期/年费读配置；季度/半年为产品固定 90/180；亲子课无会员时长返回 None。
+        """
+        from backend.common.config_service import ConfigService
+
+        if order_type == OrderType.OBSERVATION:
+            return ConfigService.get_int(self.db, "observation_days", 45)
+        if order_type == OrderType.OFFICIAL_MEMBER:
+            return ConfigService.get_int(self.db, "member_days", 365)
+        if order_type == OrderType.QUARTERLY:
+            return 90
+        if order_type == OrderType.SEMI_ANNUAL:
+            return 180
+        return None
+
     def _get_price(self, order_type: OrderType) -> Decimal:
         """从 ConfigService 读取价格，支持动态配置"""
         from backend.common.config_service import ConfigService
@@ -254,6 +271,7 @@ class OrderService:
             child_id=order_data.child_id,
             type=order_data.type,
             amount=final_amount,
+            duration_days=self._duration_days_for_type(order_data.type),  # F-050
             remark=order_data.remark,
             parent_course_time_id=order_data.slot_id,
             upgrade_deduct=upgrade_deduct,
@@ -696,6 +714,7 @@ class OrderService:
             child_id=child_id,
             type=target_type,
             amount=upgrade_amount,
+            duration_days=self._duration_days_for_type(target_type),  # F-050
             remark=f"升级差额（{OrderType(option['current_type']).name} → {OrderType(target_type).name}）",
         )
         created = self.order_repo.create(order)
@@ -730,11 +749,18 @@ class OrderService:
         # 从配置读取天数
         from backend.common.config_service import ConfigService
 
+        # F-050：退款 total_days 与激活侧统一用下单时冻结的快照（NULL=存量订单走配置兜底）
+        if order.duration_days:
+            total_days = int(order.duration_days)
+        else:
+            total_days = None
         obs_days = ConfigService.get_int(self.db, "observation_days", 45)
         member_days = ConfigService.get_int(self.db, "member_days", 365)
         free_days = ConfigService.get_int(self.db, "refund_free_days", 7)
 
-        if order.type == OrderType.OBSERVATION:
+        if total_days is not None:
+            pass
+        elif order.type == OrderType.OBSERVATION:
             total_days = obs_days
         elif order.type == OrderType.OFFICIAL_MEMBER:
             total_days = member_days

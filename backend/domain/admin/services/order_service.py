@@ -355,6 +355,9 @@ class AdminOrderService:
             child_id=child.id,
             type=data["order_type"],
             amount=data.get("amount") or 0,
+            duration_days=DomainOrderService(self.db)._duration_days_for_type(
+                data["order_type"]
+            ),  # F-050：线下建单同样冻结时长快照
             pay_status=PayStatus.PAID
             if data.get("amount") and data.get("pay_type")
             else PayStatus.PENDING,

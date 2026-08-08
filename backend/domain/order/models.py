@@ -75,6 +75,11 @@ class Order(BaseModel):
         nullable=False,
         comment="支付成功但会员未激活标记: 0=正常 1=待人工处理（F7 对账任务扫描）",
     )
+    duration_days = Column(
+        SmallInteger,
+        nullable=True,
+        comment="F-050 会员时长快照（下单时冻结：观察期/年费/季度/半年总天数，与金额同冻结时点）",
+    )
 
     remark = Column(String(255), nullable=True, comment="订单备注")
     upgrade_deduct = Column(

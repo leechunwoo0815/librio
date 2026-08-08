@@ -73,6 +73,18 @@ def handle_order_paid_for_child(event, db: Session):
 
     now = datetime.now()
 
+    # F-050：激活时长以下单时冻结快照为准（order.duration_days），NULL=存量订单配置兜底
+    from backend.domain.order.models import Order as OrderModel
+
+    paid_order = None
+    if event.order_id:
+        paid_order = (
+            db.query(OrderModel)
+            .filter(OrderModel.id == event.order_id, OrderModel.is_deleted == 0)
+            .first()
+        )
+    duration_days = paid_order.duration_days if paid_order else None
+
     if event.order_type in (
         OrderType.OFFICIAL_MEMBER,
         OrderType.QUARTERLY,
@@ -88,7 +100,9 @@ def handle_order_paid_for_child(event, db: Session):
             )
             return
         # 根据订单类型设置不同的到期时间
-        if event.order_type == OrderType.QUARTERLY:
+        if duration_days:
+            days = int(duration_days)
+        elif event.order_type == OrderType.QUARTERLY:
             days = 90
         elif event.order_type == OrderType.SEMI_ANNUAL:
             days = 180
@@ -99,11 +113,8 @@ def handle_order_paid_for_child(event, db: Session):
         # F16：升级/抵扣单（upgrade_deduct>0）差额已按剩余价值抵扣（A6），
         # 会员期重置起算，禁止"抵扣+叠加"双重受益；普通购买/续费仍叠加。
         is_upgrade = False
-        if event.order_id:
-            from backend.domain.order.models import Order
-
-            paid_order = db.query(Order).filter(Order.id == event.order_id).first()
-            is_upgrade = paid_order is not None and (paid_order.upgrade_deduct or 0) > 0
+        if paid_order is not None:
+            is_upgrade = (paid_order.upgrade_deduct or 0) > 0
         if is_upgrade:
             child.member_start_time = now
             child.member_expire_time = now + timedelta(days=days)
@@ -126,7 +137,11 @@ def handle_order_paid_for_child(event, db: Session):
                 db, event, f"status_not_allowed_for_observation({child.status})"
             )
             return
-        obs_days = ConfigService.get_int(db, "observation_days", 45)
+        obs_days = (
+            int(duration_days)
+            if duration_days
+            else ConfigService.get_int(db, "observation_days", 45)
+        )
         child.status = MemberStatus.OBSERVATION
         child.member_start_time = now
         child.member_expire_time = now + timedelta(days=obs_days)

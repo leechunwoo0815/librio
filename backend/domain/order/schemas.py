@@ -39,6 +39,7 @@ class OrderResponse(BaseSchema):
     refund_amount: Decimal | None = None
     remark: str | None = None
     upgrade_deduct: Decimal = Decimal("0")  # A6：升级抵扣金额
+    duration_days: int | None = None  # F-050：会员时长快照（下单时冻结）
     create_time: datetime
 
 
