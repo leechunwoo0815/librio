@@ -509,7 +509,13 @@ class DamageAdminService:
             DamageReportResponse.model_validate(r).model_dump(mode="json")
             for r in reports
         ]
-        return {"total": total, "items": items, "page": page, "page_size": page_size}
+        return {
+            "total": total,
+            "items": items,
+            "page": page,
+            "page_size": page_size,
+            "has_next": (page * page_size) < total,  # F-102
+        }
 
     def appeal(self, report_id: int, reason: str) -> BookDamageReport:
         """家长申诉（7天申诉期）"""

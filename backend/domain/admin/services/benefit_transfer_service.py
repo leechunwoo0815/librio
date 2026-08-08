@@ -72,7 +72,13 @@ class BenefitTransferAdminService:
                 }
             )
 
-        return {"items": result, "total": total, "page": page, "page_size": page_size}
+        return {
+            "items": result,
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "has_next": (page * page_size) < total,  # F-101
+        }
 
     def approve(
         self, application_id: int, reviewer_id: int, review_remark: str = ""

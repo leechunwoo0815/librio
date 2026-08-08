@@ -70,7 +70,14 @@ class AdminExportService:
             raise ValidationError(f"不支持导出: {module}")
 
         Model, fields = model_map[module]
-        items = self.db.query(Model).filter(Model.is_deleted == 0).limit(10000).all()
+        # F-108：截断必须显式告知（原静默 limit 10000，超量导出不完整无提示）
+        total = self.db.query(Model).filter(Model.is_deleted == 0).count()
+        items = (
+            self.db.query(Model)
+            .filter(Model.is_deleted == 0)
+            .limit(10000)
+            .all()
+        )
 
         output = io.StringIO()
         writer = csv.DictWriter(output, fieldnames=fields)
@@ -86,6 +93,9 @@ class AdminExportService:
                 row[f] = raw
             writer.writerow(row)
 
+        if total > 10000:
+            writer.writerow({fields[0]: f"[截断提示] 共 {total} 条，仅导出前 10000 条"})
+
         return output.getvalue(), f"{module}_export.csv"
 
     def _export_quiz_results(self) -> tuple[str, str]:
@@ -98,6 +108,9 @@ class AdminExportService:
             .order_by(Quiz.create_time.desc())
             .limit(10000)
             .all()
+        )
+        total_quizzes = (
+            self.db.query(Quiz).filter(Quiz.is_deleted == 0).count()
         )
 
         # 批量查询所有相关 child 和 book，避免 N+1
@@ -152,6 +165,9 @@ class AdminExportService:
                 ]
             )
 
+        if total_quizzes > 10000:
+            writer.writerow([f"[截断提示] 共 {total_quizzes} 条，仅导出前 10000 条"])
+
         return output.getvalue(), "quiz_results_export.csv"
 
     def _export_activity_enrollments(self) -> tuple[str, str]:
@@ -176,6 +192,11 @@ class AdminExportService:
             .filter(ActivityEnrollment.is_deleted == 0)
             .limit(10000)
             .all()
+        )
+        total_enrollments = (
+            self.db.query(ActivityEnrollment)
+            .filter(ActivityEnrollment.is_deleted == 0)
+            .count()
         )
 
         # 批量查询所有相关 child 和 activity，避免 N+1
@@ -214,5 +235,8 @@ class AdminExportService:
                     e.create_time.isoformat() if e.create_time else "",
                 ]
             )
+
+        if total_enrollments > 10000:
+            writer.writerow([f"[截断提示] 共 {total_enrollments} 条，仅导出前 10000 条"])
 
         return output.getvalue(), "activity_enrollments_export.csv"

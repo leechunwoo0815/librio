@@ -24,6 +24,7 @@ from backend.domain.admin.admin_schemas import (
     CreateBookCopyRequest,
     UpdateBookCopyStatusRequest,
     SaveBookPageRequest,
+    BookCopyListResponse,
 )
 from backend.domain.admin.services.book_service import AdminBookService
 from backend.domain.admin.services.export_service import AdminExportService
@@ -176,13 +177,15 @@ def bulk_import_books(
 # ==================== 图书副本 ====================
 
 
-@router.get("/bookcopy", response_model=list)
+@router.get("/bookcopy", response_model=BookCopyListResponse)
 def list_bookcopies(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
     service: AdminBookService = Depends(get_admin_book_service),
     admin=Depends(require_perm("bookcopy.list")),
 ):
-    """获取所有副本列表"""
-    return service.list_bookcopies()
+    """获取副本列表（F-094 分页，原 limit 500 静默截断）"""
+    return service.list_bookcopies(page=page, page_size=page_size)
 
 
 @router.post("/bookcopy/batch-generate", response_model=AdminActionResponse)

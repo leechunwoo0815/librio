@@ -186,6 +186,18 @@ class RecycleBinResponse(BaseModel):
     has_next: bool = False
 
 
+class BookCopyListResponse(BaseModel):
+    """副本列表分页响应（F-094）"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    items: list = []
+    total: int = 0
+    page: int = 1
+    page_size: int = 20
+    has_next: bool = False
+
+
 class MessageSendResponse(BaseModel):
     """消息发送响应"""
 

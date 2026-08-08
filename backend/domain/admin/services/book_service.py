@@ -48,17 +48,31 @@ class AdminBookService:
             "quiz_books": quiz_books,
         }
 
-    def list_bookcopies(self) -> list[dict]:
-        """获取所有副本列表（含图书信息、当前借阅人）"""
+    def list_bookcopies(self, page: int = 1, page_size: int = 20) -> dict:
+        """获取副本列表（含图书信息、当前借阅人）— F-094 分页（原 limit 500 静默截断）"""
         from backend.domain.book.models import Book, BookCopy
         from backend.domain.borrow.models import BorrowRecord
         from backend.domain.child.models import Child
 
+        total = (
+            self.db.query(BookCopy).filter(BookCopy.is_deleted == 0).count()
+        )
         copies = (
-            self.db.query(BookCopy).filter(BookCopy.is_deleted == 0).limit(500).all()
+            self.db.query(BookCopy)
+            .filter(BookCopy.is_deleted == 0)
+            .order_by(BookCopy.id)
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+            .all()
         )
         if not copies:
-            return []
+            return {
+                "items": [],
+                "total": total,
+                "page": page,
+                "page_size": page_size,
+                "has_next": False,
+            }
 
         book_ids = list({c.book_id for c in copies if c.book_id})
         books = {
@@ -110,7 +124,13 @@ class AdminBookService:
                     "create_time": c.create_time.isoformat() if c.create_time else None,
                 }
             )
-        return result
+        return {
+            "items": result,
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "has_next": (page * page_size) < total,
+        }
 
     def bulk_import_books(self, books: list[BulkImportBookItem]) -> dict:
         """批量导入图书（PC-008）"""

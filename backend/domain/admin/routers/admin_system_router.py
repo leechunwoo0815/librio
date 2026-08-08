@@ -672,13 +672,15 @@ def delete_order(
 # ==================== 提交审核 ====================
 
 
-@router.get("/submissions", response_model=list)
+@router.get("/submissions", response_model=AdminActionResponse)
 def list_submissions_legacy(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
     service: AdminUserService = Depends(get_admin_user_service),
     admin=Depends(require_perm("submission.list")),
 ):
-    """获取待审核提交列表（兼容旧路径）"""
-    return service.list_pending_submissions()
+    """获取待审核提交列表（兼容旧路径）— F-117 分页"""
+    return service.list_pending_submissions(page=page, page_size=page_size)
 
 
 # ==================== 操作日志 ====================

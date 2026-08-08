@@ -123,7 +123,13 @@ class AdminOrderService:
                     "refund_status": o.refund_status,
                 }
             )
-        return {"items": items, "total": total, "page": page, "page_size": page_size}
+        return {
+            "items": items,
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "has_next": (page * page_size) < total,  # F-102
+        }
 
     def get_order(self, order_no: str) -> dict:
         """获取订单详情"""

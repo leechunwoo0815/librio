@@ -158,6 +158,7 @@ class AdminSystemService:
             "total": total,
             "page": page,
             "page_size": page_size,
+            "has_next": (page * page_size) < total,  # F-102
         }
 
     # ==================== 死信事件（F-029） ====================
@@ -319,15 +320,17 @@ class AdminSystemService:
             {module: model_map[module]} if module and module in model_map else model_map
         )
 
+        # F-104：跨模块合并后统一分页（原每模块各取 page_size → 首页 4×20 条、
+        # total=本页条数、翻页语义错误）。回收站为低频小数据，全量收集可接受。
+        all_items = []
         for name, Model in models_to_check.items():
             q = (
                 self.db.query(Model)
                 .filter(Model.is_deleted == 1)
                 .order_by(Model.update_time.desc())
             )
-            items = q.offset((page - 1) * page_size).limit(page_size).all()
-            for item in items:
-                results.append(
+            for item in q.all():
+                all_items.append(
                     {
                         "id": item.id,
                         "module": name,
@@ -337,10 +340,24 @@ class AdminSystemService:
                         "deleted_at": item.update_time.isoformat()
                         if hasattr(item, "update_time") and item.update_time
                         else None,
+                        "deleted_time": item.update_time,
                     }
                 )
 
-        return {"items": results, "total": len(results)}
+        all_items.sort(key=lambda x: x["deleted_time"], reverse=True)
+        total = len(all_items)
+        start = (page - 1) * page_size
+        results = [
+            {k: v for k, v in item.items() if k != "deleted_time"}
+            for item in all_items[start : start + page_size]
+        ]
+        return {
+            "items": results,
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "has_next": (page * page_size) < total,
+        }
 
     def restore_item(self, module: str, item_id: int) -> dict:
         """恢复软删除的数据"""

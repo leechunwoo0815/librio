@@ -127,29 +127,45 @@ class AdminUserService:
                     ],
                 }
             )
-        return {"items": items, "total": total, "page": page, "page_size": page_size}
+        return {
+            "items": items,
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "has_next": (page * page_size) < total,  # F-102
+        }
 
-    def list_pending_submissions(self) -> list:
-        """获取待审核提交列表"""
-        subs = (
+    def list_pending_submissions(self, page: int = 1, page_size: int = 20) -> dict:
+        """获取待审核提交列表 — F-117 分页（原 limit 100 静默截断，第 101+ 条不可审核）"""
+        q = (
             self.db.query(ReadingSubmission)
             .filter(
                 ReadingSubmission.status == 0,
                 ReadingSubmission.is_deleted == 0,
             )
             .order_by(ReadingSubmission.create_time.desc())
-            .limit(100)
-            .all()
         )
-        return [
-            {
-                "id": s.id,
-                "child_id": s.child_id,
-                "book_id": s.book_id,
-                "submitted_at": s.submitted_at.isoformat() if s.submitted_at else None,
-            }
-            for s in subs
-        ]
+        total = q.count()
+        subs = (
+            q.offset((page - 1) * page_size).limit(page_size).all()
+        )
+        return {
+            "items": [
+                {
+                    "id": s.id,
+                    "child_id": s.child_id,
+                    "book_id": s.book_id,
+                    "submitted_at": s.submitted_at.isoformat()
+                    if s.submitted_at
+                    else None,
+                }
+                for s in subs
+            ],
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "has_next": (page * page_size) < total,
+        }
 
     def list_children(
         self, limit: int = 500, child_ids: list[int] | None = None
@@ -305,11 +321,33 @@ class AdminUserService:
             .all()
         )
 
-        total_borrows = len(borrows)
-        current_borrows = sum(1 for b in borrows if b.status == 0)
-        overdue_borrows = sum(1 for b in borrows if b.status == 2)
+        # F-118：统计口径用全量 count/sum（原基于 limit(50) 截断列表——老用户统计虚低）
+        child_ids = [c.id for c in children]
+        borrow_base = (
+            self.db.query(BorrowRecord).filter(
+                BorrowRecord.child_id.in_(child_ids),
+                BorrowRecord.is_deleted == 0,
+            )
+            if child_ids
+            else self.db.query(BorrowRecord).filter(False)
+        )
+        total_borrows = borrow_base.count()
+        current_borrows = (
+            borrow_base.filter(BorrowRecord.status == 0).count()
+        )
+        overdue_borrows = (
+            borrow_base.filter(BorrowRecord.status == 2).count()
+        )
         total_spent = str(
-            sum(Decimal(str(o.amount)) for o in orders if o.pay_status == 1)
+            self.db.query(
+                func.coalesce(func.sum(Order.amount), 0)
+            )
+            .filter(
+                Order.user_id == user_id,
+                Order.pay_status == 1,
+                Order.is_deleted == 0,
+            )
+            .scalar()
         )
 
         return {
