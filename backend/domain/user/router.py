@@ -44,14 +44,20 @@ async def wx_login(
 
     user = user_service.find_or_create_by_openid(openid, wx_data.get("unionid"))
 
-    phone = None
+    phone_occupied = False
     if login_data.phone_code:
         phone = await WeChatAuth.get_phone_number(login_data.phone_code)
         if phone:
-            user = user_service.update_user_phone(user.id, phone)
+            try:
+                # F-077：手机号被他人占用 → 跳过绑定（openid 主身份登录），
+                # 任何路径不得返回他人用户或签发他人 token
+                user = user_service.update_user_phone(user.id, phone)
+            except ConflictError:
+                phone_occupied = True
 
-    token = create_access_token({"sub": str(user.id), "gen": user.token_generation})
-    return WxLoginResponse(token=token, user=user)
+    gen = user_service.get_token_generation(user.id)
+    token = create_access_token({"sub": str(user.id), "gen": gen})
+    return WxLoginResponse(token=token, user=user, phone_occupied=phone_occupied)
 
 
 @router.get("/info", response_model=UserResponse)

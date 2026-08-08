@@ -98,21 +98,24 @@ class UserService:
         return UserResponse.model_validate(user)
 
     def update_user_phone(self, user_id: int, phone: str) -> UserResponse:
+        """绑定手机号 — F-077：占用时统一抛 ConflictError，任何路径不得返回他人用户"""
+        existing = self.user_repo.get_by_phone(phone)
+        if existing and existing.id != user_id:
+            raise ConflictError("该手机号已被其他账号绑定")
+        user = self.user_repo.get_by_id_or_raise(user_id)
+        user.phone = phone
         try:
-            existing = self.user_repo.get_by_phone(phone)
-            if existing and existing.id != user_id:
-                return UserResponse.model_validate(existing)
-            user = self.user_repo.get_by_id_or_raise(user_id)
-            user.phone = phone
             self.user_repo.update(user)
             self.db.commit()
         except IntegrityError:
             self.db.rollback()
-            logger.warning(
-                f"Failed to update phone for user {user_id}: duplicate phone {phone}"
-            )
-            user = self.user_repo.get_by_id_or_raise(user_id)
+            raise ConflictError("该手机号已被其他账号绑定") from None
         return UserResponse.model_validate(user)
+
+    def get_token_generation(self, user_id: int) -> int:
+        """读取用户 token_generation（wx_login 签发 token 用，UserResponse 不暴露该字段）"""
+        user = self.user_repo.get_by_id_or_raise(user_id)
+        return user.token_generation
 
     def link_openid(self, user_id: int, openid: str) -> UserResponse:
         user = self.user_repo.get_by_id_or_raise(user_id)

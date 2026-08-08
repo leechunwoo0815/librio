@@ -68,6 +68,10 @@ class WxLoginResponse(BaseSchema):
 
     token: str = Field(..., description="JWT token")
     user: UserResponse
+    phone_occupied: bool = Field(
+        False,
+        description="F-077：手机号已被他人占用时 True（openid 主身份照常登录，跳过绑定）",
+    )
 
 
 # ── 同意记录 ──

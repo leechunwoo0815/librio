@@ -1,0 +1,15 @@
+F-077 wx_login 账号接管（方案 Y）RED→GREEN 证据
+==========================================
+
+[RED] 修复前 tests/unit/test_f077_phone_occupied.py：
+3 failed: test_update_user_phone_occupied_raises_conflict (DID NOT RAISE)
+          test_wx_login_occupied_returns_own_token_with_flag (返回他人用户/无 phone_occupied)
+          test_wx_login_unoccupied_binds_phone (wx_login token_generation AttributeError 500)
+
+[GREEN] 修复后：
+3 passed
+附带修复：wx_login 原代码 user.token_generation 在 UserResponse 上不存在 → 微信登录全链路 500；
+新增 UserService.get_token_generation() 解决。
+
+[回归] tests/unit/ -k 'user or login or auth or phone'：36 passed
+verify_api_contract：OK
