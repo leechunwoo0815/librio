@@ -92,7 +92,24 @@ class ParentCourseTimeService:
 
     def delete(self, slot_id: int) -> dict:
         """删除时间段（软删除）"""
+        from backend.common.exceptions import ConflictError
+        from backend.domain.order.models import Order
+
         record = self.repo.get_by_id_or_raise(slot_id)
+        # F-112：已付费/待支付亲子课订单关联该时段 → 拒绝删除（家长订单悬空无退款无通知）
+        linked_orders = (
+            self.db.query(Order)
+            .filter(
+                Order.parent_course_time_id == slot_id,
+                Order.pay_status.in_([1, 0]),  # PAID/PENDING
+                Order.is_deleted == 0,
+            )
+            .count()
+        )
+        if linked_orders > 0:
+            raise ConflictError(
+                f"该时段有 {linked_orders} 笔关联订单，请先处理订单/退款后再删除"
+            )
         record.is_deleted = 1
         self.repo.update(record)
         self.db.commit()

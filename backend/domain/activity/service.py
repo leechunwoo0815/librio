@@ -491,11 +491,34 @@ class ActivityService:
 
     def delete_activity(self, activity_id: int) -> dict:
         """删除活动"""
-        from backend.common.exceptions import NotFoundError
+        from backend.common.exceptions import NotFoundError, ConflictError
+        from backend.domain.activity.models import ActivityEnrollment
 
         activity = self.activity_repo.get_by_id(activity_id)
         if not activity or activity.is_deleted == 1:
             raise NotFoundError("活动不存在")
+        # F-096：有有效报名（PENDING/APPROVED/SIGNED_IN）拒绝删除，引导走 cancel_activity
+        # （cancel 完整保障链：状态守卫 + 报名批量取消 + 付费退款 + 家长通知）
+        active_count = (
+            self.db.query(ActivityEnrollment)
+            .filter(
+                ActivityEnrollment.activity_id == activity_id,
+                ActivityEnrollment.status.in_(
+                    [
+                        ActivityEnrollment.STATUS_PENDING,
+                        ActivityEnrollment.STATUS_APPROVED,
+                        ActivityEnrollment.STATUS_SIGNED_IN,
+                    ]
+                ),
+                ActivityEnrollment.is_deleted == 0,
+            )
+            .count()
+        )
+        if active_count > 0:
+            raise ConflictError(
+                f"活动有 {active_count} 条有效报名，请先走「取消活动」流程"
+                "（含退款与家长通知）"
+            )
         activity.is_deleted = 1
         self.activity_repo.update(activity)
         self.db.commit()
