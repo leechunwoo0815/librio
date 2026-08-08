@@ -671,9 +671,12 @@ class DamageAdminService:
         return count
 
     def _get_report_or_raise(self, report_id: int) -> BookDamageReport:
+        # F-080：行锁串行化 confirm/reject/review/appeal/confirm_expired——
+        # 并发双确认双计罚款的根因（report 状态层无锁）
         report = (
             self.db.query(BookDamageReport)
             .filter(BookDamageReport.id == report_id, BookDamageReport.is_deleted == 0)
+            .with_for_update()
             .first()
         )
         if not report:

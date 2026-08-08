@@ -1,0 +1,12 @@
+F-080 损坏报告并发双确认（双计罚款）RED→GREEN 证据
+===================================================
+
+[RED] MySQL 实证（修复前，verify_mysql_concurrency.py 场景 D）：
+[FAIL] D 损坏报告并发双确认（行锁）: 确认成功 40/20（应恰 20），双计报告 20（应 0）
+→ 20 个报告全部被双确认、罚款全部双计
+
+[GREEN] 修复后（_get_report_or_raise 加 with_for_update）：
+[PASS] D 损坏报告并发双确认（行锁）: 确认成功 20/20（应恰 20），双计报告 0（应 0）
+错误样本: ['仅待复核状态的报告可确认', ...]（第二个确认被状态守卫拦截）
+
+[单测] test_f080_damage_confirm_lock.py 2 passed + damage 域 38 passed

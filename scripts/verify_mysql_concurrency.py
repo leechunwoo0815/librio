@@ -51,6 +51,7 @@ def main():
     results.append(("A 预约并发超卖（行锁）", _scenario_reservation_oversell(Session)))
     results.append(("B 副本并发双借（行锁）", _scenario_borrow_dedup(Session)))
     results.append(("C 押金活跃唯一索引（DB 兜底）", _scenario_deposit_unique(Session)))
+    results.append(("D 损坏报告并发双确认（行锁）", _scenario_damage_double_confirm(Session)))
 
     if "--keep" not in sys.argv:
         _cleanup(engine)
@@ -276,6 +277,91 @@ def _scenario_deposit_unique(Session):
     integrity = sum(1 for ok, err in outcomes if not ok and err)
     passed = succ == 1 and integrity == 1
     return passed, f"成功 1/2（唯一索引拦截 1），结果: {outcomes}"
+
+
+def _scenario_damage_double_confirm(Session):
+    """F-080：损坏报告并发双确认——行锁串行化后每个报告恰 1 次生效（罚款不双计）
+
+    20 个报告 × 2 管理员并发 confirm：修复前存在双成功（fines 双计）；修复后 0 双成功。
+    """
+    from datetime import datetime, timedelta
+
+    from backend.domain.admin.services.damage_admin_service import DamageAdminService
+    from backend.domain.book.damage_model import BookDamageReport
+    from backend.domain.borrow.models import BorrowRecord
+    from backend.domain.child.models import Child
+
+    s = Session()
+    report_ids = []
+    child_ids = []
+    for i in range(20):
+        _, cid = _make_user_child(s, f"dmg_{uuid.uuid4().hex[:8]}")
+        child = s.query(Child).filter(Child.id == cid).first()
+        child.outstanding_fines = Decimal("0")
+        br = BorrowRecord(
+            child_id=cid,
+            book_id=1,
+            borrow_time=datetime.now() - timedelta(days=10),
+            due_date=datetime.now() - timedelta(days=5),
+            status=0,
+        )
+        s.add(br)
+        s.flush()
+        report = BookDamageReport(
+            child_id=cid,
+            borrow_record_id=br.id,
+            damage_level=2,
+            fine_amount=Decimal("100"),
+            status=BookDamageReport.STATUS_PENDING_REVIEW,
+            description=f"并发双确认 {i}",
+        )
+        s.add(report)
+        s.flush()
+        report_ids.append(report.id)
+        child_ids.append(cid)
+    s.commit()
+    s.close()
+
+    ok_counts = []
+    errors = []
+    lock = threading.Lock()
+
+    def try_confirm(report_id, admin_id):
+        sess = Session()
+        try:
+            DamageAdminService(sess).confirm_report(report_id, admin_id)
+            with lock:
+                ok_counts.append(1)
+        except Exception as e:
+            with lock:
+                errors.append(str(e)[:80])
+        finally:
+            sess.close()
+
+    for rid in report_ids:
+        threads = [
+            threading.Thread(target=try_confirm, args=(rid, a))
+            for a in (1, 2)
+        ]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+    s = Session()
+    double_count = 0
+    for cid in child_ids:
+        child = s.query(Child).filter(Child.id == cid).first()
+        if child.outstanding_fines != Decimal("100"):
+            double_count += 1
+    s.close()
+
+    passed = double_count == 0 and len(ok_counts) == 20
+    return (
+        passed,
+        f"确认成功 {len(ok_counts)}/20（应恰 20），双计报告 {double_count}（应 0），"
+        f"错误样本: {errors[:2]}",
+    )
 
 
 def _cleanup(engine):
