@@ -12,6 +12,7 @@ from decimal import Decimal
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
 import backend.domain.admin.models  # noqa: F401
 import backend.domain.message.models  # noqa: F401
@@ -46,12 +47,19 @@ def _noop_lock(monkeypatch):
 
 @pytest.fixture
 def db_factory(monkeypatch):
-    engine = create_engine("sqlite:///:memory:")
+    # StaticPool：所有 session（含任务内部自建）共享同一内存库；
+    # _get_db_session 每次返回新 session——任务 finally close 不影响 fixture session
+    # （全量跑时全局 APScheduler 后台线程也会经该钩子取 session 并 close，必须隔离）
+    engine = create_engine(
+        "sqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
     Base.metadata.create_all(bind=engine)
     Session = sessionmaker(bind=engine)
     session = Session()
     register_event_handlers()
-    monkeypatch.setattr(scheduler, "_get_db_session", lambda: session)
+    monkeypatch.setattr(scheduler, "_get_db_session", Session)
     yield session, Session
     session.close()
 
