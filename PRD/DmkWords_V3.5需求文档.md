@@ -997,7 +997,7 @@
 
 ## 附录 C：API 端点索引
 
-> 全量业务路由 332 个（include_router 注册实测：管理端 /admin 211 = 174 API + 37 页面路由，用户端 121；不含 /health、/、/openapi.json，DEBUG mock 路由不计）。下表为用户端核心模块索引（运行时实测）。
+> 全量业务路由 336 个（include_router 注册实测：管理端 /admin 215 = 178 API + 37 页面路由，用户端 121；不含 /health、/、/openapi.json，DEBUG mock 路由不计）。下表为用户端核心模块索引（运行时实测）。
 
 | 模块 | 端点数 | 说明 |
 |------|--------|------|

@@ -2,7 +2,7 @@
 
 > **生成时间**: 2026-08-04 GMT+8 (v19)
 > **项目版本**: V3.23 — 52 题需求决策 + 四轮外部审查全闭环（FINAL-3.0 专家签署放行）+ 隐私合规 + 目录清理
-> **测试状态**: pytest 789 collected（通过数随环境：开发机 789 passed / CI 708+15 skip / 无 MySQL 沙箱 714+9 err）· behave 211/1369 · ruff 0 · API契约 OK · 模型一致 56 tables · CI 同构十一关（含 Gate 11）· 集成全绿 · alembic head=a5b6c7d8e9f0
+> **测试状态**: pytest 846 collected（通过数随环境：开发机 846 passed / CI 708+15 skip / 无 MySQL 沙箱 714+9 err）· behave 211/1369 · ruff 0 · API契约 OK · 模型一致 56 tables · CI 同构十一关（含 Gate 11）· 集成全绿 · alembic head=b1c2d3e4f506
 > **权威基线与机制定案**：以《专家意见/项目终态交接-20260807.md》为准（其 §四 关键机制定案含 P3-④ 决策、F5 快照四入口等；旧 K3 交接已标取代）
 
 ---
@@ -10,7 +10,7 @@
 ## 一、项目一句话
 
 OMO 儿童英文阅读平台：线下实体书借阅 + 线上音频伴读 + 手动查词 + 异步测评。
-微信小程序 34 页（家长端）+ PC 管理后台 39 模板（35 业务页面，运营端）+ FastAPI 后端 28 领域模块（56 表 / 332 API（37 页面路由） / 24 定时任务）。
+微信小程序 34 页（家长端）+ PC 管理后台 39 模板（35 业务页面，运营端）+ FastAPI 后端 28 领域模块（56 表 / 336 API（37 页面路由） / 24 定时任务）。
 管理后台全员已迁移到 `data-action` 事件委托模式（0 inline handler），36 JS 文件全部 IIFE 隔离，XSS 表面向量清零。
 
 ---
@@ -19,8 +19,8 @@ OMO 儿童英文阅读平台：线下实体书借阅 + 线上音频伴读 + 手�
 
 > ⚠️ 本节为 2026-07-23 的历史验证记录，数字（pytest 391/5、behave 189/1240、54 tables、
 > 55/55 integration、"十关"等）均已过时。**现行基线与机制以文档头部测试状态 +《专家意见/
-> 项目终态交接-20260807.md》§一/§四为准**（pytest 789 / behave 211/1369 / 56 表 /
-> 66 配置 / 24 任务 / 332 API / 十一关 / head=a5b6c7d8e9f0）。
+> 项目终态交接-20260807.md》§一/§四为准**（pytest 846 / behave 211/1369 / 56 表 /
+> 67 配置 / 24 任务 / 336 API / 十一关 / head=b1c2d3e4f506）。
 
 ```bash
 # ── 2026-07-23 时的 CI 命令快照（当时为十关，现行十一关见 §八）──
@@ -509,7 +509,7 @@ python -m alembic check
 
 ```markdown
 1. 读取 CLAUDE.md（宪法）、HANDOFF.md（本交接文档）、.ai/context/CONTEXT.md（业务知识）、ARCHITECTURE.md（架构）
-2. 运行 CI 同构十一关确认项目状态（pytest 789 collected，通过数随环境；behave 211/1369；ruff 0；api contract；model 56 tables；integration 全绿；alembic check；action wiring --strict；gen_config_doc --check）——权威基线与机制以《专家意见/项目终态交接-20260807.md》为准
+2. 运行 CI 同构十一关确认项目状态（pytest 846 collected，通过数随环境；behave 211/1369；ruff 0；api contract；model 56 tables；integration 全绿；alembic check；action wiring --strict；gen_config_doc --check）——权威基线与机制以《专家意见/项目终态交接-20260807.md》为准
 3. 按剩余工作清单优先级开始：
    P0: 外部输入项（appid/服务协议/隐私政策）
    P1: iconfont woff2 下载 + nginx rate limit

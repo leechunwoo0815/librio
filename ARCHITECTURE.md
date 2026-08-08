@@ -1,6 +1,6 @@
 # DmkWords — 架构文档
 
-> 版本：V3.23（2026-08-05 更新：52 题决策 + 四轮审查闭环 + 二批 P0 修复 — 56 表/66 配置/fine_policy/config_levels/guardian/teacher_workbench）
+> 版本：V3.23（2026-08-05 更新：52 题决策 + 四轮审查闭环 + 二批 P0 修复 — 56 表/67 配置/fine_policy/config_levels/guardian/teacher_workbench）
 > 零粉饰，只写事实
 
 ---
@@ -233,7 +233,7 @@ frontend/                # 微信小程序（34 个页面，4 子包）
 - `guidance_record` — 指导课记录
 
 ### 系统域
-- `system_config` — 动态配置（66 项，三级管控 config_levels.py）
+- `system_config` — 动态配置（67 项，三级管控 config_levels.py）
 - `system_message` — 站内信
 - `operation_log` — 操作日志
 - `observation_report` — 观察期报告
