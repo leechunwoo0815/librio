@@ -1,0 +1,14 @@
+F-023 分片上传路径遍历 RED→GREEN 证据
+=============================================
+
+[RED] 修复前：
+test_traversal_upload_id_rejected: FAILED（../../escape 可逃逸 CHUNK_DIR 写文件）
+test_oversize_chunk_rejected: FAILED（无单分片大小限制）
+
+[GREEN] 修复后（四层防御）：
+3 passed
+① router 三端点 upload_id pattern ^[a-zA-Z0-9_-]{8,64}$ + chunk_index/total_chunks 上限
+② service _safe_session_dir resolve+前缀校验（校验最先，纵深）
+③ 单分片 ≤10MB
+
+[回归] upload 域测试通过 + ruff 干净

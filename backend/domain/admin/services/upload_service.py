@@ -43,6 +43,17 @@ class UploadService:
     }
     ALLOWED_EXTENSIONS = ALLOWED_IMAGE_EXTENSIONS | ALLOWED_AUDIO_EXTENSIONS | {".pdf"}
 
+    MAX_CHUNK_BYTES = 10 * 1024 * 1024  # F-023：单分片上限（对齐 save_upload 10MB）
+
+    @staticmethod
+    def _safe_session_dir(upload_id: str):
+        """F-023：分片会话目录防御——resolve 后必须位于 CHUNK_DIR 内"""
+        session_dir = (CHUNK_DIR / upload_id).resolve()
+        base = str(CHUNK_DIR.resolve())
+        if not str(session_dir).startswith(base + os.sep):
+            raise ValidationError("非法上传会话")
+        return session_dir
+
     _MIME_MAGIC: dict[bytes, str] = {
         b"\x89PNG\r\n\x1a\n": "image/png",
         b"\xff\xd8\xff": "image/jpeg",
@@ -133,14 +144,19 @@ class UploadService:
         content: bytes,
     ) -> dict:
         """保存分片"""
+        # F-023：路径遍历校验最先（无论扩展名是否合法，恶意 upload_id 一律拦截）
+        session_dir = self._safe_session_dir(upload_id)
+
         # 校验扩展名（仅校验，内容交给 complete_upload 做魔数检测）
         ext = Path(filename).suffix.lower()
         if ext not in self.ALLOWED_EXTENSIONS:
             raise ValidationError(
                 f"不支持的格式: {ext}，允许: {', '.join(sorted(self.ALLOWED_EXTENSIONS))}"
             )
-        session_dir = CHUNK_DIR / upload_id
         session_dir.mkdir(exist_ok=True)
+
+        if len(content) > self.MAX_CHUNK_BYTES:
+            raise ValidationError(f"单分片超 {self.MAX_CHUNK_BYTES // (1024 * 1024)}MB")
 
         chunk_path = session_dir / f"chunk_{chunk_index:06d}"
         chunk_path.write_bytes(content)
@@ -169,7 +185,7 @@ class UploadService:
         """合并分片，完成上传"""
         import uuid as _uuid
 
-        session_dir = CHUNK_DIR / upload_id
+        session_dir = self._safe_session_dir(upload_id)
         meta_path = session_dir / "meta.json"
 
         if not meta_path.exists():
@@ -218,7 +234,7 @@ class UploadService:
 
     def get_upload_status(self, upload_id: str) -> dict:
         """查询分片上传进度"""
-        session_dir = CHUNK_DIR / upload_id
+        session_dir = self._safe_session_dir(upload_id)
         meta_path = session_dir / "meta.json"
 
         if not meta_path.exists():

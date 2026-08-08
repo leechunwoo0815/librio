@@ -3,6 +3,7 @@
 
 from pathlib import Path
 from fastapi import APIRouter, Depends, Query, UploadFile, File as FastAPIFile
+from fastapi import Path as FastAPIPath
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
@@ -332,9 +333,9 @@ async def upload_file(
 @router.post("/upload/chunk", response_model=AdminActionResponse)
 async def upload_chunk(
     file: UploadFile = FastAPIFile(...),
-    upload_id: str = Query(...),
-    chunk_index: int = Query(..., ge=0),
-    total_chunks: int = Query(..., ge=1),
+    upload_id: str = Query(..., pattern=r"^[a-zA-Z0-9_-]{8,64}$"),  # F-023：防路径遍历
+    chunk_index: int = Query(..., ge=0, le=10000),
+    total_chunks: int = Query(..., ge=1, le=10000),
     filename: str = Query(...),
     file_type: str = Query(None),
     service: AdminUploadService = Depends(get_admin_upload_service),
@@ -358,7 +359,7 @@ async def upload_chunk(
 
 @router.post("/upload/complete", response_model=AdminActionResponse)
 def complete_upload(
-    upload_id: str = Query(...),
+    upload_id: str = Query(..., pattern=r"^[a-zA-Z0-9_-]{8,64}$"),  # F-023：防路径遍历
     service: AdminUploadService = Depends(get_admin_upload_service),
     admin=Depends(require_perm("upload.manage")),
 ):
@@ -378,7 +379,7 @@ def complete_upload(
 
 @router.get("/upload/status/{upload_id}", response_model=AdminActionResponse)
 def upload_status(
-    upload_id: str,
+    upload_id: str = FastAPIPath(..., pattern=r"^[a-zA-Z0-9_-]{8,64}$"),  # F-023：防路径遍历
     service: AdminUploadService = Depends(get_admin_upload_service),
     admin=Depends(require_perm("upload.manage")),
 ):
