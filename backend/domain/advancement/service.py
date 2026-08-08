@@ -195,7 +195,7 @@ class AdvancementService:
             questions = self.question_repo.get_by_book(quiz.book_id)
         else:
             questions = self.question_repo.get_by_book(book_or_quiz_id)
-        return [
+        items = [
             {
                 "id": q.id,
                 "question_text": q.question_text,
@@ -208,6 +208,13 @@ class AdvancementService:
                 "explanation": q.explanation,
             }
             for q in questions
+        ]
+        if is_quiz_id:
+            return items  # admin 出卷需要答案
+        # F-057：用户取题剥离答案字段（防作弊泄漏）
+        return [
+            {k: v for k, v in q.items() if k not in ("correct_answer", "explanation")}
+            for q in items
         ]
 
     def submit_answers(self, quiz_id: int, answers: list) -> dict:
