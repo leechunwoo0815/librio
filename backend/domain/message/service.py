@@ -173,18 +173,21 @@ class MessageService:
             .all()
         ]
         shared_count = 0
-        for mid in shared_ids:
-            existing = (
-                self.db.query(MessageReadStatus)
+        if shared_ids:
+            # F-044：in_ 批量查已有状态（原逐条查询 N+1）
+            existing_ids = {
+                r[0]
+                for r in self.db.query(MessageReadStatus.message_id)
                 .filter(
-                    MessageReadStatus.message_id == mid,
+                    MessageReadStatus.message_id.in_(shared_ids),
                     MessageReadStatus.user_id == user_id,
                 )
-                .first()
-            )
-            if not existing:
-                self.db.add(MessageReadStatus(message_id=mid, user_id=user_id))
-                shared_count += 1
+                .all()
+            }
+            for mid in shared_ids:
+                if mid not in existing_ids:
+                    self.db.add(MessageReadStatus(message_id=mid, user_id=user_id))
+                    shared_count += 1
 
         self.db.commit()
         return personal_count + shared_count

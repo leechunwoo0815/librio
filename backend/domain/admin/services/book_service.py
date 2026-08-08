@@ -210,12 +210,22 @@ class AdminBookService:
                     Book.isbn.like(f"%{esc}%", escape="\\"),
                 ),
             )
+            .limit(50)  # F-026：搜索有界（防全表拉爆）
             .all()
         )
 
         book_ids = [b.id for b in books]
         question_groups: dict[int, list] = {}
+        total = 0
         if book_ids:
+            total = (
+                self.db.query(QuestionBank.id)
+                .filter(
+                    QuestionBank.book_id.in_(book_ids),
+                    QuestionBank.is_deleted == 0,
+                )
+                .count()
+            )
             for q in (
                 self.db.query(QuestionBank)
                 .filter(
@@ -247,7 +257,7 @@ class AdminBookService:
                         "difficulty": q.difficulty,
                     }
                 )
-        return {"items": results, "total": len(results)}
+        return {"items": results, "total": total}
 
     def update_question(self, question_id: int, data: UpdateQuestionRequest) -> dict:
         """更新题目"""

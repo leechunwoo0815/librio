@@ -54,7 +54,12 @@ class Child(BaseModel):
 
     # 阅读统计字段
     total_reading_minutes = Column(Integer, default=0, comment="累计阅读分钟")
-    total_words_read = Column(Integer, default=0, comment="累计阅读词数")
+    total_words_read = Column(
+        Integer,
+        default=0,
+        index=True,  # F-064：排行榜排序索引（迁移052）
+        comment="累计阅读词数",
+    )
     total_books_finished = Column(Integer, default=0, comment="累计读完本数")
     current_streak_days = Column(Integer, default=0, comment="连续打卡天数")
     longest_streak_days = Column(Integer, default=0, comment="最长连续打卡")
