@@ -1,0 +1,8 @@
+批次5-F-008/F-028 后端可修项 — 2026-08-09
+F-008: cancel_order 允许 FAILED→CLOSED（用户侧支付失败的单可自行关闭，不再永久滞留；
+  管理端 FAILED→PAID/CLOSED 白名单不变）；PENDING/FAILED 之外仍拒绝
+F-028: main.py 启动块 reload 改为 APP_RELOAD=1 环境变量控制，默认 False（生产 python main.py
+  安全；开发热重载显式开启）
+测试: test_b5_f008_failed_cancel.py 2 passed（FAILED 可取消/PAID 仍拒）
+RED→GREEN: 还原仅 PENDING 可取消 → 1 failed；恢复 → 2 passed
+F-027（隐私政策 4 处占位符）: 甲方阻塞——需运营主体/办学许可证信息，已列入上线前动作

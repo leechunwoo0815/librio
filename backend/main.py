@@ -337,8 +337,14 @@ async def root():
 
 
 if __name__ == "__main__":
+    import os
     import uvicorn
 
+    # F-028：生产默认禁用 reload（python main.py 直接启动安全）；
+    # 开发本地需要热重载时显式 APP_RELOAD=1
     uvicorn.run(
-        "backend.main:app", host="0.0.0.0", port=settings.BACKEND_PORT, reload=True
+        "backend.main:app",
+        host="0.0.0.0",
+        port=settings.BACKEND_PORT,
+        reload=os.environ.get("APP_RELOAD") == "1",
     )
