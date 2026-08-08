@@ -438,6 +438,13 @@ class OrderService:
             logger.warning(f"Order {callback.order_no} already paid")
             return OrderResponse.model_validate(order)
 
+        # F-007：已退款/退款中的订单忽略支付回调（防资金状态被反转覆盖）
+        if order.pay_status in (PayStatus.REFUNDED, PayStatus.REFUNDING):
+            logger.warning(
+                f"Order {callback.order_no} in refund state, payment callback ignored"
+            )
+            return OrderResponse.model_validate(order)
+
         # F26：trade_no 重复 = 同一笔支付被两次入账（DB 唯一索引兜底 + 服务层前置检查）
         dup_trade = (
             self.db.query(Order.id)

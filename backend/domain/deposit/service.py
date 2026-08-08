@@ -367,6 +367,11 @@ class DepositService:
         record = self.deposit_repo.get_active_by_child_for_update(data.child_id)
         if not record:
             raise NotFoundError("未找到已缴纳的押金记录")
+        # F-006：仅已缴纳状态可申请退款（PENDING 支付中/REFUNDING 退款中一律拒绝）
+        from backend.common.types import DepositStatus
+
+        if record.status != DepositStatus.PAID:
+            raise ValidationError("仅已缴纳押金可申请退款")
 
         assert_no_pending_transfer(self.db, data.child_id)
 

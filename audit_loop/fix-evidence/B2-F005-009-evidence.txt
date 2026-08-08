@@ -1,0 +1,10 @@
+批次2-F005/006/007/009 状态守卫证据
+======================================
+
+F-005: _rollback_refund_failure 对 REFUNDED 订单跳过回滚（防覆盖 PAID）
+F-006: refund_deposit 仅 PAID 可申请（PENDING/REFUNDING 拒绝）
+F-007: handle_payment_callback 对 REFUNDED/REFUNDING 订单忽略回调
+F-009: apply_refund 可退金额≤0（罚款全额抵扣）拒绝创建 0 元单
+
+[单测] test_batch2_refund_deposit_guards.py 4 passed
+退款/押金/回调域回归 110 passed + ruff 干净

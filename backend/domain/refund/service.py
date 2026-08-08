@@ -141,6 +141,9 @@ class RefundService:
         )
         fine_deducted = min(refund_amount, outstanding)
         final_amount = refund_amount - fine_deducted
+        # F-009：可退金额 ≤0（服务期用满或罚款全额抵扣）→ 拒绝创建 0 元退款单
+        if final_amount <= 0:
+            raise ValidationError("可退金额为 0，无需申请退款")
 
         refund = RefundApplication(
             order_id=data.order_id,
@@ -329,6 +332,12 @@ class RefundService:
                 .first()
             )
             if order:
+                # F-005：已退款订单不回滚——防与 mark_refunded 并发完成后被覆盖为 PAID
+                if order.refund_status == 2:  # REFUND_DONE
+                    logger.warning(
+                        f"Refund rollback skipped: order={order_no} already refunded"
+                    )
+                    return
                 order.refund_status = 3  # FAILED
                 order.pay_status = PayStatus.PAID
                 order.refund_remark = str(error)[:200]
