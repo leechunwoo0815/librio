@@ -1,0 +1,6 @@
+批次5-F-116 is_published 消费 — 2026-08-09
+修复: 用户端三处补 is_published==1 过滤——repository.search（用户搜索）/
+  get_related_books（推荐）/ get_book_detail（详情 404"已下架"）
+  管理端走独立 AdminBookService 查询不受影响；toggle_publish 后用户端立即可见性生效
+测试: test_b5_f116_is_published.py 4 passed（搜索排除/详情404/推荐排除/toggle 后隐藏）
+RED→GREEN: 移除 search 过滤 → 1 failed；恢复 → 4 passed

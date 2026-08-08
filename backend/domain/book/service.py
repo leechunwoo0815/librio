@@ -106,7 +106,12 @@ class BookService:
 
     def get_book_detail(self, book_id: int) -> BookResponse:
         """获取图书详情"""
+        from backend.common.exceptions import NotFoundError
+
         book = self.book_repo.get_by_id_or_raise(book_id)
+        if book.is_published != 1:
+            # F-116：下架书用户端不可见（管理端走独立 admin 查询，不受影响）
+            raise NotFoundError("图书不存在或已下架")
         resp = BookResponse.model_validate(book)
         resp.series_name = book.series_name
         resp.description = book.summary
@@ -355,6 +360,7 @@ class BookService:
                 Book.theme == theme,
                 Book.id != book_id,
                 Book.is_deleted == 0,
+                Book.is_published == 1,  # F-116：推荐只推上架书
             )
             .limit(limit)
             .all()
