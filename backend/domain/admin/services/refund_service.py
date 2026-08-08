@@ -6,8 +6,8 @@ from decimal import Decimal
 
 from sqlalchemy.orm import Session
 
-from backend.common.exceptions import NotFoundError
-from backend.common.types import AdminRole
+from backend.common.exceptions import ConflictError, NotFoundError, ValidationError
+from backend.common.types import AdminRole, PayStatus
 from backend.domain.order.models import Order
 from backend.domain.refund.models import RefundApplication
 
@@ -91,10 +91,32 @@ class AdminRefundService:
         order = (
             self.db.query(Order)
             .filter(Order.order_no == order_no, Order.is_deleted == 0)
+            .with_for_update()  # F-084 三层③：与 commit 同事务，防并发重复建单
             .first()
         )
         if not order:
             raise NotFoundError("订单不存在")
+
+        # F-084 三层①：前置校验（对齐用户侧 apply_refund）
+        if order.pay_status != PayStatus.PAID:
+            raise ValidationError("订单未支付，无法退款")
+        existing = (
+            self.db.query(RefundApplication)
+            .filter(
+                RefundApplication.order_id == order.id,
+                RefundApplication.status.in_(
+                    [
+                        RefundApplication.STATUS_PENDING,
+                        RefundApplication.STATUS_APPROVED,
+                        RefundApplication.STATUS_COMPLETED,
+                    ]
+                ),
+                RefundApplication.is_deleted == 0,
+            )
+            .first()
+        )
+        if existing:
+            raise ConflictError("该订单已有退款单，请勿重复发起")
 
         reason = data.get("reason", "管理员代发起退款")
         used_days = data.get("used_days", 0)

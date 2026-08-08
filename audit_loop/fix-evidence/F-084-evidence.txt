@@ -1,0 +1,11 @@
+F-084 admin 重复打款三层修复 RED→GREEN 证据
+=============================================
+
+[RED] 修复前：
+test_rejects_duplicate_refund: DID NOT RAISE ConflictError（已 COMPLETED 仍可重复建单）
+test_execute_skips_completed_refund: gateway.refund awaited 1 time（已退款仍调网关）
+
+[GREEN] 修复后：
+4 passed（未支付拒绝/重复拒绝/REJECTED 可重提/执行链跳过）
+
+[回归] tests/unit/ -k refund：84 passed

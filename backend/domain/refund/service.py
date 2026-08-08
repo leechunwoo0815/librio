@@ -241,10 +241,22 @@ class RefundService:
                 db.close()
                 return
 
-            # 重新查询确保活跃 session
-            order = db.query(Order).filter(Order.order_no == order_no).first()
+            # 重新查询确保活跃 session（F-084 三层③：执行链行锁）
+            order = (
+                db.query(Order)
+                .filter(Order.order_no == order_no)
+                .with_for_update()
+                .first()
+            )
             if not order:
                 logger.error(f"Refund task: order not found: {order_no}")
+                db.close()
+                return
+            # F-084 三层②：执行前状态守卫——已退款订单不重复打款
+            if order.refund_status == 2:  # REFUNDED
+                logger.warning(
+                    f"Refund task skipped: order={order_no} already refunded"
+                )
                 db.close()
                 return
 
@@ -254,6 +266,13 @@ class RefundService:
                 .filter(RefundApplication.id == refund_id)
                 .first()
             )
+            # F-084 三层②：退款单已完成后不重复调网关
+            if refund and refund.status == RefundApplication.STATUS_COMPLETED:
+                logger.warning(
+                    f"Refund task skipped: refund={refund_id} already completed"
+                )
+                db.close()
+                return
             out_refund_no = getattr(refund, "out_refund_no", None) if refund else None
             if not out_refund_no:
                 out_refund_no = f"RF{uuid.uuid4().hex[:16]}"
