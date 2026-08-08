@@ -314,6 +314,11 @@ class ReadingService:
             from backend.common.exceptions import NotFoundError
 
             raise NotFoundError("阅读会话不存在")
+        # F-059：重复结算守卫——已结束的会话不再结算（防双计时长/双打卡）
+        if session.end_time is not None:
+            from backend.common.exceptions import ValidationError
+
+            raise ValidationError("阅读会话已结束，请勿重复提交")
         session.end_time = datetime.now()
         session.duration_seconds = int(
             (session.end_time - session.start_time).total_seconds()

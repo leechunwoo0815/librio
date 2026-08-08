@@ -4,13 +4,19 @@
 from datetime import datetime
 from decimal import Decimal
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from backend.common.base_schema import BaseSchema, PaginatedResponse
 
 
 class BookCreate(BaseSchema):
     """创建图书请求"""
+
+    @model_validator(mode="after")
+    def _check_age_range(self):
+        if self.age_min > self.age_max:
+            raise ValueError("age_min 不能大于 age_max")  # F-073
+        return self
 
     isbn: str = Field(..., min_length=10, max_length=20, description="ISBN号")
     title: str = Field(..., max_length=255, description="书名")

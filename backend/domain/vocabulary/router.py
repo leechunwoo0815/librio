@@ -36,9 +36,13 @@ def lookup_word(
     """查词 — 受开关和次数限制；传 child_id 时自动记录生词本（C3）"""
     service.check_lookup_allowed(current_user.id)
     result = service.lookup_word(word)
-    if result and child_id:
-        verify_child_ownership(child_id, current_user, db)
-        service.record_lookup(child_id, word, book_id=book_id)
+    if result:
+        # F-072：child_id 缺省时用当前孩子兜底——查词必须计数，
+        # 否则试读用户不传 child_id 可无限绕过每日限额
+        eff_child_id = child_id or getattr(current_user, "current_child_id", None)
+        if eff_child_id:
+            verify_child_ownership(eff_child_id, current_user, db)
+            service.record_lookup(eff_child_id, word, book_id=book_id)
     return result
 
 

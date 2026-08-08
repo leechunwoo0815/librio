@@ -50,6 +50,7 @@ DELETE_TABLES_BY_CHILD = [
     "ar_evaluation",
     "observation_evaluation",
     "guidance_record",
+    "assessment",  # F-063：评估表级联补漏
 ]
 
 # 经 quiz_id 间接关联的表（quiz_answer.quiz_id → quiz.child_id）

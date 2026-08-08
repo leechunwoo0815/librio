@@ -247,7 +247,7 @@ class RefundService:
             # 重新查询确保活跃 session（F-084 三层③：执行链行锁）
             order = (
                 db.query(Order)
-                .filter(Order.order_no == order_no)
+                .filter(Order.order_no == order_no, Order.is_deleted == 0)  # F-016
                 .with_for_update()
                 .first()
             )
@@ -266,7 +266,10 @@ class RefundService:
             # F38：复用持久化退款单号（微信幂等键）；缺失则生成并先落库
             refund = (
                 db.query(RefundApplication)
-                .filter(RefundApplication.id == refund_id)
+                .filter(
+                    RefundApplication.id == refund_id,
+                    RefundApplication.is_deleted == 0,  # F-016
+                )
                 .first()
             )
             # F-084 三层②：退款单已完成后不重复调网关

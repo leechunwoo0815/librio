@@ -562,14 +562,19 @@ def check_member_expiry(db: Session | None = None):
         min_days = min(notify_days)
         date_upper = today + timedelta(days=max_days)
         date_lower = today + timedelta(days=min_days)
+        # F-015：范围比较替代 func.date 包裹（索引失效全表扫描）
+        lower_dt = datetime.combine(date_lower, datetime.min.time())
+        upper_dt = datetime.combine(
+            date_upper + timedelta(days=1), datetime.min.time()
+        )
 
         children = (
             db.query(Child)
             .filter(
                 Child.status == MemberStatus.OFFICIAL,
                 Child.member_expire_time.isnot(None),
-                sql_func.date(Child.member_expire_time) >= date_lower,
-                sql_func.date(Child.member_expire_time) <= date_upper,
+                Child.member_expire_time >= lower_dt,
+                Child.member_expire_time < upper_dt,
                 Child.is_deleted == 0,
             )
             .all()
@@ -740,6 +745,7 @@ def generate_monthly_reports():
         today = date.today()
         last_month_end = today.replace(day=1) - timedelta(days=1)
         last_month_start = last_month_end.replace(day=1)
+        next_month_start = (last_month_start + timedelta(days=32)).replace(day=1)
 
         # === 平台级月度统计 ===
 
@@ -748,7 +754,7 @@ def generate_monthly_reports():
             db.query(sql_func.count(User.id))
             .filter(
                 User.create_time >= last_month_start,
-                User.create_time <= last_month_end,
+                User.create_time < next_month_start,  # F-035：避免漏月末当天
                 User.is_deleted == 0,
             )
             .scalar()
@@ -760,7 +766,7 @@ def generate_monthly_reports():
             db.query(sql_func.count(sql_func.distinct(ReadingSession.child_id)))
             .filter(
                 ReadingSession.start_time >= last_month_start,
-                ReadingSession.start_time <= last_month_end,
+                ReadingSession.start_time < next_month_start,  # F-035：避免漏月末当天
                 ReadingSession.is_deleted == 0,
             )
             .scalar()

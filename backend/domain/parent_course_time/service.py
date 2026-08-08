@@ -51,6 +51,11 @@ class ParentCourseTimeService:
 
     def create(self, data: ParentCourseTimeCreate) -> ParentCourseTimeResponse:
         """创建时间段"""
+        # F-069：时间校验——结束必须晚于开始
+        if data.end_time <= data.start_time:
+            from backend.common.exceptions import ValidationError
+
+            raise ValidationError("结束时间必须晚于开始时间")
         record = ParentCourseTime(
             venue_id=data.venue_id,
             course_date=data.course_date,
@@ -72,6 +77,13 @@ class ParentCourseTimeService:
         """更新时间段"""
         record = self.repo.get_by_id_or_raise(slot_id)
         update_data = data.model_dump(exclude_unset=True)
+        # F-069：合并后时间校验
+        end = update_data.get("end_time", record.end_time)
+        start = update_data.get("start_time", record.start_time)
+        if end <= start:
+            from backend.common.exceptions import ValidationError
+
+            raise ValidationError("结束时间必须晚于开始时间")
         for key, value in update_data.items():
             setattr(record, key, value)
         self.repo.update(record)

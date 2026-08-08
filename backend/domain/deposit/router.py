@@ -144,6 +144,14 @@ async def deposit_callback(
 
     # 网关 decrypt_callback_data 已做分→元转换，直接使用
     callback_amount = callback_data.amount
+    # F-048：trade_state 消费——非 SUCCESS 不确认押金到账（对齐订单 F75-③）
+    if callback_data.trade_state and callback_data.trade_state != "SUCCESS":
+        import logging
+
+        logging.getLogger(__name__).warning(
+            f"Deposit callback non-SUCCESS: trade_state={callback_data.trade_state}"
+        )
+        return {"success": True, "deposit": {"ignored": True}}
 
     # B12：先尝试罚款缴款单（FINE 前缀单号），命中则核销罚款
     if callback_data.out_trade_no.startswith("FINE"):

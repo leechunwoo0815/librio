@@ -1,0 +1,16 @@
+批次4 第一批证据（F-015/016/035/048/059/060/063/069/072/073）
+===================================================================
+
+F-015: 到期提醒改范围比较（func.date 索引失效）
+F-016: 退款执行链两处查询补 is_deleted==0
+F-035: 月报上界改下月1日（DateTime 比较，补漏月末当天）
+F-048: 押金回调 trade_state 非 SUCCESS 忽略（对齐订单 F75-③）
+F-059: end_session 重复结算守卫（end_time 已存在拒绝）
+F-060: EndSessionRequest 页数/词数/分钟上限
+F-063: 删除级联补 assessment 表
+F-069: 亲子课时间校验 + max_participants ge=1 + HH:MM pattern
+F-072: 查词 child_id 缺省用当前孩子兜底（堵无限绕过限额）
+F-073: BookCreate age_min<=age_max 交叉校验
+
+[单测] test_batch4_data.py 6 passed + 相关回归 230 passed
+注: F-017 配置审计 old_value 已实现（跳过）；F-030/031/032/033 批次2已做
