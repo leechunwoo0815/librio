@@ -1,0 +1,13 @@
+F-024 delete_voice_files 路径穿越 RED→GREEN 证据
+===================================================
+
+[RED] 修复前（uploads/voice 存在时）：
+test_traversal_blocked: FAILED（../../victim.txt 逃逸删除 tmp 根文件）
+test_uploads_prefix_traversal_blocked: FAILED（uploads/../../ 逃逸删除）
+→ deletion_service 同款防御已存在，file_utils 为同类漏改
+
+[GREEN] 修复后（resolve + uploads 前缀校验）：
+3 passed（逃逸拦截×2 + 正常删除）
+另：purge 语音清理回归 4 passed
+
+注：中间目录不存在时逃逸静默失败（系统 ENOENT），生产 uploads/voice 存在故漏洞真实
