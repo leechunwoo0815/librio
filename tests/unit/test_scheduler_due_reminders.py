@@ -15,6 +15,10 @@ def _stub_db(monkeypatch):
     """替换 _get_db_session 返回 MagicMock"""
     from backend.tasks import scheduler
 
+    # 停掉全局后台调度器：其每分钟任务也会经 _get_db_session 拿到同一 stub，
+    # 造成 rollback/close 断言被污染（全量顺序相关 flaky）
+    scheduler.stop_scheduler()
+
     db = MagicMock()
     db.commit = MagicMock()
     db.rollback = MagicMock()
@@ -31,6 +35,8 @@ def sqlite_session(monkeypatch):
     from backend.domain.child.models import Child
     from backend.domain.book.models import Book
     from backend.domain.user.models import User
+
+    scheduler.stop_scheduler()
 
     # 确保模型在被 Base.metadata.create_all 前完成注册
     _ = BorrowRecord, Child, Book, User

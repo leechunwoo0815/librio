@@ -39,6 +39,7 @@ def _noop_lock(monkeypatch):
 
 @pytest.fixture
 def db(monkeypatch):
+    scheduler.stop_scheduler()  # 停全局后台任务，防污染注入 session
     engine = create_engine("sqlite:///:memory:")
     Base.metadata.create_all(bind=engine)
     Session = sessionmaker(bind=engine)
