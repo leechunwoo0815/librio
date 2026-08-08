@@ -134,7 +134,7 @@ scripts/                 # CI 脚本
 └── verify_api_contract.py    # 前后端 API 契约验证
 .github/workflows/ci.yml     # CI 配置
 features/                # BDD feature 文件（20 个，211 场景，1369 步骤）
-tests/unit/              # pytest 单元测试（776 个 collected，通过数随环境）
+tests/unit/              # pytest 单元测试（783 个 collected，通过数随环境）
 scripts/integration_test.py  # 全链路集成测试（867 行，6 主流程 + 7 异常场景）
 frontend/                # 微信小程序（34 个页面，4 子包）
 ```
