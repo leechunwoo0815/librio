@@ -634,6 +634,19 @@ def check_grace_period_shutdown():
         )
 
         for child in expired:
+            # F-046：写前重取+行锁+状态守卫（防与续费并发把新会员覆盖为 EXPIRED）
+            child = (
+                db.query(Child)
+                .filter(
+                    Child.id == child.id,
+                    Child.status == MemberStatus.OFFICIAL,
+                    Child.is_deleted == 0,
+                )
+                .with_for_update()
+                .first()
+            )
+            if child is None or child.member_expire_time >= cutoff:
+                continue
             old_status = child.status
             child.status = MemberStatus.EXPIRED
             logger.info(
@@ -962,6 +975,8 @@ def migrate_activity_status():
             .all()
         )
         for a in activities:
+            if a.status != Activity.STATUS_ENROLLING:
+                continue  # F-046：状态守卫（并发管理端改动则跳过）
             a.status = Activity.STATUS_ENROLL_CLOSED
             migrated += 1
 
@@ -976,6 +991,8 @@ def migrate_activity_status():
             .all()
         )
         for a in activities:
+            if a.status != Activity.STATUS_ENROLL_CLOSED:
+                continue  # F-046：状态守卫
             a.status = Activity.STATUS_IN_PROGRESS
             migrated += 1
 
@@ -990,6 +1007,8 @@ def migrate_activity_status():
             .all()
         )
         for a in activities:
+            if a.status != Activity.STATUS_IN_PROGRESS:
+                continue  # F-046：状态守卫
             a.status = Activity.STATUS_FINISHED
             migrated += 1
 
@@ -1102,6 +1121,19 @@ def alert_stale_refunds(db: Session | None = None):
             .all()
         )
         for dr in stale_deposits:
+            # F-046：写前重取+行锁+状态守卫（防与退款回调并发覆盖）
+            dr = (
+                db.query(DepositRecord)
+                .filter(
+                    DepositRecord.id == dr.id,
+                    DepositRecord.status == DepositStatus.REFUNDING,
+                    DepositRecord.is_deleted == 0,
+                )
+                .with_for_update()
+                .first()
+            )
+            if dr is None:
+                continue
             dr.status = DepositStatus.REFUND_PENDING
             _create_message(
                 db,
@@ -1476,6 +1508,19 @@ def graduate_children(db: Session | None = None):
             .all()
         )
         for child in graduates:
+            # F-046：写前重取+行锁+状态守卫（防与续费/复活并发覆盖）
+            child = (
+                db.query(Child)
+                .filter(
+                    Child.id == child.id,
+                    Child.status.in_(member_statuses),
+                    Child.is_deleted == 0,
+                )
+                .with_for_update()
+                .first()
+            )
+            if child is None:
+                continue
             child.status = MemberStatus.ALUMNI
             _create_message(
                 db,
@@ -1704,6 +1749,19 @@ def check_observation_expiry(db: Session | None = None):
         expired_count = 0
         for child in expired:
             if child.id in ready_ids:
+                # F-046：写前重取+状态守卫（防与管理员改状态并发覆盖）
+                child = (
+                    db.query(Child)
+                    .filter(
+                        Child.id == child.id,
+                        Child.status == MemberStatus.OBSERVATION,
+                        Child.is_deleted == 0,
+                    )
+                    .with_for_update()
+                    .first()
+                )
+                if child is None:
+                    continue
                 child.status = MemberStatus.EXPIRED
                 expired_count += 1
                 logger.info(

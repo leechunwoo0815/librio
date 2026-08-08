@@ -54,6 +54,7 @@ def main():
     results.append(("D 损坏报告并发双确认（行锁）", _scenario_damage_double_confirm(Session)))
     results.append(("E 取消订单 vs 支付（行锁）", _scenario_cancel_vs_paid(Session)))
     results.append(("F 库存并发双报损（行锁）", _scenario_stock_double_lost(Session)))
+    results.append(("G 缓冲期关停 vs 续费（行锁）", _scenario_grace_vs_renew(Session)))
 
     if "--keep" not in sys.argv:
         _cleanup(engine)
@@ -541,6 +542,90 @@ def _scenario_stock_double_lost(Session):
 
     passed = total == 0
     return passed, f"双报损后 total_stock={total}（应 0，丢失更新则 1），结果: {outcomes}"
+
+
+def _scenario_grace_vs_renew(Session):
+    """F-046：缓冲期关停任务 vs 并发续费——任务不得把续费后的会员覆盖为 EXPIRED
+
+    30 个 OFFICIAL+expire 过期 child：15 个并发续费（带锁置 expire=未来），
+    1 个任务线程 check_grace_period_shutdown（_get_db_session 指向测试库）。
+    缺陷特征：续费成功的 child 被任务覆盖为 EXPIRED。
+    """
+    from datetime import datetime, timedelta
+
+    from backend.common.types import MemberStatus
+    from backend.domain.child.models import Child
+
+    s = Session()
+    child_ids = []
+    for _ in range(30):
+        _, cid = _make_user_child(s, f"grc_{uuid.uuid4().hex[:8]}")
+        child = s.query(Child).filter(Child.id == cid).first()
+        child.status = MemberStatus.OFFICIAL
+        child.member_expire_time = datetime.now() - timedelta(days=20)
+        child_ids.append(cid)
+    s.commit()
+    s.close()
+
+    renew_ids = child_ids[:15]
+    lock = threading.Lock()
+    outcomes = []
+
+    def try_renew(cid):
+        sess = Session()
+        try:
+            child = (
+                sess.query(Child)
+                .filter(Child.id == cid)
+                .with_for_update()
+                .first()
+            )
+            child.status = MemberStatus.OFFICIAL
+            child.member_expire_time = datetime.now() + timedelta(days=365)
+            sess.commit()
+            with lock:
+                outcomes.append("renew_ok")
+        except Exception as e:
+            with lock:
+                outcomes.append(f"renew_err:{str(e)[:60]}")
+        finally:
+            sess.close()
+
+    threads = [threading.Thread(target=try_renew, args=(cid,)) for cid in renew_ids]
+    for t in threads:
+        t.start()
+
+    # 任务线程：_get_db_session 指向测试库
+    import backend.tasks.scheduler as sched_mod
+    from backend.tasks.scheduler import check_grace_period_shutdown
+
+    orig = sched_mod._get_db_session
+    sched_mod._get_db_session = lambda: Session()
+    try:
+        check_grace_period_shutdown()
+    finally:
+        sched_mod._get_db_session = orig
+
+    for t in threads:
+        t.join()
+
+    s = Session()
+    corrupted = 0
+    renewed_ok = 0
+    for cid in renew_ids:
+        child = s.query(Child).filter(Child.id == cid).first()
+        if child.status == MemberStatus.OFFICIAL:
+            renewed_ok += 1
+        else:
+            corrupted += 1  # 续费成功但被任务覆盖 EXPIRED
+    s.close()
+
+    passed = corrupted == 0 and renewed_ok >= 1
+    return (
+        passed,
+        f"续费成功 {renewed_ok}/15，被任务覆盖 EXPIRED {corrupted}（应 0），"
+        f"结果样本: {outcomes[:2]}",
+    )
 
 
 def _cleanup(engine):

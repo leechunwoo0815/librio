@@ -1,0 +1,16 @@
+F-046 scheduler 状态写守卫证据
+=================================
+
+修复（5 处，对齐 F58 mark_overdue_books 范本）：
+① check_grace_period_shutdown：写前重取+行锁+expire 守卫
+② migrate_activity_status×3：写前状态前置守卫
+③ alert_stale_refunds：写前重取+行锁+REFUNDING 守卫
+④ graduate_children：写前重取+行锁+member 状态守卫
+⑤ check_observation_expiry：写前重取+OBSERVATION 守卫
+
+[单测] test_f046_scheduler_guards.py 3 passed（正常迁移/重复运行幂等/非目标状态不覆盖）
+scheduler 相关回归 186 passed + ruff 干净
+
+[MySQL] 场景 G（缓冲期关停 vs 并发续费）：修复后 15/15 续费成功、0 覆盖 PASS
+诚实记录：还原态 RED 未复现损坏（任务秒级完成、竞态窗口极窄，续费后写覆盖场景），
+但代码审查确认修复前无任何写前守卫（直接赋值），本修复为对齐 F58 的防御加固。
