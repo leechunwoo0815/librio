@@ -10,6 +10,7 @@ from backend.common.dependencies import (
     get_admin_report_service,
     get_admin_refund_service,
 )
+from backend.common.exceptions import ConflictError
 from backend.middleware.admin_rbac import require_perm
 from backend.domain.admin.admin_schemas import (
     AdminActionResponse,
@@ -124,19 +125,26 @@ def generate_observation_report(
     db: Session = Depends(get_db),
 ):
     """生成到期观察期报告"""
-    service = ReportService(db)
-    generated = service.generate_due_reports()
-    result = {"success": True, "message": f"已生成 {len(generated)} 份观察期报告"}
-    from backend.domain.admin.services.system_service import AdminSystemService
+    # F-061：手动入口复用 scheduler 同一把分布式锁（job:check_observation_expiry），
+    # 防"定时任务 9:30 与运营手动点击"并发双生成（原仅 scheduler 持锁，DB 无唯一约束兜底）
+    from backend.common.distributed_lock import redis_lock
 
-    system_service = AdminSystemService(service.db)
-    system_service.write_operation_log(
-        admin_id=admin.id,
-        module="report",
-        operation="generate",
-        content=f"生成 {len(generated)} 份观察期报告",
-    )
-    return result
+    with redis_lock("job:check_observation_expiry", timeout=600) as acquired:
+        if not acquired:
+            raise ConflictError("观察期报告正在生成中（定时任务或他人正在执行），请稍后再试")
+        service = ReportService(db)
+        generated = service.generate_due_reports()
+        result = {"success": True, "message": f"已生成 {len(generated)} 份观察期报告"}
+        from backend.domain.admin.services.system_service import AdminSystemService
+
+        system_service = AdminSystemService(service.db)
+        system_service.write_operation_log(
+            admin_id=admin.id,
+            module="report",
+            operation="generate",
+            content=f"生成 {len(generated)} 份观察期报告",
+        )
+        return result
 
 
 @router.put(

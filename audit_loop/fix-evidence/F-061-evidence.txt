@@ -1,0 +1,9 @@
+F-061 报告双入口并发双生成 — 2026-08-08
+修复: admin 手动 POST /reports/observation/generate 复用 scheduler 同一把分布式锁
+  （redis_lock("job:check_observation_expiry", timeout=600)），锁被占时 409 ConflictError
+  （原仅 scheduler @distributed_lock 持锁，admin 无锁；ObservationReport 无 DB 唯一约束兜底）
+测试: test_f061_report_generate_lock.py（2 用例）
+  - locked → 409 + 锁键/超时断言（必须与 scheduler 同键才能真正互斥）
+  - unlocked → 200 正常生成
+  - fixture 需 seed Permission（super_admin 权限集来自 Permission 表，空表 = 403）
+结果: 2 passed
