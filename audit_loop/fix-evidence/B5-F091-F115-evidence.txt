@@ -1,0 +1,9 @@
+批次5-F-091/F-115 唯一性与查重锁 — 2026-08-09
+F-091: create_venue 全局查重（含软删，ConflictError）+ venue.name unique（迁移055）
+  - 语义与 user.phone 一致：软删名不复用（DB unique 兜底并发）
+  - 存量核查：开发库无重名
+F-115: create_book_copy_admin barcode 查重加 with_for_update（F-095 同根不同入口）
+  - 单线程行为与修复前等价（查重仍拒），并发安全由 MySQL 实证批末覆盖
+测试: test_b5_f091_f115_uniqueness.py 4 passed（重名拒绝/软删不复用/条码重复拒绝/自动条码）
+RED→GREEN: 移除查重 → 2 failed；恢复 → 4 passed
+alembic: upgrade head + check 无漂移（head=d3e4f5061728）

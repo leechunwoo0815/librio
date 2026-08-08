@@ -399,7 +399,13 @@ class BookService:
             raise NotFoundError("图书不存在")
 
         if barcode:
-            existing = self.copy_repo.get_by_barcode(barcode)
+            # F-115：查重带行锁（先查后插无锁 → 并发双建同条码；F-095 同根不同入口）
+            existing = (
+                self.db.query(BookCopy)
+                .filter(BookCopy.barcode == barcode)
+                .with_for_update()
+                .first()
+            )
             if existing:
                 raise ConflictError(f"条码 {barcode} 已存在")
         else:

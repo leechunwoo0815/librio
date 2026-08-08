@@ -38,6 +38,17 @@ class AdminVenueService:
 
     def create_venue(self, data: CreateVenueRequest) -> VenueResponse:
         """创建场馆"""
+        from backend.common.exceptions import ConflictError
+
+        # F-091：同名场馆拒绝（含软删，全局唯一——与 user.phone 语义一致，
+        # DB unique 兜底并发；软删名不复用）
+        existing = (
+            self.db.query(Venue)
+            .filter(Venue.name == data.name)
+            .first()
+        )
+        if existing:
+            raise ConflictError(f"场馆名称已存在: {data.name}")
         venue = Venue(
             name=data.name,
             address=data.address,

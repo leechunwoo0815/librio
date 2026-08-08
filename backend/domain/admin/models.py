@@ -399,7 +399,7 @@ class Venue(BaseModel):
     __tablename__ = "venue"
     __table_args__ = {"extend_existing": True}
 
-    name = Column(String(100), nullable=False, comment="场馆名称")
+    name = Column(String(100), nullable=False, unique=True, comment="场馆名称")
     address = Column(String(255), nullable=True, comment="场馆地址")
     phone = Column(String(20), nullable=True, comment="联系电话")
     business_hours = Column(String(100), nullable=True, comment="营业时间")
