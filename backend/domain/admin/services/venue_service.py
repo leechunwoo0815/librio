@@ -52,6 +52,9 @@ class AdminVenueService:
 
     def delete_venue(self, venue_id: int) -> dict:
         """删除场馆"""
+        venue = self.venue_repo.get_by_id(venue_id)
+        if not venue or venue.is_deleted == 1:
+            raise NotFoundError("场馆不存在")  # F-092：假成功修复
         self.venue_repo.soft_delete(venue_id)
         self.db.commit()
         return {"success": True}

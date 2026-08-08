@@ -1958,26 +1958,34 @@ def purge_expired_data(db: Session | None = None):
         )
 
         msg_cutoff = now - timedelta(days=msg_years * 365)
-        old_msg_ids = [
-            r[0]
-            for r in db.query(SystemMessage.id)
-            .filter(
-                SystemMessage.create_time < msg_cutoff,
-                (SystemMessage.user_id.is_(None)) | (SystemMessage.user_id != 0),
+        # F-014：消息清理分批（limit 5000 循环，防大表一次性全量拉爆）
+        while True:
+            batch = [
+                r[0]
+                for r in db.query(SystemMessage.id)
+                .filter(
+                    SystemMessage.create_time < msg_cutoff,
+                    (SystemMessage.user_id.is_(None))
+                    | (SystemMessage.user_id != 0),
+                )
+                .limit(5000)
+                .all()
+            ]
+            if not batch:
+                break
+            stats["message_read_status"] = stats.get(
+                "message_read_status", 0
+            ) + db.query(MessageReadStatus).filter(
+                MessageReadStatus.message_id.in_(batch)
+            ).delete(
+                synchronize_session=False
             )
-            .all()
-        ]
-        if old_msg_ids:
-            stats["message_read_status"] = (
-                db.query(MessageReadStatus)
-                .filter(MessageReadStatus.message_id.in_(old_msg_ids))
-                .delete(synchronize_session=False)
-            )
-            stats["system_message"] = (
+            stats["system_message"] = stats.get("system_message", 0) + (
                 db.query(SystemMessage)
-                .filter(SystemMessage.id.in_(old_msg_ids))
+                .filter(SystemMessage.id.in_(batch))
                 .delete(synchronize_session=False)
             )
+            db.commit()
         stats["teacher_message"] = (
             db.query(TeacherMessage)
             .filter(TeacherMessage.create_time < msg_cutoff)

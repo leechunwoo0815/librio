@@ -461,7 +461,15 @@ class ActivityService:
 
     def create_activity(self, data) -> dict:
         """创建活动"""
-        activity = Activity(**data.model_dump())
+        # F-097：时间校验
+        payload = data.model_dump()
+        start = payload.get("start_time")
+        end = payload.get("end_time")
+        if start and end and end <= start:
+            from backend.common.exceptions import ValidationError
+
+            raise ValidationError("结束时间必须晚于开始时间")
+        activity = Activity(**payload)
         created = self.activity_repo.create(activity)
         self.db.commit()
         return {"id": created.id, "message": "活动创建成功"}
