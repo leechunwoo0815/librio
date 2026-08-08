@@ -193,12 +193,8 @@ class AdminSystemService:
                     "handler_name": e.handler_name,
                     "error_message": e.error_message,
                     "retry_count": e.retry_count or 0,
-                    "resolved_at": e.resolved_at.isoformat()
-                    if e.resolved_at
-                    else None,
-                    "create_time": e.create_time.isoformat()
-                    if e.create_time
-                    else None,
+                    "resolved_at": e.resolved_at.isoformat() if e.resolved_at else None,
+                    "create_time": e.create_time.isoformat() if e.create_time else None,
                 }
                 for e in entries
             ],

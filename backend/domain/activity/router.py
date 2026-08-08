@@ -51,9 +51,7 @@ def enroll(
     return service.enroll(data)
 
 
-@router.put(
-    "/enroll/{enrollment_id}/cancel", response_model=EnrollmentActionResponse
-)
+@router.put("/enroll/{enrollment_id}/cancel", response_model=EnrollmentActionResponse)
 def cancel_enrollment(
     service: ActivityService = Depends(get_activity_service),
     result=Depends(GetOwnedEnrollment()),
@@ -62,9 +60,7 @@ def cancel_enrollment(
     return service.cancel_enrollment(enrollment.id)
 
 
-@router.put(
-    "/enroll/{enrollment_id}/sign-in", response_model=EnrollmentActionResponse
-)
+@router.put("/enroll/{enrollment_id}/sign-in", response_model=EnrollmentActionResponse)
 def sign_in(
     service: ActivityService = Depends(get_activity_service),
     result=Depends(GetOwnedEnrollment()),
@@ -73,9 +69,7 @@ def sign_in(
     return service.sign_in(enrollment.id)
 
 
-@router.get(
-    "/{activity_id}/enrollments", response_model=list[EnrollmentItemResponse]
-)
+@router.get("/{activity_id}/enrollments", response_model=list[EnrollmentItemResponse])
 def get_enrollments(
     activity_id: int,
     service: ActivityService = Depends(get_activity_service),

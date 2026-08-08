@@ -41,9 +41,7 @@ def _mk_user_child(db, status=MemberStatus.TRIAL):
     user = User(openid="f050", phone="13800005000")
     db.add(user)
     db.commit()
-    child = Child(
-        user_id=user.id, name="时长", age=7, grade="二年级", status=status
-    )
+    child = Child(user_id=user.id, name="时长", age=7, grade="二年级", status=status)
     db.add(child)
     db.commit()
     return user, child
@@ -129,9 +127,7 @@ class TestSnapshotWritten:
                 "pay_type": 2,
             }
         )
-        order = (
-            db.query(Order).filter(Order.order_no == result["order_no"]).one()
-        )
+        order = db.query(Order).filter(Order.order_no == result["order_no"]).one()
         assert order.duration_days == 45
 
 

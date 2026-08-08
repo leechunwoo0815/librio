@@ -151,7 +151,11 @@ class SystemConfig(BaseModel):
             "bool",
             "每孩子首次逾期免罚（B7决策：培养习惯优先）",
         ),
-        "lost_book_fine_multiplier": ("1.5", "decimal", "丢书罚款倍率（图书定价×倍率）"),
+        "lost_book_fine_multiplier": (
+            "1.5",
+            "decimal",
+            "丢书罚款倍率（图书定价×倍率）",
+        ),
         "lost_search_days": (
             "7",
             "int",

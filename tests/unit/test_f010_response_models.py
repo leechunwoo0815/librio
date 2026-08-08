@@ -48,11 +48,10 @@ def test_all_16_endpoints_have_response_model():
                 operation = paths[p][method]
                 break
         if not operation:
-            missing.append(
-                f"{method.upper()} {template}（无 OpenAPI 路径或该操作）"
-            )
+            missing.append(f"{method.upper()} {template}（无 OpenAPI 路径或该操作）")
             continue
         responses = operation.get("responses", {})
+
         def _has_real_schema(resp) -> bool:
             content = resp.get("content", {})
             schema = content.get("application/json", {}).get("schema")

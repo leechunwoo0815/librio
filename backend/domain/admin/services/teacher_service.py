@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from backend.common.base_repo import BaseRepository
 from backend.common.exceptions import NotFoundError
-from backend.domain.admin.models import Teacher, TeacherSchedule, Venue
+from backend.domain.admin.models import Teacher, Venue
 from backend.domain.admin.repository import TeacherRepository, TeacherScheduleRepository
 from backend.domain.admin.schemas import (
     SuccessResponse,

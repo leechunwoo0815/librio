@@ -28,6 +28,4 @@ def validate_question_correct_answer(
         "D": option_d,
     }
     if not str(option_map[correct_answer] or "").strip():
-        raise ValidationError(
-            f"correct_answer={correct_answer} 指向的选项不能为空"
-        )
+        raise ValidationError(f"correct_answer={correct_answer} 指向的选项不能为空")

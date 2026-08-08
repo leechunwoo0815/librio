@@ -47,9 +47,7 @@ def get_child_reservations(
     return service.get_child_reservations(child.id)
 
 
-@router.post(
-    "/{reservation_id}/cancel", response_model=WaitlistActionResponse
-)
+@router.post("/{reservation_id}/cancel", response_model=WaitlistActionResponse)
 def cancel_reservation(
     reservation_id: int,
     service: ReservationService = Depends(get_reservation_service),
@@ -71,9 +69,7 @@ def join_waitlist(
     return service.join_waitlist(child.id, data.book_id)
 
 
-@router.get(
-    "/waitlist/{child_id}", response_model=list[WaitlistEntryResponse]
-)
+@router.get("/waitlist/{child_id}", response_model=list[WaitlistEntryResponse])
 def get_child_waitlist(
     child=Depends(GetOwnedChild()),
     service: ReservationService = Depends(get_reservation_service),
@@ -82,9 +78,7 @@ def get_child_waitlist(
     return service.get_child_waitlist(child.id)
 
 
-@router.post(
-    "/waitlist/{waitlist_id}/cancel", response_model=WaitlistActionResponse
-)
+@router.post("/waitlist/{waitlist_id}/cancel", response_model=WaitlistActionResponse)
 def cancel_waitlist(
     waitlist_id: int,
     service: ReservationService = Depends(get_reservation_service),

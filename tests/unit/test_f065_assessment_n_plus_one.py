@@ -42,9 +42,7 @@ def _seed(db):
     venue = Venue(name="评估馆", address="测试路1号", phone="13800065003")
     db.add(venue)
     db.flush()
-    teacher = Teacher(
-        name="评估老师", phone="13800065002", venue_id=venue.id
-    )
+    teacher = Teacher(name="评估老师", phone="13800065002", venue_id=venue.id)
     db.add(teacher)
     db.flush()
     for i, c in enumerate(children):
@@ -92,6 +90,4 @@ def test_list_assessments_no_n_plus_one(db):
     assert result.total == 3
     assert len(result.items) == 3
     assert lazy_sql == [], f"F-065 N+1 泄漏: {lazy_sql}"
-    assert all(
-        i.child_name and i.teacher_name and i.venue_name for i in result.items
-    )
+    assert all(i.child_name and i.teacher_name and i.venue_name for i in result.items)

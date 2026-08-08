@@ -732,9 +732,7 @@ def replay_dead_letter(
     return result
 
 
-@router.delete(
-    "/dead-letters/{dead_letter_id}", response_model=AdminActionResponse
-)
+@router.delete("/dead-letters/{dead_letter_id}", response_model=AdminActionResponse)
 def delete_dead_letter(
     dead_letter_id: int,
     service: AdminSystemService = Depends(get_admin_system_service),

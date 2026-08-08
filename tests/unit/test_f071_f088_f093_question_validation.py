@@ -9,7 +9,6 @@ from pydantic import ValidationError
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from backend.common.types import OrderType
 from backend.database import Base
 from backend.domain.admin.services.book_service import AdminBookService
 from backend.domain.advancement.models import QuestionBank
@@ -81,6 +80,7 @@ class TestF071CreateQuestion:
 
         book = _mk_book(db)
         svc = AdvancementService(db)
+
         class _Rogue:
             correct_answer = "C"
             option_a = "甲"
@@ -124,9 +124,7 @@ class TestF093UpdateQuestion:
 
         svc = AdvancementService(db)
         with pytest.raises(BizValidationError, match="指向的选项不能为空"):
-            svc.update_question(
-                q.id, UpdateQuestionRequest(correct_answer="C")
-            )
+            svc.update_question(q.id, UpdateQuestionRequest(correct_answer="C"))
         db.rollback()
         db.refresh(q)
         assert q.correct_answer == "A"  # 未落库
@@ -150,9 +148,7 @@ class TestF093UpdateQuestion:
 
         svc = AdvancementService(db)
         with pytest.raises(BizValidationError, match="指向的选项不能为空"):
-            svc.update_question(
-                q.id, UpdateQuestionRequest(option_a="")
-            )
+            svc.update_question(q.id, UpdateQuestionRequest(option_a=""))
         db.rollback()
         db.refresh(q)
         assert q.option_a == "甲"

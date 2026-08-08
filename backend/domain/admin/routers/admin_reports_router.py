@@ -131,7 +131,9 @@ def generate_observation_report(
 
     with redis_lock("job:check_observation_expiry", timeout=600) as acquired:
         if not acquired:
-            raise ConflictError("观察期报告正在生成中（定时任务或他人正在执行），请稍后再试")
+            raise ConflictError(
+                "观察期报告正在生成中（定时任务或他人正在执行），请稍后再试"
+            )
         service = ReportService(db)
         generated = service.generate_due_reports()
         result = {"success": True, "message": f"已生成 {len(generated)} 份观察期报告"}

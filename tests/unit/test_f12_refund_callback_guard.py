@@ -130,7 +130,6 @@ class TestMarkRefundedIdempotent:
 
     def test_second_callback_does_not_double_deduct_fine(self, http_db):
         """F-019：带罚款抵扣的退款，重复回调不得二次核销 outstanding_fines"""
-        from backend.domain.child.models import Child
         from backend.domain.refund.service import RefundService
 
         db = http_db

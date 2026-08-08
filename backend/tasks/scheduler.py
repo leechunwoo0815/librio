@@ -484,10 +484,7 @@ def reconcile_child_stats(db: Session | None = None):
             # 增量：只对"窗口内有数据变更"的孩子做对账，且只修正本次聚合到的字段——
             # 窗口外孩子的历史字段不受影响（F-036：避免把未聚合字段误清零）
             affected_ids = (
-                set(words_map)
-                | set(minutes_map)
-                | set(books_map)
-                | set(dates_by_child)
+                set(words_map) | set(minutes_map) | set(books_map) | set(dates_by_child)
             )
             children = (
                 db.query(Child)
@@ -504,23 +501,23 @@ def reconcile_child_stats(db: Session | None = None):
             cur_streak, longest_run = _streaks(dates_by_child.get(child.id, set()))
 
             deviations = []
-            if (
-                child.id in words_map or full_reconcile
-            ) and (child.total_words_read or 0) != expected_words:
+            if (child.id in words_map or full_reconcile) and (
+                child.total_words_read or 0
+            ) != expected_words:
                 deviations.append(
                     f"words {child.total_words_read or 0}→{expected_words}"
                 )
                 child.total_words_read = expected_words
-            if (
-                child.id in minutes_map or full_reconcile
-            ) and (child.total_reading_minutes or 0) != expected_minutes:
+            if (child.id in minutes_map or full_reconcile) and (
+                child.total_reading_minutes or 0
+            ) != expected_minutes:
                 deviations.append(
                     f"minutes {child.total_reading_minutes or 0}→{expected_minutes}"
                 )
                 child.total_reading_minutes = expected_minutes
-            if (
-                child.id in books_map or full_reconcile
-            ) and (child.total_books_finished or 0) != expected_books:
+            if (child.id in books_map or full_reconcile) and (
+                child.total_books_finished or 0
+            ) != expected_books:
                 deviations.append(
                     f"books {child.total_books_finished or 0}→{expected_books}"
                 )
@@ -820,9 +817,7 @@ def generate_monthly_reports():
         for book_id, borrow_count in top_books:
             # F-038：月报 TOP10 过滤已下架图书（软删书不得展示）
             book = (
-                db.query(Book)
-                .filter(Book.id == book_id, Book.is_deleted == 0)
-                .first()
+                db.query(Book).filter(Book.id == book_id, Book.is_deleted == 0).first()
             )
             top_books_info.append(
                 {

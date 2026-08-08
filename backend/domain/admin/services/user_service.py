@@ -206,7 +206,9 @@ class AdminUserService:
         q = (
             self.db.query(Child)
             .join(User, Child.user_id == User.id)
-            .options(contains_eager(Child.user))  # F-025：join 已带 User 列，禁止二次懒加载
+            .options(
+                contains_eager(Child.user)
+            )  # F-025：join 已带 User 列，禁止二次懒加载
             .filter(
                 Child.is_deleted == 0,
                 or_(
