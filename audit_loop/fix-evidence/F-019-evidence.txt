@@ -1,0 +1,10 @@
+F-019 幂等测试 RED 守护 — 2026-08-08
+修改: tests/unit/test_f12_refund_callback_guard.py
+  - test_second_callback_does_not_error 补 refund_time/actual_refund_amount 未变断言
+  - 新增 test_second_callback_does_not_double_deduct_fine（罚款抵扣二次核销防护）
+RED 实证: 临时移除 refund/service.py:404-406 幂等守卫后:
+  FAILED TestMarkRefundedIdempotent::test_second_callback_does_not_error
+  FAILED TestMarkRefundedIdempotent::test_second_callback_does_not_double_deduct_fine
+  2 failed
+恢复守卫后: 6 passed
+结论: 新断言真实守护幂等守卫；移除守卫必红。

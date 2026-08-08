@@ -117,11 +117,41 @@ class TestMarkRefundedIdempotent:
         svc.mark_refunded("MW-F12-001")
         db.refresh(refund)
         assert refund.status == RefundApplication.STATUS_COMPLETED
+        first_refund_time = refund.refund_time
+        first_actual_amount = refund.actual_refund_amount
 
         # 重复回调：幂等返回，不报错不重复置位
         svc.mark_refunded("MW-F12-001")
         db.refresh(refund)
         assert refund.status == RefundApplication.STATUS_COMPLETED
+        # F-019 RED 守护：幂等守卫被移除时，第二次调用会覆盖 refund_time 并重算金额
+        assert refund.refund_time == first_refund_time
+        assert refund.actual_refund_amount == first_actual_amount
+
+    def test_second_callback_does_not_double_deduct_fine(self, http_db):
+        """F-019：带罚款抵扣的退款，重复回调不得二次核销 outstanding_fines"""
+        from backend.domain.child.models import Child
+        from backend.domain.refund.service import RefundService
+
+        db = http_db
+        user, child, order, refund = _seed_order_refund(db)
+        # 构造"申请时已抵扣 30 元罚款"的场景（家长退款窗口内有未缴罚款）
+        child.outstanding_fines = Decimal("30")
+        refund.fine_deducted = Decimal("30")
+        db.commit()
+
+        svc = RefundService(db)
+        svc.mark_refunded("MW-F12-001")
+        db.refresh(child)
+        assert child.outstanding_fines == Decimal("0")
+
+        # 重复回调：不得二次核销（若守卫被移除，会按 min(30, 0)=0 再走一遍，
+        # 并将差额回补进 actual_refund_amount——两个断言都必须守住）
+        svc.mark_refunded("MW-F12-001")
+        db.refresh(child)
+        db.refresh(refund)
+        assert child.outstanding_fines == Decimal("0")
+        assert refund.actual_refund_amount == refund.refund_amount
 
 
 class TestRefundCallbackStatusGate:
