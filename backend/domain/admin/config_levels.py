@@ -100,6 +100,7 @@ CONFIG_RANGES: dict[str, tuple[float, float]] = {
     "review_sla_hours": (1, 168),
     "reservation_expire_hours": (1, 720),
     "reservation_remind_hours": (1, 168),
+    "waitlist_notified_ttl_hours": (1, 720),
     "default_required_books": (1, 50),
     "quiz_pass_rate": (0.01, 1),
     "quiz_total_questions": (1, 20),

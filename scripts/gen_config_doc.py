@@ -100,6 +100,7 @@ SECTIONS: list[tuple[str, list[str]]] = [
         [
             "reservation_expire_hours",
             "reservation_remind_hours",
+            "waitlist_notified_ttl_hours",
         ],
     ),
     (

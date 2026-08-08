@@ -1,0 +1,8 @@
+F-056 候补 NOTIFIED 回归路径 — 2026-08-08
+修复: join_waitlist 对 NOTIFIED 且 notify_time 超过配置阈值者自动转回 WAITING 重新排队
+  （通知未抢到者不再永久失格；未超时仍拒绝重复加入；notify_time 为空保守拒绝）
+新增配置: waitlist_notified_ttl_hours（默认 48h，CONFIG_RANGES 1-720，gen_config_doc SECTIONS 七）
+  → 配置总数 66→67（基线同步见批次末）
+测试: test_f056_waitlist_notified_return.py（4 用例：超时重排/未超时拒绝/空时间拒绝/配置阈值生效）
+  + 原 test_waitlist 10 用例全绿（未破坏 F4 语义）
+RED→GREEN: 移除 F-056 分支 → 2 failed；恢复 → 4 passed

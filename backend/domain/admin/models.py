@@ -201,6 +201,11 @@ class SystemConfig(BaseModel):
             "int",
             "预约取书提醒提前量（B4：到期前N小时未取提醒）",
         ),
+        "waitlist_notified_ttl_hours": (
+            "48",
+            "int",
+            "候补到货通知滞留时长（F-056：NOTIFIED 后 N 小时内未抢到可重新排队，小时）",
+        ),
         # ── 晋级规则 ──
         "default_required_books": (
             "5",

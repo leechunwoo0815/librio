@@ -353,6 +353,8 @@ class ReservationService:
         if active_reservation:
             raise ConflictError("该孩子已预约本书，无需加入等候")
 
+        from backend.common.config_service import ConfigService
+
         existing = (
             self.db.query(BookWaitlist)
             .filter(
@@ -366,6 +368,23 @@ class ReservationService:
             .first()
         )
         if existing:
+            # F-056：NOTIFIED 且通知超时未抢到 → 允许重新排队（保留原记录队序语义）
+            if (
+                existing.status == BookWaitlist.STATUS_NOTIFIED
+                and existing.notify_time is not None
+            ):
+                ttl_hours = ConfigService.get_int(
+                    self.db, "waitlist_notified_ttl_hours", 48
+                )
+                if datetime.now() - existing.notify_time > timedelta(hours=ttl_hours):
+                    existing.status = BookWaitlist.STATUS_WAITING
+                    self.db.commit()
+                    self.db.refresh(existing)
+                    return {
+                        "success": True,
+                        "waitlist_id": existing.id,
+                        "message": "您之前的到货通知已超时，已为您重新排队等候",
+                    }
             raise ConflictError("已在等候名单中，请留意到货通知")
 
         entry = BookWaitlist(child_id=child_id, book_id=book_id)
