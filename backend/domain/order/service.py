@@ -2,7 +2,7 @@
 """订单域业务逻辑 — 创建订单、支付处理、退款计算"""
 
 import logging
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 from datetime import datetime
 
 from sqlalchemy.orm import Session
@@ -329,7 +329,9 @@ class OrderService:
             renewal_disc = ConfigService.get_decimal(
                 self.db, "renewal_discount", Decimal("0.9")
             )
-            renewal_price = (amount * renewal_disc).quantize(Decimal("0.01"))
+            renewal_price = (amount * renewal_disc).quantize(
+                Decimal("0.01"), rounding=ROUND_HALF_UP
+            )
 
         # P0-6: 多孩优惠 — 检查该用户是否有其他孩子是观察期/正式会员
         # 排除报名孩子自身，避免单孩子也享受多孩优惠
@@ -380,7 +382,9 @@ class OrderService:
             discount = ConfigService.get_decimal(
                 self.db, "multi_child_discount", MULTI_CHILD_DISCOUNT
             )
-            multi_child_price = (amount * discount).quantize(Decimal("0.01"))
+            multi_child_price = (amount * discount).quantize(
+                Decimal("0.01"), rounding=ROUND_HALF_UP
+            )
 
         # 不可叠加：取最低价
         return min(renewal_price, multi_child_price)
@@ -635,7 +639,7 @@ class OrderService:
             current_price
             * Decimal(str(remaining_days))
             / Decimal(str(current_total_days))
-        ).quantize(Decimal("0.01"))
+        ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
         # 可升级到的目标类型
         target_types = []
@@ -655,7 +659,11 @@ class OrderService:
                     "target_price": str(target_price),
                     "target_days": target_days,
                     "remaining_value": str(remaining_value),
-                    "upgrade_price": str(upgrade_price.quantize(Decimal("0.01"))),
+                    "upgrade_price": str(
+                        upgrade_price.quantize(
+                            Decimal("0.01"), rounding=ROUND_HALF_UP
+                        )
+                    ),
                 }
             )
 
@@ -760,7 +768,9 @@ class OrderService:
         return {
             "refund_amount": refund,
             "daily_rate": daily_rate,
-            "used_amount": (order.amount - refund).quantize(Decimal("0.01")),
+            "used_amount": (order.amount - refund).quantize(
+                Decimal("0.01"), rounding=ROUND_HALF_UP
+            ),
             "total_days": total_days,
         }
 

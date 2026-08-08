@@ -1,0 +1,10 @@
+批次2-F030/031/032/033 证据
+===============================
+
+F-030: pay_deposit/repay_deposit prepay 失败保持 PENDING（回调仅接受 PENDING→PAID，
+      原置 UNPAID 会丢网络超时窗口的回调匹配；超时由 F78 复位）
+F-031: handle_refund_failed 对已 REFUNDED 订单忽略（乱序回调不覆盖）
+F-032: 订单金额 quantize 统一 ROUND_HALF_UP（332/383/638/658/763 + damage fine）
+F-033: deposit 三处 int(x*100) 截断改 yuan_to_cents 四舍五入
+
+[单测] test_batch2_f030_033.py 3 passed + 相关域回归 200 passed

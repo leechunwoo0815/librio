@@ -447,6 +447,13 @@ class RefundService:
         if not order:
             return
 
+        # F-031：乱序回调守卫——退款已完成后忽略非成功终态（防 REFUNDED 被覆盖回 PAID）
+        if order.refund_status == 2:  # REFUND_DONE
+            logger.warning(
+                f"Refund failure callback ignored: order={order_no} already refunded"
+            )
+            return
+
         order.refund_status = 3  # FAILED
         order.pay_status = PayStatus.PAID
         order.refund_remark = f"微信退款回调状态={status}"

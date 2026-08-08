@@ -104,7 +104,7 @@ class DepositService:
         self.db.commit()
 
         # Phase 2: 事务外调用支付网关（无DB锁）
-        amount_cent = int(deposit_amount * 100)
+        amount_cent = yuan_to_cents(deposit_amount)  # F-033：四舍五入到分（原 int 截断）
         order_req = PaymentOrderRequest(
             out_trade_no=order_no,
             amount=amount_cent,
@@ -116,27 +116,12 @@ class DepositService:
             result = await payment_gateway.create_order(order_req)
         except Exception as e:
             logger.error(f"pay_deposit gateway error: child={data.child_id}, error={e}")
-            record = (
-                self.db.query(DepositRecord)
-                .filter(DepositRecord.id == record.id)
-                .with_for_update()
-                .first()
-            )
-            if record:
-                record.status = DepositStatus.UNPAID
-            self.db.commit()
+            # F-030：prepay 失败保持 PENDING——网络超时窗口微信可能已受理，
+            # 置 UNPAID 会丢回调匹配（回调仅接受 PENDING→PAID）；超时由 F78 复位
             raise PaymentError(f"支付网关调用失败: {e}")
 
         if not result.success:
-            record = (
-                self.db.query(DepositRecord)
-                .filter(DepositRecord.id == record.id)
-                .with_for_update()
-                .first()
-            )
-            if record:
-                record.status = DepositStatus.UNPAID
-            self.db.commit()
+            # F-030：同异常分支——保持 PENDING 保留回调窗口
             raise PaymentError(result.error_message)
 
         # Phase 3: 独立事务更新最终状态
@@ -281,7 +266,7 @@ class DepositService:
         self.db.commit()
 
         # Phase 2: 事务外调用支付网关（无DB锁）
-        amount_cent = int(deposit_amount * 100)
+        amount_cent = yuan_to_cents(deposit_amount)  # F-033：四舍五入到分（原 int 截断）
         order_req = PaymentOrderRequest(
             out_trade_no=order_no,
             amount=amount_cent,
@@ -293,27 +278,11 @@ class DepositService:
             result = await payment_gateway.create_order(order_req)
         except Exception as e:
             logger.error(f"repay_deposit gateway error: child={child_id}, error={e}")
-            record = (
-                self.db.query(DepositRecord)
-                .filter(DepositRecord.id == record.id)
-                .with_for_update()
-                .first()
-            )
-            if record:
-                record.status = DepositStatus.UNPAID
-            self.db.commit()
+            # F-030：同 pay_deposit——保持 PENDING 保留回调窗口，超时由 F78 复位
             raise PaymentError(f"支付网关调用失败: {e}")
 
         if not result.success:
-            record = (
-                self.db.query(DepositRecord)
-                .filter(DepositRecord.id == record.id)
-                .with_for_update()
-                .first()
-            )
-            if record:
-                record.status = DepositStatus.UNPAID
-            self.db.commit()
+            # F-030：同异常分支——保持 PENDING
             raise PaymentError(result.error_message)
 
         # Phase 3: 独立事务更新最终状态
@@ -890,7 +859,7 @@ class DepositService:
             self.db.commit()
             self.db.refresh(record)
 
-        amount_cent = int(outstanding * 100)
+        amount_cent = yuan_to_cents(outstanding)  # F-033：四舍五入到分（原 int 截断）
         order_req = PaymentOrderRequest(
             out_trade_no=record.pay_order_no,
             amount=amount_cent,
