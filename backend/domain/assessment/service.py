@@ -62,27 +62,40 @@ class AssessmentService:
             .all()
         )
 
+        # F-065：in_ 批量预取 child/teacher/venue（原逐条查询 N+1，page_size 上限 100）
+        child_ids = {a.child_id for a in items}
+        teacher_ids = {a.teacher_id for a in items if a.teacher_id}
+        venue_ids = {a.venue_id for a in items if a.venue_id}
+        children = {}
+        teachers = {}
+        venues = {}
+        if child_ids:
+            children = {
+                c.id: c
+                for c in self.db.query(Child)
+                .filter(Child.id.in_(child_ids), Child.is_deleted == 0)
+                .all()
+            }
+        if teacher_ids:
+            teachers = {
+                t.id: t
+                for t in self.db.query(Teacher)
+                .filter(Teacher.id.in_(teacher_ids), Teacher.is_deleted == 0)
+                .all()
+            }
+        if venue_ids:
+            venues = {
+                v.id: v
+                for v in self.db.query(Venue)
+                .filter(Venue.id.in_(venue_ids), Venue.is_deleted == 0)
+                .all()
+            }
+
         result = []
         for a in items:
-            child = (
-                self.db.query(Child)
-                .filter(Child.id == a.child_id, Child.is_deleted == 0)
-                .first()
-            )
-            teacher = (
-                self.db.query(Teacher)
-                .filter(Teacher.id == a.teacher_id, Teacher.is_deleted == 0)
-                .first()
-                if a.teacher_id
-                else None
-            )
-            venue = (
-                self.db.query(Venue)
-                .filter(Venue.id == a.venue_id, Venue.is_deleted == 0)
-                .first()
-                if a.venue_id
-                else None
-            )
+            child = children.get(a.child_id)
+            teacher = teachers.get(a.teacher_id) if a.teacher_id else None
+            venue = venues.get(a.venue_id) if a.venue_id else None
 
             ar_change = None
             if a.ar_level_before is not None and a.ar_level_after is not None:

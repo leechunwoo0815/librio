@@ -1,0 +1,6 @@
+F-065 N+1 修复 — 2026-08-08
+位置: assessment/service.py list_assessments 分页循环内逐条查询 Child/Teacher/Venue
+修复: in_ 批量预取三张表 + dict 映射（对齐 borrow/report 先例）
+测试: test_f065_assessment_n_plus_one.py —— SQL 计数守护，排除 IN 批量预取，
+  只抓逐条 = ? 查询；expunge_all 防缓存假绿
+RED→GREEN: 临时还原逐条查询 → 1 failed；恢复 → 1 passed
