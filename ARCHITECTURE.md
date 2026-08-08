@@ -44,7 +44,7 @@ Gateways → Mock支付网关 / Mock短信网关 / 真实支付网关（依赖�
 | 前端 | 微信小程序原生（34 页，4 子包） |
 | 后端 | Python 3.13 + FastAPI + SQLAlchemy 2.0 + Pydantic V2 |
 | 数据库 | MySQL 8.0 (utf8mb4)，测试用 SQLite :memory: |
-| 测试 | pytest (776 collected，通过数随环境) + behave (211 scenarios / 1369 steps) |
+| 测试 | pytest (783 collected，通过数随环境) + behave (211 scenarios / 1369 steps) |
 | 管理端 | 39 个 PC 后台模板（含 base.html）+ 35 页面级 CSS + 36 page JS（IIFE） |
 | 设计系统 | --accent: #5560cf + 31/31 class 对齐 ≥95% + 0 hardcoded + 0 oklch |
 | 定时 | APScheduler（24 个任务） |
@@ -258,7 +258,7 @@ frontend/                # 微信小程序（34 个页面，4 子包）
 
 ```bash
 # pytest
-776 collected（通过数随环境：开发机 776 passed / CI 708+15 skip / 无 MySQL 沙箱 714+9 err）
+783 collected（通过数随环境：开发机 783 passed / CI 708+15 skip / 无 MySQL 沙箱 714+9 err）
 
 # 架构验证
 ✅ Router 层 ORM 操作：0 处
@@ -428,7 +428,7 @@ behave:  ✅ 138/138 passed
 | — | Admin XSS innerHTML | P1 | ✅ 已修复（XSS 审查 20260721 闭环） |
 | — | Alembic 漂移 | P1 | ✅ 已修复（021/022/023） |
 | — | 管理后台列表无分页 | P2/P1 | ✅ 已修复（PaginatedResponse 全量继承） |
-| — | 测试覆盖补全 | P0 parallel | ✅ 已修复（776 测试 + 真实断言 + MySQL 并发脚本） |
+| — | 测试覆盖补全 | P0 parallel | ✅ 已修复（783 测试 + 真实断言 + MySQL 并发脚本） |
 
 ---
 
