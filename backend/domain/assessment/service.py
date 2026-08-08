@@ -242,6 +242,19 @@ class AssessmentService:
         if not child:
             raise NotFoundError("孩子不存在")
 
+        # F-113：teacher_id 存在性校验（悬空老师记录不可追溯）
+        if data.teacher_id is not None:
+            from backend.domain.admin.models import Teacher
+            from backend.common.exceptions import ValidationError
+
+            teacher = (
+                self.db.query(Teacher)
+                .filter(Teacher.id == data.teacher_id, Teacher.is_deleted == 0)
+                .first()
+            )
+            if not teacher:
+                raise ValidationError(f"老师不存在: {data.teacher_id}")
+
         assessment = Assessment(
             child_id=data.child_id,
             teacher_id=data.teacher_id,
