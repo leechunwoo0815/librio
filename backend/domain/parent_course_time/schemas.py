@@ -22,8 +22,12 @@ class ParentCourseTimeUpdate(BaseSchema):
     """更新时间段请求"""
 
     course_date: str | None = Field(None, description="日期 YYYY-MM-DD")
-    start_time: str | None = Field(None, pattern=r"^\d{2}:\d{2}$", description="开始时间 HH:MM")
-    end_time: str | None = Field(None, pattern=r"^\d{2}:\d{2}$", description="结束时间 HH:MM")
+    start_time: str | None = Field(
+        None, pattern=r"^\d{2}:\d{2}$", description="开始时间 HH:MM"
+    )
+    end_time: str | None = Field(
+        None, pattern=r"^\d{2}:\d{2}$", description="结束时间 HH:MM"
+    )
     max_participants: int | None = Field(None, ge=1, description="最大名额")  # F-069
     status: int | None = Field(None, description="状态: 1=可约 0=已满 -1=关闭")
 

@@ -55,8 +55,12 @@ class EndSessionRequest(BaseSchema):
     """结束阅读会话请求"""
 
     pages_read: int = Field(0, ge=0, le=10000, description="本次阅读页数上限")  # F-060
-    words_read: int = Field(0, ge=0, le=1000000, description="本次阅读词数上限")  # F-060
-    reading_minutes: int = Field(0, ge=0, le=1440, description="本次阅读分钟上限")  # F-060
+    words_read: int = Field(
+        0, ge=0, le=1000000, description="本次阅读词数上限"
+    )  # F-060
+    reading_minutes: int = Field(
+        0, ge=0, le=1440, description="本次阅读分钟上限"
+    )  # F-060
 
 
 class SessionResponse(BaseSchema):

@@ -564,9 +564,7 @@ def check_member_expiry(db: Session | None = None):
         date_lower = today + timedelta(days=min_days)
         # F-015：范围比较替代 func.date 包裹（索引失效全表扫描）
         lower_dt = datetime.combine(date_lower, datetime.min.time())
-        upper_dt = datetime.combine(
-            date_upper + timedelta(days=1), datetime.min.time()
-        )
+        upper_dt = datetime.combine(date_upper + timedelta(days=1), datetime.min.time())
 
         children = (
             db.query(Child)
@@ -1965,8 +1963,7 @@ def purge_expired_data(db: Session | None = None):
                 for r in db.query(SystemMessage.id)
                 .filter(
                     SystemMessage.create_time < msg_cutoff,
-                    (SystemMessage.user_id.is_(None))
-                    | (SystemMessage.user_id != 0),
+                    (SystemMessage.user_id.is_(None)) | (SystemMessage.user_id != 0),
                 )
                 .limit(5000)
                 .all()
@@ -1977,9 +1974,7 @@ def purge_expired_data(db: Session | None = None):
                 "message_read_status", 0
             ) + db.query(MessageReadStatus).filter(
                 MessageReadStatus.message_id.in_(batch)
-            ).delete(
-                synchronize_session=False
-            )
+            ).delete(synchronize_session=False)
             stats["system_message"] = stats.get("system_message", 0) + (
                 db.query(SystemMessage)
                 .filter(SystemMessage.id.in_(batch))
