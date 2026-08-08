@@ -411,6 +411,30 @@ class AdminSystemService:
         if not item:
             raise NotFoundError("记录不存在或未被删除")
 
+        # F-103：物理删除前检查下游关联（FK 环境会 500，无 FK 环境留孤儿数据——
+        # 统一改为明确拒绝并提示先处理关联）
+        from backend.common.exceptions import ConflictError
+
+        if module == "book":
+            from backend.domain.book.models import BookCopy
+            from backend.domain.advancement.models import QuestionBank
+
+            copy_count = (
+                self.db.query(BookCopy)
+                .filter(BookCopy.book_id == item_id)
+                .count()
+            )
+            question_count = (
+                self.db.query(QuestionBank)
+                .filter(QuestionBank.book_id == item_id)
+                .count()
+            )
+            if copy_count > 0 or question_count > 0:
+                raise ConflictError(
+                    f"该图书仍有 {copy_count} 个副本、{question_count} 道题目关联，"
+                    "请先永久删除副本/题目后再删除图书"
+                )
+
         self.db.delete(item)
         self.db.commit()
         return {"success": True, "message": f"已永久删除 {module} #{item_id}"}

@@ -253,3 +253,45 @@ class TestF118DetailStatsFullCount:
         assert Decimal(detail["summary"]["total_spent"]) == Decimal("6000")
         # 展示列表仍为最近 50 条（展示 vs 统计分离）
         assert len(detail["orders"]) == 50
+
+
+class TestF103PermanentDeleteGuard:
+    def test_book_with_copies_rejected(self, db):
+        from backend.common.exceptions import ConflictError
+        from backend.domain.admin.services.system_service import AdminSystemService
+        from backend.domain.book.models import BookCopy
+
+        book = Book(
+            isbn="9780000001030",
+            title="关联书",
+            author="A",
+            ar_value=Decimal("2.0"),
+            age_min=5,
+            age_max=9,
+            is_deleted=1,
+        )
+        db.add(book)
+        db.commit()
+        db.add(BookCopy(book_id=book.id, barcode="F103-001", is_deleted=1))
+        db.commit()
+
+        with pytest.raises(ConflictError, match="副本"):
+            AdminSystemService(db).permanent_delete_item("book", book.id)
+        assert db.query(Book).filter_by(id=book.id).count() == 1
+
+    def test_orphan_book_deletable(self, db):
+        from backend.domain.admin.services.system_service import AdminSystemService
+
+        book = Book(
+            isbn="9780000001031",
+            title="孤书",
+            author="A",
+            ar_value=Decimal("2.0"),
+            age_min=5,
+            age_max=9,
+            is_deleted=1,
+        )
+        db.add(book)
+        db.commit()
+        result = AdminSystemService(db).permanent_delete_item("book", book.id)
+        assert result["success"] is True
