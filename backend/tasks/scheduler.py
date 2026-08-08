@@ -790,7 +790,12 @@ def generate_monthly_reports():
 
         top_books_info = []
         for book_id, borrow_count in top_books:
-            book = db.query(Book).filter(Book.id == book_id).first()
+            # F-038：月报 TOP10 过滤已下架图书（软删书不得展示）
+            book = (
+                db.query(Book)
+                .filter(Book.id == book_id, Book.is_deleted == 0)
+                .first()
+            )
             top_books_info.append(
                 {
                     "book_id": book_id,
@@ -1048,11 +1053,17 @@ def remind_pending_submissions():
             .filter(
                 ReadingSubmission.status == ReadingSubmission.STATUS_PENDING,
                 ReadingSubmission.submitted_at < cutoff,
+                ReadingSubmission.is_deleted == 0,  # F-038：软删提交不提醒
             )
             .all()
         )
         for s in pending:
-            child = db.query(Child).filter(Child.id == s.child_id).first()
+            # F-038：软删孩子不提醒（家长已删除档案后不得再收到待审提醒）
+            child = (
+                db.query(Child)
+                .filter(Child.id == s.child_id, Child.is_deleted == 0)
+                .first()
+            )
             if child and child.teacher_id:
                 days = (datetime.now() - s.submitted_at).days
                 _create_message(

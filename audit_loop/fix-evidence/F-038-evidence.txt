@@ -1,0 +1,8 @@
+F-038 scheduler 任务层 is_deleted 过滤 — 2026-08-08
+修复 3 处（报告定位行号 774/1020/1028 在当前代码为 793/1047/1055）:
+  1. generate_monthly_reports top_books 的 Book 查询 → is_deleted==0（软删书不进月报 TOP10）
+  2. remind_pending_submissions 的 ReadingSubmission 查询 → is_deleted==0（软删提交不提醒）
+  3. remind_pending_submissions 的 Child 查询 → is_deleted==0（软删孩子不再收消息）
+测试: test_f038_scheduler_is_deleted.py（3 用例：软删提交/软删孩子不提醒 + 正常对照提醒）
+  - 教训：任务内 commit+close 注入 session 会使测试对象 detached——断言前先取值
+RED→GREEN: 移除过滤 → 2 failed；恢复 → 3 passed
