@@ -1,0 +1,12 @@
+F-053 cancel_order 覆盖已 PAID 订单 RED→GREEN 证据
+==================================================
+
+[RED] MySQL 实证（修复前，场景 E：30 订单 × cancel vs 模拟支付回调）：
+[FAIL] E 取消订单 vs 支付（行锁）: 损坏订单（CLOSED+pay_time）30/30（应 0），最终状态分布: {5: 30}
+→ 全部订单被 cancel 覆盖为 CLOSED（钱已收但订单被关）
+
+[GREEN] 修复后（with_for_update + PENDING 前置）：
+[PASS] E 取消订单 vs 支付（行锁）: 损坏订单 0/30，最终状态分布: {1: 30}
+→ 支付全部成功，cancel 全部被拒
+
+[单测] test_f053_cancel_order_lock.py 3 passed + 订单域 65 passed

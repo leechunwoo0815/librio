@@ -753,10 +753,17 @@ class OrderService:
 
     def cancel_order(self, order_id: int, user_id: int) -> OrderResponse:
         """取消未支付的订单"""
-        order = self.order_repo.get_by_id_or_raise(order_id)
-        if order.user_id != user_id:
+        # F-053：行锁 + 状态前置——先查后改竞态会把并发已 PAID 的订单覆盖为 CLOSED
+        # （close_expired_orders 已是条件更新正确范本，cancel_order 为同类漏改）
+        order = (
+            self.db.query(Order)
+            .filter(Order.id == order_id, Order.is_deleted == 0)
+            .with_for_update()
+            .first()
+        )
+        if not order or order.user_id != user_id:
             raise ValidationError("订单不存在")
-        if order.pay_status != 0:
+        if order.pay_status != PayStatus.PENDING:
             raise ValidationError("仅可取消未支付的订单")
         order.pay_status = PayStatus.CLOSED
         self.db.commit()

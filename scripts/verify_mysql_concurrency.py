@@ -52,6 +52,7 @@ def main():
     results.append(("B 副本并发双借（行锁）", _scenario_borrow_dedup(Session)))
     results.append(("C 押金活跃唯一索引（DB 兜底）", _scenario_deposit_unique(Session)))
     results.append(("D 损坏报告并发双确认（行锁）", _scenario_damage_double_confirm(Session)))
+    results.append(("E 取消订单 vs 支付（行锁）", _scenario_cancel_vs_paid(Session)))
 
     if "--keep" not in sys.argv:
         _cleanup(engine)
@@ -361,6 +362,102 @@ def _scenario_damage_double_confirm(Session):
         passed,
         f"确认成功 {len(ok_counts)}/20（应恰 20），双计报告 {double_count}（应 0），"
         f"错误样本: {errors[:2]}",
+    )
+
+
+def _scenario_cancel_vs_paid(Session):
+    """F-053：并发取消订单 vs 支付——cancel 不得把已 PAID 覆盖为 CLOSED
+
+    30 个 PENDING 订单，每单两个线程并发：cancel_order vs 模拟支付回调（带锁置 PAID）。
+    缺陷特征：最终状态 CLOSED 且 pay_time 非空（钱已收但订单被关）。
+    """
+    from datetime import datetime, timedelta
+
+    from backend.common.types import PayStatus
+    from backend.domain.order.models import Order
+    from backend.domain.order.service import OrderService
+
+    s = Session()
+    order_ids = []
+    user_ids = []
+    for i in range(30):
+        u, cid = _make_user_child(s, f"ccl_{uuid.uuid4().hex[:8]}")
+        order = Order(
+            order_no=f"CANCEL{i}-{uuid.uuid4().hex[:6]}",
+            user_id=u,
+            child_id=cid,
+            type=2,
+            amount=Decimal("500"),
+            pay_status=PayStatus.PENDING,
+            create_time=datetime.now() - timedelta(minutes=1),
+        )
+        s.add(order)
+        s.flush()
+        order_ids.append(order.id)
+        user_ids.append(u)
+    s.commit()
+    s.close()
+
+    lock = threading.Lock()
+    outcomes = []
+
+    def try_cancel(order_id, user_id):
+        sess = Session()
+        try:
+            OrderService(sess).cancel_order(order_id, user_id)
+            with lock:
+                outcomes.append(("cancel_ok", order_id))
+        except Exception as e:
+            with lock:
+                outcomes.append((f"cancel_err:{str(e)[:30]}", order_id))
+        finally:
+            sess.close()
+
+    def try_mark_paid(order_id):
+        """模拟支付回调写：带行锁置 PAID + 记录 pay_time（与回调同语义）"""
+        sess = Session()
+        try:
+            order = (
+                sess.query(Order)
+                .filter(Order.id == order_id)
+                .with_for_update()
+                .first()
+            )
+            order.pay_status = PayStatus.PAID
+            order.pay_time = datetime.now()
+            sess.commit()
+            with lock:
+                outcomes.append(("paid_ok", order_id))
+        except Exception as e:
+            with lock:
+                outcomes.append((f"paid_err:{str(e)[:30]}", order_id))
+        finally:
+            sess.close()
+
+    for oid, uid in zip(order_ids, user_ids):
+        threads = [
+            threading.Thread(target=try_cancel, args=(oid, uid)),
+            threading.Thread(target=try_mark_paid, args=(oid,)),
+        ]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+    s = Session()
+    corrupted = 0
+    final_states = {}
+    for oid in order_ids:
+        order = s.query(Order).filter(Order.id == oid).first()
+        final_states[order.pay_status] = final_states.get(order.pay_status, 0) + 1
+        if order.pay_status == PayStatus.CLOSED and order.pay_time is not None:
+            corrupted += 1
+    s.close()
+
+    passed = corrupted == 0
+    return (
+        passed,
+        f"损坏订单（CLOSED+pay_time）{corrupted}/30（应 0），最终状态分布: {final_states}",
     )
 
 
