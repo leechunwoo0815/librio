@@ -29,10 +29,10 @@ class OrderRepository(BaseRepository[Order]):
         return orders, total
 
     def generate_order_no(self) -> str:
-        """生成唯一订单号: MW + 时间戳 + 4位随机"""
-        import random
+        """生成唯一订单号: MW + 时间戳 + 6位hex（F-090：弱熵加固）"""
+        import uuid
 
-        return f"MW{int(time.time() * 1000)}{random.randint(1000, 9999)}"
+        return f"MW{int(time.time() * 1000)}{uuid.uuid4().hex[:6].upper()}"
 
     def count_pending_or_paid_by_child_and_type(
         self, child_id: int, order_type: int
