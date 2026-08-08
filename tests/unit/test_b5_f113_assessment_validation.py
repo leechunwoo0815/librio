@@ -38,14 +38,14 @@ class TestSchemaValidation:
 
     def test_ar_level_inverted_rejected(self):
         with pytest.raises(ValidationError, match="ar_level_after"):
-            AssessmentCreateRequest(
-                child_id=1, ar_level_before=3.5, ar_level_after=2.0
-            )
+            AssessmentCreateRequest(child_id=1, ar_level_before=3.5, ar_level_after=2.0)
 
     def test_update_score_range(self):
         with pytest.raises(ValidationError):
             AssessmentUpdateRequest(comprehension_score=101)
-        assert AssessmentUpdateRequest(comprehension_score=100).comprehension_score == 100
+        assert (
+            AssessmentUpdateRequest(comprehension_score=100).comprehension_score == 100
+        )
 
 
 class TestServiceTeacherExistence:

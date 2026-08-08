@@ -7,7 +7,7 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from backend.common.types import MemberStatus, OrderType, PayStatus
+from backend.common.types import OrderType, PayStatus
 from backend.database import Base
 from backend.domain.activity.models import Activity, ActivityEnrollment
 from backend.domain.activity.service import ActivityService

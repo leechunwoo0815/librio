@@ -2,7 +2,6 @@
 
 import functools
 from datetime import datetime, timedelta
-from decimal import Decimal
 
 import pytest
 from sqlalchemy import create_engine
@@ -13,15 +12,12 @@ from backend.bootstrap import register_event_handlers
 from backend.common.types import (
     BorrowStatus,
     MemberStatus,
-    OrderType,
-    PayStatus,
 )
 from backend.database import Base
 from backend.domain.borrow.models import BorrowRecord
 from backend.domain.child.benefit_transfer_model import BenefitTransferApplication
 from backend.domain.child.models import Child
 from backend.domain.message.models import SystemMessage
-from backend.domain.order.models import Order
 from backend.domain.user.models import User
 from backend.tasks import scheduler
 

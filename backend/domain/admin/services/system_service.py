@@ -420,9 +420,7 @@ class AdminSystemService:
             from backend.domain.advancement.models import QuestionBank
 
             copy_count = (
-                self.db.query(BookCopy)
-                .filter(BookCopy.book_id == item_id)
-                .count()
+                self.db.query(BookCopy).filter(BookCopy.book_id == item_id).count()
             )
             question_count = (
                 self.db.query(QuestionBank)

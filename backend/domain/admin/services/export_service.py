@@ -72,12 +72,7 @@ class AdminExportService:
         Model, fields = model_map[module]
         # F-108：截断必须显式告知（原静默 limit 10000，超量导出不完整无提示）
         total = self.db.query(Model).filter(Model.is_deleted == 0).count()
-        items = (
-            self.db.query(Model)
-            .filter(Model.is_deleted == 0)
-            .limit(10000)
-            .all()
-        )
+        items = self.db.query(Model).filter(Model.is_deleted == 0).limit(10000).all()
 
         output = io.StringIO()
         writer = csv.DictWriter(output, fieldnames=fields)
@@ -109,9 +104,7 @@ class AdminExportService:
             .limit(10000)
             .all()
         )
-        total_quizzes = (
-            self.db.query(Quiz).filter(Quiz.is_deleted == 0).count()
-        )
+        total_quizzes = self.db.query(Quiz).filter(Quiz.is_deleted == 0).count()
 
         # 批量查询所有相关 child 和 book，避免 N+1
         child_ids = list(set(q.child_id for q in quizzes if q.child_id))
@@ -237,6 +230,8 @@ class AdminExportService:
             )
 
         if total_enrollments > 10000:
-            writer.writerow([f"[截断提示] 共 {total_enrollments} 条，仅导出前 10000 条"])
+            writer.writerow(
+                [f"[截断提示] 共 {total_enrollments} 条，仅导出前 10000 条"]
+            )
 
         return output.getvalue(), "activity_enrollments_export.csv"

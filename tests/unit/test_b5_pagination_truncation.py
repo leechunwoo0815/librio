@@ -7,7 +7,7 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from backend.common.types import BorrowStatus, MemberStatus, OrderType, PayStatus
+from backend.common.types import BorrowStatus, OrderType, PayStatus
 from backend.database import Base
 from backend.domain.activity.models import Activity
 from backend.domain.advancement.models import ReadingSubmission
@@ -19,7 +19,6 @@ from backend.domain.book.models import Book, BookCopy
 from backend.domain.borrow.models import BorrowRecord
 from backend.domain.child.models import Child
 from backend.domain.order.models import Order
-from backend.domain.refund.models import RefundApplication
 from backend.domain.user.models import User
 
 
@@ -79,9 +78,7 @@ class TestHasNextContract:
         for i in range(25):
             db.add(User(openid=f"hn{i}", phone=f"138000100{i:02d}"))
         db.commit()
-        result = AdminUserService(db).list_users_with_children(
-            page=1, page_size=20
-        )
+        result = AdminUserService(db).list_users_with_children(page=1, page_size=20)
         assert result["has_next"] is True
 
 
@@ -138,10 +135,7 @@ class TestF094BookCopiesPagination:
         db.add(book)
         db.commit()
         db.bulk_save_objects(
-            [
-                BookCopy(book_id=book.id, barcode=f"BC-{i:04d}")
-                for i in range(25)
-            ]
+            [BookCopy(book_id=book.id, barcode=f"BC-{i:04d}") for i in range(25)]
         )
         db.commit()
         svc = AdminBookService(db)
@@ -238,7 +232,9 @@ class TestF118DetailStatsFullCount:
                 BorrowRecord(
                     child_id=child.id,
                     book_id=1,
-                    status=BorrowStatus.BORROWING if i % 2 == 0 else BorrowStatus.OVERDUE,
+                    status=BorrowStatus.BORROWING
+                    if i % 2 == 0
+                    else BorrowStatus.OVERDUE,
                     borrow_time=now,
                     due_date=now,
                 )

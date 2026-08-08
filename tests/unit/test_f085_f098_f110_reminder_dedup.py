@@ -16,7 +16,7 @@ from sqlalchemy.orm import sessionmaker
 import backend.domain.admin.models  # noqa: F401
 import backend.domain.message.models  # noqa: F401
 from backend.bootstrap import register_event_handlers
-from backend.common.types import BorrowStatus, MemberStatus, PayStatus, OrderType
+from backend.common.types import BorrowStatus, PayStatus, OrderType
 from backend.database import Base
 from backend.domain.advancement.models import ReadingSubmission
 from backend.domain.book.models import Book

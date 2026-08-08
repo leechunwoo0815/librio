@@ -1,13 +1,12 @@
 """批次5 F-008 回归：FAILED 订单用户侧可取消（不再永久滞留）"""
 
-from datetime import datetime
 from decimal import Decimal
 
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from backend.common.types import MemberStatus, OrderType, PayStatus
+from backend.common.types import OrderType, PayStatus
 from backend.database import Base
 from backend.domain.child.models import Child
 from backend.domain.order.models import Order

@@ -54,9 +54,7 @@ class AdminBookService:
         from backend.domain.borrow.models import BorrowRecord
         from backend.domain.child.models import Child
 
-        total = (
-            self.db.query(BookCopy).filter(BookCopy.is_deleted == 0).count()
-        )
+        total = self.db.query(BookCopy).filter(BookCopy.is_deleted == 0).count()
         copies = (
             self.db.query(BookCopy)
             .filter(BookCopy.is_deleted == 0)

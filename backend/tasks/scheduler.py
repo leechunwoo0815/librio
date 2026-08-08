@@ -1579,7 +1579,9 @@ def graduate_children(db: Session | None = None):
                 db.query(BorrowRecord)
                 .filter(
                     BorrowRecord.child_id == child.id,
-                    BorrowRecord.status.in_([BorrowStatus.BORROWING, BorrowStatus.OVERDUE]),
+                    BorrowRecord.status.in_(
+                        [BorrowStatus.BORROWING, BorrowStatus.OVERDUE]
+                    ),
                     BorrowRecord.is_deleted == 0,
                 )
                 .count()
@@ -1597,8 +1599,7 @@ def graduate_children(db: Session | None = None):
                 title="毕业快乐",
                 content=(
                     f"{child.name}已经 15 岁啦，从 DmkWords 正式毕业！"
-                    "历史阅读数据将永久保留。"
-                    + return_hint
+                    "历史阅读数据将永久保留。" + return_hint
                 ),
                 msg_type=1,
                 priority=1,

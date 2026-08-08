@@ -3,7 +3,6 @@
 
 import logging
 import secrets
-from decimal import Decimal
 
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session, contains_eager, joinedload
@@ -146,9 +145,7 @@ class AdminUserService:
             .order_by(ReadingSubmission.create_time.desc())
         )
         total = q.count()
-        subs = (
-            q.offset((page - 1) * page_size).limit(page_size).all()
-        )
+        subs = q.offset((page - 1) * page_size).limit(page_size).all()
         return {
             "items": [
                 {
@@ -301,18 +298,6 @@ class AdminUserService:
             .limit(50)
             .all()
         )
-        borrows = (
-            self.db.query(BorrowRecord)
-            .filter(
-                BorrowRecord.child_id.in_([c.id for c in children]) if children else [],
-                BorrowRecord.is_deleted == 0,
-            )
-            .order_by(BorrowRecord.borrow_time.desc())
-            .limit(50)
-            .all()
-            if children
-            else []
-        )
         refunds = (
             self.db.query(RefundApplication)
             .filter(
@@ -332,16 +317,10 @@ class AdminUserService:
             else self.db.query(BorrowRecord).filter(False)
         )
         total_borrows = borrow_base.count()
-        current_borrows = (
-            borrow_base.filter(BorrowRecord.status == 0).count()
-        )
-        overdue_borrows = (
-            borrow_base.filter(BorrowRecord.status == 2).count()
-        )
+        current_borrows = borrow_base.filter(BorrowRecord.status == 0).count()
+        overdue_borrows = borrow_base.filter(BorrowRecord.status == 2).count()
         total_spent = str(
-            self.db.query(
-                func.coalesce(func.sum(Order.amount), 0)
-            )
+            self.db.query(func.coalesce(func.sum(Order.amount), 0))
             .filter(
                 Order.user_id == user_id,
                 Order.pay_status == 1,
