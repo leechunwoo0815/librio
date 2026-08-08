@@ -1,0 +1,12 @@
+F-052 状态矩阵测试 — 2026-08-08
+修改:
+  - backend/domain/child/service.py ALLOWED_TRANSITIONS 补矩阵外受控迁移注释
+    （graduate_children→ALUMNI / revive_child EXITED→TRIAL，勿误判不可达）
+  - 新增 tests/unit/test_f052_state_matrix.py（6 用例）
+    * FAILED→PAID（含 pay_time + F5 快照 4 入口全覆盖）
+    * FAILED→CLOSED
+    * FAILED→PENDING 反向拒绝
+    * revive 无二次确认拒绝
+    * graduate OFFICIAL→ALUMNI
+    * graduate EXITED 守卫反例（不得毕业）
+结果: 6 passed

@@ -88,6 +88,12 @@ class ChildService:
     # 任何状态 → EXITED (不可逆)
     # ============================================================
     ALLOWED_TRANSITIONS: dict[int, list[int]] = {
+        # F-052：本矩阵覆盖"管理端/用户侧通用状态变更"路径；另有两条受控矩阵外迁移
+        # （均有独立守卫与测试锁定，勿从本矩阵删除或误判不可达）：
+        #   1. OBSERVATION/OFFICIAL/EXPIRED → ALUMNI：仅 scheduler.graduate_children
+        #      满 15 岁毕业直设（行锁 + 状态重查 + EXITED 守卫，scheduler.py:1518-1532）
+        #   2. EXITED → TRIAL：仅 GuardianService.revive_child 超管二次确认入口
+        #      （guardian_service.py，F13：历史保留、权益清零重来）
         MemberStatus.TRIAL: [
             MemberStatus.OBSERVATION,
             MemberStatus.OFFICIAL,
