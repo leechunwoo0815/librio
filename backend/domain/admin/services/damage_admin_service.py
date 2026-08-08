@@ -59,7 +59,13 @@ class DamageAdminService:
         if record.status not in (BorrowStatus.BORROWING, BorrowStatus.OVERDUE):
             raise ValidationError(f"当前状态({record.status})不允许登记损坏")
 
-        book = self.db.query(Book).filter(Book.id == record.book_id).first()
+        # F-001/004：库存读-改-写必须行锁（并发报损双扣/丢更新）
+        book = (
+            self.db.query(Book)
+            .filter(Book.id == record.book_id)
+            .with_for_update()
+            .first()
+        )
         if not book:
             raise NotFoundError("图书不存在")
         book_price = book.price or Decimal("0")
@@ -263,7 +269,12 @@ class DamageAdminService:
             if copy and copy.status == BookCopyStatus.LOST:
                 copy.status = BookCopyStatus.AVAILABLE
 
-        book = self.db.query(Book).filter(Book.id == record.book_id).first()
+        book = (
+            self.db.query(Book)
+            .filter(Book.id == record.book_id)
+            .with_for_update()
+            .first()
+        )
         if book:
             book.total_stock = (book.total_stock or 0) + 1
             book.available_stock = (book.available_stock or 0) + 1
@@ -364,7 +375,12 @@ class DamageAdminService:
         )
         self.db.add(new_copy)
 
-        book = self.db.query(Book).filter(Book.id == record.book_id).first()
+        book = (
+            self.db.query(Book)
+            .filter(Book.id == record.book_id)
+            .with_for_update()
+            .first()
+        )
         if book:
             book.total_stock = (book.total_stock or 0) + 1
             book.available_stock = (book.available_stock or 0) + 1
@@ -449,7 +465,12 @@ class DamageAdminService:
             .first()
         )
         if record:
-            book = self.db.query(Book).filter(Book.id == record.book_id).first()
+            book = (
+                self.db.query(Book)
+                .filter(Book.id == record.book_id)
+                .with_for_update()
+                .first()
+            )
             if book:
                 book.total_stock = (book.total_stock or 0) + 1
                 book.available_stock = (book.available_stock or 0) + 1
@@ -613,7 +634,10 @@ class DamageAdminService:
                     )
                 # 恢复库存
                 book = (
-                    self.db.query(Book).filter(Book.id == record.book_id).first()
+                    self.db.query(Book)
+                    .filter(Book.id == record.book_id)
+                    .with_for_update()
+                    .first()
                     if record
                     else None
                 )

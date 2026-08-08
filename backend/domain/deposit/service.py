@@ -472,7 +472,13 @@ class DepositService:
         multiplier = ConfigService.get_decimal(
             self.db, "lost_book_fine_multiplier", Decimal("1.5")
         )
-        book = self.db.query(Book).filter(Book.id == record.book_id).first()
+        # F-001/004：库存读-改-写必须行锁（并发报损/归还丢失更新）
+        book = (
+            self.db.query(Book)
+            .filter(Book.id == record.book_id)
+            .with_for_update()
+            .first()
+        )
         book_price = book.price if book and book.price else Decimal("0")
         fine_amount = book_price * multiplier
 

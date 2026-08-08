@@ -1,0 +1,14 @@
+F-001/004 库存读-改-写行锁 RED→GREEN 证据
+=================================================
+
+[RED] MySQL 实证（9 处写点无锁，场景 F：total=2 并发双报损）：
+[FAIL] F 库存并发双报损（行锁）: 双报损后 total_stock=1（应 0，丢失更新则 1）
+
+[GREEN] 修复后（9 处写点加 with_for_update）：
+[PASS] F 库存并发双报损（行锁）: 双报损后 total_stock=0（应 0）
+
+写点清单（全库枚举）：deposit:475 / damage:62,266,367,452,615 / book:add_copy /
+admin book_service:batch_generate,状态流转重算；borrow 仅新建 Book 无需锁；
+reconcile_stock 全量重算不加锁（手册核）
+
+[单测] test_f001_stock_lock.py 2 passed

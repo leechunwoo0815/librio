@@ -271,7 +271,10 @@ class AdminBookService:
         from backend.domain.book.models import Book, BookCopy
 
         book = (
-            self.db.query(Book).filter(Book.isbn == isbn, Book.is_deleted == 0).first()
+            self.db.query(Book)
+            .filter(Book.isbn == isbn, Book.is_deleted == 0)
+            .with_for_update()  # F-001/004：批量加副本库存读-改-写必须行锁
+            .first()
         )
         if not book:
             raise NotFoundError(f"ISBN {isbn} 不存在")
@@ -347,7 +350,12 @@ class AdminBookService:
         self.db.flush()
 
         # 按每日对账同口径重算库存（total 排除报废/丢失，available 仅在馆）
-        book = self.db.query(Book).filter(Book.id == copy.book_id).first()
+        book = (
+            self.db.query(Book)
+            .filter(Book.id == copy.book_id)
+            .with_for_update()  # F-001/004：状态流转库存重算行锁
+            .first()
+        )
         if book:
             valid = (
                 BookCopyStatus.AVAILABLE,

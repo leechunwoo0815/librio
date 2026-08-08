@@ -53,6 +53,7 @@ def main():
     results.append(("C 押金活跃唯一索引（DB 兜底）", _scenario_deposit_unique(Session)))
     results.append(("D 损坏报告并发双确认（行锁）", _scenario_damage_double_confirm(Session)))
     results.append(("E 取消订单 vs 支付（行锁）", _scenario_cancel_vs_paid(Session)))
+    results.append(("F 库存并发双报损（行锁）", _scenario_stock_double_lost(Session)))
 
     if "--keep" not in sys.argv:
         _cleanup(engine)
@@ -459,6 +460,87 @@ def _scenario_cancel_vs_paid(Session):
         passed,
         f"损坏订单（CLOSED+pay_time）{corrupted}/30（应 0），最终状态分布: {final_states}",
     )
+
+
+def _scenario_stock_double_lost(Session):
+    """F-001/004：并发双报损——库存读-改-写丢失更新（total 应减 2，实际可能只减 1）
+
+    1 本书 total=2 + 2 副本各一条借阅记录，2 线程并发 mark_book_lost。
+    缺陷特征：最终 total=1（丢失更新）；修复后 total=0。
+    """
+    from datetime import datetime, timedelta
+
+    from backend.domain.book.models import Book, BookCopy
+    from backend.domain.borrow.models import BorrowRecord
+    from backend.domain.deposit.service import DepositService
+
+    s = Session()
+    u, cid = _make_user_child(s, f"stk_{uuid.uuid4().hex[:8]}")
+    book = Book(
+        title="并发库存书",
+        author="A",
+        isbn=f"978{str(uuid.uuid4().int)[:13]}",
+        total_stock=2,
+        available_stock=2,
+        offline_available=1,
+        ar_value=Decimal("2.0"),
+        age_min=5,
+        age_max=9,
+        word_count=500,
+    )
+    s.add(book)
+    s.flush()
+    bid = book.id
+    borrow_ids = []
+    for _ in range(2):
+        copy = BookCopy(book_id=bid, barcode=f"STK-{uuid.uuid4().hex[:8]}", status=0)
+        s.add(copy)
+        s.flush()
+        br = BorrowRecord(
+            child_id=cid,
+            book_id=bid,
+            book_copy_id=copy.id,
+            borrow_time=datetime.now() - timedelta(days=10),
+            due_date=datetime.now() - timedelta(days=5),
+            status=0,  # BORROWING（mark_book_lost 允许 BORROWING/OVERDUE）
+        )
+        s.add(br)
+        s.flush()
+        borrow_ids.append(br.id)
+    s.commit()
+    s.close()
+
+    lock = threading.Lock()
+    outcomes = []
+
+    def try_lost(br_id, admin_id):
+        sess = Session()
+        try:
+            DepositService(sess).mark_book_lost(br_id, admin_id)
+            with lock:
+                outcomes.append("ok")
+        except Exception as e:
+            with lock:
+                outcomes.append(f"err:{str(e)[:60]}")
+        finally:
+            sess.close()
+
+    threads = [
+        threading.Thread(target=try_lost, args=(borrow_ids[0], 1)),
+        threading.Thread(target=try_lost, args=(borrow_ids[1], 2)),
+    ]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    s = Session()
+    book = s.query(Book).filter(Book.id == bid).first()
+    total = book.total_stock
+    s.close()
+
+    passed = total == 0
+    return passed, f"双报损后 total_stock={total}（应 0，丢失更新则 1），结果: {outcomes}"
 
 
 def _cleanup(engine):
