@@ -310,7 +310,9 @@ class RefundService:
                 return
             logger.info(f"WeChat refund submitted: order={order_no}, result={result}")
         except Exception as e:
-            logger.error(f"WeChat refund failed: order={order_no}, error={e}", exc_info=True)
+            logger.error(
+                f"WeChat refund failed: order={order_no}, error={e}", exc_info=True
+            )
             RefundService._rollback_refund_failure(db, refund_id, order_no, str(e))
         finally:
             db.close()

@@ -8,6 +8,8 @@ from backend.common.gateways.sms.base import SmsGateway
 from backend.common.gateways.sms.types import SmsSendRequest, SmsSendResponse
 
 logger = logging.getLogger(__name__)
+
+
 def _mask_phone(phone: str) -> str:
     """F-020：手机号日志脱敏（138****0000）"""
     if not phone or len(phone) < 7:

@@ -41,7 +41,10 @@ class AdminExportService:
                     "available_stock",
                 ],
             ),
-            "users": (User, ["id", "phone", "parent_name", "create_time"]),  # F-082：去 openid
+            "users": (
+                User,
+                ["id", "phone", "parent_name", "create_time"],
+            ),  # F-082：去 openid
             "orders": (
                 Order,
                 [

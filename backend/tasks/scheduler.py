@@ -706,7 +706,9 @@ def generate_weekly_reports():
                 )
                 count += 1
             except Exception as e:
-                logger.error(f"Weekly report failed for child {child.id}: {e}", exc_info=True)
+                logger.error(
+                    f"Weekly report failed for child {child.id}: {e}", exc_info=True
+                )
 
         logger.info(f"Weekly reports generated: {count}")
     except Exception as e:
@@ -890,7 +892,9 @@ def generate_monthly_reports():
                 )
                 count += 1
             except Exception as e:
-                logger.error(f"Monthly report failed for child {child.id}: {e}", exc_info=True)
+                logger.error(
+                    f"Monthly report failed for child {child.id}: {e}", exc_info=True
+                )
 
         logger.info(f"Monthly reports generated: {count}")
     except Exception as e:

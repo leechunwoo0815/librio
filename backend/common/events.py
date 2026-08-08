@@ -381,7 +381,10 @@ class EventBus:
                     try:
                         retry_session = get_session()()
                     except Exception as create_err:
-                        logger.error(f"Failed to create retry session: {create_err}", exc_info=True)
+                        logger.error(
+                            f"Failed to create retry session: {create_err}",
+                            exc_info=True,
+                        )
                         self._record_dead_letter(
                             event, handler.__name__, str(create_err)
                         )

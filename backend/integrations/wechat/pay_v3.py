@@ -331,7 +331,10 @@ class WeChatPayV3(PaymentGateway):
             )
 
         if resp.status_code != 200:
-            logger.error(f"Failed to fetch platform certs: HTTP {resp.status_code}", exc_info=True)
+            logger.error(
+                f"Failed to fetch platform certs: HTTP {resp.status_code}",
+                exc_info=True,
+            )
             return False
 
         data = resp.json()
