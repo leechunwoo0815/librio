@@ -1493,7 +1493,7 @@ def reconcile_stock():
 | reconcile_child_stats | 每天 03:45 | 统计字段对账（words/minutes/books/streak 重算修正） |
 | confirm_expired_damage_reports | 每天 00:00 | 损坏定级 7 天申诉期满自动确认（T3.6a） |
 | generate_weekly_reports | 每周一 08:00 | 生成周报（H3：生成后系统消息触达） |
-| generate_monthly_reports | 每月1日 08:00 | 生成月报 + 平台级月度统计 |
+| generate_monthly_reports | 每月1日 08:15 | 生成月报 + 平台级月度统计（F-037：与周一 08:00 周报错峰） |
 | close_expired_orders | 每分钟 | 订单30分钟未支付自动关闭 |
 | migrate_activity_status | 每5分钟 | 活动状态自动迁移 |
 | expire_reservations | 每30分钟 | 预约过期检查（72h取书，超时释放通知候补 F4） |

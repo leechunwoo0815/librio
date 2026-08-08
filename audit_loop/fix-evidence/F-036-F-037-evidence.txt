@@ -1,0 +1,14 @@
+F-036 reconcile 增量窗口 + F-037 周报月报错峰 — 2026-08-08
+F-036:
+  - words/minutes/books 聚合加近 7 天增量窗口；每月 1 日全量兜底（date.today().day==1）
+  - streak 聚合不设窗口：longest 需历史全量连续段（语义必须全量，已注释）
+  - 初版实现缺陷（自抓）：窗口外孩子不在聚合 map，旧逻辑 or 0 兜底会把历史字段清零
+    → 改为仅遍历受影响孩子（words∪minutes∪books∪dates_by_child），且只修正本次聚合到的字段
+  - 测试 +4：旧数据跳过/新数据覆盖/每月1日全量（monkeypatch date）/只修聚合字段不清零
+  - 说明：函数内 from datetime import date 无法被模块级 monkeypatch → 删除函数内重复 import
+    （模块顶部已有），date 解析到模块级属性可注入
+F-037:
+  - generate_monthly_reports CronTrigger 8:00 → 8:15（周一恰逢 1 号时与周报错峰）
+  - PRD 附录 H 时刻表同步（08:00→08:15 + F-037 注记）
+  - 测试：调度注册断言 weekly minute=0 / monthly minute=15
+结果: test_reconcile_child_stats 10 passed；test_f037_scheduler_offset 1 passed

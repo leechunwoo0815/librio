@@ -244,3 +244,77 @@ class TestReconcileChildStats:
         scheduler.reconcile_child_stats(db)
         db.refresh(child)
         assert child.longest_streak_days == 10
+
+    def test_incremental_window_skips_old_data(self, db):
+        """F-036：非全量日只重算近 7 天数据——30 天前的漂移不参与当日对账"""
+        user = _make_user(db)
+        book = _make_book(db, word_count=800)
+        child = _make_child(db, user, total_words_read=99999)
+        q = _pass_quiz(db, child.id, book.id)
+        # 把测验时间改成 30 天前（增量窗口外）
+        q.create_time = datetime.now() - timedelta(days=30)
+        db.commit()
+
+        scheduler.reconcile_child_stats(db)
+        db.refresh(child)
+        # 当月不是 1 号时（测试环境当前 8 月）：旧数据不进窗口，漂移保留
+        if date.today().day != 1:
+            assert child.total_words_read == 99999
+        else:
+            assert child.total_words_read == 800
+
+    def test_incremental_window_covers_recent_data(self, db):
+        """F-036：近 7 天数据参与增量对账"""
+        user = _make_user(db)
+        book = _make_book(db, word_count=800)
+        child = _make_child(db, user, total_words_read=99999)
+        _pass_quiz(db, child.id, book.id)  # create_time=now，窗口内
+        db.commit()
+
+        scheduler.reconcile_child_stats(db)
+        db.refresh(child)
+        assert child.total_words_read == 800
+
+    def test_incremental_only_fixes_aggregated_fields(self, db):
+        """F-036 语义守护：窗口内只有 Quiz 的孩子——只修 words，
+        不得把未聚合到的 minutes/books 历史值误清零"""
+        user = _make_user(db)
+        book = _make_book(db, word_count=800)
+        child = _make_child(
+            db,
+            user,
+            total_words_read=99999,
+            total_reading_minutes=45,
+            total_books_finished=2,
+        )
+        _pass_quiz(db, child.id, book.id)  # 窗口内 Quiz，无 minutes/books 记录
+        db.commit()
+
+        scheduler.reconcile_child_stats(db)
+        db.refresh(child)
+        assert child.total_words_read == 800  # 本次聚合到的字段被修正
+        assert child.total_reading_minutes == 45  # 未聚合字段保留历史值
+        assert child.total_books_finished == 2
+
+    def test_full_reconcile_first_day_of_month(self, db, monkeypatch):
+        """F-036：每月 1 日全量——30 天前数据也参与对账"""
+        import backend.tasks.scheduler as sched_mod
+
+        real_date = sched_mod.date
+
+        class _FakeDate(real_date):
+            @classmethod
+            def today(cls):
+                return cls(2026, 8, 1)
+
+        monkeypatch.setattr(sched_mod, "date", _FakeDate)
+        user = _make_user(db)
+        book = _make_book(db, word_count=800)
+        child = _make_child(db, user, total_words_read=99999)
+        q = _pass_quiz(db, child.id, book.id)
+        q.create_time = datetime.now() - timedelta(days=30)
+        db.commit()
+
+        scheduler.reconcile_child_stats(db)
+        db.refresh(child)
+        assert child.total_words_read == 800

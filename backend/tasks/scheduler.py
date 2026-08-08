@@ -43,10 +43,11 @@ def init_scheduler(app):
         replace_existing=True,
     )
 
-    # 每月1号早上8点：生成月报
+    # 每月1号早上8:15：生成月报（F-037：与周一 8:00 周报错峰，
+    # 避免周一恰逢 1 号时两个重任务并行争锁）
     scheduler.add_job(
         generate_monthly_reports,
-        CronTrigger(day=1, hour=8, minute=0),
+        CronTrigger(day=1, hour=8, minute=15),
         id="generate_monthly_reports",
         replace_existing=True,
     )
@@ -376,8 +377,6 @@ def reconcile_child_stats(db: Session | None = None):
       - longest_streak_days = max(现存值, 全量打卡日期最长连续段)（只升不降，保护历史）
     偏差修正并记录 operation_log。
     """
-    from datetime import date, timedelta
-
     from backend.common.config_service import ConfigService
     from backend.domain.advancement.models import Quiz
     from backend.domain.book.models import Book
@@ -392,17 +391,21 @@ def reconcile_child_stats(db: Session | None = None):
         # 保持 Decimal 与 Quiz.score(Numeric) 同精度比较，避免 float 边界偏差（审查 P2-2）
         pass_score = (pass_rate * 100).quantize(Decimal("0.01"))
 
+        # F-036：增量窗口（近 7 天）——每日只重算近期有数据变更的孩子；
+        # 每月 1 日全量兜底（历史数据修复/管理员改老记录仍会被对账修正）。
+        # streak 聚合不设窗口：longest 需历史全量连续段（只升不降），语义必须全量。
+        full_reconcile = date.today().day == 1
+        cutoff = datetime.now() - timedelta(days=7)
+
         # words：通过测验的去重 (child, book) × word_count
-        pairs = (
-            db.query(Quiz.child_id, Quiz.book_id)
-            .filter(
-                Quiz.status == Quiz.STATUS_COMPLETED,
-                Quiz.score >= pass_score,
-                Quiz.is_deleted == 0,
-            )
-            .distinct()
-            .subquery()
+        words_query = db.query(Quiz.child_id, Quiz.book_id).filter(
+            Quiz.status == Quiz.STATUS_COMPLETED,
+            Quiz.score >= pass_score,
+            Quiz.is_deleted == 0,
         )
+        if not full_reconcile:
+            words_query = words_query.filter(Quiz.create_time >= cutoff)
+        pairs = words_query.distinct().subquery()
         words_map = dict(
             db.query(pairs.c.child_id, sql_func.sum(Book.word_count))
             .join(Book, Book.id == pairs.c.book_id)
@@ -411,29 +414,29 @@ def reconcile_child_stats(db: Session | None = None):
         )
 
         # minutes：阅读会话总秒数 // 60
+        minutes_query = db.query(
+            ReadingSession.child_id, sql_func.sum(ReadingSession.duration_seconds)
+        ).filter(ReadingSession.is_deleted == 0)
+        if not full_reconcile:
+            minutes_query = minutes_query.filter(ReadingSession.start_time >= cutoff)
         minutes_map = {
             cid: int((secs or 0) // 60)
-            for cid, secs in db.query(
-                ReadingSession.child_id, sql_func.sum(ReadingSession.duration_seconds)
-            )
-            .filter(ReadingSession.is_deleted == 0)
-            .group_by(ReadingSession.child_id)
-            .all()
+            for cid, secs in minutes_query.group_by(ReadingSession.child_id).all()
         }
 
         # books：累计读完本数（P1-3 修正：以 ReadingProgress.is_finished=1 为准，
         # 此前误用 TYPE_FINISH_BOOK 打卡条数——打卡每日每类型仅 1 次，会低估本数）
         from backend.domain.reading.models import ReadingProgress
 
-        books_map = dict(
-            db.query(ReadingProgress.child_id, sql_func.count(ReadingProgress.id))
-            .filter(
-                ReadingProgress.is_finished == 1,
-                ReadingProgress.is_deleted == 0,
-            )
-            .group_by(ReadingProgress.child_id)
-            .all()
+        books_query = db.query(
+            ReadingProgress.child_id, sql_func.count(ReadingProgress.id)
+        ).filter(
+            ReadingProgress.is_finished == 1,
+            ReadingProgress.is_deleted == 0,
         )
+        if not full_reconcile:
+            books_query = books_query.filter(ReadingProgress.create_time >= cutoff)
+        books_map = dict(books_query.group_by(ReadingProgress.child_id).all())
 
         # streak：全量打卡日期（去重）→ current / longest
         date_rows = (
@@ -474,25 +477,50 @@ def reconcile_child_stats(db: Session | None = None):
             return current, longest
 
         fixed = 0
-        children = db.query(Child).filter(Child.is_deleted == 0).all()
+        if full_reconcile:
+            # 全量：所有孩子都参与，未聚合到 map 的字段视为 0（对齐历史语义）
+            children = db.query(Child).filter(Child.is_deleted == 0).all()
+        else:
+            # 增量：只对"窗口内有数据变更"的孩子做对账，且只修正本次聚合到的字段——
+            # 窗口外孩子的历史字段不受影响（F-036：避免把未聚合字段误清零）
+            affected_ids = (
+                set(words_map)
+                | set(minutes_map)
+                | set(books_map)
+                | set(dates_by_child)
+            )
+            children = (
+                db.query(Child)
+                .filter(
+                    Child.is_deleted == 0,
+                    Child.id.in_(affected_ids),
+                )
+                .all()
+            )
         for child in children:
-            expected_words = int(words_map.get(child.id) or 0)
+            expected_words = int(words_map.get(child.id, 0))
             expected_minutes = minutes_map.get(child.id, 0)
-            expected_books = int(books_map.get(child.id) or 0)
+            expected_books = int(books_map.get(child.id, 0))
             cur_streak, longest_run = _streaks(dates_by_child.get(child.id, set()))
 
             deviations = []
-            if (child.total_words_read or 0) != expected_words:
+            if (
+                child.id in words_map or full_reconcile
+            ) and (child.total_words_read or 0) != expected_words:
                 deviations.append(
                     f"words {child.total_words_read or 0}→{expected_words}"
                 )
                 child.total_words_read = expected_words
-            if (child.total_reading_minutes or 0) != expected_minutes:
+            if (
+                child.id in minutes_map or full_reconcile
+            ) and (child.total_reading_minutes or 0) != expected_minutes:
                 deviations.append(
                     f"minutes {child.total_reading_minutes or 0}→{expected_minutes}"
                 )
                 child.total_reading_minutes = expected_minutes
-            if (child.total_books_finished or 0) != expected_books:
+            if (
+                child.id in books_map or full_reconcile
+            ) and (child.total_books_finished or 0) != expected_books:
                 deviations.append(
                     f"books {child.total_books_finished or 0}→{expected_books}"
                 )
