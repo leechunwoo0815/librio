@@ -192,6 +192,26 @@ class AdminTeacherService:
         teacher = self.teacher_repo.get_by_id(teacher_id)
         if not teacher:
             raise NotFoundError("老师不存在")
+        # F-074：同老师同 weekday 时间重叠拒绝（半开区间 [start, end)）
+        from backend.common.exceptions import ValidationError
+        from backend.domain.admin.models import TeacherSchedule
+
+        overlap = (
+            self.db.query(TeacherSchedule)
+            .filter(
+                TeacherSchedule.teacher_id == teacher_id,
+                TeacherSchedule.weekday == weekday,
+                TeacherSchedule.is_deleted == 0,
+                TeacherSchedule.start_time < end_time,
+                TeacherSchedule.end_time > start_time,
+            )
+            .first()
+        )
+        if overlap:
+            raise ValidationError(
+                f"该老师周{weekday} {overlap.start_time}-{overlap.end_time} 已有排班，"
+                "时间重叠"
+            )
         schedule = TeacherSchedule(
             teacher_id=teacher_id,
             weekday=weekday,

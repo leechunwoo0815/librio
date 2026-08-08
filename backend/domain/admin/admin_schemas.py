@@ -312,8 +312,15 @@ class CreateScheduleRequest(BaseModel):
 
     teacher_id: int
     weekday: int = Field(..., ge=1, le=7)
-    start_time: str = Field(..., min_length=1)
-    end_time: str = Field(..., min_length=1)
+    # F-074：HH:MM 24 小时制（两位数字，可字典序比较）
+    start_time: str = Field(..., pattern=r"^([01]\d|2[0-3]):[0-5]\d$")
+    end_time: str = Field(..., pattern=r"^([01]\d|2[0-3]):[0-5]\d$")
+
+    @model_validator(mode="after")
+    def _check_time_order(self):
+        if self.start_time >= self.end_time:
+            raise ValueError("start_time 必须早于 end_time")
+        return self
 
 
 # ==================== 系统配置 ====================

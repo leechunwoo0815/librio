@@ -1,0 +1,5 @@
+F-074 排班时间校验 — 2026-08-08
+schema: CreateScheduleRequest start/end HH:MM 24h pattern + start<end model_validator
+service: create_schedule 同 teacher 同 weekday 半开区间重叠查询（[start,end) 相交拒绝）
+测试: 8 用例（格式×2、倒挂、相等、合法、重叠拒绝、首尾相接允许、跨 weekday 允许）
+RED→GREEN: 移除重叠校验 → overlap 1 failed；恢复 → 8 passed
