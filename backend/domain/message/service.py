@@ -12,7 +12,14 @@ from backend.domain.child.models import Child
 
 logger = logging.getLogger(__name__)
 
-_USER_GROUP_MAP = {0: "trial", 1: "observation", 2: "member"}
+_USER_GROUP_MAP = {
+    0: "trial",
+    1: "observation",
+    2: "member",
+    3: "expired",  # F-070：EXPIRED/EXITED/ALUMNI 映射缺口补全
+    4: "exited",
+    5: "alumni",
+}
 
 
 def _get_user_groups(user_id: int, db: Session) -> set[str]:

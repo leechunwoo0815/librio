@@ -62,7 +62,7 @@ def verify_token(token: str) -> dict:
         )
         return payload
     except JWTError as e:
-        logger.error(f"Token verification failed: {e}")
+        logger.error(f"Token verification failed: {e}", exc_info=True)
         raise UnauthorizedError("Token无效或已过期")
 
 

@@ -48,7 +48,7 @@ def handle_book_returned_for_copy_status(event, db: Session):
         # 单次 flush 确保两个更新在同一事务中
         db.flush()
     except Exception as e:
-        logger.error(f"handle_book_returned_for_copy_status failed: {e}")
+        logger.error(f"handle_book_returned_for_copy_status failed: {e}", exc_info=True)
         raise
 
 

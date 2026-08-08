@@ -41,7 +41,7 @@ class AdminExportService:
                     "available_stock",
                 ],
             ),
-            "users": (User, ["id", "phone", "parent_name", "openid", "create_time"]),
+            "users": (User, ["id", "phone", "parent_name", "create_time"]),  # F-082：去 openid
             "orders": (
                 Order,
                 [
@@ -76,7 +76,11 @@ class AdminExportService:
             row = {}
             for f in fields:
                 val = getattr(item, f, None)
-                row[f] = str(val) if val is not None else ""
+                raw = str(val) if val is not None else ""
+                # F-082：CSV 公式注入防护（Excel 将 = + - @ 开头当公式执行）
+                if raw.startswith(("=", "+", "-", "@")):
+                    raw = "'" + raw
+                row[f] = raw
             writer.writerow(row)
 
         return output.getvalue(), f"{module}_export.csv"

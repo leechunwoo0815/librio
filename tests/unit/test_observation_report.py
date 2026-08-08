@@ -201,6 +201,6 @@ def test_mark_report_viewed(db):
     report = svc.get_report(child.id)
     assert report["status"] == ObservationReport.STATUS_GENERATED
 
-    svc.mark_viewed(report["id"])
+    svc.mark_viewed(report["id"], user.id)  # F-042：归属校验参数
     updated = svc.get_report(child.id)
     assert updated["status"] == ObservationReport.STATUS_VIEWED

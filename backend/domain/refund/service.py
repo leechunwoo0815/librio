@@ -252,7 +252,7 @@ class RefundService:
                 .first()
             )
             if not order:
-                logger.error(f"Refund task: order not found: {order_no}")
+                logger.error(f"Refund task: order not found: {order_no}", exc_info=True)
                 db.close()
                 return
             # F-084 三层②：执行前状态守卫——已退款订单不重复打款
@@ -310,7 +310,7 @@ class RefundService:
                 return
             logger.info(f"WeChat refund submitted: order={order_no}, result={result}")
         except Exception as e:
-            logger.error(f"WeChat refund failed: order={order_no}, error={e}")
+            logger.error(f"WeChat refund failed: order={order_no}, error={e}", exc_info=True)
             RefundService._rollback_refund_failure(db, refund_id, order_no, str(e))
         finally:
             db.close()

@@ -117,7 +117,7 @@ class DepositService:
         try:
             result = await payment_gateway.create_order(order_req)
         except Exception as e:
-            logger.error(f"pay_deposit gateway error: child={data.child_id}, error={e}")
+            logger.error(f"pay_deposit gateway error: child={data.child_id}, error={e}", exc_info=True)
             # F-030：prepay 失败保持 PENDING——网络超时窗口微信可能已受理，
             # 置 UNPAID 会丢回调匹配（回调仅接受 PENDING→PAID）；超时由 F78 复位
             raise PaymentError(f"支付网关调用失败: {e}")
@@ -283,7 +283,7 @@ class DepositService:
         try:
             result = await payment_gateway.create_order(order_req)
         except Exception as e:
-            logger.error(f"repay_deposit gateway error: child={child_id}, error={e}")
+            logger.error(f"repay_deposit gateway error: child={child_id}, error={e}", exc_info=True)
             # F-030：同 pay_deposit——保持 PENDING 保留回调窗口，超时由 F78 复位
             raise PaymentError(f"支付网关调用失败: {e}")
 
@@ -611,7 +611,7 @@ class DepositService:
                         getattr(result, "error_message", "退款接口返回失败")
                     )
             except Exception as e:
-                logger.error(f"Refund failed: child={child_id}, error={e}")
+                logger.error(f"Refund failed: child={child_id}, error={e}", exc_info=True)
                 # Phase 3 (failure): 回退 REFUND_PENDING，允许管理员重试
                 record = (
                     self.db.query(DepositRecord)
@@ -795,7 +795,7 @@ class DepositService:
                         getattr(result, "error_message", "退款接口返回失败")
                     )
             except Exception as e:
-                logger.error(f"Partial refund failed: child={child_id}, error={e}")
+                logger.error(f"Partial refund failed: child={child_id}, error={e}", exc_info=True)
                 record = (
                     self.db.query(DepositRecord)
                     .filter(DepositRecord.id == record.id)
@@ -877,7 +877,7 @@ class DepositService:
         try:
             result = await payment_gateway.create_order(order_req)
         except Exception as e:
-            logger.error(f"pay_fines gateway error: child={data.child_id}, error={e}")
+            logger.error(f"pay_fines gateway error: child={data.child_id}, error={e}", exc_info=True)
             raise PaymentError(f"支付网关调用失败: {e}")
         if not result.success:
             raise PaymentError(result.error_message)

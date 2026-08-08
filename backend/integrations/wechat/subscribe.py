@@ -134,8 +134,8 @@ class WeChatSubscribe:
             if errcode in (40003, 41028, 41029, 41030):
                 raise ValidationError(f"订阅消息发送失败: {errmsg}")
             elif errcode == 43101:
-                # NOTE: openid 是公开标识，开发日志可记录全量；生产环境可按需脱敏。
-                logger.info(f"User {openid} refused subscribe message")
+                # F-041：openid 日志脱敏（仅保留后 4 位）
+                logger.info(f"User ...{openid[-4:]} refused subscribe message")
                 return result
             else:
                 logger.error(
@@ -157,5 +157,5 @@ async def _get_access_token() -> dict:
         token = await asyncio.to_thread(service.get_access_token)
         return {"access_token": token}
     except Exception as e:
-        logger.error(f"获取微信 access_token 失败: {e}")
+        logger.error(f"获取微信 access_token 失败: {e}", exc_info=True)
         return {}

@@ -45,7 +45,7 @@ def redis_lock(lock_key: str, timeout: int = 300):
             client = None
             yield True
         else:
-            logger.error(f"Redis 不可用且 FAIL_OPEN=false，任务 {lock_key} 跳过执行")
+            logger.error(f"Redis 不可用且 FAIL_OPEN=false，任务 {lock_key} 跳过执行", exc_info=True)
             client = None
             yield False
     finally:

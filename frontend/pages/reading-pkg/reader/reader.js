@@ -176,6 +176,7 @@ Page({
   },
 
   async onUnload() {
+    this._destroyAudio()  // F-011：页面卸载销毁音频实例
     this._saveLocalProgress()
     try {
       await this.endSession()
@@ -424,9 +425,20 @@ Page({
   onPlayLookupAudio(e) {
     const audioUrl = e.currentTarget.dataset.audio
     if (!audioUrl) return
+    this._destroyAudio()  // F-011：先销毁旧实例，防泄漏
     const audio = wx.createInnerAudioContext()
+    this._activeAudio = audio
     audio.src = audioUrl
+    audio.onEnded(() => this._destroyAudio())
     audio.play()
+  },
+
+  _destroyAudio() {
+    if (this._activeAudio) {
+      this._activeAudio.stop()
+      this._activeAudio.destroy()
+      this._activeAudio = null
+    }
   },
 
   async addLookupToVocab() {

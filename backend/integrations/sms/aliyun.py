@@ -8,6 +8,12 @@ from backend.common.gateways.sms.base import SmsGateway
 from backend.common.gateways.sms.types import SmsSendRequest, SmsSendResponse
 
 logger = logging.getLogger(__name__)
+def _mask_phone(phone: str) -> str:
+    """F-020：手机号日志脱敏（138****0000）"""
+    if not phone or len(phone) < 7:
+        return phone or ""
+    return phone[:3] + "****" + phone[-4:]
+
 
 try:
     from alibabacloud_dysmsapi20170525.client import Client as DysmsapiClient
@@ -80,9 +86,11 @@ class AliyunSmsGateway(SmsGateway):
         ok, err = await asyncio.to_thread(self._call_send_sms, req)
         if ok:
             self._codes[phone] = (code, time.time())
-            logger.info("阿里云 SMS 验证码已发送 phone=%s", phone)
+            logger.info("阿里云 SMS 验证码已发送 phone=%s", _mask_phone(phone))
         else:
-            logger.error("阿里云 SMS 发送失败 phone=%s reason=%s", phone, err)
+            logger.error(
+                "阿里云 SMS 发送失败 phone=%s reason=%s", _mask_phone(phone), err
+            )
         return SmsSendResponse(success=ok, error_message=err, code=code)
 
     async def verify_code(self, phone: str, code: str) -> bool:

@@ -331,7 +331,7 @@ def reconcile_stock(db: Session | None = None):
         else:
             logger.info("Stock reconciliation: all consistent")
     except Exception as e:
-        logger.error(f"Stock reconciliation failed: {e}")
+        logger.error(f"Stock reconciliation failed: {e}", exc_info=True)
         db.rollback()
     finally:
         if own_session:
@@ -356,7 +356,7 @@ def execute_child_deletions(db: Session | None = None):
                 f"Child deletions executed: {result['executed']}/{result['due']}"
             )
     except Exception as e:
-        logger.error(f"Child deletion job failed: {e}")
+        logger.error(f"Child deletion job failed: {e}", exc_info=True)
         db.rollback()
     finally:
         if own_session:
@@ -524,7 +524,7 @@ def reconcile_child_stats(db: Session | None = None):
         db.commit()
         logger.info(f"Child stats reconciliation: {fixed} children fixed")
     except Exception as e:
-        logger.error(f"Child stats reconciliation failed: {e}")
+        logger.error(f"Child stats reconciliation failed: {e}", exc_info=True)
         db.rollback()
     finally:
         if own_session:
@@ -706,7 +706,7 @@ def generate_weekly_reports():
                 )
                 count += 1
             except Exception as e:
-                logger.error(f"Weekly report failed for child {child.id}: {e}")
+                logger.error(f"Weekly report failed for child {child.id}: {e}", exc_info=True)
 
         logger.info(f"Weekly reports generated: {count}")
     except Exception as e:
@@ -890,7 +890,7 @@ def generate_monthly_reports():
                 )
                 count += 1
             except Exception as e:
-                logger.error(f"Monthly report failed for child {child.id}: {e}")
+                logger.error(f"Monthly report failed for child {child.id}: {e}", exc_info=True)
 
         logger.info(f"Monthly reports generated: {count}")
     except Exception as e:
@@ -1287,7 +1287,7 @@ def expire_reservations(db: Session | None = None):
                     f"RESERVATION_EXPIRED: id={r.id}, child={r.child_id}, book={r.book_id}"
                 )
             except Exception as e:
-                logger.error(f"Failed to expire reservation {r.id}: {e}")
+                logger.error(f"Failed to expire reservation {r.id}: {e}", exc_info=True)
 
         if expired:
             db.commit()

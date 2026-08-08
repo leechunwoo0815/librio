@@ -11,6 +11,9 @@ from backend.domain.admin.models import Admin
 from backend.utils.password import hash_password, verify_password
 
 
+_ROLE_LEVEL = {"super_admin": 3, "staff": 2, "teacher": 1}
+
+
 def assert_not_last_super_admin(db: Session, exclude_admin_id: int):
     """如果操作后 enabled super_admin 数量为 0，拒绝操作。"""
     from backend.domain.admin.rbac_models import Role
@@ -195,6 +198,17 @@ class AdminAccountService:
 
     def create_admin(self, data, current_admin_id: int) -> dict:
         """创建管理员"""
+        # F-062：角色层级校验——非超管不能创建同级/上级管理员
+        current = (
+            self.db.query(Admin)
+            .filter(Admin.id == current_admin_id, Admin.is_deleted == 0)
+            .first()
+        )
+        if current and not self.is_super_admin(current):
+            target_code = self._resolve_target_role_code(data)
+            current_code = self._get_admin_role_code(current)
+            if _ROLE_LEVEL.get(target_code, 0) >= _ROLE_LEVEL.get(current_code, 0):
+                raise ForbiddenError("无权创建该角色层级的管理员")
         existing = self.db.query(Admin).filter(Admin.username == data.username).first()
         if existing:
             raise ValidationError("用户名已存在")
@@ -225,6 +239,35 @@ class AdminAccountService:
             "teacher_id": new_admin.teacher_id,
             "message": "管理员创建成功",
         }
+
+    def _resolve_target_role_code(self, data) -> str:
+        """解析目标角色 code（admin_role_id 优先，legacy role 兜底）"""
+        if data.admin_role_id is not None:
+            from backend.domain.admin.rbac_models import Role
+
+            role = (
+                self.db.query(Role)
+                .filter(Role.id == data.admin_role_id, Role.is_deleted == 0)
+                .first()
+            )
+            return role.code if role else ""
+        legacy_map = {0: "super_admin", 1: "staff", 2: "teacher"}
+        return legacy_map.get(data.role, "staff")
+
+    def _get_admin_role_code(self, admin: Admin) -> str:
+        """解析管理员角色 code（RBAC 优先，legacy role 兜底）"""
+        if admin.admin_role_id:
+            from backend.domain.admin.rbac_models import Role
+
+            role = (
+                self.db.query(Role)
+                .filter(Role.id == admin.admin_role_id, Role.is_deleted == 0)
+                .first()
+            )
+            if role:
+                return role.code
+        legacy_map = {0: "super_admin", 1: "staff", 2: "teacher"}
+        return legacy_map.get(admin.role, "")
 
     def _check_admin_role_change(self, target: Admin, data, current: Admin):
         if target.id == current.id:

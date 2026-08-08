@@ -1,0 +1,17 @@
+批次3 安全/权限证据（后端全 + 前端 F-011 标注）
+====================================================
+
+F-012/034: book 查看按钮 data-perm 对齐 book.list（无独立详情端点，列表即详情）
+F-011: reader/vocabulary 音频实例 onUnload 销毁（纯前端，需前端验证）
+F-020/041: SMS phone + openid 日志脱敏
+F-021: trace_id contextvar + TraceIdFilter 全链路透传
+F-022: 21 处 logger.error(f) 补 exc_info=True
+F-042: mark_observation_viewed 归属校验（ForbiddenError）
+F-049: admin_page 未登记页面 fail-closed
+F-057: 用户取题 QuestionPublicResponse（无 correct_answer/explanation）
+F-062: create_admin 角色层级校验（非超管不能创建同级/上级）
+F-070: _USER_GROUP_MAP 补 EXPIRED/EXITED/ALUMNI
+F-082: users 导出去 openid + CSV 公式注入前缀
+F-043/F-106: 已随 F-023 修复（同批）
+
+[单测] test_batch3_security.py 7 passed + 相关回归 181 passed + ruff 干净

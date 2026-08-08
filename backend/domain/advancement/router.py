@@ -20,7 +20,7 @@ from backend.domain.advancement.schemas import (
     QuizResponse,
     SubmitAnswerRequest,
     QuizResultResponse,
-    QuestionResponse,
+    QuestionPublicResponse,
     AchievementResponse,
     ChildAchievementResponse,
     LeaderboardEntryResponse,
@@ -72,7 +72,7 @@ def start_quiz(
     return service.start_quiz(cid, data)
 
 
-@router.get("/quiz/questions/{book_id}", response_model=list[QuestionResponse])
+@router.get("/quiz/questions/{book_id}", response_model=list[QuestionPublicResponse])
 def get_quiz_questions(
     book_id: int,
     service: AdvancementService = Depends(get_advancement_service),

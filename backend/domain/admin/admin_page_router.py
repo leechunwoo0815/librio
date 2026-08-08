@@ -95,7 +95,7 @@ def _check_page_perm(admin: dict, page: str) -> bool:
     """检查管理员是否有权访问页面"""
     required_perm = PAGE_PERM_MAP.get(page)
     if not required_perm:
-        return True
+        return False  # F-049：未登记页面默认拒绝（fail-closed），白名单放行
     perms = admin.get("permissions", [])
     return required_perm in perms
 

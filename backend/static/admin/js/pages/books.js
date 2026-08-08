@@ -125,7 +125,7 @@
         '<td style="font-family:var(--font-mono);font-size:12px;">' + escapeHtml(barcode) + '</td>' +
         '<td>' + totalStock + ' / ' + availStock + '</td>' +
         '<td><div class="ops">' +
-          '<a href="#" data-perm="book.view" onclick="window.booksPage.viewBook(\'' + b.id + '\')">查看</a>' +
+          '<a href="#" data-perm="book.list" onclick="window.booksPage.viewBook(\'' + b.id + '\')">查看</a>' +
           '<span class="sep">|</span>' +
           '<a href="#" data-perm="book.edit" onclick="window.booksPage.togglePublish(\'' + b.id + '\',\'' + jsEscape(b.title) + '\',' + totalStock + ',' + availStock + ')">' + publishAction + '</a>' +
           '<span class="sep">|</span>' +

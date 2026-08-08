@@ -30,6 +30,9 @@ settings = get_settings()
 
 log_level = logging.DEBUG if settings.DEBUG else logging.INFO
 logging.basicConfig(level=log_level)
+from backend.middleware.trace import TraceIdFilter  # noqa: E402
+
+logging.getLogger().addFilter(TraceIdFilter())
 
 logger = logging.getLogger(__name__)
 

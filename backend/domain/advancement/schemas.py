@@ -95,6 +95,18 @@ class QuestionResponse(BaseSchema):
     explanation: str | None = None
 
 
+class QuestionPublicResponse(BaseSchema):
+    """用户取题响应 — F-057：不暴露 correct_answer/explanation（防刷题/防作弊泄漏）"""
+
+    id: int
+    question_text: str
+    option_a: str
+    option_b: str
+    option_c: str | None = None
+    option_d: str | None = None
+    difficulty: int = 1
+
+
 # ==================== 成就 ====================
 
 

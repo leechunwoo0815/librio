@@ -14,7 +14,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from backend.common.base_repo import BaseRepository
-from backend.common.exceptions import NotFoundError
+from backend.common.exceptions import ForbiddenError, NotFoundError
 from backend.common.types import MemberStatus, PASS_THRESHOLD
 from backend.common.config_service import ConfigService
 from backend.domain.advancement.models import ChildLevel, Level, Quiz, ReadingSubmission
@@ -335,19 +335,28 @@ class ReportService:
         )
         return report
 
-    def mark_observation_viewed(self, report_id: int) -> dict:
-        """标记报告已查看"""
+    def mark_observation_viewed(self, report_id: int, user_id: int) -> dict:
+        """标记报告已查看 — F-042：归属校验（只能标记自己孩子的报告）"""
+        from backend.domain.child.models import Child
+
         report = self.observation_repo.get_by_id(report_id)
         if not report:
             raise NotFoundError("报告不存在")
+        child = (
+            self.db.query(Child)
+            .filter(Child.id == report.child_id, Child.is_deleted == 0)
+            .first()
+        )
+        if not child or child.user_id != user_id:
+            raise ForbiddenError("无权操作该报告")
         report.status = 2  # STATUS_VIEWED
         self.observation_repo.update(report)
         self.db.commit()
         return MarkViewedResponse(success=True)
 
     # 向后兼容别名
-    def mark_viewed(self, report_id: int) -> dict:
-        return self.mark_observation_viewed(report_id)
+    def mark_viewed(self, report_id: int, user_id: int) -> dict:
+        return self.mark_observation_viewed(report_id, user_id)
 
     def add_teacher_comment(
         self, report_id: int, teacher_id: int, comment: str

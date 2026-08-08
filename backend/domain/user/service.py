@@ -30,9 +30,8 @@ class UserService:
 
     def create_user(self, user_data: UserCreate) -> UserResponse:
         """创建用户 — 支持微信登录（无需手机号）和手机号注册"""
-        # NOTE: openid 是公开的微信用户标识（非密钥），开发日志记录全量 openid 可接受。
-        # 生产环境如需脱敏，可改为 ...{user_data.openid[-4:]}
-        logger.info(f"Creating user with openid: {user_data.openid}")
+        # F-041：openid 日志脱敏（仅保留后 4 位）
+        logger.info(f"Creating user with openid: ...{user_data.openid[-4:]}")
 
         # 手机号唯一性检查
         if user_data.phone:

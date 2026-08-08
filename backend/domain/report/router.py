@@ -106,7 +106,7 @@ def mark_observation_viewed(
     current_user=Depends(get_current_user),
 ):
     """标记报告已查看"""
-    return service.mark_observation_viewed(report_id)
+    return service.mark_observation_viewed(report_id, current_user.id)
 
 
 @router.put("/observation/{report_id}/comment", response_model=AddCommentResponse)
