@@ -160,6 +160,144 @@ class AdminSystemService:
             "page_size": page_size,
         }
 
+    # ==================== 死信事件（F-029） ====================
+
+    def list_dead_letters(
+        self,
+        page: int = 1,
+        page_size: int = 20,
+        resolved: bool | None = None,
+    ) -> dict:
+        """死信列表（运维可观测：原只写不读，无任何查询入口）"""
+        from backend.common.dead_letter_model import DeadLetterEvent
+
+        q = self.db.query(DeadLetterEvent)
+        if resolved is not None:
+            q = (
+                q.filter(DeadLetterEvent.resolved_at.isnot(None))
+                if resolved
+                else q.filter(DeadLetterEvent.resolved_at.is_(None))
+            )
+        total = q.count()
+        entries = (
+            q.order_by(DeadLetterEvent.create_time.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+            .all()
+        )
+        return {
+            "items": [
+                {
+                    "id": e.id,
+                    "event_type": e.event_type,
+                    "handler_name": e.handler_name,
+                    "error_message": e.error_message,
+                    "retry_count": e.retry_count or 0,
+                    "resolved_at": e.resolved_at.isoformat()
+                    if e.resolved_at
+                    else None,
+                    "create_time": e.create_time.isoformat()
+                    if e.create_time
+                    else None,
+                }
+                for e in entries
+            ],
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "has_next": (page * page_size) < total,
+        }
+
+    def replay_dead_letter(self, dead_letter_id: int) -> dict:
+        """重放死信：恢复事件 → 复用已注册 handler 独立事务执行 → 成功标记 resolved_at
+
+        失败时不改原记录（人工可再次重放）；handler 内部失败由重放方异常暴露。
+        """
+        import dataclasses
+        import json
+        from datetime import datetime
+
+        from backend.common.dead_letter_model import DeadLetterEvent
+        from backend.common import events
+
+        entry = (
+            self.db.query(DeadLetterEvent)
+            .filter(DeadLetterEvent.id == dead_letter_id)
+            .first()
+        )
+        if not entry:
+            raise NotFoundError("死信记录不存在")
+
+        event_class = None
+        for cls in vars(events).values():
+            if (
+                dataclasses.is_dataclass(cls)
+                and isinstance(cls, type)
+                and issubclass(cls, events.DomainEvent)
+                and getattr(cls, "event_type", "") == entry.event_type
+            ):
+                event_class = cls
+                break
+        if event_class is None:
+            raise ValidationError(f"未知事件类型: {entry.event_type}，无法重放")
+
+        data = json.loads(entry.event_data or "{}")
+        field_names = {f.name for f in dataclasses.fields(event_class)}
+        event = event_class(**{k: v for k, v in data.items() if k in field_names})
+
+        handlers = events.event_bus._handlers.get(event.event_type, [])
+        if not handlers:
+            raise ValidationError(f"事件 {event.event_type} 无已注册处理器，无法重放")
+
+        from backend.database import get_session
+
+        session = get_session()()
+        try:
+            for handler in handlers:
+                handler(event, session)
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            raise ValidationError(f"重放失败（原死信保留，可稍后重试）: {e}") from e
+        finally:
+            session.close()
+
+        entry.resolved_at = datetime.now()
+        entry.retry_count = (entry.retry_count or 0) + 1
+        self.db.commit()
+        return {
+            "success": True,
+            "message": f"死信 {entry.id} 重放成功",
+            "event_type": entry.event_type,
+        }
+
+    def delete_dead_letter(self, dead_letter_id: int) -> dict:
+        """删除单条死信（运维清扫）"""
+        from backend.common.dead_letter_model import DeadLetterEvent
+
+        entry = (
+            self.db.query(DeadLetterEvent)
+            .filter(DeadLetterEvent.id == dead_letter_id)
+            .first()
+        )
+        if not entry:
+            raise NotFoundError("死信记录不存在")
+        self.db.delete(entry)
+        self.db.commit()
+        return {"success": True, "message": f"死信 {dead_letter_id} 已删除"}
+
+    def cleanup_resolved_dead_letters(self) -> dict:
+        """批量清扫已解决死信（resolved_at 非空，只进不出现象的出口）"""
+        from backend.common.dead_letter_model import DeadLetterEvent
+
+        rows = (
+            self.db.query(DeadLetterEvent)
+            .filter(DeadLetterEvent.resolved_at.isnot(None))
+            .delete(synchronize_session=False)
+        )
+        self.db.commit()
+        return {"success": True, "message": f"已清理 {rows} 条已解决死信"}
+
     # ==================== 回收站（PC-001） ====================
 
     def list_recycle_bin(

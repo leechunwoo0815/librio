@@ -35,6 +35,7 @@ from backend.domain.admin.admin_schemas import (
     AdminCreateUserRequest,
     OrderListResponse,
     OperationLogResponse,
+    DeadLetterListResponse,
     RecycleBinResponse,
     MessageSendResponse,
     SendMessageRequest,
@@ -693,6 +694,77 @@ def list_operation_logs(
 ):
     """获取操作日志"""
     return service.list_operation_logs(page, page_size, module)
+
+
+# ==================== 死信事件（F-029 运维可观测） ====================
+
+
+@router.get("/dead-letters", response_model=DeadLetterListResponse)
+def list_dead_letters(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    resolved: bool | None = Query(
+        None, description="按解决状态过滤：true=已解决 false=未解决"
+    ),
+    service: AdminSystemService = Depends(get_admin_system_service),
+    admin=Depends(require_perm("log.list")),
+):
+    """死信事件列表（F-029：原只写不读，运维无法发现失败事件）"""
+    return service.list_dead_letters(page, page_size, resolved)
+
+
+@router.post(
+    "/dead-letters/{dead_letter_id}/replay", response_model=AdminActionResponse
+)
+def replay_dead_letter(
+    dead_letter_id: int,
+    service: AdminSystemService = Depends(get_admin_system_service),
+    admin=Depends(require_perm("log.list")),
+):
+    """重放死信事件（复用已注册 handler；成功标记 resolved_at）"""
+    result = service.replay_dead_letter(dead_letter_id)
+    service.write_operation_log(
+        admin_id=admin.id,
+        module="dead_letter",
+        operation="replay",
+        content=f"重放死信: {dead_letter_id}（{result.get('event_type', '')}）",
+    )
+    return result
+
+
+@router.delete(
+    "/dead-letters/{dead_letter_id}", response_model=AdminActionResponse
+)
+def delete_dead_letter(
+    dead_letter_id: int,
+    service: AdminSystemService = Depends(get_admin_system_service),
+    admin=Depends(require_perm("log.list")),
+):
+    """删除单条死信"""
+    result = service.delete_dead_letter(dead_letter_id)
+    service.write_operation_log(
+        admin_id=admin.id,
+        module="dead_letter",
+        operation="delete",
+        content=f"删除死信: {dead_letter_id}",
+    )
+    return result
+
+
+@router.delete("/dead-letters", response_model=AdminActionResponse)
+def cleanup_dead_letters(
+    service: AdminSystemService = Depends(get_admin_system_service),
+    admin=Depends(require_perm("log.list")),
+):
+    """批量清扫已解决死信（resolved_at 非空）"""
+    result = service.cleanup_resolved_dead_letters()
+    service.write_operation_log(
+        admin_id=admin.id,
+        module="dead_letter",
+        operation="cleanup",
+        content=result.get("message", ""),
+    )
+    return result
 
 
 # ==================== 回收站 ====================

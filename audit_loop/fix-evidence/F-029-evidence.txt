@@ -1,0 +1,12 @@
+F-029 死信消费（查询/重放/删除/清扫） — 2026-08-08
+原缺陷: DeadLetterEvent 只写不读——无查询端点/无重放/无清扫，retry_count/resolved_at 从未使用
+新增（AdminSystemService + admin_system_router，权限 log.list）:
+  - GET  /admin/api/dead-letters（分页 + resolved 过滤）
+  - POST /admin/api/dead-letters/{id}/replay（恢复事件对象 → 复用已注册 handler 独立事务
+    → 成功标记 resolved_at + retry_count；失败保留原记录可重试；未知类型/无 handler 拒绝）
+  - DELETE /admin/api/dead-letters/{id}（单条清扫）
+  - DELETE /admin/api/dead-letters（批量清理 resolved）
+测试: test_f029_dead_letter_consumption.py（7 用例：分页/has_next/resolved 过滤/
+  重放成功标记/重放失败保留/未知类型/单删+清扫）
+  - 重放验证用测试事件动态注册 events 模块 + 临时 handler（不触发真实业务副作用）
+结果: 7 passed

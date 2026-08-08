@@ -148,6 +148,32 @@ class OperationLogResponse(BaseModel):
     has_next: bool = False
 
 
+class DeadLetterResponse(BaseModel):
+    """死信事件响应（F-029：运维可观测）"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: int
+    event_type: str
+    handler_name: str
+    error_message: str | None = None
+    retry_count: int = 0
+    resolved_at: str | None = None
+    create_time: str | None = None
+
+
+class DeadLetterListResponse(BaseModel):
+    """死信列表响应"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    items: list[DeadLetterResponse] = []
+    total: int = 0
+    page: int = 1
+    page_size: int = 20
+    has_next: bool = False
+
+
 class RecycleBinResponse(BaseModel):
     """回收站响应"""
 
