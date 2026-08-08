@@ -159,6 +159,7 @@ class OrderService:
                         ParentCourseTime.id == order_data.slot_id,
                         ParentCourseTime.is_deleted == 0,
                     )
+                    .with_for_update()  # F-067：名额计数与报名同事务行锁（防并发超卖）
                     .first()
                 )
                 if not slot:

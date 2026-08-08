@@ -825,6 +825,7 @@ class DepositService:
         child = (
             self.db.query(Child)
             .filter(Child.id == data.child_id, Child.is_deleted == 0)
+            .with_for_update()  # F-066：串行化并发缴款（防双单）
             .first()
         )
         if not child:

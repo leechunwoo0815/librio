@@ -83,6 +83,7 @@ class BenefitTransferAdminService:
                 BenefitTransferApplication.id == application_id,
                 BenefitTransferApplication.is_deleted == 0,
             )
+            .with_for_update()  # F-078：审核行锁——并发双审核防重复转移
             .first()
         )
         if not app:

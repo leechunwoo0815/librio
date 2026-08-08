@@ -83,6 +83,7 @@ class DamageAdminService:
                 ),
                 BookDamageReport.is_deleted == 0,
             )
+            .with_for_update()  # F-107：查重行锁——并发双登记防重复计费
             .first()
         )
         if active_report:

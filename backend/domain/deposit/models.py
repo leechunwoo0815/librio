@@ -98,7 +98,10 @@ class FinePayment(BaseModel):
     """罚款缴纳记录 — B12：家长线上缴纳 outstanding_fines"""
 
     __tablename__ = "fine_payment"
-    __table_args__ = {"extend_existing": True}
+    __table_args__ = (
+        Index("uq_fine_payment_active", "active_fine", unique=True),
+        {"extend_existing": True},
+    )
 
     STATUS_PENDING = 0
     STATUS_PAID = 1
@@ -112,6 +115,11 @@ class FinePayment(BaseModel):
         String(32), nullable=True, unique=True, index=True, comment="支付单号"
     )
     pay_time = Column(DateTime, nullable=True, comment="支付时间")
+    active_fine = Column(
+        BigInteger,
+        nullable=True,
+        comment="F-066：活跃缴款唯一键（PENDING 且未软删时 child×金额分，防并发双单）",
+    )
 
     child = relationship("Child", foreign_keys=[child_id])
 

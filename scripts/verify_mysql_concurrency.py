@@ -58,6 +58,7 @@ def main():
     results.append(("F 库存并发双报损（行锁）", _scenario_stock_double_lost(Session)))
     results.append(("G 缓冲期关停 vs 续费（行锁）", _scenario_grace_vs_renew(Session)))
     results.append(("H 首次免罚并发（行锁）", _scenario_first_free_concurrent(Session)))
+    results.append(("I 活动并发双报（行锁）", _scenario_activity_double_enroll(Session)))
 
     if "--keep" not in sys.argv:
         _cleanup(engine)
@@ -693,6 +694,72 @@ def _scenario_first_free_concurrent(Session):
 
     passed = double_free == 0
     return passed, f"双免孩子 {double_free}/10（应 0），错误样本: {errors[:2]}"
+
+
+def _scenario_activity_double_enroll(Session):
+    """F-075：活动并发双报——activity 行锁串行化后每孩子每活动恰 1 条报名
+
+    1 个孩子 × 10 线程并发 enroll 同一活动（max=100）。
+    缺陷特征：同一孩子产生多条报名记录（查重与插入之间无锁）。
+    """
+    from datetime import datetime, timedelta
+
+    from backend.domain.activity.models import Activity, ActivityEnrollment
+    from backend.domain.activity.schemas import ActivityEnrollRequest
+    from backend.domain.activity.service import ActivityService
+
+    s = Session()
+    _, cid = _make_user_child(s, f"ade_{uuid.uuid4().hex[:8]}")
+    activity = Activity(
+        title="并发报名活动",
+        type=1,
+        status=Activity.STATUS_ENROLLING,
+        max_participants=100,
+        current_participants=0,
+        start_time=datetime.now() + timedelta(days=1),
+        end_time=datetime.now() + timedelta(days=2),
+    )
+    s.add(activity)
+    s.commit()
+    aid = activity.id
+    s.close()
+
+    lock = threading.Lock()
+    outcomes = []
+
+    def try_enroll():
+        sess = Session()
+        try:
+            r = ActivityService(sess).enroll(
+                ActivityEnrollRequest(activity_id=aid, child_id=cid)
+            )
+            with lock:
+                outcomes.append(r.get("status", "?"))
+        except Exception as e:
+            with lock:
+                outcomes.append(f"err:{str(e)[:50]}")
+        finally:
+            sess.close()
+
+    threads = [threading.Thread(target=try_enroll) for _ in range(10)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    s = Session()
+    count = (
+        s.query(ActivityEnrollment)
+        .filter(
+            ActivityEnrollment.activity_id == aid,
+            ActivityEnrollment.child_id == cid,
+        )
+        .count()
+    )
+    s.close()
+
+    passed = count == 1
+    return passed, f"报名记录 {count}（应恰 1），结果样本: {outcomes[:4]}"
 
 
 def _cleanup(engine):

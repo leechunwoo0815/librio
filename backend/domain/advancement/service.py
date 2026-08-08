@@ -18,7 +18,7 @@ from backend.common.events import (
     LevelAdvancedEvent,
     event_bus,
 )
-from backend.common.exceptions import ConflictError, NotFoundError
+from backend.common.exceptions import ConflictError, NotFoundError, ValidationError
 from backend.common.sql_utils import escape_like
 from backend.domain.advancement.models import (
     Level,
@@ -743,10 +743,13 @@ class AdvancementService:
         sub = (
             self.db.query(ReadingSubmission)
             .filter(ReadingSubmission.id == submission_id)
+            .with_for_update()  # F-058：审核行锁——并发双审核防重复处理
             .first()
         )
         if not sub:
             raise NotFoundError("提交不存在")
+        if sub.status != 0:  # PENDING
+            raise ValidationError("提交已审核，无法重复处理")
         sub.status = data.status
         if data.comment:
             sub.teacher_comment = data.comment

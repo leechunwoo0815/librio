@@ -301,7 +301,13 @@ class BookService:
         from backend.common.exceptions import NotFoundError
         from backend.domain.reading.models import BookPage
 
-        book = self.book_repo.get_by_id(book_id)
+        # F-076：book 行锁串行化同书页面保存（查重 + 插入之间防并发双插）
+        book = (
+            self.db.query(Book)
+            .filter(Book.id == book_id, Book.is_deleted == 0)
+            .with_for_update()
+            .first()
+        )
         if not book or book.is_deleted == 1:
             raise NotFoundError("图书不存在")
 

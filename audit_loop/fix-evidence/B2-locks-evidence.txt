@@ -1,0 +1,13 @@
+批次2-F058/066/067/075/076/078/107 + 迁移051 证据
+==================================================
+
+F-058: review_submission 行锁 + 已审核守卫
+F-066: pay_fines child 行锁串行化 + 迁移051 active_fine 活跃唯一（DB 兜底）
+F-067: 亲子课 slot 行锁（名额计数同事务）
+F-075: activity 行锁串行化报名（MySQL 实证：并发双报 8 条→1 条）
+F-076: save_book_page_admin book 行锁（同页更新不重复插入）
+F-078: benefit approve 行锁（重复审核拦截）
+F-107: create_report 查重行锁（重复登记拦截）
+
+[MySQL] 场景 I：修复前 8 条报名记录，修复后恰 1 条
+[单测] test_batch2_locks.py 6 passed + 相关回归 165 passed + alembic check 无漂移

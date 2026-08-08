@@ -82,7 +82,22 @@ class ActivityService:
         return resp
 
     def enroll(self, data: ActivityEnrollRequest) -> dict:
-        activity = self.activity_repo.get_by_id_or_raise(data.activity_id)
+        # F-075：activity 行锁串行化报名流程（查重 + 插入之间防并发双报）
+        from backend.domain.activity.models import Activity as ActivityModel
+
+        activity = (
+            self.db.query(ActivityModel)
+            .filter(
+                ActivityModel.id == data.activity_id,
+                ActivityModel.is_deleted == 0,
+            )
+            .with_for_update()
+            .first()
+        )
+        if not activity:
+            from backend.common.exceptions import NotFoundError
+
+            raise NotFoundError("活动不存在")
 
         # 检查活动状态
         if activity.status != Activity.STATUS_ENROLLING:
