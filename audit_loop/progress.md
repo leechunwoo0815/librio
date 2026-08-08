@@ -107,6 +107,7 @@
 | R45 | 2026-08-08 | 综合接口覆盖复查 | 0 | 0 | C-138 接口覆盖零缺失（零发现） |
 | R46 | 2026-08-08 | damage 损坏报告域（定责/赔偿链） | 1 | 0 | F-080 confirm/reject/review 无锁双计罚款（P2）+ C-139 |
 | R47 | 2026-08-08 | damage override 冲正链 | 0 | 0 | C-140 override 冲正链安全（零发现） |
+| R48 | 2026-08-08 | quiz_handlers 联动链 | 0 | 0 | C-141 handler 链安全（零发现） |
 
 ## 维度轮换表（15 维，按序循环，深度递增）
 
@@ -143,11 +144,11 @@
 
 ## 当前进度
 
-- **当前维度子项**：第四十七轮 damage override 冲正链 R47 完成（C-140 冲正链安全，零发现）→ R47 完结
-- **本圈发现数**：0（R47：零发现合法产出）
-- **累计发现数**：79（P0:0 / P1:0 / P2:12 / P3:67）+ 137 clean 记录
-- **下次从哪开始**：R48 建议继续新维度（继续轮转新面）
-- **上一圈结束时 HEAD**：R47 完结后最新提交（见轮次表下方说明）
+- **当前维度子项**：第四十八轮 quiz_handlers 联动链 R48 完成（C-141 handler 链安全，零发现）→ R48 完结
+- **本圈发现数**：0（R48：零发现合法产出）
+- **累计发现数**：79（P0:0 / P1:0 / P2:12 / P3:67）+ 138 clean 记录
+- **下次从哪开始**：R49 建议继续新维度（继续轮转新面）
+- **上一圈结束时 HEAD**：R48 完结后最新提交（见轮次表下方说明）
 
 > 轮次报告文件拆分（用户指令 2026-08-08 起）：每轮一个独立 md 文件存 `audit_loop/rounds/Rxx-<维度>.md`，
 > 编号跨文件连续（F-061 起 / C-103 起），findings-20260807.md 冻结不再追加。本表只做索引。
@@ -659,6 +660,17 @@
 4. 锁覆盖：child/record/copy 全 with_for_update → ✓ C-140 内
 
 **R47 进度**：完成，零发现 + clean C-140，累计 79 发现 / 137 clean。R47 完结（合法零发现轮）。
+
+## 第四十八轮（R48）quiz_handlers 联动链清单
+
+> quiz.passed 六 handler（advancement/stats/borrow/bookshelf/submission/failed）。
+
+1. submission 自动审核：PENDING 行锁（防双 APPROVED）+ 时长检查 → ✓ C-141 内
+2. bookshelf handler：with_for_update + FINISHED → ✓ C-141 内
+3. book_finished 转发：increment + check_and_advance（C-101 防双重晋级）→ ✓ C-141 内
+4. borrow handler 异常隔离（try/except 不影响主流程）→ ✓ C-141 内
+
+**R48 进度**：完成，零发现 + clean C-141，累计 79 发现 / 138 clean。R48 完结（合法零发现轮）。
 
 ## 待甲方 / 需人工
 
