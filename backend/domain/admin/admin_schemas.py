@@ -10,6 +10,8 @@
 
 from datetime import datetime
 from decimal import Decimal
+from typing import Literal
+
 from pydantic import BaseModel, Field, ConfigDict, model_validator, field_validator
 
 
@@ -850,13 +852,31 @@ class BulkImportQuestionItem(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     isbn: str = Field(..., min_length=1)
-    question_text: str = ""
-    option_a: str = ""
-    option_b: str = ""
+    question_text: str = Field(..., min_length=1)
+    option_a: str = Field(..., min_length=1)  # F-088：禁空选项
+    option_b: str = Field(..., min_length=1)
     option_c: str | None = None
     option_d: str | None = None
-    correct_answer: str = "A"
+    correct_answer: Literal["A", "B", "C", "D"] = "A"  # F-088：A-D 枚举
     difficulty: int = 1
+
+    @model_validator(mode="after")
+    def _check_option_reference(self):
+        # F-088：correct_answer 指向的选项必须非空（pydantic 层 422）
+        from backend.common.question_validation import validate_question_correct_answer
+        from backend.common.exceptions import ValidationError as BizValidationError
+
+        try:
+            validate_question_correct_answer(
+                self.correct_answer,
+                self.option_a,
+                self.option_b,
+                self.option_c,
+                self.option_d,
+            )
+        except BizValidationError as e:
+            raise ValueError(str(e)) from e
+        return self
 
 
 # ==================== 退款管理 ====================

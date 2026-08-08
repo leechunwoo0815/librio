@@ -177,6 +177,18 @@ class AdminBookService:
                         {"isbn": book_isbn, "status": "error", "reason": "ISBN 不存在"}
                     )
                     continue
+                # F-088：service 层兜底校验（schema 已 422，防默认值/绕过）
+                from backend.common.question_validation import (
+                    validate_question_correct_answer,
+                )
+
+                validate_question_correct_answer(
+                    item.correct_answer,
+                    item.option_a,
+                    item.option_b,
+                    item.option_c,
+                    item.option_d,
+                )
                 q = QuestionBank(
                     book_id=book.id,
                     question_text=item.question_text,
@@ -272,6 +284,16 @@ class AdminBookService:
         update_fields = data.model_dump(exclude_unset=True)
         for field, value in update_fields.items():
             setattr(q, field, value)
+        # F-093：合并后校验——correct_answer 指向的选项最终必须非空
+        from backend.common.question_validation import validate_question_correct_answer
+
+        validate_question_correct_answer(
+            q.correct_answer,
+            q.option_a,
+            q.option_b,
+            q.option_c,
+            q.option_d,
+        )
 
         self.db.commit()
         return {"success": True, "id": q.id}

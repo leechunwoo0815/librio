@@ -4,7 +4,8 @@
 from datetime import datetime
 from decimal import Decimal
 
-from pydantic import Field
+from pydantic import Field, model_validator
+from typing import Literal
 
 from backend.common.base_schema import BaseSchema
 
@@ -77,10 +78,30 @@ class CreateQuestionRequest(BaseSchema):
     option_b: str = Field(..., min_length=1)
     option_c: str | None = None
     option_d: str | None = None
-    correct_answer: str = Field(..., min_length=1, max_length=1)
+    correct_answer: Literal["A", "B", "C", "D"] = Field(
+        ..., description="正确答案（F-071：A-D 枚举）"
+    )
     difficulty: int = Field(default=1, ge=1, le=5)
     explanation: str | None = None
     created_by: int | None = None
+
+    @model_validator(mode="after")
+    def _check_option_reference(self):
+        # F-071/F-093：correct_answer 指向的选项必须非空（pydantic 层 422）
+        from backend.common.question_validation import validate_question_correct_answer
+        from backend.common.exceptions import ValidationError as BizValidationError
+
+        try:
+            validate_question_correct_answer(
+                self.correct_answer,
+                self.option_a,
+                self.option_b,
+                self.option_c,
+                self.option_d,
+            )
+        except BizValidationError as e:
+            raise ValueError(str(e)) from e
+        return self
 
 
 class QuestionResponse(BaseSchema):

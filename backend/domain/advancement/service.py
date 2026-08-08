@@ -694,6 +694,16 @@ class AdvancementService:
     def create_question(self, data) -> dict:
         """创建题目"""
         from backend.domain.advancement.models import QuestionBank
+        from backend.common.question_validation import validate_question_correct_answer
+
+        # F-071：兜底校验（schema 层已 422，此处防绕过/默认值）
+        validate_question_correct_answer(
+            data.correct_answer,
+            data.option_a,
+            data.option_b,
+            data.option_c,
+            data.option_d,
+        )
 
         question = QuestionBank(**data.model_dump())
         self.db.add(question)
@@ -705,6 +715,7 @@ class AdvancementService:
         """更新题目"""
         from backend.domain.advancement.models import QuestionBank
         from backend.common.exceptions import NotFoundError
+        from backend.common.question_validation import validate_question_correct_answer
 
         question = (
             self.db.query(QuestionBank).filter(QuestionBank.id == question_id).first()
@@ -725,6 +736,15 @@ class AdvancementService:
         for key, value in update_data.items():
             if key in allowed_fields:
                 setattr(question, key, value)
+        # F-093：合并后校验——correct_answer 指向的选项最终必须非空
+        # （部分更新场景：本次只改 correct_answer 或清空某选项都须拦截）
+        validate_question_correct_answer(
+            question.correct_answer,
+            question.option_a,
+            question.option_b,
+            question.option_c,
+            question.option_d,
+        )
         self.db.commit()
         return QuestionResponse.model_validate(question)
 

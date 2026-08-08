@@ -1,0 +1,11 @@
+F-071/F-088/F-093 correct_answer 三入口统一校验 — 2026-08-08
+枚举: QuestionBank( 构造点 3 处（advancement create / admin bulk / seeds×2 不涉校验）
+  更新入口实际路由: admin_advancement_router PUT /questions/{id} → AdvancementService.update_question
+  （F-093 报告定位的 admin/book_service.py update_question 为无路由死代码——同步修防未来接线）
+新增: backend/common/question_validation.py（A-D 枚举 + 指向选项非空，三入口共用）
+schema: CreateQuestionRequest/BulkImportQuestionItem correct_answer → Literal + model_validator
+  （pydantic after-validator 不包装业务异常 → try/except 转 ValueError 保 422）
+service: create 兜底 / update 合并后校验（部分更新场景）/ bulk per-item 隔离
+测试: 10 用例（schema 422×3、service 兜底、update 改答案/清选项两拒绝+不落库、
+  死代码路径守卫、批量合法导入）
+RED→GREEN: 移除 update 合并校验 → 2 failed；恢复 → 10 passed
