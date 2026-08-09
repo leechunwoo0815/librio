@@ -135,6 +135,29 @@ class TestDepositStateMachine:
         db.refresh(child)
         assert child.deposit_status == DepositStatus.PAID
 
+    def test_cannot_cancel_refund_while_refunding(self, db):
+        """F-005 终审闭环：REFUNDING（微信退款已在途）不允许 cancel 回 PAID"""
+        from backend.domain.deposit.models import DepositRecord
+
+        user, child = _make_child(db)
+        record = DepositRecord(
+            child_id=child.id,
+            amount=Decimal("1200.00"),
+            status=DepositStatus.REFUNDING,
+        )
+        db.add(record)
+        child.deposit_status = DepositStatus.REFUNDING
+        db.commit()
+
+        svc = DepositService(db)
+        with pytest.raises(Exception, match="无法取消"):
+            svc.cancel_refund(child.id)
+
+        db.expire_all()
+        reloaded = db.query(DepositRecord).filter(DepositRecord.id == record.id).first()
+        assert reloaded.status == DepositStatus.REFUNDING
+        assert child.deposit_status == DepositStatus.REFUNDING
+
 
 class TestBorrowStateMachine:
     def test_cannot_return_unborrowed(self, db):

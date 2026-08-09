@@ -645,12 +645,14 @@ class DepositService:
         return DepositResponse.model_validate(record)
 
     def cancel_refund(self, child_id: int) -> DepositResponse:
-        """取消退款申请 — REFUNDING/REFUND_PENDING → PAID"""
+        """取消退款申请 — 仅 REFUND_PENDING → PAID（F-005 终审：REFUNDING 钱在途不可取消）"""
         record = self.deposit_repo.get_active_by_child_for_update(child_id)
         if not record:
             raise NotFoundError("未找到已缴纳的押金记录")
-        if record.status not in (DepositStatus.REFUNDING, DepositStatus.REFUND_PENDING):
-            raise ConflictError("当前状态不是退款中或待审核，无法取消")
+        if record.status == DepositStatus.REFUNDING:
+            raise ConflictError("退款已在处理中（钱在途），无法取消；如需恢复请联系管理员")
+        if record.status != DepositStatus.REFUND_PENDING:
+            raise ConflictError("当前状态不是待审核，无法取消")
 
         record.status = DepositStatus.PAID
         record.refund_time = None
