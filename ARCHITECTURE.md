@@ -1,6 +1,6 @@
 # DmkWords — 架构文档
 
-> 版本：V3.23（2026-08-05 更新：52 题决策 + 四轮审查闭环 + 二批 P0 修复 — 56 表/67 配置/fine_policy/config_levels/guardian/teacher_workbench）
+> 版本：V3.23（2026-08-09 更新：52 题决策 + 四轮审查闭环 + 160 轮审查 118 项修复五批次全闭环 — 56 表/67 配置/336 API/fine_policy/config_levels/guardian/teacher_workbench）
 > 零粉饰，只写事实
 
 ---
@@ -44,7 +44,7 @@ Gateways → Mock支付网关 / Mock短信网关 / 真实支付网关（依赖�
 | 前端 | 微信小程序原生（34 页，4 子包） |
 | 后端 | Python 3.13 + FastAPI + SQLAlchemy 2.0 + Pydantic V2 |
 | 数据库 | MySQL 8.0 (utf8mb4)，测试用 SQLite :memory: |
-| 测试 | pytest (789 collected，通过数随环境) + behave (211 scenarios / 1369 steps) |
+| 测试 | pytest (883 collected，通过数随环境) + behave (211 scenarios / 1369 steps) |
 | 管理端 | 39 个 PC 后台模板（含 base.html）+ 35 页面级 CSS + 36 page JS（IIFE） |
 | 设计系统 | --accent: #5560cf + 31/31 class 对齐 ≥95% + 0 hardcoded + 0 oklch |
 | 定时 | APScheduler（24 个任务） |
@@ -134,7 +134,7 @@ scripts/                 # CI 脚本
 └── verify_api_contract.py    # 前后端 API 契约验证
 .github/workflows/ci.yml     # CI 配置
 features/                # BDD feature 文件（20 个，211 场景，1369 步骤）
-tests/unit/              # pytest 单元测试（789 个 collected，通过数随环境）
+tests/unit/              # pytest 单元测试（883 个 collected，通过数随环境）
 scripts/integration_test.py  # 全链路集成测试（867 行，6 主流程 + 7 异常场景）
 frontend/                # 微信小程序（34 个页面，4 子包）
 ```
@@ -243,10 +243,10 @@ frontend/                # 微信小程序（34 个页面，4 子包）
 
 ## 六、API 端点清单
 
-### 6.1 全量口径（2026-08-04 运行时实测）
+### 6.1 全量口径（2026-08-09 运行时实测）
 
-- 业务路由合计 **332**（`include_router` 注册 APIRoute 数；不含 `/health`、`/`、`/openapi.json`；DEBUG 下的 mock 路由不计）
-- 管理端 `/admin`：**211**（174 个 admin API + 37 个页面路由）
+- 业务路由合计 **336**（`include_router` 注册 APIRoute 数；不含 `/health`、`/`；DEBUG 下的 mock 路由不计）
+- 管理端 `/admin`：**215**（178 个 admin API + 37 个页面路由）
 - 用户端：**121**（各模块明细见《PRD/DmkWords_V3.5需求文档.md》附录 C）
 - DEBUG 限定路由：docs/redoc（+3）、mock 支付/短信（+4）
 
@@ -258,7 +258,7 @@ frontend/                # 微信小程序（34 个页面，4 子包）
 
 ```bash
 # pytest
-789 collected（通过数随环境：开发机 789 passed / CI 708+15 skip / 无 MySQL 沙箱 714+9 err）
+883 collected（通过数随环境：开发机 883 passed / CI 708+15 skip / 无 MySQL 沙箱 714+9 err）
 
 # 架构验证
 ✅ Router 层 ORM 操作：0 处
