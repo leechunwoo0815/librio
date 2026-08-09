@@ -60,7 +60,7 @@
 
 <div class="guide">
   <b>使用说明</b>：① <b>✅ 甲方已确认</b> = 该决策已按标注选项落地到代码/文档（选项已预选，原因见绿色确认块，可直接复核）；② <b>🕐 待确认</b> = 仍需甲方拍板（含新增 I 组外部事项）；③ 未作答的待确认题，开发将按 ★ 推荐项执行；④ 全部完成后点底部「生成决策结果」，将结果文件发回开发团队。<br>
-  <b>版本说明（V1.2, 2026-08-09）</b>：52 题中已确认 44 题（依据最新代码基线 pytest 883 / 迁移 055 逐项核对，选项已预选并附代码落地点），待确认 8 题（B1/B2/B3/C5/C6/E4/E5/G2）保留作答，另新增 I 组 11 项甲方待办（隐私主体信息/产品口径/前端素材等）。<br>
+  <b>版本说明（V1.2, 2026-08-09）</b>：52 题中已确认 44 题（依据最新代码基线 pytest 883 / 迁移 055 逐项核对，选项已预选并附代码落地点），待确认 8 题（B1/B2/B3/C5/C6/E4/E5/G2）保留作答；另新增 I 组 11 项 + J 组 28 项甲方待办/拍板事项（隐私主体信息、文档模糊点、P3 观察项排期等），决策项合计 <b>91 项</b>。<br>
   <b>阻塞度说明</b>：🔴 阻塞（7 题，开发开工前提）｜🟡 重要（14 题，影响上线质量）｜🟢 可默认（31 题）。<br>
   <b>单店前提</b>：本表按"当前单店运营"编制。venue 字段已在数据模型预留多店结构；未来扩店时再启动多店决策（库存/预约/借阅的店维度，预估 3-4 天，届时单独立项）。<br>
   <b>决策变更流程</b>：决策确认后如需变更，变更引起的返工工期顺延，已测试内容需重新回归。<br>
@@ -855,6 +855,274 @@
   <textarea name="I11_note" placeholder="请补充：① 各馆门店电话/客服微信号（每馆一行） ② 扫码枪品牌型号/采购时间 ③ 其余待确认题的选项（可在上方对应卡片直接作答）"></textarea>
 </div>
 
+<!-- ═══════════ J 组：文档模糊点与待排期事项（V1.2 新增，全部需甲方/产品拍板） ═══════════ -->
+<div class="group">J 组 · 文档模糊点与待排期事项 <span>28 项 — 来自历轮审查 P3 观察项与交接清单，均为文档未写清或代码按默认值执行的"责任交接点"，请逐项拍板</span></div>
+
+<div class="card" data-q="J1">
+  <h3><span class="qid">J1</span><span class="tag-pending">🕐 甲方拍板</span>退款处理期间是否允许继续借书（F57）</h3>
+  <div class="current"><b>现状</b>：提交退款申请后订单退款中，孩子仍可借书（无白名单/黑名单规则）。文档未定义"退款在途是否冻结借阅"。家长"边退边借"会造成退款金额与在读书押金/罚款纠缠。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="J1" value="允许继续借到退款完成（推荐：体验优先，退款与借阅解耦，还书义务仍有效）">允许继续借（推荐）</label>
+    <label><input type="radio" name="J1" value="退款在途冻结新借阅（还书可，新借不可）">退款在途冻结新借阅</label>
+    <label><input type="radio" name="J1" value="仅退款完成后 15 天内禁止新借（防"退款后继续薅"）">退款后 15 天禁借</label>
+  </div>
+</div>
+
+<div class="card" data-q="J2">
+  <h3><span class="qid">J2</span><span class="tag-pending">🕐 甲方拍板</span>非会员（体验/过期/校友）能否预约或借书（F63）</h3>
+  <div class="current"><b>现状</b>：预约/借阅端点仅校验孩子归属，未按会员状态拦截（体验用户也可预约）；PRD 对非会员借阅权限未写清。若开放=免费体验借书漏洞；若全拦=体验用户无法感受实体书价值。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="J2" value="仅观察期/正式会员可预约借书（推荐：体验用户只读电子书）">仅付费会员可借（推荐）</label>
+    <label><input type="radio" name="J2" value="体验用户可预约但取书时校验（到店引导转化）">体验可预约、取书校验</label>
+    <label><input type="radio" name="J2" value="全部开放（现状，不拦截）">全部开放（现状）</label>
+  </div>
+</div>
+
+<div class="card" data-q="J3">
+  <h3><span class="qid">J3</span><span class="tag-pending">🕐 甲方拍板</span>预约时是否校验押金（F71-①，PRD 自相矛盾）</h3>
+  <div class="current"><b>现状矛盾</b>：预约时不校验押金、取书时校验——家长预约成功到店才发现没交押金无法取书（体验断裂）。PRD 一处写"预约需押金"、一处只写"取书需押金"。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="J3" value="预约时校验押金（推荐：交押金才可预约，避免到店扑空）">预约时校验押金（推荐）</label>
+    <label><input type="radio" name="J3" value="维持取书时校验（预约门槛低，转化优先）">维持取书时校验</label>
+    <label><input type="radio" name="J3" value="预约时提示"未交押金"，但允许预约（到店前发提醒）">预约允许+到店前提醒</label>
+  </div>
+</div>
+
+<div class="card" data-q="J4">
+  <h3><span class="qid">J4</span><span class="tag-pending">🕐 甲方拍板</span>押金余额展示口径（F73）</h3>
+  <div class="current"><b>现状</b>：家长端押金页展示"押金 1200"与"未缴罚款"两个数，但"实际可退余额 = 押金 − 罚款 − 在途扣除"未展示；管理端押金池总额口径也未统一（实收 vs 应收）。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="J4" value="家长端展示"可退余额=押金−未缴罚款−在途扣除"，管理端按实收统计（推荐）">展示可退余额+实收口径（推荐）</label>
+    <label><input type="radio" name="J4" value="维持现状（家长看押金总额，罚款单独列）">维持现状</label>
+  </div>
+</div>
+
+<div class="card" data-q="J5">
+  <h3><span class="qid">J5</span><span class="tag-pending">🕐 甲方拍板</span>ALUMNI 毕业状态的出入边界（F9）</h3>
+  <div class="current"><b>现状</b>：毕业=ALUMNI 终态（不可借可查历史），但"毕业后能否再退出/复活"未定义；前端状态映射未含 ALUMNI 展示（家长端显示异常）；毕业引导退押金页是否单独做未定。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="J5" value="ALUMNI 为终态不可复活，前端补状态展示+毕业页引导退押金（推荐）">终态+前端展示+毕业页（推荐）</label>
+    <label><input type="radio" name="J5" value="ALUMNI 允许管理员复活（与 F5 同机制）">允许复活</label>
+    <label><input type="radio" name="J5" value="维持现状（不补前端，人工引导）">维持现状</label>
+  </div>
+</div>
+
+<div class="card" data-q="J6">
+  <h3><span class="qid">J6</span><span class="tag-pending">🕐 甲方拍板</span>押金被部分扣除（DEDUCTED）后剩余押金的退款通道</h3>
+  <div class="current"><b>现状</b>：损坏/丢失扣除押金后，剩余押金（如 1200−450=750）无独立退款通道——家长想退出只能走整笔押金退款，剩余部分无法单独结算。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="J6" value="剩余押金可全额退（自动 = 押金 − 累计扣除 − 未缴罚款，推荐）">剩余可全额退（推荐）</label>
+    <label><input type="radio" name="J6" value="剩余押金结转下次（不退现，转为预存）">结转不退</label>
+    <label><input type="radio" name="J6" value="线下作废（仅退整笔，扣除部分不退）">线下作废</label>
+  </div>
+</div>
+
+<div class="card" data-q="J7">
+  <h3><span class="qid">J7</span><span class="tag-pending">🕐 甲方/微信侧</span>订阅消息（服务通知）模板与启用范围</h3>
+  <div class="current"><b>现状</b>：订阅消息代码管线已实现（SubscribeTemplate + subscribe.js），但微信后台模板 ID 未申请；哪些事件推送订阅消息未定（候选：到货通知/逾期提醒/周月报/退款到账/审核结果）。</div>
+  <div class="opts">
+    <label class="rec"><input type="checkbox" name="J7" value="到货通知（候补）">到货通知</label>
+    <label class="rec"><input type="checkbox" name="J7" value="退款到账">退款到账</label>
+    <label class="rec"><input type="checkbox" name="J7" value="审核结果（退款/转让/申诉）">审核结果</label>
+    <label class="rec"><input type="checkbox" name="J7" value="周报/月报生成提醒">周月报提醒</label>
+    <label><input type="checkbox" name="J7" value="逾期/到期提醒（全部选 = 4 类模板）">逾期到期提醒</label>
+  </div>
+  <textarea name="J7_note" placeholder="请确认勾选哪些事件 + 预计何时提供微信模板 ID"></textarea>
+</div>
+
+<div class="card" data-q="J8">
+  <h3><span class="qid">J8</span><span class="tag-pending">🕐 运营决策</span>存量已还书（RETURNED）但未计罚款的历史记录是否补收</h3>
+  <div class="current"><b>现状</b>：历史上有逾期还书记录已还清但罚款从未入账（旧逻辑缺口，修复后新记录正常）；存量补收 = 一次性给老会员账单，不补收 = 旧账豁免（观察项记录在案）。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="J8" value="不补收，历史豁免（推荐：客诉风险 > 金额，新规则向前看）">不补收（推荐）</label>
+    <label><input type="radio" name="J8" value="补收（管理端出存量清单人工确认后入账）">补收（人工清单）</label>
+  </div>
+</div>
+
+<div class="card" data-q="J9">
+  <h3><span class="qid">J9</span><span class="tag-pending">🕐 甲方授权</span>孤儿借阅数据清理授权</h3>
+  <div class="current"><b>现状</b>：历史遗留少量"孩子已删/用户已删但借阅记录悬空"的孤儿数据（审查观察项），清理属破坏性操作，需甲方书面授权后执行（列出清单→确认→清理）。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="J9" value="授权清理（先出清单人工核对，再做标记/归档，不物理删）">授权（清单+归档）</label>
+    <label><input type="radio" name="J9" value="暂不清理（保留观察）">暂不清理</label>
+  </div>
+</div>
+
+<div class="card" data-q="J10">
+  <h3><span class="qid">J10</span><span class="tag-pending">🕐 甲方拍板</span>阅读时长/词数防刷阈值（words_read 防刷）</h3>
+  <div class="current"><b>现状</b>：阅读分钟数与词数由前端上报，无异常阈值拦截（如 3 分钟读完 200 页、1 小时 5 万字）；审核端已有异常件人工队列（D4），是否需要自动阈值拦截未定。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="J10" value="不加硬拦截，异常件走人工审核（推荐：避免误伤真快读）">人工审核兜底（推荐）</label>
+    <label><input type="radio" name="J10" value="加自动阈值（如每分钟 > 5 页标记异常并降级不计分）">自动阈值标记</label>
+  </div>
+</div>
+
+<div class="card" data-q="J11">
+  <h3><span class="qid">J11</span><span class="tag-pending">🕐 甲方拍板</span>亲子课退款/改期边界（A4 未决子项）</h3>
+  <div class="current"><b>现状</b>：亲子课订单"开始后不可退"已实现；但 K3 建议"开课前 24h 全退 + 开始后不可退但可改期一次"，运营专家建议"开课后 30 分钟内可退 50%"——两者未拍板，改期入口也尚未实现。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="J11" value="开课前 24h 全退 + 开课后不可退但可改期 1 次（K3 推荐）">24h 全退+可改期 1 次（推荐）</label>
+    <label><input type="radio" name="J11" value="开课后 30 分钟内可退 50%（运营专家方案）">开课后 30 分钟退 50%</label>
+    <label><input type="radio" name="J11" value="维持现状：开始后不可退不可改期">维持现状</label>
+  </div>
+</div>
+
+<div class="card" data-q="J12">
+  <h3><span class="qid">J12</span><span class="tag-pending">🕐 甲方拍板</span>缓冲期（到期后 15 天）内权益范围（F24）</h3>
+  <div class="current"><b>现状</b>：正式会员到期后进入 15 天缓冲期（member_grace_days=15），期间续费 9 折（F8 已修 day-0 边界）；但缓冲期内"能否继续借书/听音频/查词"未定义（当前代码不主动拦截，等于免费续享 15 天）。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="J12" value="缓冲期内保留全部权益（推荐：体验友好，续费窗口最大化）">保留全部权益（推荐）</label>
+    <label><input type="radio" name="J12" value="缓冲期内仅可听已借书音频，不可新借">仅已借书音频</label>
+    <label><input type="radio" name="J12" value="到期即锁全部（缓冲期只保留 9 折续费价）">到期即锁</label>
+  </div>
+</div>
+
+<div class="card" data-q="J13">
+  <h3><span class="qid">J13</span><span class="tag-pending">🕐 甲方拍板</span>EXITED 退出后会员时间字段保留还是清空（F29）</h3>
+  <div class="current"><b>现状</b>：退出（EXITED）时不清 member_start_time/member_expire_time（保留历史）；复活（revive）时清空重来。文档未定义"退出后展示历史到期日"还是"显示已退出"。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="J13" value="保留历史到期日（推荐：数据完整，前端状态仍显示 EXITED）">保留历史到期日（推荐）</label>
+    <label><input type="radio" name="J13" value="退出即清空（与复活语义一致）">退出即清空</label>
+  </div>
+</div>
+
+<div class="card" data-q="J14">
+  <h3><span class="qid">J14</span><span class="tag-pending">🕐 甲方拍板</span>电子凭证/证书形式（F27）</h3>
+  <div class="current"><b>现状</b>：证书表/接口存在（certificate），前端无展示页；晋级"到店领实体徽章"（C6-3）是运营动作，但电子证书是否展示/分享/打印未定。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="J14" value="做电子证书展示页（晋级后自动生成可分享图，推荐）">电子证书展示页（推荐）</label>
+    <label><input type="radio" name="J14" value="仅到店领实体徽章（电子证书二期）">仅实体徽章</label>
+    <label><input type="radio" name="J14" value="两者都不做（维持现状）">都不做</label>
+  </div>
+</div>
+
+<div class="card" data-q="J15">
+  <h3><span class="qid">J15</span><span class="tag-pending">🕐 甲方拍板</span>升级时剩余会员期叠加还是重置（F16）</h3>
+  <div class="current"><b>现状</b>：升级差额单已实现（剩余价值抵扣后补齐差价），激活时会员期**重置起算**（F16 决策：防"抵扣+叠加"双重受益）；但"普通续费"是叠加（原到期日+365）。季度→半年、半年→年费属于升级（重置）——是否维持需书面确认。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="J15" value="维持：升级重置起算（抵扣后重置，防双受益，推荐）">升级重置（推荐）</label>
+    <label><input type="radio" name="J15" value="升级也叠加（抵扣后原到期日顺延）">升级叠加</label>
+  </div>
+</div>
+
+<div class="card" data-q="J16">
+  <h3><span class="qid">J16</span><span class="tag-pending">🕐 甲方拍板</span>前端展示价格与后端配置同步机制（F17）</h3>
+  <div class="current"><b>现状</b>：价格由后端配置（price_*），但前端部分页面展示写死文案（tiers 页 30 天观察期等旧文案）；F15 tiers 文案 30 天与 45 天现状不一致。需确认是否统一改为"后端动态配置下发前端"（约 1-2 天）或人工保证同步。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="J16" value="统一后端下发（tiers/报名页价格与周期全动态，推荐）">后端动态下发（推荐）</label>
+    <label><input type="radio" name="J16" value="人工同步（改配置同时改前端，发版）">人工同步</label>
+  </div>
+</div>
+
+<div class="card" data-q="J17">
+  <h3><span class="qid">J17</span><span class="tag-pending">🕐 甲方拍板</span>iOS 虚拟服务页价格残留清理（F18）</h3>
+  <div class="current"><b>现状</b>：iOS 虚拟服务页已隐藏价格/购买按钮（微信严格口径）；但旧缓存/分享链接/部分入口是否仍展示价格未逐一验证，需人工过一遍 iOS 真机并授权清理残留入口。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="J17" value="上线前 iOS 真机全入口验证并清理（推荐，排期验证）">真机验证清理（推荐）</label>
+    <label><input type="radio" name="J17" value="维持现状（已隐藏，不额外验证）">维持现状</label>
+  </div>
+</div>
+
+<div class="card" data-q="J18">
+  <h3><span class="qid">J18</span><span class="tag-pending">🕐 甲方拍板</span>亲子课开课后能否报名/候补（F19）</h3>
+  <div class="current"><b>现状</b>：亲子课时段名额校验（PAID 计数）；开课后/已满时段是否允许报名或加入候补未定义。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="J18" value="仅可报未开始时段（推荐：开课后拒绝+提示下一期）">仅未开始可报（推荐）</label>
+    <label><input type="radio" name="J18" value="开课后 30 分钟内仍可报（跟课体验）">开课后 30 分钟可报</label>
+    <label><input type="radio" name="J18" value="已满时段开放候补名单">满员候补</label>
+  </div>
+</div>
+
+<div class="card" data-q="J19">
+  <h3><span class="qid">J19</span><span class="tag-pending">🕐 甲方拍板</span>独孩家庭的多孩优惠展示（F20）</h3>
+  <div class="current"><b>现状</b>：多孩优惠（第 2 孩起 9 折）只对二孩生效；独孩家庭报名页未解释"为什么没有优惠"（体验困惑）。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="J19" value="独孩不展示优惠字样（现状，不加解释，推荐）">不展示（推荐）</label>
+    <label><input type="radio" name="J19" value="独孩页加一行"多孩家庭第 2 孩起享 9 折"（教育/转化）">加提示文案</label>
+  </div>
+</div>
+
+<div class="card" data-q="J20">
+  <h3><span class="qid">J20</span><span class="tag-pending">🕐 甲方拍板</span>14 岁毕业提醒的频次与形式（F23）</h3>
+  <div class="current"><b>现状</b>：14 岁提醒每年最多 1 条（grad_remind_year 自然年去重）；但"仅 1 条是否足够、是否含续费挽留话术、是否到 15 岁当月再提醒一次"未定义。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="J20" value="维持每年 1 条 + 15 岁生日当月再提醒 1 次（推荐）">每年 1 条+15 岁当月 1 条（推荐）</label>
+    <label><input type="radio" name="J20" value="维持现状（仅 14 岁 1 条）">维持现状</label>
+    <label><input type="radio" name="J20" value="14/15 岁各 1 条 + 退押金提醒合入">加强版</label>
+  </div>
+</div>
+
+<div class="card" data-q="J21">
+  <h3><span class="qid">J21</span><span class="tag-pending">🕐 产品决策</span>reading-stats 折线图（历史阅读统计可视化）</h3>
+  <div class="current"><b>现状</b>：Phase2 遗留"产品决策待定"项——家长端阅读统计是否做折线图（时长/本数趋势），还是维持数字列表。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="J21" value="做折线图（周/月阅读时长趋势，推荐）">做折线图（推荐）</label>
+    <label><input type="radio" name="J21" value="维持数字列表">维持数字列表</label>
+  </div>
+</div>
+
+<div class="card" data-q="J22">
+  <h3><span class="qid">J22</span><span class="tag-pending">🕐 甲方提供</span>微信 appid / 商户号 / 服务器域名等上线配置</h3>
+  <div class="current"><b>现状</b>：代码读取微信配置（appid/secret/商户号），当前为开发占位；需甲方提供正式小程序 appid、微信支付商户号、服务器 HTTPS 域名并完成微信后台配置（request/uploadFile 合法域名）。</div>
+  <textarea name="J22_note" placeholder="请提供：正式 appid / 商户号 / 服务器域名（或注明预计提供时间）"></textarea>
+</div>
+
+<div class="card" data-q="J23">
+  <h3><span class="qid">J23</span><span class="tag-pending">🕐 甲方确认</span>favorites（收藏）存量与前端入口确认（0B-9）</h3>
+  <div class="current"><b>现状</b>：favorites 表与 API 完整，但小程序无收藏入口、无存量数据说明（0 存量 or 有历史数据需迁移）。需确认：是否做"收藏"前端入口，还是废弃该表。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="J23" value="补收藏入口（图书详情页加"收藏"按钮，推荐）">补收藏入口（推荐）</label>
+    <label><input type="radio" name="J23" value="废弃收藏（与想读清单合并，迁移数据）">废弃合并</label>
+  </div>
+</div>
+
+<div class="card" data-q="J24">
+  <h3><span class="qid">J24</span><span class="tag-pending">🕐 甲方拍板</span>预留权限点清理或保留（种子超集）</h3>
+  <div class="current"><b>现状</b>：权限种子含 11 个无对应功能/未接线的预留权限（审查观察项）；保留 = 未来功能免迁移，清理 = 最小权限面。需确认方向。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="J24" value="保留并标注"预留"（推荐：不删权限，避免未来返工）">保留标注（推荐）</label>
+    <label><input type="radio" name="J24" value="清理无对应功能的权限码">清理</label>
+  </div>
+</div>
+
+<div class="card" data-q="J25">
+  <h3><span class="qid">J25</span><span class="tag-pending">🕐 甲方拍板</span>FAILED 订单是否自动清理（F-008 补充）</h3>
+  <div class="current"><b>现状</b>：用户侧已可手动取消 FAILED 单（F-008 修复）；是否再加"定时自动关闭超 24h 的 FAILED 单"（省手动操作）未定。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="J25" value="加自动关闭（FAILED 超 24h → CLOSED，推荐）">自动关闭 24h（推荐）</label>
+    <label><input type="radio" name="J25" value="仅手动取消（现状）">仅手动</label>
+  </div>
+</div>
+
+<div class="card" data-q="J26">
+  <h3><span class="qid">J26</span><span class="tag-pending">🕐 甲方拍板</span>统计对账增量窗口天数（F-036）</h3>
+  <div class="current"><b>现状</b>：reconcile_child_stats 每日增量对账窗口 7 天 + 每月 1 日全量兜底（代码默认）；窗口长短影响"历史修正及时性 vs 扫描量"，是否调整未定。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="J26" value="维持 7 天增量 + 每月全量（推荐）">维持 7 天（推荐）</label>
+    <label><input type="radio" name="J26" value="改 30 天增量（历史修正更快，扫描量大）">30 天增量</label>
+    <label><input type="radio" name="J26" value="每日全量（数据量小，最简单）">每日全量</label>
+  </div>
+</div>
+
+<div class="card" data-q="J27">
+  <h3><span class="qid">J27</span><span class="tag-pending">🕐 甲方拍板</span>死信（事件失败记录）自动清理周期（F-029 补充）</h3>
+  <div class="current"><b>现状</b>：死信已可查询/重放/手动清理（F-029）；是否加"自动清理已解决超 90 天死信"的定时任务（少一项人工运维）未定。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="J27" value="加自动清理（已解决超 90 天自动删，推荐）">自动清理 90 天（推荐）</label>
+    <label><input type="radio" name="J27" value="维持手动清理">手动清理</label>
+  </div>
+</div>
+
+<div class="card" data-q="J28">
+  <h3><span class="qid">J28</span><span class="tag-pending">🕐 甲方拍板</span>候补"到货通知"滞留时长阈值（F-056）</h3>
+  <div class="current"><b>现状</b>：候补被通知后 48 小时内未抢到可重新排队（waitlist_notified_ttl_hours=48）；阈值影响"通知后给家长留多久"——太短家长没看到通知就失位，太长占着队尾。</div>
+  <div class="opts">
+    <label class="rec"><input type="radio" name="J28" value="维持 48 小时（推荐：周末节奏友好）">维持 48h（推荐）</label>
+    <label><input type="radio" name="J28" value="24 小时（更快释放队位）">24h</label>
+    <label><input type="radio" name="J28" value="72 小时（更宽松）">72h</label>
+  </div>
+</div>
+
 <div style="height:20px"></div>
 </div>
 
@@ -930,7 +1198,7 @@
     var lines = [
       '# DmkWords PRD 需求决策结果（甲方确认）',
       '',
-      '> 确认日期：' + now + ' ｜ 决策表版本：V1.2（2026-08-09：52 题中 44 题已确认并标注代码依据，其余待确认题 + I 组甲方待办 11 项）',
+      '> 确认日期：' + now + ' ｜ 决策表版本：V1.2（2026-08-09：52 题中 44 题已确认并标注代码依据；I 组甲方待办 11 项 + J 组拍板事项 28 项，合计 91 项）',
       '> 未作答项：按表单 ★ 推荐项执行',
       ''
     ];
