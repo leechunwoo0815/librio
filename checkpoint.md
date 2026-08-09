@@ -1,7 +1,7 @@
 # DmkWords (librio) 项目检查点
 
 > 更新时间：2026-08-09 GMT+8 (v14)
-> 状态：✅ V3.23 — 52 题需求决策 + 四轮外部审查全闭环 + 终极全量审查 P0/P1/P2/P3 全部处置 + 160 轮审查 118 项修复五批次全闭环（audit-fix-batch-1~5）+ 终审整改（P1×3/P2×9/P3×14）闭环 + 决策表 V1.2（91 项）+ 910 pytest collected（开发机 910 passed，通过数随环境）/ 211/1369 behave + 56 表 + 67 配置 + 24 定时任务 + 336 API + CI 同构十一关全绿（含 Gate 11）
+> 状态：✅ V3.23 — 52 题需求决策 + 四轮外部审查全闭环 + 终极全量审查 P0/P1/P2/P3 全部处置 + 160 轮审查 118 项修复五批次全闭环（audit-fix-batch-1~5）+ 终审整改（P1×3/P2×9/P3×14）闭环 + 决策表 V1.2（91 项）+ 925 pytest collected（开发机 925 passed，通过数随环境）/ 211/1369 behave + 56 表 + 67 配置 + 24 定时任务 + 336 API + CI 同构十一关全绿（含 Gate 11）
 
 ---
 
@@ -26,11 +26,11 @@ DmkWords 是一个儿童英语阅读管理平台：
 
 | 检查项 | 状态 |
 |--------|------|
-| pytest | ✅ 910 collected（开发机 910 passed；CI sqlite 708 + 15 skipped；无 MySQL 沙箱 714 passed + 9 error） |
+| pytest | ✅ 925 collected（开发机 925 passed；CI sqlite 708 + 15 skipped；无 MySQL 沙箱 714 passed + 9 error） |
 | behave | ✅ 211 scenarios / 1369 steps（无 MySQL 沙箱 171 passed + 40 error / 0 failed） |
 | ruff check `backend/ tests/` | ✅ 0 errors |
 | ruff check `features/ scripts/` | ✅ 0 errors |
-| ruff format `--check .` | ✅ 494 files formatted |
+| ruff format `--check .` | ✅ 496 files formatted |
 | verify_api_contract | ✅ OK |
 | check_model_consistency | ✅ 56 tables |
 | alembic check (MySQL only) | ✅ No new upgrade operations detected |
@@ -930,6 +930,8 @@ alembic check:                 No new upgrade operations detected ✅
 
 删除 `deliverables/` / `专家意见/` / `docs/superpowers/` / `docs/compose/` / `specs/` / 5 个 AUDIT_PROMPT_* / `AUDIT_REPORT.md` / `backend-full-audit-summary_20260715.md` / `TASK_PLAN.md` / `docs/wechat-compliance-improvement-plan.md` / `docs/frontend-style-improvement-report.md`
 
+> ⚠️ 历史快照（早期版本实测，数字已过时）；**现行基线以 §2.1 为准**（pytest 925 / ruff 496 files）。
+
 ### 全量验证
 
 | 检查项 | 结果 |
@@ -1141,6 +1143,8 @@ alembic check:                 No new upgrade operations detected ✅
 |----------|:----:|------|
 | `test_new_routes.py` | 15 | Service: 正常/空/异常/边界 |
 | `test_new_routes_http.py` | 21 | HTTP: 鉴权/序列化/参数/7 边界 |
+
+> ⚠️ 历史快照（早期版本实测，数字已过时）；**现行基线以 §2.1 为准**（pytest 925 / ruff 496 files）。
 
 ### 最终 CI 数字
 
