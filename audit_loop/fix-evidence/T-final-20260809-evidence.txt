@@ -1,0 +1,28 @@
+终审整改修复证据（2026-08-09）— RED→GREEN 撤行实证摘要 + 全量门禁输出
+
+[RED→GREEN 撤行实证]（均以 git stash / 临时撤行还原缺陷行为 → 测试转红 → 恢复全绿）
+P1-1 F-057：撤 submit 响应 question_review → test_f057 2 failed；恢复 3 passed
+P1-2 F-116：撤 admin router published_only=False → test_b5 1 failed；恢复 7 passed
+P1-3 F-005：撤 REFUNDING 守卫 → test_state_machines 1 failed；恢复 9 passed
+P2-1 F-077：撤应用层占用检查（屏蔽 DB 兜底）→ test_f077 1 failed；恢复 3 passed
+P2-4 F-016：撤 is_deleted 过滤 → test_f016 4 failed；恢复 4 passed
+P2-5 F-035：撤 < next_month_start → test_f035 1 failed；恢复 1 passed
+P2-6 F-015：撤范围查询 → test_scheduler_msg_types 1 failed；恢复 4 passed
+P2-7 F-069：撤重叠校验 → test_batch4_data 2 failed；恢复 9 passed
+P2-8 F-049：撤白名单/403 修复 → test_batch3_security 2 failed；恢复 9 passed
+P3   F-119：撤生成列唯一（模型/迁移）→ test_batch2 1 failed；恢复 9 passed
+
+[全量门禁]
+pytest:  910 passed, 69 warnings in 429.99s (0:07:09)（0 failed 0 error）
+behave:  20 features / 211 scenarios / 1369 steps，0 failed（Took 2min 16.088s）
+ruff:    check backend+tests: All checks passed! · check features+scripts: All checks passed!
+         format --check .: 494 files already formatted
+contract: OK: API contract verified
+model:   OK: 56 tables created on SQLite / Model consistency check: PASSED
+wiring:  ✅ verify_action_wiring: 通过
+config:  OK: 动态配置清单.md 与 DEFAULTS 一致（67 项）
+integration: 全部通过（MOCK_PAYMENT=true MOCK_SMS=true DEBUG=true）
+alembic: upgrade d3e4f5061728 -> e4f506172839（056 audio active unique）成功
+         check: No new upgrade operations detected（head=e4f506172839）
+MySQL 并发: A 5/100 · B 1/50 · C 唯一索引拦截 · D 双计0 · E 0/30 ·
+           F total_stock=0 · G 0 · H 0/10 · I 1 条 —— 全 PASS

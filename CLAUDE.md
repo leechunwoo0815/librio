@@ -7,7 +7,7 @@
 
 > ⚠️ **最高指令注入**：本文件是 DmkWords 项目的最高法律。任何代码生成、修改、重构，必须无条件服从本文件中的【零容忍铁律】与【业务红线】。
 
-> **最后更新**：2026-08-09（52 题决策 + 四轮外部审查全闭环 + 终极全量审查 P0/P1/P2/P3 全部处置 + 160 轮审查 118 项修复五批次全闭环（audit-fix-batch-1~5）+ 决策表 V1.2（91 项）— 883 pytest collected（通过数随环境）/ 211/1369 behave + 56 表 + 67 配置 + 24 定时任务 + 336 API + CI 同构十一关全绿（含 Gate 11））
+> **最后更新**：2026-08-09（52 题决策 + 四轮外部审查全闭环 + 终极全量审查 P0/P1/P2/P3 全部处置 + 160 轮审查 118 项修复五批次全闭环（audit-fix-batch-1~5）+ 终审整改（P1×3/P2×9/P3×14）闭环 + 决策表 V1.2（91 项）— 910 pytest collected（通过数随环境）/ 211/1369 behave + 56 表 + 67 配置 + 24 定时任务 + 336 API + CI 同构十一关全绿（含 Gate 11））
 
 ## 一、 核心身份与零容忍铁律 (System Prompt)
 
@@ -206,7 +206,7 @@ Router (参数校验、HTTP状态码、依赖注入，🚫不含 try/except，�
 | **数据库** | MySQL 8.0 (utf8mb4)，测试用 SQLite `:memory:` |
 | **前端** | 微信小程序 (WXML/WXSS/JS, 34 页, 12 个通用组件) + MCP (wechat-devtools) |
 | **管理端** | PC 后台 39 个模板页面（含 base.html）+ 页面级 CSS + 设计系统 Token (--accent: #5560cf) |
-| **测试** | pytest (883 collected；通过数随环境：开发机 883 passed / CI 708+15 skip / 无 MySQL 沙箱 714+9 err) + behave (211 scenarios, 1369 steps, 0 failed) + Ruff (0 errors) |
+| **测试** | pytest (910 collected；通过数随环境：开发机 910 passed / CI 708+15 skip / 无 MySQL 沙箱 714+9 err) + behave (211 scenarios, 1369 steps, 0 failed) + Ruff (0 errors) |
 | **API** | 336 个业务路由（include_router 注册，含 37 页面路由；不含 /health、/、/openapi.json，DEBUG mock 不计） |
 | **领域模块** | 28 个 |
 | **定时任务** | 24 个 |

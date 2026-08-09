@@ -64,6 +64,7 @@ cp .env.example .env
 - [ ] 迁移 050（child.grad_remind_year 毕业提醒独立留痕）纯加列无回填，低峰执行
 - [ ] 迁移 051（fine_payment active_fine 生成列 + 唯一索引，F-066 DB 兜底）开发库存量 0 行，低峰执行
 - [ ] 迁移 052（child.total_words_read 排行榜索引，F-064）低峰执行
+- [ ] 迁移 056（audio_file.active_audio_key 生成列 + 唯一索引，F-119 DB 兜底）低峰执行
 - [ ] 种子幂等重跑：`venv/bin/python -m backend.seeds.seed_rbac`（含 migrate_admin_roles——
     F34：旧 admin.role 需回填到 admin_role_id，否则初始超管无法执行会员状态变更/复活）
 - [ ] 上线前在微信商户平台核对「退款结果通知」地址已配置为 `WECHAT_REFUND_NOTIFY_URL`（代码层无法确认，F55）
@@ -117,7 +118,7 @@ python -c "import weasyprint; print('WeasyPrint OK:', weasyprint.__version__)"
 venv/bin/python -m alembic upgrade head
 ```
 
-- [ ] 迁移 head: `d3e4f5061728`（053-055：duration_days/提醒去重三列/venue.name 唯一，纯加列+唯一约束，低峰执行）
+- [ ] 迁移 head: `e4f506172839`（053-055：duration_days/提醒去重三列/venue.name 唯一；056：audio 唯一键，纯加列+唯一约束，低峰执行）
 - [ ] 迁移无报错
 - [ ] 种子数据已导入（如需要）: `venv/bin/python -m backend.seeds.seed_test_data`
 
