@@ -92,20 +92,15 @@ class TestObservationRemindersMsgType:
         child.member_expire_time = datetime.combine(
             today + timedelta(days=3), datetime.min.time()
         )
-        # 默认提醒日 [7,5,3,2,1,0] — 函数逐日查询，仅 days=3（第 4 次）命中
+        # F-015 终审：一次范围查询替代逐日查询，仅 days=3 命中
         db = MagicMock()
-        db.query.return_value.filter.return_value.all.side_effect = [
-            [],
-            [],
-            [],
-            [child],
-            [],
-            [],
-        ]
+        db.query.return_value.filter.return_value.all.return_value = [child]
 
         with patch.object(scheduler, "_create_message") as mock_create:
             scheduler.check_observation_reminders(db=db)
             assert mock_create.call_count == 1
+            # 守护：范围查询只执行一次 all（逐日实现会调 6 次 → 本断言红）
+            assert db.query.return_value.filter.return_value.all.call_count == 1
             call = mock_create.call_args
             assert call.kwargs["title"] == "观察期到期提醒"
             assert call.kwargs["msg_type"] == 1

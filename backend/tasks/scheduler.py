@@ -807,7 +807,7 @@ def generate_monthly_reports():
             )
             .filter(
                 BorrowRecord.create_time >= last_month_start,
-                BorrowRecord.create_time <= last_month_end,
+                BorrowRecord.create_time < next_month_start,  # F-035：避免漏月末当天
                 BorrowRecord.is_deleted == 0,
             )
             .group_by(BorrowRecord.book_id)
@@ -836,7 +836,7 @@ def generate_monthly_reports():
             .filter(
                 Quiz.status == Quiz.STATUS_COMPLETED,
                 Quiz.create_time >= last_month_start,
-                Quiz.create_time <= last_month_end,
+                Quiz.create_time < next_month_start,  # F-035：避免漏月末当天
                 Quiz.is_deleted == 0,
             )
             .scalar()
@@ -848,7 +848,7 @@ def generate_monthly_reports():
                 Quiz.status == Quiz.STATUS_COMPLETED,
                 Quiz.score >= 70,
                 Quiz.create_time >= last_month_start,
-                Quiz.create_time <= last_month_end,
+                Quiz.create_time < next_month_start,  # F-035：避免漏月末当天
                 Quiz.is_deleted == 0,
             )
             .scalar()
@@ -864,7 +864,7 @@ def generate_monthly_reports():
             .filter(
                 Order.pay_status == 1,
                 Order.create_time >= last_month_start,
-                Order.create_time <= last_month_end,
+                Order.create_time < next_month_start,  # F-035：避免漏月末当天
                 Order.is_deleted == 0,
             )
             .scalar()
@@ -875,7 +875,7 @@ def generate_monthly_reports():
             .filter(
                 Order.refund_status.in_([1, 2]),  # REFUND_PROCESSING, REFUND_DONE
                 Order.create_time >= last_month_start,
-                Order.create_time <= last_month_end,
+                Order.create_time < next_month_start,  # F-035：避免漏月末当天
                 Order.is_deleted == 0,
             )
             .scalar()
@@ -1879,19 +1879,35 @@ def check_observation_reminders(db: Session | None = None):
             db, "observation_remind_days", [7, 5, 3, 2, 1, 0]
         )
 
+        # F-015 终审同类漏改：一次范围查询替代 N 次 func.date 逐日查询
+        # （func.date 包裹 member_expire_time 令索引失效全表扫描，check_member_expiry 已同款）
+        from collections import defaultdict
+
+        max_days = max(remind_days)
+        min_days = min(remind_days)
+        date_upper = today + timedelta(days=max_days)
+        date_lower = today + timedelta(days=min_days)
+        lower_dt = datetime.combine(date_lower, datetime.min.time())
+        upper_dt = datetime.combine(date_upper + timedelta(days=1), datetime.min.time())
+
+        children = (
+            db.query(Child)
+            .filter(
+                Child.status == MemberStatus.OBSERVATION,
+                Child.member_expire_time.isnot(None),
+                Child.member_expire_time >= lower_dt,
+                Child.member_expire_time < upper_dt,
+                Child.is_deleted == 0,
+            )
+            .all()
+        )
+        children_by_date: dict[date, list] = defaultdict(list)
+        for child in children:
+            children_by_date[child.member_expire_time.date()].append(child)
+
         for days in remind_days:
             target_date = today + timedelta(days=days)
-            children = (
-                db.query(Child)
-                .filter(
-                    Child.status == MemberStatus.OBSERVATION,
-                    Child.member_expire_time.isnot(None),
-                    sql_func.date(Child.member_expire_time) == target_date,
-                    Child.is_deleted == 0,
-                )
-                .all()
-            )
-            for child in children:
+            for child in children_by_date.get(target_date, []):
                 if days == 0:
                     msg = f"您的孩子 {child.name} 的观察期今天到期，请决定是否升级为正式会员"
                 else:
