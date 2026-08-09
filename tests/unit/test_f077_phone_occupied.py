@@ -56,8 +56,20 @@ def _decode_sub(token):
 
 
 class TestF077PhoneOccupied:
-    def test_update_user_phone_occupied_raises_conflict(self, db):
-        """手机号被 A 占用 → B 绑定必须抛 ConflictError，禁止返回 A"""
+    def test_update_user_phone_occupied_raises_conflict(self, db, monkeypatch):
+        """手机号被 A 占用 → B 绑定必须抛 ConflictError，禁止返回 A
+
+        终审 P2-1：DB unique 兜底会掩盖应用层检查缺失（撤检查仍绿）。
+        本测试屏蔽 DB 唯一约束兜底（将 IntegrityError 捕获替换为不可匹配类型），
+        证明"应用层占用检查"是独立必需的第一道闸——撤掉它测试必红。
+        """
+        import backend.domain.user.service as user_service
+
+        monkeypatch.setattr(
+            user_service,
+            "IntegrityError",
+            type("_NoDBUniqueGuard", (Exception,), {}),
+        )
         a = _mk_user(db, "openid_a", phone="13800000001")
         b = _mk_user(db, "openid_b")
         svc = UserService(db)
