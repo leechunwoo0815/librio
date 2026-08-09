@@ -1,0 +1,197 @@
+#!/usr/bin/env python3
+"""专家独立对抗测试: scripts/monitor_gates.py（不修改任何项目代码）。
+
+场景清单:
+  A  超时 → 退出码 3 + 统计输出
+  B  增量写入无重复计数（跨多个轮询周期）
+  C  半行断裂写入（写端块缓冲 flush 断在行中间）→ 观察计数/DONE/段名
+  D  文件轮转（inode 变化）→ 是否重开续读
+  E  同 inode 截断重建（size 变小，规格 §三 要求"大小变化时重新打开"）
+  F  Ctrl+C (SIGINT) → 汇总 + 退出码
+  G  --exit-on-error 对无错历史文件 → 应退出码 0
+  H  ERROR 大写 / error 小写（pytest collection error 汇总行）识别差异
+"""
+import os
+import signal
+import subprocess
+import sys
+import time
+
+PY = "/Users/litianyu/cc-projects/librio/venv/bin/python"
+TOOL = "/Users/litianyu/cc-projects/librio/scripts/monitor_gates.py"
+TMP = "/Users/litianyu/.qwenworkcn/workspace/mse2jdcw4e4cf1lh/adv_tmp"
+os.makedirs(TMP, exist_ok=True)
+
+
+def run(args, timeout=40):
+    return subprocess.run([PY, TOOL] + args, capture_output=True, text=True, timeout=timeout)
+
+
+def bg(args):
+    return subprocess.Popen([PY, TOOL] + args, stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE, text=True)
+
+
+def section(name):
+    print("\n" + "=" * 60 + "\n场景 " + name + "\n" + "=" * 60)
+
+
+# ---------- A: 超时 ----------
+section("A: 无 DONE 标记 → 应超时退出码 3")
+f = os.path.join(TMP, "a.log")
+open(f, "w").write("===== PYTEST =====\n910 passed, 69 warnings\n")
+r = run(["--log-file", f, "--interval", "0.5", "--timeout", "2", "--stats-every", "1"])
+print("rc=%d (期望 3)" % r.returncode)
+print("stdout:", r.stdout.strip())
+print("stderr:", r.stderr.strip())
+
+# ---------- B: 增量、不重复计数 ----------
+section("B: 跨周期增量写入 → 计数恰一次，DONE 退出码 0")
+f = os.path.join(TMP, "b.log")
+open(f, "w").close()
+p = bg(["--log-file", f, "--interval", "0.5", "--timeout", "30"])
+time.sleep(1.2)
+with open(f, "a") as fh:
+    fh.write("===== PYTEST =====\n910 passed, 69 warnings in 432.13s\n")
+time.sleep(1.2)  # 跨第二个轮询周期再写
+with open(f, "a") as fh:
+    fh.write("===== BEHAVE =====\n211 scenarios passed, 0 failed, 0 skipped\n"
+             "===== GATES DONE =====\n")
+out, err = p.communicate(timeout=30)
+print("rc=%d (期望 0)" % p.returncode)
+print(out.strip())
+assert out.count("910 passed") == 1, "结果行被重复输出!"
+assert "passed=1121" in out, "passed 计数错误!"
+
+# ---------- C: 半行断裂 ----------
+section("C1: 结果行被截成两半写入（模拟写端块缓冲 flush 断行）")
+f = os.path.join(TMP, "c1.log")
+open(f, "w").close()
+p = bg(["--log-file", f, "--interval", "0.5", "--timeout", "15"])
+time.sleep(1.0)
+with open(f, "a") as fh:
+    fh.write("91")          # 半行，无换行
+    fh.flush()
+time.sleep(1.2)             # 让监控读到半行
+with open(f, "a") as fh:
+    fh.write("0 passed, 69 warnings in 432.13s\n===== GATES DONE =====\n")
+out, err = p.communicate(timeout=20)
+print("rc=%d" % p.returncode)
+print(out.strip())
+if "passed=910" in out:
+    print("C1 结论: 半行断裂下计数仍正确")
+else:
+    print("C1 结论: *** 半行断裂导致计数损坏（期望 passed=910）***")
+
+section("C2: DONE 标记被截成两半写入")
+f = os.path.join(TMP, "c2.log")
+open(f, "w").close()
+p = bg(["--log-file", f, "--interval", "0.5", "--timeout", "4"])
+time.sleep(1.0)
+with open(f, "a") as fh:
+    fh.write("910 passed, 69 warnings\n===== GATES ")
+    fh.flush()
+time.sleep(1.2)
+with open(f, "a") as fh:
+    fh.write("DONE =====\n")
+out, err = p.communicate(timeout=15)
+print("rc=%d (DONE 正常识别应 0；误超时为 3)" % p.returncode)
+print("stdout:", out.strip())
+print("stderr:", err.strip())
+
+section("C3: 段名被截成两半写入")
+f = os.path.join(TMP, "c3.log")
+open(f, "w").close()
+p = bg(["--log-file", f, "--interval", "0.5", "--timeout", "8"])
+time.sleep(1.0)
+with open(f, "a") as fh:
+    fh.write("===== PYTE")
+    fh.flush()
+time.sleep(1.2)
+with open(f, "a") as fh:
+    fh.write("ST =====\n910 passed, 69 warnings\n===== GATES DONE =====\n")
+out, err = p.communicate(timeout=15)
+print("rc=%d" % p.returncode)
+print(out.strip())
+if "PYTEST✓" in out:
+    print("C3 结论: 段名完整")
+else:
+    print("C3 结论: *** 段名丢失（汇总段清单缺 PYTEST）***")
+
+# ---------- D: inode 轮转 ----------
+section("D: 文件被 mv 走并新建同名文件（inode 变化）")
+f = os.path.join(TMP, "d.log")
+with open(f, "w") as fh:
+    fh.write("===== PYTEST =====\n100 passed\n")
+p = bg(["--log-file", f, "--interval", "0.5", "--timeout", "20"])
+time.sleep(1.2)
+os.rename(f, f + ".old")
+with open(f, "w") as fh:
+    fh.write("===== BEHAVE =====\n50 scenarios passed, 0 failed, 0 skipped\n"
+             "===== GATES DONE =====\n")
+out, err = p.communicate(timeout=25)
+print("rc=%d" % p.returncode)
+print(out.strip())
+print("stderr:", err.strip())
+
+# ---------- E: 同 inode 截断 ----------
+section("E: 同 inode 截断重建（size 变小）→ 规格 §三 要求按大小变化重开")
+f = os.path.join(TMP, "e.log")
+with open(f, "w") as fh:
+    fh.write("===== PYTEST =====\n900 passed, 69 warnings in 432.13s\n" * 3)  # 拉长 offset
+p = bg(["--log-file", f, "--interval", "0.5", "--timeout", "6"])
+time.sleep(1.2)
+with open(f, "w") as fh:  # truncate + 重写（同 inode）
+    fh.write("===== PYTEST =====\n77 passed\n===== GATES DONE =====\n")
+out, err = p.communicate(timeout=15)
+print("rc=%d (识别截断应读到 77 passed 并退出码 0)" % p.returncode)
+print("stdout:", out.strip())
+print("stderr:", err.strip())
+
+# ---------- F: SIGINT ----------
+section("F: 运行中 Ctrl+C → 汇总 + 退出码 0（未见失败行）")
+f = os.path.join(TMP, "f.log")
+open(f, "w").write("910 passed, 69 warnings\n")
+p = bg(["--log-file", f, "--interval", "0.5", "--timeout", "30"])
+time.sleep(1.5)
+p.send_signal(signal.SIGINT)
+out, err = p.communicate(timeout=10)
+print("rc=%d (期望 0)" % p.returncode)
+print(out.strip())
+
+section("F2: 已见失败行后 Ctrl+C → 期望退出码 1")
+f = os.path.join(TMP, "f2.log")
+open(f, "w").close()
+p = bg(["--log-file", f, "--interval", "0.5", "--timeout", "30"])
+time.sleep(1.0)
+with open(f, "a") as fh:
+    fh.write("boom ERROR here\n")
+time.sleep(1.2)
+p.send_signal(signal.SIGINT)
+out, err = p.communicate(timeout=10)
+print("rc=%d (期望 1)" % p.returncode)
+print(out.strip())
+
+# ---------- G: exit-on-error 无错历史 ----------
+section("G: --exit-on-error 全程回扫无错文件 → 应退出码 0")
+f = os.path.join(TMP, "g.log")
+open(f, "w").write("910 passed, 69 warnings\n211 scenarios passed, 0 failed\n"
+                   "===== GATES DONE =====\n")
+r = run(["--log-file", f, "--interval", "0.5", "--timeout", "10", "--exit-on-error"])
+print("rc=%d (期望 0)" % r.returncode)
+print(r.stdout.strip())
+
+# ---------- H: 小写 error 汇总行 ----------
+section("H: pytest collection error 汇总行 '1 error in 0.12s'（全小写）")
+f = os.path.join(TMP, "h.log")
+open(f, "w").write("!!!! Interrupted: 1 error during collection !!!!\n"
+                   "====== 1 error in 0.12s ======\n===== GATES DONE =====\n")
+r = run(["--log-file", f, "--tail-lines", "100", "--interval", "0.5", "--timeout", "10"])
+print("rc=%d" % r.returncode)
+print(r.stdout.strip())
+if "[FAIL]" in r.stdout:
+    print("H 结论: collection error 被标失败")
+else:
+    print("H 结论: *** 全小写 error 汇总行未被标失败（退出码 0 假绿）***")
+
+print("\n全部场景执行完毕")

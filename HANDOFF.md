@@ -2,7 +2,7 @@
 
 > **生成时间**: 2026-08-09 GMT+8 (v20)
 > **项目版本**: V3.23 — 52 题需求决策 + 四轮外部审查全闭环（FINAL-3.0 专家签署放行）+ 隐私合规 + 目录清理
-> **测试状态**: pytest 925 collected（通过数随环境：开发机 925 passed / CI 708+15 skip / 无 MySQL 沙箱 714+9 err）· behave 211/1369 · ruff 496 files · API契约 OK · 模型一致 56 tables · CI 同构十一关（含 Gate 11）· 集成全绿 · alembic head=e4f506172839
+> **测试状态**: pytest 925 collected（通过数随环境：开发机 925 passed / CI 708+15 skip / 无 MySQL 沙箱 714+9 err）· behave 211/1369 · ruff 495 files（2026-08-09 实测纠正）· API契约 OK · 模型一致 56 tables · CI 同构十一关（含 Gate 11）· 集成全绿 · alembic head=e4f506172839
 > **权威基线与机制定案**：以《专家意见/项目交接-20260809.md》为准（五批次完结、决策表 V1.2 91 项、剩余外部阻塞；旧终态交接 20260807 已标历史存档）
 
 ---

@@ -1,7 +1,7 @@
 # DmkWords (librio) 项目检查点
 
-> 更新时间：2026-08-09 GMT+8 (v15)
-> 状态：✅ V3.23 — 52 题需求决策 + 四轮外部审查全闭环 + 终极全量审查 P0/P1/P2/P3 全部处置 + 160 轮审查 118 项修复五批次全闭环（audit-fix-batch-1~5）+ 终审整改（P1×3/P2×9/P3×14）闭环 + 决策表 V1.2（91 项）+ 925 pytest collected（开发机 925 passed，通过数随环境）/ 211/1369 behave + 56 表 + 67 配置 + 24 定时任务 + 336 API + CI 同构十一关全绿（含 Gate 11）+ 门禁监控工具 monitor_gates.py 交付（v15 新增）
+> 更新时间：2026-08-09 GMT+8 (v16)
+> 状态：✅ V3.23 — 52 题需求决策 + 四轮外部审查全闭环 + 终极全量审查 P0/P1/P2/P3 全部处置 + 160 轮审查 118 项修复五批次全闭环（audit-fix-batch-1~5）+ 终审整改（P1×3/P2×9/P3×14）闭环 + 决策表 V1.2（91 项）+ 925 pytest collected（开发机 925 passed，通过数随环境）/ 211/1369 behave + 56 表 + 67 配置 + 24 定时任务 + 336 API + CI 同构十一关全绿（含 Gate 11）+ 门禁监控工具 monitor_gates.py 交付并通过专家审查返工（v2，v16 更新）
 
 ---
 
@@ -30,7 +30,7 @@ DmkWords 是一个儿童英语阅读管理平台：
 | behave | ✅ 211 scenarios / 1369 steps（无 MySQL 沙箱 171 passed + 40 error / 0 failed） |
 | ruff check `backend/ tests/` | ✅ 0 errors |
 | ruff check `features/ scripts/` | ✅ 0 errors |
-| ruff format `--check .` | ✅ 496 files formatted |
+| ruff format `--check .` | ✅ 495 files formatted（2026-08-09 返工后实测；历史 496 为漂移已纠正） |
 | verify_api_contract | ✅ OK |
 | check_model_consistency | ✅ 56 tables |
 | alembic check (MySQL only) | ✅ No new upgrade operations detected |
@@ -930,7 +930,7 @@ alembic check:                 No new upgrade operations detected ✅
 
 删除 `deliverables/` / `专家意见/` / `docs/superpowers/` / `docs/compose/` / `specs/` / 5 个 AUDIT_PROMPT_* / `AUDIT_REPORT.md` / `backend-full-audit-summary_20260715.md` / `TASK_PLAN.md` / `docs/wechat-compliance-improvement-plan.md` / `docs/frontend-style-improvement-report.md`
 
-> ⚠️ 历史快照（早期版本实测，数字已过时）；**现行基线以 §2.1 为准**（pytest 925 / ruff 496 files）。
+> ⚠️ 历史快照（早期版本实测，数字已过时）；**现行基线以 §2.1 为准**（pytest 925 / ruff 495 files）。
 
 ### 全量验证
 
@@ -1144,7 +1144,7 @@ alembic check:                 No new upgrade operations detected ✅
 | `test_new_routes.py` | 15 | Service: 正常/空/异常/边界 |
 | `test_new_routes_http.py` | 21 | HTTP: 鉴权/序列化/参数/7 边界 |
 
-> ⚠️ 历史快照（早期版本实测，数字已过时）；**现行基线以 §2.1 为准**（pytest 925 / ruff 496 files）。
+> ⚠️ 历史快照（早期版本实测，数字已过时）；**现行基线以 §2.1 为准**（pytest 925 / ruff 495 files）。
 
 ### 最终 CI 数字
 
@@ -1383,17 +1383,39 @@ activity_checkin.html:  2    profile.html:           1    base.html:            
 
 ---
 
-## §二十六、门禁监控工具交付（2026-08-09，v15）
+## §二十六、门禁监控工具交付（2026-08-09，v16 更正）
 
-> 需求：`专家意见/门禁监控工具规格-20260809.md`；实现报告：`专家意见/门禁监控工具实现报告-20260809.md`
+> 需求：`专家意见/门禁监控工具规格-20260809.md`；实现报告：`专家意见/门禁监控工具实现报告-20260809.md`（v2 返工版）
+> 专家审查：`专家意见/门禁监控工具专家审查-20260809.md`（返工记录见 §二十七）
 
 | 项 | 内容 |
 |---|---|
-| 文件 | `scripts/monitor_gates.py`（新增，纯标准库，ruff 0 告警） |
+| 文件 | `scripts/monitor_gates.py`（新增，纯标准库，ruff check + format --check 双绿，实测输出见实现报告 §六） |
 | 重构对象 | `sleep 500; grep -E "passed\|failed\|PASS\|FAIL\|No new\|OK:\|PASSED" /tmp/librio_gates6.log \| tail -20` |
-| 能力 | 轮询增量监控（替代 sleep 死等）/ 错误检测（`N failed(N>0)`/`FAIL`/`ERROR`/`Traceback`，[FAIL] 标红）/ 结果计数（passed/failed/PASS/FAIL/OK/No-new）+ 段名✓ 汇总 / GATES DONE 自动退出 |
+| 能力 | 轮询增量监控（替代 sleep 死等）/ 错误检测（`N failed(N>0)`/`FAIL`/`ERROR`/`Traceback`/`N error(s)(N>0)`/`Interrupted`，[FAIL] 标红）/ 结果计数（passed/failed/PASS/FAIL/OK/No-new）+ 段名✓ 汇总（白名单）/ GATES DONE 自动退出 |
 | 参数 | `--log-file`（默认 /tmp 最新）`--pattern` `--done-marker` `--interval`(5) `--stats-every`(60) `--timeout`(900) `--tail-lines`(0) `--exit-on-error` |
-| 退出码 | 0=DONE / 1=exit-on-error / 2=无日志 / 3=超时 / 4=异常；Ctrl+C 打印汇总退出 |
-| 测试 | `/tmp/test_monitor_gates.py` 18 用例（单元 13 + 集成 5）RED→GREEN 3.1s；**不入库**（pytest 门禁基线 925 零漂移） |
-| 实证 | 规格验收 1-4 全过：live 增量+DONE 退出 0 / 预写 2 failed → [FAIL]+码 1 / 无文件 → 码 2 列候选 / 历史真实文件 passed=2510 PASS=9 OK=3 No-new=1 十段全✓ |
+| 退出码 | 0=DONE / 1=exit-on-error / 2=无日志（含监控中消失）/ 3=超时 / 4=异常；Ctrl+C 打印汇总退出 |
+| 测试 | `/tmp/test_monitor_gates.py` 24 用例（单元 14 + 集成 10）RED→GREEN 全绿；**不入库**（pytest 门禁基线 925 零漂移）；证据副本 `audit_loop/fix-evidence/monitor-gates-test-evidence.txt` |
+| 实证 | 规格验收 1-4 全过：live 增量+DONE 退出 0 / 预写 2 failed → [FAIL]+码 1 / 无文件 → 码 2 列候选 / 历史真实文件 passed=2510 PASS=9 OK=3 No-new=1 十段全✓；专家对抗 11 场景全绿 |
 | 门禁影响 | 零：未改 backend/ 与 scripts/ 其他脚本，未跑门禁命令（规格 §五 禁做清单全遵守） |
+
+---
+
+## §二十七、门禁监控工具专家审查返工批（2026-08-09，v16）
+
+> 审查：`专家意见/门禁监控工具专家审查-20260809.md`（结论"不通过，打回返工"）；返工记录：实现报告 §十；对抗脚本副本 `audit_loop/fix-evidence/monitor-gates-adv-test-evidence.txt`
+
+| 问题 | 修复 | 验证 |
+|---|---|---|
+| P1-1 ruff format --check 红（模式 5 复发） | `ruff format` 修正（纯格式）+ 补贴两关输出 | check + format --check 全绿（495 files） |
+| P2-1 半行缓冲（flush 断行：计数损坏/DONE 丢失/段名丢失） | 二进制读取 + 半行偏移回退拼接 | 对抗 C1 passed=910 / C2 退出 0 / C3 PYTEST✓ |
+| P2-2 同 inode 截断不重开（规格 §三 未实现） | 每轮 size < 已读偏移 → 重开 | 对抗 E passed=77 退出 0 |
+| P2-3 pytest 横幅污染段名 + 小写 error 假绿 | 段名恰 5 等号 + 白名单；补 `N error(s)`/`Interrupted` 规则（规格补强，授权依据见实现报告 §十） | 对抗 H [FAIL] ✓ 无垃圾段 |
+| P3-1 HEAD 漂移（结构性） | 交接卡 HEAD 行改指引式（以 git log -1 为准） | — |
+| P3-2 报告/checkpoint 数字失实 | "单元 13+集成 5"→"14+4"；删"ruff 0 告警"改贴实测 | — |
+| P3-3 stats period 语义 | 窗口累计（非最近单轮） | — |
+| P3-4 监控中文件消失 | 专用提示 + 码 2 | — |
+| P3-5 测试证据存活期 | 测试+对抗脚本副本入库 fix-evidence/ | — |
+
+- 返工后全量：24 用例全绿（原有 18 断言未放宽）+ 专家对抗 11 场景全绿（C1/C2/C3/E/H 为返工目标，A/B/D/F/F2/G 无回归）
+- 全库 ruff 数字纠正：496→495（bb03e3d 实测 494 + monitor_gates.py；496 为历史漂移，E-09 红线）

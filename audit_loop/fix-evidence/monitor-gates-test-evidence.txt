@@ -1,0 +1,266 @@
+#!/usr/bin/env python3
+"""TDD 测试: scripts/monitor_gates.py（独立于项目 tests/，不进 pytest 门禁基线）"""
+import os
+import subprocess
+import sys
+import tempfile
+import time
+import unittest
+
+SCRIPTS = "/Users/litianyu/cc-projects/librio/scripts"
+sys.path.insert(0, SCRIPTS)
+from monitor_gates import DEFAULT_PATTERN, GateMonitor  # noqa: E402
+
+
+class TestClassify(unittest.TestCase):
+    def setUp(self):
+        self.m = GateMonitor(pattern=DEFAULT_PATTERN, done_marker="===== GATES DONE =====")
+
+    def test_pytest_pass_line(self):
+        is_match, is_error, done = self.m.process_line("910 passed, 69 warnings in 432.13s (0:07:12)")
+        self.assertTrue(is_match)
+        self.assertFalse(is_error)
+        self.assertFalse(done)
+        self.assertEqual(self.m.counters["passed"], 910)
+
+    def test_behave_pass_lines(self):
+        for line in ("20 features passed, 0 failed, 0 skipped",
+                     "211 scenarios passed, 0 failed, 0 skipped",
+                     "1369 steps passed, 0 failed, 0 skipped"):
+            is_match, is_error, _ = self.m.process_line(line)
+            self.assertTrue(is_match)
+            self.assertFalse(is_error)
+        self.assertEqual(self.m.counters["passed"], 20 + 211 + 1369)
+        self.assertEqual(self.m.counters["failed"], 0)
+
+    def test_pytest_fail_m_gt_0(self):
+        is_match, is_error, _ = self.m.process_line("100 passed, 2 failed in 10.00s")
+        self.assertTrue(is_match)
+        self.assertTrue(is_error)
+        self.assertEqual(self.m.counters["failed"], 2)
+
+    def test_fail_word(self):
+        _, is_error, _ = self.m.process_line("FAILED: smoke test crash")
+        self.assertTrue(is_error)
+
+    def test_error_and_traceback(self):
+        _, e1, _ = self.m.process_line("ERROR: boom")
+        _, e2, _ = self.m.process_line("Traceback (most recent call last):")
+        self.assertTrue(e1 and e2)
+
+    def test_pass_prefix_count(self):
+        is_match, is_error, _ = self.m.process_line(
+            "[PASS] A 预约并发超卖（行锁）: 成功 5/100（库存 5），错误样本: ['该书暂无库存']")
+        self.assertTrue(is_match)
+        self.assertFalse(is_error)
+        self.assertEqual(self.m.counters["pass_rows"], 1)
+
+    def test_ok_count(self):
+        is_match, _, _ = self.m.process_line("OK: API contract verified")
+        self.assertTrue(is_match)
+        self.assertEqual(self.m.counters["ok_rows"], 1)
+
+    def test_no_new_count(self):
+        is_match, _, _ = self.m.process_line("No new upgrade operations detected.")
+        self.assertTrue(is_match)
+        self.assertEqual(self.m.counters["no_new"], 1)
+
+    def test_ruff_all_checks_passed(self):
+        is_match, is_error, _ = self.m.process_line("All checks passed!")
+        self.assertTrue(is_match)
+        self.assertFalse(is_error)
+        self.assertEqual(self.m.counters["passed"], 0)  # 无数字不计数
+
+    def test_segment_recorded_not_done(self):
+        is_match, is_error, done = self.m.process_line("===== PYTEST =====")
+        self.assertFalse(is_match)
+        self.assertFalse(is_error)
+        self.assertFalse(done)
+        self.assertEqual(self.m.segments, ["PYTEST"])
+
+    def test_done_marker(self):
+        _, _, done = self.m.process_line("===== GATES DONE =====")
+        self.assertTrue(done)
+
+    def test_no_match_ignored(self):
+        is_match, is_error, _ = self.m.process_line("INFO:backend.domain.activity:hello world")
+        self.assertFalse(is_match)
+        self.assertFalse(is_error)
+
+    def test_zero_failed_not_error(self):
+        _, is_error, _ = self.m.process_line("20 features passed, 0 failed, 0 skipped")
+        self.assertFalse(is_error)
+
+    def test_summary_line_format(self):
+        self.m.process_line("910 passed, 69 warnings")
+        self.m.process_line("[PASS] A x")
+        self.m.process_line("OK: y")
+        self.m.process_line("No new upgrade operations detected.")
+        s = self.m.summary_line()
+        self.assertIn("passed=910", s)
+        self.assertIn("failed=0", s)
+        self.assertIn("PASS=1", s)
+        self.assertIn("FAIL=0", s)
+        self.assertIn("OK=1", s)
+        self.assertIn("No-new=1", s)
+
+
+class TestIntegration(unittest.TestCase):
+    SCRIPT = os.path.join(SCRIPTS, "monitor_gates.py")
+
+    def _bg(self, args):
+        return subprocess.Popen([sys.executable, self.SCRIPT, *args],
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+    def _run(self, args):
+        return subprocess.run([sys.executable, self.SCRIPT, *args],
+                              capture_output=True, text=True, timeout=90)
+
+    def test_missing_file_exit_2(self):
+        r = self._run(["--log-file", "/tmp/librio_gates_NONEXIST_xyz.log"])
+        self.assertEqual(r.returncode, 2)
+        self.assertIn("librio_gates", r.stderr)
+
+    def test_history_file_summary(self):
+        r = self._run(["--log-file", "/tmp/librio_gates2_20260809.log",
+                       "--tail-lines", "10000", "--timeout", "5", "--interval", "1"])
+        self.assertEqual(r.returncode, 0)
+        self.assertIn("passed=2510", r.stdout)
+        self.assertIn("failed=0", r.stdout)
+        self.assertIn("PASS=9", r.stdout)
+        self.assertIn("OK=3", r.stdout)
+        self.assertIn("No-new=1", r.stdout)
+        self.assertIn("段: PYTEST✓ BEHAVE✓ RUFF✓", r.stdout)
+
+    def test_live_append_then_done_exit_0(self):
+        logf = tempfile.mktemp(prefix="librio_gates_test_", suffix=".log")
+        try:
+            with open(logf, "w") as f:
+                f.write("")
+            p = subprocess.Popen([sys.executable, self.SCRIPT, "--log-file", logf,
+                                  "--interval", "1", "--timeout", "30"],
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            time.sleep(2.5)
+            with open(logf, "a") as f:
+                f.write("===== PYTEST =====\n910 passed, 69 warnings\n"
+                        "===== BEHAVE =====\n211 scenarios passed, 0 failed, 0 skipped\n"
+                        "===== GATES DONE =====\n")
+            out, err = p.communicate(timeout=30)
+            self.assertEqual(p.returncode, 0, err)
+            self.assertIn("passed=1121", out)
+            self.assertIn("段: PYTEST✓ BEHAVE✓", out)
+        finally:
+            os.unlink(logf)
+
+    def test_exit_on_error_1(self):
+        logf = tempfile.mktemp(prefix="librio_gates_err_", suffix=".log")
+        try:
+            with open(logf, "w") as f:
+                f.write("100 passed, 2 failed in 10.00s\n")
+            r = self._run(["--log-file", logf, "--interval", "1",
+                           "--timeout", "60", "--exit-on-error"])
+            self.assertEqual(r.returncode, 1)
+            self.assertIn("[FAIL]", r.stdout)
+        finally:
+            os.unlink(logf)
+
+    # ---- 返工批（专家审查 P2-1/P2-2/P2-3 对抗场景，RED→GREEN）----
+
+    def _partial_write(self, logf, chunks, timeout, interval="0.5"):
+        """分段写入 chunks（每段 flush 后等待监控读到），返回 (out, returncode)。"""
+        p = self._bg(["--log-file", logf, "--interval", interval, "--timeout", str(timeout)])
+        time.sleep(1.0)
+        with open(logf, "a") as f:
+            for i, chunk in enumerate(chunks):
+                f.write(chunk)
+                f.flush()
+                time.sleep(1.2)
+        out, err = p.communicate(timeout=30)
+        return out, p.returncode
+
+    def test_p2_1_partial_result_line_joined(self):
+        """C1: 结果行 '91' + '0 passed...' 分段写 → 拼接后 passed=910"""
+        logf = tempfile.mktemp(prefix="librio_gates_p21a_", suffix=".log")
+        try:
+            open(logf, "w").close()
+            out, rc = self._partial_write(
+                logf, ["91", "0 passed, 69 warnings in 432.13s\n===== GATES DONE =====\n"], timeout=15)
+            self.assertEqual(rc, 0, out)
+            self.assertIn("passed=910", out)
+        finally:
+            os.unlink(logf)
+
+    def test_p2_1_partial_done_marker(self):
+        """C2: DONE 标记分段写 → 拼接识别，退出 0 不误超时"""
+        logf = tempfile.mktemp(prefix="librio_gates_p21b_", suffix=".log")
+        try:
+            open(logf, "w").close()
+            out, rc = self._partial_write(
+                logf, ["910 passed, 69 warnings\n===== GATES ", "DONE =====\n"], timeout=8)
+            self.assertEqual(rc, 0, out)
+        finally:
+            os.unlink(logf)
+
+    def test_p2_1_partial_segment_name(self):
+        """C3: 段名 '===== PYTE' + 'ST =====' 分段写 → 汇总含 PYTEST✓"""
+        logf = tempfile.mktemp(prefix="librio_gates_p21c_", suffix=".log")
+        try:
+            open(logf, "w").close()
+            out, rc = self._partial_write(
+                logf, ["===== PYTE", "ST =====\n910 passed, 69 warnings\n===== GATES DONE =====\n"],
+                timeout=15)
+            self.assertEqual(rc, 0, out)
+            self.assertIn("PYTEST✓", out)
+        finally:
+            os.unlink(logf)
+
+    def test_p2_2_truncate_reopen(self):
+        """E: 同 inode 截断重写（size 变小）→ 重开读到新内容，退出 0"""
+        logf = tempfile.mktemp(prefix="librio_gates_p22_", suffix=".log")
+        try:
+            with open(logf, "w") as f:
+                f.write("===== PYTEST =====\n900 passed, 69 warnings in 432.13s\n" * 3)
+            p = self._bg(["--log-file", logf, "--interval", "0.5", "--timeout", "6"])
+            time.sleep(1.2)
+            with open(logf, "w") as f:
+                f.write("===== PYTEST =====\n77 passed\n===== GATES DONE =====\n")
+            out, err = p.communicate(timeout=15)
+            self.assertEqual(p.returncode, 0, err)
+            self.assertIn("passed=77", out)
+        finally:
+            os.unlink(logf)
+
+    def test_p2_3_pytest_banner_not_segment(self):
+        """段名正则收紧: pytest 6 等号横幅不入段名清单"""
+        logf = tempfile.mktemp(prefix="librio_gates_p23a_", suffix=".log")
+        try:
+            with open(logf, "w") as f:
+                f.write("===== PYTEST =====\n====== 1 error in 0.12s ======\n"
+                        "===== GATES DONE =====\n")
+            r = self._run(["--log-file", logf, "--tail-lines", "100",
+                           "--interval", "1", "--timeout", "5"])
+            self.assertEqual(r.returncode, 0)
+            self.assertNotIn("error in 0.12s =✓", r.stdout)
+            self.assertNotIn("段: = 1", r.stdout)
+            self.assertIn("PYTEST✓", r.stdout)
+        finally:
+            os.unlink(logf)
+
+    def test_p2_3_lowercase_error_is_fail(self):
+        """H: 全小写 collection error 汇总行 → [FAIL] 标记（规格补强，防假绿）"""
+        logf = tempfile.mktemp(prefix="librio_gates_p23b_", suffix=".log")
+        try:
+            with open(logf, "w") as f:
+                f.write("!!!! Interrupted: 1 error during collection !!!!\n"
+                        "====== 1 error in 0.12s ======\n===== GATES DONE =====\n")
+            r = self._run(["--log-file", logf, "--tail-lines", "100",
+                           "--interval", "1", "--timeout", "5"])
+            self.assertEqual(r.returncode, 0)
+            self.assertIn("[FAIL]", r.stdout)
+            self.assertIn("Interrupted", r.stdout)
+        finally:
+            os.unlink(logf)
+
+
+if __name__ == "__main__":
+    unittest.main()
