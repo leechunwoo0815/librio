@@ -167,7 +167,7 @@ class RefundService:
             refund.status = RefundApplication.STATUS_APPROVED
             refund.review_time = datetime.now()
             refund.review_comment = f"系统自动审核（退款≤{auto_max}元，E1决策）"
-            order.refund_status = 1  # 退款中
+            order.refund_status = Order.REFUND_PROCESSING  # 退款中
             order.refund_amount = final_amount
 
         self.refund_repo.create(refund)
@@ -211,7 +211,7 @@ class RefundService:
                 .first()
             )
             if order:
-                order.refund_status = 1  # 退款中
+                order.refund_status = Order.REFUND_PROCESSING  # 退款中
                 order.refund_amount = refund.refund_amount
 
         self.db.commit()
@@ -256,7 +256,7 @@ class RefundService:
                 db.close()
                 return
             # F-084 三层②：执行前状态守卫——已退款订单不重复打款
-            if order.refund_status == 2:  # REFUNDED
+            if order.refund_status == Order.REFUND_DONE:  # REFUNDED
                 logger.warning(
                     f"Refund task skipped: order={order_no} already refunded"
                 )
@@ -340,12 +340,12 @@ class RefundService:
                 # F-016：订单不存在/已软删时整条回退链不动作（含退款单）
                 return
             # F-005：已退款订单不回滚——防与 mark_refunded 并发完成后被覆盖为 PAID
-            if order.refund_status == 2:  # REFUND_DONE
+            if order.refund_status == Order.REFUND_DONE:
                 logger.warning(
                     f"Refund rollback skipped: order={order_no} already refunded"
                 )
                 return
-            order.refund_status = 3  # FAILED
+            order.refund_status = Order.REFUND_FAILED
             order.pay_status = PayStatus.PAID
             order.refund_remark = str(error)[:200]
 
@@ -415,7 +415,7 @@ class RefundService:
         refund.status = RefundApplication.STATUS_COMPLETED
         refund.actual_refund_amount = refund.refund_amount
         refund.refund_time = datetime.now()
-        order.refund_status = 2  # REFUND_DONE
+        order.refund_status = Order.REFUND_DONE
         order.pay_status = PayStatus.REFUNDED
 
         # E7/B11：退款完成时核销已抵扣的未缴罚款
@@ -460,13 +460,13 @@ class RefundService:
             return
 
         # F-031：乱序回调守卫——退款已完成后忽略非成功终态（防 REFUNDED 被覆盖回 PAID）
-        if order.refund_status == 2:  # REFUND_DONE
+        if order.refund_status == Order.REFUND_DONE:
             logger.warning(
                 f"Refund failure callback ignored: order={order_no} already refunded"
             )
             return
 
-        order.refund_status = 3  # FAILED
+        order.refund_status = Order.REFUND_FAILED
         order.pay_status = PayStatus.PAID
         order.refund_remark = f"微信退款回调状态={status}"
 
@@ -550,4 +550,5 @@ class RefundService:
             "total": total,
             "page": page,
             "page_size": page_size,
+            "has_next": page * page_size < total,  # F-010 终审
         }

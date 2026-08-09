@@ -288,7 +288,8 @@ class ActivityService:
                     "id": e.id,
                     "child_id": e.child_id,
                     "child_name": child.name if child else "未知",
-                    "english_name": child.english_name if child else "",
+                    # F-010 终审：english_name 可空（None→""，避免响应序列化 500）
+                    "english_name": (child.english_name or "") if child else "",
                     "parent_name": user.parent_name if user else None,
                     "parent_phone": user.phone if user else None,
                     "status": e.status,
@@ -476,12 +477,17 @@ class ActivityService:
 
     def update_activity(self, activity_id: int, data) -> dict:
         """更新活动"""
-        from backend.common.exceptions import NotFoundError
+        from backend.common.exceptions import NotFoundError, ValidationError
 
         activity = self.activity_repo.get_by_id(activity_id)
         if not activity or activity.is_deleted == 1:
             raise NotFoundError("活动不存在")
         update_data = data.model_dump(exclude_unset=True)
+        # F-097 终审：合并后重校验（create 有 start<end，update 必须同口径）
+        start = update_data.get("start_time", activity.start_time)
+        end = update_data.get("end_time", activity.end_time)
+        if start and end and end <= start:
+            raise ValidationError("结束时间必须晚于开始时间")
         for key, value in update_data.items():
             if hasattr(activity, key):
                 setattr(activity, key, value)

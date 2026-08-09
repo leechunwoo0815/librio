@@ -517,6 +517,11 @@ class BatchCheckinRequest(BaseModel):
 
 # ==================== 图书管理 ====================
 
+ISBN_PATTERN = (
+    r"^(?:[0-9]{13}|[0-9]{9}[0-9Xx]|"
+    r"(?:[0-9]{1,5}-){3}[0-9Xx]|(?:[0-9]{1,5}-){4}[0-9])$"
+)
+
 
 class CreateBookRequest(BaseModel):
     """创建图书请求"""
@@ -524,7 +529,12 @@ class CreateBookRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     title: str = Field(..., min_length=1, max_length=200)
-    isbn: str = Field(..., min_length=10, max_length=20)
+    isbn: str = Field(
+        ...,
+        min_length=10,
+        max_length=20,
+        pattern=ISBN_PATTERN,  # F-073
+    )
     author: str = Field(..., max_length=100)
     publisher: str | None = Field(None, max_length=100)
     ar_value: float = Field(..., description="AR阅读等级")
@@ -542,7 +552,12 @@ class UpdateBookRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     title: str | None = Field(None, min_length=1, max_length=200)
-    isbn: str | None = Field(None, min_length=10, max_length=20)
+    isbn: str | None = Field(
+        None,
+        min_length=10,
+        max_length=20,
+        pattern=ISBN_PATTERN,  # F-073
+    )
     author: str | None = Field(None, max_length=100)
     publisher: str | None = Field(None, max_length=100)
     ar_value: float | None = None
@@ -563,7 +578,12 @@ class BulkImportBookItem(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    isbn: str = Field(..., min_length=10, max_length=20)
+    isbn: str = Field(
+        ...,
+        min_length=10,
+        max_length=20,
+        pattern=ISBN_PATTERN,  # F-073
+    )
     title: str = ""
     author: str = ""
     ar_value: float | None = None

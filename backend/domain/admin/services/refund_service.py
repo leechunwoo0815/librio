@@ -145,7 +145,7 @@ class AdminRefundService:
         self.db.add(refund)
         if is_admin:
             # F52：审核通过≠钱已退——只置"退款中"，实际打款由网关执行链路完成
-            order.refund_status = 1
+            order.refund_status = Order.REFUND_PROCESSING
         self.db.commit()
         self.db.refresh(refund)
         msg = (

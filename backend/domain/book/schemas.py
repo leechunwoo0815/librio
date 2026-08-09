@@ -9,6 +9,12 @@ from pydantic import Field, model_validator
 from backend.common.base_schema import BaseSchema, PaginatedResponse
 
 
+ISBN_PATTERN = (
+    r"^(?:[0-9]{13}|[0-9]{9}[0-9Xx]|"
+    r"(?:[0-9]{1,5}-){3}[0-9Xx]|(?:[0-9]{1,5}-){4}[0-9])$"
+)
+
+
 class BookCreate(BaseSchema):
     """创建图书请求"""
 
@@ -18,7 +24,13 @@ class BookCreate(BaseSchema):
             raise ValueError("age_min 不能大于 age_max")  # F-073
         return self
 
-    isbn: str = Field(..., min_length=10, max_length=20, description="ISBN号")
+    isbn: str = Field(
+        ...,
+        min_length=10,
+        max_length=20,
+        pattern=ISBN_PATTERN,  # F-073
+        description="ISBN号",
+    )
     title: str = Field(..., max_length=255, description="书名")
     author: str = Field(..., max_length=100, description="作者")
     publisher: str | None = Field(None, max_length=100, description="出版社")

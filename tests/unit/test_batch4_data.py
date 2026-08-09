@@ -199,3 +199,31 @@ class TestF073BookCreateCrossValidation:
                 age_min=10,
                 age_max=5,
             )
+
+    def test_isbn_format_validated(self):
+        """F-073 终审：ISBN 必须为 10/13 位数字或带连字符标准形式"""
+        BookCreate(
+            isbn="9781234567890",
+            title="书",
+            author="A",
+            ar_value=Decimal("2.0"),
+            age_min=3,
+            age_max=5,
+        )
+        BookCreate(
+            isbn="978-7-121-12345-6",
+            title="书",
+            author="A",
+            ar_value=Decimal("2.0"),
+            age_min=3,
+            age_max=5,
+        )
+        with pytest.raises(PydanticValidationError, match="isbn"):
+            BookCreate(
+                isbn="NOT-A-ISBN",
+                title="书",
+                author="A",
+                ar_value=Decimal("2.0"),
+                age_min=3,
+                age_max=5,
+            )
