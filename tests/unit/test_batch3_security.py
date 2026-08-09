@@ -82,6 +82,40 @@ class TestF049PageFailClosed:
         assert _check_page_perm(admin, "not-a-page") is False  # fail-closed
         assert _check_page_perm(admin, "dashboard") is True
 
+    def test_profile_and_403_are_whitelisted(self):
+        """F-049 终审：profile 个人名片与 403 错误页必须放行（否则恒 403 / 无限重定向）"""
+        from backend.domain.admin.admin_page_router import _check_page_perm
+
+        admin = {"permissions": ["dashboard.view"]}
+        assert _check_page_perm(admin, "profile") is True
+        assert _check_page_perm(admin, "403") is True
+
+    def test_profile_route_renders_for_authed_admin(self, db):
+        """profile 页面路由不再 302 到 403（回归守护）"""
+        import asyncio
+        from unittest.mock import patch
+
+        from backend.domain.admin.admin_page_router import (
+            PAGE_PERM_MAP,
+            profile,
+        )
+
+        assert PAGE_PERM_MAP.get("profile") == ""
+        fake_admin = {"id": 1, "permissions": []}
+        with patch(
+            "backend.domain.admin.admin_page_router._get_admin_info",
+            return_value=fake_admin,
+        ), patch(
+            "backend.domain.admin.admin_page_router.templates.TemplateResponse",
+            return_value="RENDERED",
+        ) as mock_render:
+            from starlette.requests import Request
+
+            request = Request({"type": "http", "method": "GET", "path": "/admin/view/profile"})
+            resp = asyncio.run(profile(request))
+        assert resp == "RENDERED"
+        assert mock_render.call_args[0][1] == "admin/profile.html"
+
 
 class TestF057QuizNoAnswerLeak:
     def test_public_question_response_has_no_answer(self):

@@ -44,6 +44,7 @@ PAGE_PERM_MAP: dict[str, str] = {
     "settings": "config.view",
     "operation-logs": "log.list",
     "recycle_bin": "recycle.list",
+    "403": "",  # 错误页白名单（否则权限不足跳转 403 会无限重定向）
     "profile": "",
     "quiz": "quiz.list",
     "reading-data": "report.reading_data",
@@ -93,9 +94,11 @@ def _get_admin_info(request: Request) -> dict | None:
 
 def _check_page_perm(admin: dict, page: str) -> bool:
     """检查管理员是否有权访问页面"""
-    required_perm = PAGE_PERM_MAP.get(page)
+    if page not in PAGE_PERM_MAP:
+        return False  # F-049：未登记页面默认拒绝（fail-closed）
+    required_perm = PAGE_PERM_MAP[page]
     if not required_perm:
-        return False  # F-049：未登记页面默认拒绝（fail-closed），白名单放行
+        return True  # 显式登记为空 = 已登录即可访问（profile/403 白名单）
     perms = admin.get("permissions", [])
     return required_perm in perms
 
