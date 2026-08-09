@@ -78,7 +78,13 @@ def distributed_lock(lock_key: str, timeout: int = 300):
                 if not acquired:
                     logger.info(f"Lock not acquired for {lock_key}, skipping")
                     return
-                return func(*args, **kwargs)
+                # F-021 终审：任务入口生成 trace_id，全任务日志可用同一 ID 关联
+                trace_id = str(uuid.uuid4())[:12]
+                logger.info(f"TASK_START trace_id={trace_id} job={lock_key}")
+                try:
+                    return func(*args, **kwargs)
+                finally:
+                    logger.info(f"TASK_END trace_id={trace_id} job={lock_key}")
 
         return wrapper
 
