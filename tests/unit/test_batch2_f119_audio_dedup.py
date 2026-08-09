@@ -112,3 +112,42 @@ class TestF119AudioDedup:
         )
         count = db.query(AudioFile).filter(AudioFile.book_id == book.id).count()
         assert count == 2
+
+    def test_db_unique_backstop_blocks_raw_duplicate(self, db):
+        """F-119 终审：DB 生成列唯一兜底——绕过应用层直接插入同 key 必 IntegrityError"""
+        from sqlalchemy.exc import IntegrityError
+
+        book = _mk_book(db)
+        svc = AudioService(db)
+        svc.create_audio(
+            AudioCreateRequest(
+                filename="a.mp3", file_url="/u/a.mp3", book_id=book.id, page_number=1
+            )
+        )
+        dup = AudioFile(
+            filename="c.mp3",
+            file_url="/u/c.mp3",
+            book_id=book.id,
+            page_number=1,
+        )
+        db.add(dup)
+        with pytest.raises(IntegrityError):
+            db.commit()
+        db.rollback()
+
+    def test_soft_deleted_releases_unique_key(self, db):
+        """软删后同书同页可重新录入（active_audio_key 置 NULL 释放唯一）"""
+        book = _mk_book(db)
+        svc = AudioService(db)
+        created = svc.create_audio(
+            AudioCreateRequest(
+                filename="a.mp3", file_url="/u/a.mp3", book_id=book.id, page_number=1
+            )
+        )
+        svc.delete_audio(created.id)
+        again = svc.create_audio(
+            AudioCreateRequest(
+                filename="b.mp3", file_url="/u/b.mp3", book_id=book.id, page_number=1
+            )
+        )
+        assert again.id is not None

@@ -1,7 +1,7 @@
 # backend/domain/audio/models.py
 """音频域数据模型"""
 
-from sqlalchemy import Column, BigInteger, String, Integer
+from sqlalchemy import Column, BigInteger, String, Integer, Computed, Index
 from backend.common.base_model import BaseModel
 
 
@@ -9,6 +9,10 @@ class AudioFile(BaseModel):
     """音频文件"""
 
     __tablename__ = "audio_file"
+    __table_args__ = (
+        Index("uq_audio_active_key", "active_audio_key", unique=True),
+        {"extend_existing": True},
+    )
 
     filename = Column(String(255), nullable=False, comment="文件名")
     file_url = Column(String(500), nullable=False, comment="文件URL")
@@ -25,3 +29,13 @@ class AudioFile(BaseModel):
         String(20), default="linked", nullable=False, comment="状态: linked/pending"
     )
     file_size = Column(Integer, nullable=True, comment="文件大小（字节）")
+    active_audio_key = Column(
+        BigInteger,
+        Computed(
+            "CASE WHEN is_deleted = 0 AND book_id IS NOT NULL "
+            "THEN book_id * 10000 + COALESCE(page_number, -1) ELSE NULL END",
+            persisted=True,
+        ),
+        nullable=True,
+        comment="F-119：同书同页音频唯一键（未软删且已关联图书时非 NULL，DB 兜底防并发双插）",
+    )

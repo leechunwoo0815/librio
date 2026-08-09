@@ -190,6 +190,16 @@ class AudioService:
         if not audio:
             raise NotFoundError("音频不存在")
 
+        # F-119 终审：查重必须在任何字段修改前（否则 autoflush 先落库撞 DB 唯一索引）
+        new_book_id = data.book_id if data.book_id is not None else audio.book_id
+        new_page = (
+            data.page_number if data.page_number is not None else audio.page_number
+        )
+        if new_book_id and self._find_dup_audio(
+            new_book_id, new_page, exclude_id=audio.id
+        ):
+            raise ConflictError("该书该页已存在音频，请勿重复关联")
+
         if data.filename is not None:
             audio.filename = data.filename
         if data.reader is not None:
@@ -212,16 +222,6 @@ class AudioService:
         if data.page_number is not None:
             audio.page_number = data.page_number
             audio.page_label = f"P{data.page_number}" if data.page_number else "全文"
-
-        # F-119：合并后的 book/page 查重（exclude 自身）
-        new_book_id = data.book_id if data.book_id is not None else audio.book_id
-        new_page = (
-            data.page_number if data.page_number is not None else audio.page_number
-        )
-        if new_book_id and self._find_dup_audio(
-            new_book_id, new_page, exclude_id=audio.id
-        ):
-            raise ConflictError("该书该页已存在音频，请勿重复关联")
 
         self.db.commit()
         return self.get_audio(audio_id)

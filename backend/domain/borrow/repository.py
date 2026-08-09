@@ -53,5 +53,6 @@ class BorrowRecordRepository(BaseRepository[BorrowRecord]):
                 BorrowRecord.is_deleted == 0,
                 BorrowRecord.overdue_reminded == 0,  # F-098：已提醒过不再重复
             )
+            .with_for_update()  # F-098 终审：双管理员并发点击防双发（标记与查询同事务）
             .all()
         )
