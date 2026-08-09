@@ -487,6 +487,45 @@ class TestCRUD:
         db.refresh(a)
         assert a.title == "Updated"
 
+    def test_update_end_before_original_start_rejected(self, db):
+        """F-097 终审：只更新 end_time 早于原 start → 拒绝（合并后校验）"""
+        a = _create_activity(db)
+        db.commit()
+        data = MagicMock()
+        data.model_dump.return_value = {
+            "end_time": datetime.now() + timedelta(hours=1)  # < 原 start(now+48h)
+        }
+        svc = ActivityService(db)
+        with pytest.raises(ValidationError, match="结束时间必须晚于开始时间"):
+            svc.update_activity(a.id, data)
+        db.refresh(a)
+        assert a.end_time > datetime.now() + timedelta(hours=40)  # 未被覆写
+
+    def test_update_start_after_original_end_rejected(self, db):
+        """F-097 终审：只更新 start_time 晚于原 end → 拒绝"""
+        a = _create_activity(db)
+        db.commit()
+        data = MagicMock()
+        data.model_dump.return_value = {
+            "start_time": datetime.now() + timedelta(hours=100)  # > 原 end(now+50h)
+        }
+        svc = ActivityService(db)
+        with pytest.raises(ValidationError, match="结束时间必须晚于开始时间"):
+            svc.update_activity(a.id, data)
+
+    def test_update_valid_window_allowed(self, db):
+        """F-097 终审：start/end 同步合理调整 → 通过"""
+        a = _create_activity(db)
+        db.commit()
+        data = MagicMock()
+        data.model_dump.return_value = {
+            "start_time": datetime.now() + timedelta(hours=10),
+            "end_time": datetime.now() + timedelta(hours=12),
+        }
+        svc = ActivityService(db)
+        result = svc.update_activity(a.id, data)
+        assert result["success"] is True
+
     def test_delete_activity_not_found(self, db):
         svc = ActivityService(db)
         with pytest.raises(NotFoundError):

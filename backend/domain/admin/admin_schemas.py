@@ -519,7 +519,7 @@ class BatchCheckinRequest(BaseModel):
 
 ISBN_PATTERN = (
     r"^(?:[0-9]{13}|[0-9]{9}[0-9Xx]|"
-    r"(?:[0-9]{1,5}-){3}[0-9Xx]|(?:[0-9]{1,5}-){4}[0-9])$"
+    r"(?:[0-9]{1,7}-){3}[0-9Xx]|(?:[0-9]{1,7}-){4}[0-9])$"
 )
 
 
@@ -916,7 +916,7 @@ class BulkImportQuestionItem(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    isbn: str = Field(..., min_length=1)
+    isbn: str = Field(..., min_length=1, pattern=ISBN_PATTERN)  # F-073：标准 ISBN 格式
     question_text: str = Field(..., min_length=1)
     option_a: str = Field(..., min_length=1)  # F-088：禁空选项
     option_b: str = Field(..., min_length=1)

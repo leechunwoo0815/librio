@@ -4,8 +4,10 @@
 from datetime import datetime
 from decimal import Decimal
 
+from pydantic import Field
 
 from backend.common.base_schema import BaseSchema, PaginatedResponse
+from backend.domain.book.schemas import ISBN_PATTERN
 
 
 class BorrowBookRequest(BaseSchema):
@@ -26,7 +28,11 @@ class ScanAndBorrowRequest(BaseSchema):
     # 以下字段仅在条码不存在时需要（首次扫码创建新书）
     title: str | None = None
     author: str | None = None  # F47：Book.author NOT NULL，建档必须提供
-    isbn: str | None = None
+    isbn: str | None = Field(
+        default=None,
+        pattern=ISBN_PATTERN,
+        description="F-073：首次建档 ISBN 须标准格式",
+    )
     ar_value: float | None = None
     age_min: int | None = None
     age_max: int | None = None

@@ -25,19 +25,52 @@ def _is_logger_error_call(node: ast.AST) -> bool:
     )
 
 
+def _check_except_logger_errors(tree: ast.AST, path: str) -> list[str]:
+    """except 块内 logger.error 必须 exc_info=True（真值检查，exc_info=False 视为违规）"""
+    violations = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.ExceptHandler):
+            continue
+        for sub in ast.walk(node):
+            if not _is_logger_error_call(sub):
+                continue
+            kwargs = {kw.arg: kw.value for kw in sub.keywords if kw.arg}
+            exc = kwargs.get("exc_info")
+            if not (isinstance(exc, ast.Constant) and exc.value is True):
+                violations.append(f"{path}:{getattr(sub, 'lineno', '?')}")
+    return violations
+
+
 def test_every_logger_error_inside_except_has_exc_info():
     violations = []
     for path in _iter_backend_py():
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
-        for node in ast.walk(tree):
-            if not isinstance(node, ast.ExceptHandler):
-                continue
-            for sub in ast.walk(node):
-                if not _is_logger_error_call(sub):
-                    continue
-                kwargs = {kw.arg: kw.value for kw in sub.keywords if kw.arg}
-                if "exc_info" not in kwargs:
-                    violations.append(f"{path}:{getattr(sub, 'lineno', '?')}")
-    assert not violations, "except 块内 logger.error 缺 exc_info：\n" + "\n".join(
+        violations.extend(_check_except_logger_errors(tree, str(path)))
+    assert not violations, "except 块内 logger.error 缺 exc_info=True：\n" + "\n".join(
         violations
     )
+
+
+def test_guard_rejects_exc_info_false():
+    """自验证：exc_info=False 必须被判违规（防守护退化回'仅查 key 存在'）"""
+    tree = ast.parse(
+        """\
+try:
+    pass
+except Exception:
+    logger.error("boom", exc_info=False)
+"""
+    )
+    assert _check_except_logger_errors(tree, "synthetic"), "exc_info=False 必须报违规"
+
+
+def test_guard_accepts_exc_info_true():
+    tree = ast.parse(
+        """\
+try:
+    pass
+except Exception:
+    logger.error("boom", exc_info=True)
+"""
+    )
+    assert not _check_except_logger_errors(tree, "synthetic")

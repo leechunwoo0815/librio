@@ -227,3 +227,47 @@ class TestF073BookCreateCrossValidation:
                 age_min=3,
                 age_max=5,
             )
+
+    def test_scan_and_borrow_isbn_format_validated(self):
+        """F-073 终审同类漏改：扫码借书首次建档的 isbn 输入同样必须标准格式"""
+        from backend.domain.borrow.schemas import ScanAndBorrowRequest
+
+        ScanAndBorrowRequest(
+            child_id=1,
+            barcode="BC-1",
+            title="书",
+            author="A",
+            isbn="9781234567890",
+            ar_value=2.0,
+            age_min=3,
+            age_max=5,
+        )
+        with pytest.raises(PydanticValidationError, match="isbn"):
+            ScanAndBorrowRequest(
+                child_id=1,
+                barcode="BC-2",
+                title="书",
+                author="A",
+                isbn="NOT-A-ISBN",
+                ar_value=2.0,
+                age_min=3,
+                age_max=5,
+            )
+
+    def test_bulk_import_question_isbn_format_validated(self):
+        """F-073 终审同类漏改：批量导入题目项的 isbn 必须标准格式"""
+        from backend.domain.admin.admin_schemas import BulkImportQuestionItem
+
+        BulkImportQuestionItem(
+            isbn="978-7-121-12345-6",
+            question_text="Q",
+            option_a="A",
+            option_b="B",
+        )
+        with pytest.raises(PydanticValidationError, match="isbn"):
+            BulkImportQuestionItem(
+                isbn="NOT-A-ISBN",
+                question_text="Q",
+                option_a="A",
+                option_b="B",
+            )

@@ -11,7 +11,7 @@ from backend.common.base_schema import BaseSchema, PaginatedResponse
 
 ISBN_PATTERN = (
     r"^(?:[0-9]{13}|[0-9]{9}[0-9Xx]|"
-    r"(?:[0-9]{1,5}-){3}[0-9Xx]|(?:[0-9]{1,5}-){4}[0-9])$"
+    r"(?:[0-9]{1,7}-){3}[0-9Xx]|(?:[0-9]{1,7}-){4}[0-9])$"
 )
 
 
