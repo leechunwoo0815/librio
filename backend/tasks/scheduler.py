@@ -873,7 +873,9 @@ def generate_monthly_reports():
         refunded_orders = (
             db.query(sql_func.count(Order.id))
             .filter(
-                Order.refund_status.in_([1, 2]),  # REFUND_PROCESSING, REFUND_DONE
+                Order.refund_status.in_(
+                    [Order.REFUND_PROCESSING, Order.REFUND_DONE]
+                ),  # F-078 终审：魔法数字改常量
                 Order.create_time >= last_month_start,
                 Order.create_time < next_month_start,  # F-035：避免漏月末当天
                 Order.is_deleted == 0,

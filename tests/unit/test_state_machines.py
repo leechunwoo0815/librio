@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+from backend.common.exceptions import ConflictError
 from backend.database import Base
 from backend.domain.user.models import User
 from backend.domain.child.models import Child
@@ -150,7 +151,7 @@ class TestDepositStateMachine:
         db.commit()
 
         svc = DepositService(db)
-        with pytest.raises(Exception, match="无法取消"):
+        with pytest.raises(ConflictError, match="无法取消"):
             svc.cancel_refund(child.id)
 
         db.expire_all()
