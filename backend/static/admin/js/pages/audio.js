@@ -38,7 +38,7 @@
       var statusCls = item.status === 'linked' ? 'tag-done' : 'tag-pending';
       var statusText = item.status === 'linked' ? '已关联' : '待关联';
       var actions = '<button class="action-sm" data-action="play-audio" data-url="' + escapeAttr(item.file_url || '') + '" data-name="' + escapeAttr(item.filename || '') + '">播放</button>';
-      actions += '<button class="action-sm" data-action="delete-audio" data-id="' + item.id + '">删除</button>';
+      actions += '<button class="action-sm" data-perm="content.delete" data-action="delete-audio" data-id="' + item.id + '">删除</button>';
       return '<tr>' +
         '<td>' + escapeHtml(item.filename || '-') + '</td>' +
         '<td>' + escapeHtml(item.book_title || '-') + '</td>' +
