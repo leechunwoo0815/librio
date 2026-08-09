@@ -100,3 +100,20 @@
   （独立测试库，MySQL 实测）。
 - 金额禁 float、LIKE 用户输入必须 escape_like、时区用应用侧 datetime.now。
 - 项目宪法：`CLAUDE.md`（最高法律，冲突时以其与最新 `checkpoint.md` 为准）。
+
+## LOOP-2 强制闭环自审协议（恢复口令含"LOOP-2"或台账有未完成项时生效）
+
+> 恢复口令：读 `audit_loop/loop2/PROMPT.md` + `audit_loop/loop2/LEDGER.md`，继续。
+> 设计文档：`专家意见/强制闭环自审协议-20260809.md`；外层驱动：`audit_loop/loop2/driver.sh`。
+
+1. 台账 `audit_loop/loop2/LEDGER.md` 是唯一事实源：按表序做第一行未闭环项，禁止跳行、
+   并行多项、顺手做别的。
+2. 通过/失败的唯一裁决 = `scripts/loop_gate.sh` 退出码（quick 单项 / full 全量十一关）；
+   完成与否的唯一裁决 = `scripts/loop_check.py --mode full` 退出码。禁止读输出文本自行判定。
+3. 状态流转必须先落证据（gate-runs/ 或 fix-evidence/ 真实文件）再改台账再提交；无证据流转无效。
+4. 同一项 3 次尝试仍不绿 → 必须 BLOCKED 并追加 `audit_loop/loop2/ESCALATE.md`，跳下一项；
+   禁止弱化断言、删测绕过、缩小门禁范围。
+5. 禁止修改协议与工具自身：`audit_loop/loop2/PROMPT.md`、`scripts/loop_gate.sh`、
+   `scripts/loop_check.py`、`audit_loop/loop2/driver.sh`（有问题写进 ESCALATE.md）。
+6. 未获 `loop_check.py --mode full` 退出码 0 之前，禁止宣布整体完工/停工（BLOCKED 簇升级除外）。
+7. 本节对与 LOOP-2 无关的会话（无恢复口令且台账无未完成项）不产生额外义务。

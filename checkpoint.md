@@ -30,7 +30,7 @@ DmkWords 是一个儿童英语阅读管理平台：
 | behave | ✅ 211 scenarios / 1369 steps（无 MySQL 沙箱 171 passed + 40 error / 0 failed） |
 | ruff check `backend/ tests/` | ✅ 0 errors |
 | ruff check `features/ scripts/` | ✅ 0 errors |
-| ruff format `--check .` | ✅ 495 files formatted（2026-08-09 返工后实测；历史 496 为漂移已纠正） |
+| ruff format `--check .` | ✅ 496 files formatted（2026-08-09 LOOP-2 入库后实测；495 + scripts/loop_check.py） |
 | verify_api_contract | ✅ OK |
 | check_model_consistency | ✅ 56 tables |
 | alembic check (MySQL only) | ✅ No new upgrade operations detected |
@@ -930,7 +930,7 @@ alembic check:                 No new upgrade operations detected ✅
 
 删除 `deliverables/` / `专家意见/` / `docs/superpowers/` / `docs/compose/` / `specs/` / 5 个 AUDIT_PROMPT_* / `AUDIT_REPORT.md` / `backend-full-audit-summary_20260715.md` / `TASK_PLAN.md` / `docs/wechat-compliance-improvement-plan.md` / `docs/frontend-style-improvement-report.md`
 
-> ⚠️ 历史快照（早期版本实测，数字已过时）；**现行基线以 §2.1 为准**（pytest 925 / ruff 495 files）。
+> ⚠️ 历史快照（早期版本实测，数字已过时）；**现行基线以 §2.1 为准**（pytest 925 / ruff 496 files）。
 
 ### 全量验证
 
@@ -1144,7 +1144,7 @@ alembic check:                 No new upgrade operations detected ✅
 | `test_new_routes.py` | 15 | Service: 正常/空/异常/边界 |
 | `test_new_routes_http.py` | 21 | HTTP: 鉴权/序列化/参数/7 边界 |
 
-> ⚠️ 历史快照（早期版本实测，数字已过时）；**现行基线以 §2.1 为准**（pytest 925 / ruff 495 files）。
+> ⚠️ 历史快照（早期版本实测，数字已过时）；**现行基线以 §2.1 为准**（pytest 925 / ruff 496 files）。
 
 ### 最终 CI 数字
 
