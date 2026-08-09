@@ -61,6 +61,12 @@ def main():
     results.append(
         ("I 活动并发双报（行锁）", _scenario_activity_double_enroll(Session))
     )
+    results.append(
+        (
+            "J 权益转让 approve vs reject（行锁）",
+            _scenario_transfer_approve_reject(Session),
+        )
+    )
 
     if "--keep" not in sys.argv:
         _cleanup(engine)
@@ -769,6 +775,121 @@ def _cleanup(engine):
 
     Base.metadata.drop_all(bind=engine)
     print("\n[cleanup] 测试库表已清空（--keep 可保留）")
+
+
+def _scenario_transfer_approve_reject(Session):
+    """F-078：并发 approve vs reject 同一权益转让申请——reject 不得覆盖已转移权益
+
+    30 个 PENDING 申请，每单双线程并发：approve（转移权益+置 1）vs reject（置 2）。
+    缺陷特征（reject 无行锁）：approve 已转移权益（source.status=EXPIRED）并置 status=1，
+    并发 reject 读到旧快照 status=0 → 置 status=2 → 终态 REJECTED 但权益已转移，
+    资金/权益口径矛盾。修复：reject 与 approve 对称 with_for_update（行锁串行）。
+    """
+    from datetime import datetime, timedelta
+
+    from backend.common.types import MemberStatus
+    from backend.domain.admin.services.benefit_transfer_service import (
+        BenefitTransferAdminService,
+    )
+    from backend.domain.child.benefit_transfer_model import BenefitTransferApplication
+    from backend.domain.child.models import Child
+    from backend.domain.user.models import User
+
+    s = Session()
+    app_ids = []
+    for i in range(30):
+        u = User(openid=f"bt_{uuid.uuid4().hex[:8]}", phone=f"137{i:08d}")
+        s.add(u)
+        s.flush()
+        src = Child(
+            user_id=u.id,
+            name="源",
+            age=8,
+            grade="三年级",
+            status=MemberStatus.OFFICIAL,
+            member_start_time=datetime.now(),
+            member_expire_time=datetime.now() + timedelta(days=100),
+        )
+        tgt = Child(
+            user_id=u.id,
+            name="目标",
+            age=6,
+            grade="大班",
+            status=MemberStatus.TRIAL,
+        )
+        s.add_all([src, tgt])
+        s.flush()
+        app = BenefitTransferApplication(
+            source_child_id=src.id,
+            target_child_id=tgt.id,
+            user_id=u.id,
+            status=0,
+            create_time=datetime.now(),
+            update_time=datetime.now(),
+        )
+        s.add(app)
+        s.flush()
+        app_ids.append(app.id)
+    s.commit()
+    s.close()
+
+    lock = threading.Lock()
+    outcomes = []
+
+    def try_approve(app_id):
+        sess = Session()
+        try:
+            BenefitTransferAdminService(sess).approve(
+                app_id, reviewer_id=1, review_remark="并发通过"
+            )
+            with lock:
+                outcomes.append(("approve_ok", app_id))
+        except Exception as e:
+            with lock:
+                outcomes.append((f"approve_err:{str(e)[:20]}", app_id))
+        finally:
+            sess.close()
+
+    def try_reject(app_id):
+        sess = Session()
+        try:
+            BenefitTransferAdminService(sess).reject(
+                app_id, reviewer_id=2, review_remark="并发拒绝"
+            )
+            with lock:
+                outcomes.append(("reject_ok", app_id))
+        except Exception as e:
+            with lock:
+                outcomes.append((f"reject_err:{str(e)[:20]}", app_id))
+        finally:
+            sess.close()
+
+    for aid in app_ids:
+        threads = [
+            threading.Thread(target=try_approve, args=(aid,)),
+            threading.Thread(target=try_reject, args=(aid,)),
+        ]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+    s = Session()
+    rows = {
+        a.id: a
+        for a in s.query(BenefitTransferApplication)
+        .filter(BenefitTransferApplication.id.in_(app_ids))
+        .all()
+    }
+    s.close()
+
+    approve_oks = [aid for kind, aid in outcomes if kind == "approve_ok"]
+    contradictions = sum(1 for aid in approve_oks if rows[aid].status == 2)
+    detail = (
+        f"矛盾单 {contradictions}/{len(approve_oks)}（应 0，approve 成功的申请终态不得为 REJECTED），"
+        f"分布 { {k: sum(1 for x, _ in outcomes if x == k) for k in ('approve_ok', 'reject_ok')} }"
+    )
+    return contradictions == 0, detail
 
 
 if __name__ == "__main__":

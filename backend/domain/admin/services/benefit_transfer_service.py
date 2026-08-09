@@ -119,6 +119,7 @@ class BenefitTransferAdminService:
                 BenefitTransferApplication.id == application_id,
                 BenefitTransferApplication.is_deleted == 0,
             )
+            .with_for_update()  # F-078 终审：reject 与 approve 对称行锁——并发双审防状态覆盖
             .first()
         )
         if not app:

@@ -112,7 +112,7 @@ class TencentSmsGateway(SmsGateway):
         if not _HAS_SDK or not self.app_id or not self.app_key:
             logger.info(
                 "[TencentSms(dev)] 通知短信 phone=%s template=%s params=%s（SDK/凭据未配置）",
-                request.phone,
+                _mask_phone(request.phone),
                 request.template_id,
                 request.template_params,
             )
