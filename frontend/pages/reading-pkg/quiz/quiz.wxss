@@ -312,6 +312,11 @@
   color: var(--error);
 }
 
+.feedback.selected {
+  background: rgba(85, 96, 207, 0.1);
+  color: var(--primary, #5560cf);
+}
+
 /* Footer */
 .quiz-footer {
   padding: 24rpx 32rpx 56rpx;

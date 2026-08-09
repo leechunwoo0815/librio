@@ -72,13 +72,8 @@ Page({
         return
       }
 
-      // Strip correct_answer from data sent to WXML
-      const sanitizedQuestions = questions.map(q => {
-        const { correct_answer, ...rest } = q
-        return rest
-      })
-      this._correctAnswers = {}
-      questions.forEach(q => { this._correctAnswers[q.id] = q.correct_answer })
+      // F-057：后端取题已剥离 correct_answer/explanation，前端不保存任何答案字段
+      const sanitizedQuestions = questions
 
       this.setData({
         quizId,
@@ -104,7 +99,6 @@ Page({
           success: (res) => {
             if (res.confirm) {
               // 题库变更时缓存索引可能越界，夹紧到有效范围
-              // 用 setData 后的净化题目（不含 correct_answer）
               const safeQuestions = this.data.questions
               const safeQ = Math.min(cached.currentQ || 0, safeQuestions.length - 1)
               this.setData({
@@ -145,18 +139,12 @@ Page({
   selectOption(e) {
     if (this.data.selected) return  // 已作答，防连击跳题
     const ans = e.currentTarget.dataset.ans
-    const questionId = this.data.questions[this.data.currentQ].id
-    const correctAns = this._correctAnswers[questionId]
-    const isCorrect = ans === correctAns
-    const resultData = {}
-    resultData['result' + ans] = isCorrect ? 'correct' : 'wrong'
-    if (!isCorrect) {
-      resultData['result' + correctAns] = 'correct'
-    }
-    resultData.feedbackType = isCorrect ? 'correct' : 'wrong'
-    const expl = this.data.question.explanation || ''
-    resultData.feedbackText = isCorrect ? '回答正确！' + (expl ? ' ' + expl : '') : '正确答案是 ' + correctAns + (expl ? '，' + expl : '')
-    this.setData(Object.assign({ selected: ans }, resultData))
+    // F-057：不在客户端判分（答案仅提交后由服务端权威返回），只记录选择
+    this.setData({
+      selected: ans,
+      feedbackType: 'selected',
+      feedbackText: '已选择，提交后可查看对错与解析',
+    })
     // MP-007: 每次选择后缓存进度
     this._saveProgress()
     // 触觉反馈
@@ -268,19 +256,21 @@ Page({
       // MP-007: 提交成功后清除缓存
       storage.clearQuizProgress(quizId)
 
-      // 错题回顾：缓存题目和答案供结果页使用
+      // 错题回顾：以服务端提交响应为准（F-057，不依赖取题接口泄露的答案）
       try {
-        var self = this
-        var wrongQuestions = questions.filter(function(q) {
-          return answers[q.id] && answers[q.id] !== (self._correctAnswers[q.id] || '')
-        }).map(function(q) {
+        var review = (result && result.question_review) || []
+        var wrongQuestions = review.filter(function(item) {
+          return !item.is_correct
+        }).map(function(item) {
           return {
-            question_text: q.question_text,
-            option_a: q.option_a, option_b: q.option_b,
-            option_c: q.option_c, option_d: q.option_d,
-            correct_answer: self._correctAnswers[q.id] || '',
-            user_answer: answers[q.id] || '',
-            explanation: q.explanation || ''
+            question_text: item.question_text || '',
+            option_a: item.option_a || '',
+            option_b: item.option_b || '',
+            option_c: item.option_c || '',
+            option_d: item.option_d || '',
+            correct_answer: item.correct_answer || '',
+            user_answer: item.selected_answer || '',
+            explanation: item.explanation || ''
           }
         })
         const cacheData = { questions: wrongQuestions, _ts: Date.now() }
@@ -354,5 +344,10 @@ Page({
     if (this._navTimer) { clearTimeout(this._navTimer); this._navTimer = null; }
     if (this._nextTimer) { clearTimeout(this._nextTimer); this._nextTimer = null; }
     if (this._timerInterval) { clearInterval(this._timerInterval); this._timerInterval = null; }
+    // F-011：销毁 TTS 音频上下文，防止页面卸载后继续播放/泄漏
+    if (this._ttsCtx) {
+      try { this._ttsCtx.destroy() } catch (e) { /* 静默 */ }
+      this._ttsCtx = null
+    }
   },
 })

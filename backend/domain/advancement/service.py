@@ -240,6 +240,7 @@ class AdvancementService:
             q.id: q
             for q in self.db.query(QuestionBank).filter(QuestionBank.id.in_(qids)).all()
         }
+        review_items: list[dict] = []
         for ans in answers:
             if isinstance(ans, dict):
                 qid = ans["question_id"]
@@ -252,6 +253,22 @@ class AdvancementService:
             is_correct = question and question.correct_answer == selected
             if is_correct:
                 correct += 1
+
+            # F-057：提交响应携带每题回顾（正确答案/解析仅在作答提交后返回）
+            review_items.append(
+                {
+                    "question_id": qid,
+                    "question_text": question.question_text if question else "",
+                    "option_a": question.option_a if question else "",
+                    "option_b": question.option_b if question else "",
+                    "option_c": question.option_c if question else None,
+                    "option_d": question.option_d if question else None,
+                    "selected_answer": selected or "",
+                    "correct_answer": question.correct_answer if question else "",
+                    "explanation": question.explanation if question else None,
+                    "is_correct": is_correct,
+                }
+            )
 
             answer_record = QuizAnswer(
                 quiz_id=quiz_id,
@@ -337,6 +354,7 @@ class AdvancementService:
             "score": float(quiz.score),
             "passed": passed,
             "word_count": effective_word_count,
+            "question_review": review_items,
         }
 
     # ==================== 晋级检测 ====================

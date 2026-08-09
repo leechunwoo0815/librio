@@ -61,12 +61,28 @@ class SubmitAnswerRequest(BaseSchema):
     selected_answer: str = Field(..., min_length=1, max_length=1)
 
 
+class QuestionReviewItem(BaseSchema):
+    """提交后每题回顾 — 仅在提交响应返回（取题阶段不暴露，F-057 闭环）"""
+
+    question_id: int
+    question_text: str = ""
+    option_a: str = ""
+    option_b: str = ""
+    option_c: str | None = None
+    option_d: str | None = None
+    selected_answer: str = ""
+    correct_answer: str = ""
+    explanation: str | None = None
+    is_correct: bool
+
+
 class QuizResultResponse(BaseSchema):
     correct: int
     total: int
     score: float
     passed: bool
     word_count: int = 0
+    question_review: list[QuestionReviewItem] = []
 
 
 class CreateQuestionRequest(BaseSchema):
