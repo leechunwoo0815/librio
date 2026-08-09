@@ -100,6 +100,93 @@ class TestF069ParentCourseTime:
                 max_participants=0,
             )
 
+    def test_overlap_same_venue_same_day_rejected(self, db):
+        """F-069 终审：同日同 venue 时间重叠必须拒绝"""
+        from backend.domain.parent_course_time.models import ParentCourseTime
+
+        db.add(
+            ParentCourseTime(
+                venue_id=7,
+                course_date="2026-08-10",
+                start_time="10:00",
+                end_time="11:00",
+                max_participants=10,
+            )
+        )
+        db.commit()
+
+        svc = ParentCourseTimeService(db)
+        with pytest.raises(ValidationError, match="重叠"):
+            svc.create(
+                ParentCourseTimeCreate(
+                    venue_id=7,
+                    course_date="2026-08-10",
+                    start_time="10:30",
+                    end_time="11:30",
+                )
+            )
+
+    def test_adjacent_and_other_venue_allowed(self, db):
+        """F-069：首尾相接（无重叠）与不同场馆同时间均允许"""
+        from backend.domain.parent_course_time.models import ParentCourseTime
+
+        db.add(
+            ParentCourseTime(
+                venue_id=7,
+                course_date="2026-08-10",
+                start_time="10:00",
+                end_time="11:00",
+                max_participants=10,
+            )
+        )
+        db.commit()
+        svc = ParentCourseTimeService(db)
+
+        svc.create(
+            ParentCourseTimeCreate(
+                venue_id=7,
+                course_date="2026-08-10",
+                start_time="11:00",
+                end_time="12:00",
+            )
+        )
+        svc.create(
+            ParentCourseTimeCreate(
+                venue_id=8,
+                course_date="2026-08-10",
+                start_time="10:30",
+                end_time="11:30",
+            )
+        )
+
+    def test_update_overlap_rejected_excluding_self(self, db):
+        """F-069：update 撞到其他时段拒绝；仅重叠自身（时间不变）放行"""
+        from backend.domain.parent_course_time.models import ParentCourseTime
+        from backend.domain.parent_course_time.schemas import ParentCourseTimeUpdate
+
+        slot = ParentCourseTime(
+            venue_id=7,
+            course_date="2026-08-10",
+            start_time="10:00",
+            end_time="11:00",
+            max_participants=10,
+        )
+        other = ParentCourseTime(
+            venue_id=7,
+            course_date="2026-08-10",
+            start_time="11:00",
+            end_time="12:00",
+            max_participants=10,
+        )
+        db.add_all([slot, other])
+        db.commit()
+
+        svc = ParentCourseTimeService(db)
+        with pytest.raises(ValidationError, match="重叠"):
+            svc.update(slot.id, ParentCourseTimeUpdate(end_time="11:30"))
+        # 自身不重叠（更新无关字段）
+        svc.update(slot.id, ParentCourseTimeUpdate(max_participants=12))
+
 
 class TestF073BookCreateCrossValidation:
     def test_age_min_le_age_max(self):

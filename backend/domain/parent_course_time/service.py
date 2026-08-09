@@ -56,6 +56,14 @@ class ParentCourseTimeService:
             from backend.common.exceptions import ValidationError
 
             raise ValidationError("结束时间必须晚于开始时间")
+        # F-069 终审：同日同 venue 时间重叠校验（双时段不能同时占同一个亲子课教室）
+        self._assert_no_overlap(
+            venue_id=data.venue_id,
+            course_date=data.course_date,
+            start_time=data.start_time,
+            end_time=data.end_time,
+            exclude_id=None,
+        )
         record = ParentCourseTime(
             venue_id=data.venue_id,
             course_date=data.course_date,
@@ -84,11 +92,41 @@ class ParentCourseTimeService:
             from backend.common.exceptions import ValidationError
 
             raise ValidationError("结束时间必须晚于开始时间")
+        self._assert_no_overlap(
+            venue_id=update_data.get("venue_id", record.venue_id),
+            course_date=update_data.get("course_date", record.course_date),
+            start_time=start,
+            end_time=end,
+            exclude_id=slot_id,
+        )
         for key, value in update_data.items():
             setattr(record, key, value)
         self.repo.update(record)
         self.db.commit()
         return ParentCourseTimeResponse.model_validate(record)
+
+    def _assert_no_overlap(
+        self,
+        venue_id: int,
+        course_date,
+        start_time,
+        end_time,
+        exclude_id: int | None,
+    ) -> None:
+        """同日同 venue 区间重叠检查（[start,end) 半开区间相交判定）"""
+        from backend.common.exceptions import ValidationError
+
+        query = self.db.query(ParentCourseTime).filter(
+            ParentCourseTime.venue_id == venue_id,
+            ParentCourseTime.course_date == course_date,
+            ParentCourseTime.is_deleted == 0,
+            ParentCourseTime.start_time < end_time,
+            ParentCourseTime.end_time > start_time,
+        )
+        if exclude_id is not None:
+            query = query.filter(ParentCourseTime.id != exclude_id)
+        if query.first():
+            raise ValidationError("同一天同一场馆已存在时间重叠的亲子课时段")
 
     def delete(self, slot_id: int) -> dict:
         """删除时间段（软删除）"""
