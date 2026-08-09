@@ -32,7 +32,11 @@ log_level = logging.DEBUG if settings.DEBUG else logging.INFO
 logging.basicConfig(level=log_level)
 from backend.middleware.trace import TraceIdFilter  # noqa: E402
 
+# F-021 终审同类：logger 级 filter 对子 logger 传播的 record 不生效（logging 设计限制），
+# 必须同时挂到 handlers——任务/事件日志经传播链 emit 时同样注入 trace_id
 logging.getLogger().addFilter(TraceIdFilter())
+for _h in logging.getLogger().handlers:
+    _h.addFilter(TraceIdFilter())
 
 logger = logging.getLogger(__name__)
 

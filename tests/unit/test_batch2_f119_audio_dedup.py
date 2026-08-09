@@ -151,3 +151,46 @@ class TestF119AudioDedup:
             )
         )
         assert again.id is not None
+
+    def test_create_db_backstop_returns_conflict_not_500(self, db, monkeypatch):
+        """F-119 终审同类：并发窗口内 DB 唯一兜底触发时必须转 ConflictError（409），不得裸 IntegrityError 500"""
+        book = _mk_book(db)
+        svc = AudioService(db)
+        svc.create_audio(
+            AudioCreateRequest(
+                filename="a.mp3", file_url="/u/a.mp3", book_id=book.id, page_number=1
+            )
+        )
+        # 模拟并发窗口：应用层查重被绕过（另一请求同时通过），DB 唯一索引兜底
+        monkeypatch.setattr(
+            AudioService, "_find_dup_audio", lambda self, *a, **k: False
+        )
+        with pytest.raises(ConflictError, match="已存在音频"):
+            svc.create_audio(
+                AudioCreateRequest(
+                    filename="b.mp3",
+                    file_url="/u/b.mp3",
+                    book_id=book.id,
+                    page_number=1,
+                )
+            )
+
+    def test_update_db_backstop_returns_conflict_not_500(self, db, monkeypatch):
+        """F-119 终审同类：update 并发窗口 DB 兜底 → 409 而非 500"""
+        book = _mk_book(db)
+        svc = AudioService(db)
+        a1 = svc.create_audio(
+            AudioCreateRequest(
+                filename="a.mp3", file_url="/u/a.mp3", book_id=book.id, page_number=1
+            )
+        )
+        svc.create_audio(
+            AudioCreateRequest(
+                filename="b.mp3", file_url="/u/b.mp3", book_id=book.id, page_number=2
+            )
+        )
+        monkeypatch.setattr(
+            AudioService, "_find_dup_audio", lambda self, *a, **k: False
+        )
+        with pytest.raises(ConflictError, match="已存在音频"):
+            svc.update_audio(a1.id, AudioUpdateRequest(page_number=2))

@@ -3,6 +3,7 @@
 
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 
 from backend.domain.audio.models import AudioFile
 from backend.domain.audio.schemas import (
@@ -156,7 +157,12 @@ class AudioService:
             file_size=data.file_size,
         )
         self.db.add(audio)
-        self.db.commit()
+        try:
+            self.db.commit()
+        except IntegrityError:
+            # F-119 终审同类：并发窗口内应用层查重被绕过时 DB 唯一索引兜底
+            self.db.rollback()
+            raise ConflictError("该书该页已存在音频，请勿重复添加") from None
         self.db.refresh(audio)
 
         return self.get_audio(audio.id)
@@ -223,7 +229,12 @@ class AudioService:
             audio.page_number = data.page_number
             audio.page_label = f"P{data.page_number}" if data.page_number else "全文"
 
-        self.db.commit()
+        try:
+            self.db.commit()
+        except IntegrityError:
+            # F-119 终审同类：update 并发窗口 DB 兜底 → 409 而非 500
+            self.db.rollback()
+            raise ConflictError("该书该页已存在音频，请勿重复关联") from None
         return self.get_audio(audio_id)
 
     def delete_audio(self, audio_id: int) -> dict:

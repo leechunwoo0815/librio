@@ -67,6 +67,12 @@ def main():
             _scenario_transfer_approve_reject(Session),
         )
     )
+    results.append(
+        (
+            "K 逾期提醒并发双发（行锁）",
+            _scenario_overdue_reminder_double_send(Session),
+        )
+    )
 
     if "--keep" not in sys.argv:
         _cleanup(engine)
@@ -890,6 +896,87 @@ def _scenario_transfer_approve_reject(Session):
         f"分布 { {k: sum(1 for x, _ in outcomes if x == k) for k in ('approve_ok', 'reject_ok')} }"
     )
     return contradictions == 0, detail
+
+
+def _scenario_overdue_reminder_double_send(Session):
+    """F-098：并发双管理员触发逾期提醒——不得对同一逾期记录双发
+
+    30 个逾期未提醒借阅记录（每孩子 1 条），双线程并发 send_overdue_reminders。
+    缺陷特征（无行锁）：两线程都读到 overdue_reminded=0 → 双发 → SystemMessage
+    借阅通知 60 条（应恰 30）。修复：get_overdue_records with_for_update 串行，
+    后者读到已标记 → 不再发。
+    """
+    from datetime import datetime, timedelta
+
+    from backend.common.types import BorrowStatus
+    from backend.domain.admin.services.message_service import AdminMessageService
+    from backend.domain.book.models import Book
+    from backend.domain.borrow.models import BorrowRecord
+    from backend.domain.message.models import SystemMessage
+
+    s = Session()
+    record_ids = []
+    for i in range(30):
+        u, cid = _make_user_child(s, f"odr_{uuid.uuid4().hex[:8]}")
+        book = Book(
+            title=f"逾期书{i}",
+            author="A",
+            isbn=f"978000000{i:04d}",
+            total_stock=1,
+            available_stock=1,
+            offline_available=1,
+            ar_value=Decimal("2.0"),
+            age_min=5,
+            age_max=9,
+        )
+        s.add(book)
+        s.flush()
+        rec = BorrowRecord(
+            child_id=cid,
+            book_id=book.id,
+            borrow_time=datetime.now() - timedelta(days=30),
+            due_date=datetime.now() - timedelta(days=7),
+            status=BorrowStatus.OVERDUE,
+            overdue_reminded=0,
+        )
+        s.add(rec)
+        s.flush()
+        record_ids.append(rec.id)
+    s.commit()
+    s.close()
+
+    lock = threading.Lock()
+    results = []
+
+    def try_send(tag):
+        sess = Session()
+        try:
+            r = AdminMessageService(sess).send_overdue_reminders(admin_id=1)
+            with lock:
+                results.append((tag, r.get("sent_count")))
+        except Exception as e:
+            with lock:
+                results.append((tag, f"err:{str(e)[:30]}"))
+        finally:
+            sess.close()
+
+    threads = [
+        threading.Thread(target=try_send, args=("T1",)),
+        threading.Thread(target=try_send, args=("T2",)),
+    ]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    s = Session()
+    # 只统计本场景独有内容（"逾期书"标题）——场景 A-J 残留的逾期借阅记录不干扰判定
+    k_msg = (
+        s.query(SystemMessage).filter(SystemMessage.content.like("%逾期书%")).count()
+    )
+    s.close()
+    detail = f"逾期提醒 {k_msg} 条（应恰 30），结果 {results}"
+    return k_msg == 30, detail
 
 
 if __name__ == "__main__":
