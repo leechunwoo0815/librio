@@ -332,24 +332,29 @@ class RefundService:
             # F-002：回滚路径写 order.refund_status 必须行锁（与主流程/回调并发防覆盖）
             order = (
                 db.query(Order)
-                .filter(Order.order_no == order_no)
+                .filter(Order.order_no == order_no, Order.is_deleted == 0)  # F-016
                 .with_for_update()
                 .first()
             )
-            if order:
-                # F-005：已退款订单不回滚——防与 mark_refunded 并发完成后被覆盖为 PAID
-                if order.refund_status == 2:  # REFUND_DONE
-                    logger.warning(
-                        f"Refund rollback skipped: order={order_no} already refunded"
-                    )
-                    return
-                order.refund_status = 3  # FAILED
-                order.pay_status = PayStatus.PAID
-                order.refund_remark = str(error)[:200]
+            if not order:
+                # F-016：订单不存在/已软删时整条回退链不动作（含退款单）
+                return
+            # F-005：已退款订单不回滚——防与 mark_refunded 并发完成后被覆盖为 PAID
+            if order.refund_status == 2:  # REFUND_DONE
+                logger.warning(
+                    f"Refund rollback skipped: order={order_no} already refunded"
+                )
+                return
+            order.refund_status = 3  # FAILED
+            order.pay_status = PayStatus.PAID
+            order.refund_remark = str(error)[:200]
 
             refund = (
                 db.query(RefundApplication)
-                .filter(RefundApplication.id == refund_id)
+                .filter(
+                    RefundApplication.id == refund_id,
+                    RefundApplication.is_deleted == 0,  # F-016
+                )
                 .first()
             )
             if refund and refund.status == RefundApplication.STATUS_APPROVED:
@@ -371,7 +376,8 @@ class RefundService:
             db.commit()
         except SQLAlchemyError as e2:
             logger.error(
-                f"Failed to save refund failure state for order {order_no}: {e2}"
+                f"Failed to save refund failure state for order {order_no}: {e2}",
+                exc_info=True,
             )
 
     def mark_refunded(self, order_no: str) -> RefundResponse:
@@ -389,6 +395,7 @@ class RefundService:
             self.db.query(RefundApplication)
             .filter(
                 RefundApplication.order_id == order.id,
+                RefundApplication.is_deleted == 0,  # F-016
                 RefundApplication.status.in_(
                     [
                         RefundApplication.STATUS_APPROVED,
@@ -467,6 +474,7 @@ class RefundService:
             self.db.query(RefundApplication)
             .filter(
                 RefundApplication.order_id == order.id,
+                RefundApplication.is_deleted == 0,  # F-016
                 RefundApplication.status == RefundApplication.STATUS_APPROVED,
             )
             .with_for_update()

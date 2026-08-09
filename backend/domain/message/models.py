@@ -116,7 +116,8 @@ def _system_message_after_insert(mapper, connection, target):
     except Exception:
         logger.error(
             f"Subscribe hook failed for message {target.id} (non-blocking): "
-            f"{target.title}"
+            f"{target.title}",
+            exc_info=True,
         )
 
 

@@ -64,7 +64,7 @@ class AliyunSmsGateway(SmsGateway):
                 return True, ""
             return False, resp.body.message if resp.body else "未知错误"
         except Exception as e:
-            logger.error("阿里云 SMS SDK 异常 %s", e)
+            logger.error("阿里云 SMS SDK 异常 %s", e, exc_info=True)
             return False, str(e)
 
     async def send_code(self, phone: str) -> SmsSendResponse:
@@ -75,7 +75,7 @@ class AliyunSmsGateway(SmsGateway):
             logger.info(
                 "[AliyunSms(dev)] 验证码 %s 已生成（SDK/凭据未配置，未实际发送）phone=%s",
                 code[:4],
-                phone,
+                _mask_phone(phone),
             )
             return SmsSendResponse(success=True, code=code)
 
@@ -111,7 +111,7 @@ class AliyunSmsGateway(SmsGateway):
         if not _HAS_SDK or not self.app_id or not self.app_key:
             logger.info(
                 "[AliyunSms(dev)] 通知短信 phone=%s template=%s params=%s（SDK/凭据未配置）",
-                request.phone,
+                _mask_phone(request.phone),
                 request.template_id,
                 request.template_params,
             )
@@ -128,6 +128,8 @@ class AliyunSmsGateway(SmsGateway):
         )
         ok, err = await asyncio.to_thread(self._call_send_sms, req)
         logger.info(
-            "阿里云 SMS 通知 %s phone=%s", "成功" if ok else "失败", request.phone
+            "阿里云 SMS 通知 %s phone=%s",
+            "成功" if ok else "失败",
+            _mask_phone(request.phone),
         )
         return SmsSendResponse(success=ok, error_message=err)

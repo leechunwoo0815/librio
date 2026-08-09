@@ -64,7 +64,7 @@ class TencentSmsGateway(SmsGateway):
             logger.error("腾讯云 SMS 发送失败 reason=%s", err)
             return False, err
         except TencentCloudSDKException as e:
-            logger.error("腾讯云 SMS SDK 异常 %s", e)
+            logger.error("腾讯云 SMS SDK 异常 %s", e, exc_info=True)
             return False, str(e)
 
     async def send_code(self, phone: str) -> SmsSendResponse:
@@ -75,7 +75,7 @@ class TencentSmsGateway(SmsGateway):
             logger.info(
                 "[TencentSms(dev)] 验证码 %s 已生成（SDK/凭据未配置，未实际发送）phone=%s",
                 code[:4],
-                phone,
+                _mask_phone(phone),
             )
             return SmsSendResponse(success=True, code=code)
 
@@ -128,6 +128,8 @@ class TencentSmsGateway(SmsGateway):
 
         ok, err = await asyncio.to_thread(self._call_send, req)
         logger.info(
-            "腾讯云 SMS 通知 %s phone=%s", "成功" if ok else "失败", request.phone
+            "腾讯云 SMS 通知 %s phone=%s",
+            "成功" if ok else "失败",
+            _mask_phone(request.phone),
         )
         return SmsSendResponse(success=ok, error_message=err)

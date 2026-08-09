@@ -199,7 +199,7 @@ def main():
         init_child_v31_fields()
         logger.info("V3.1 data migration completed successfully!")
     except Exception:
-        logger.error("V3.1 data migration FAILED")
+        logger.error("V3.1 data migration FAILED", exc_info=True)
         sys.exit(1)
 
 

@@ -65,7 +65,7 @@ async def mock_payment_notify(
         }
     except Exception as e:
         db.rollback()
-        logger.error("[MockPayNotify] 支付回调失败: %s", e)
+        logger.error("[MockPayNotify] 支付回调失败: %s", e, exc_info=True)
         raise HTTPException(500, str(e))
     finally:
         db.close()
@@ -106,7 +106,7 @@ async def mock_refund_notify(
         return {"success": True, "order_no": order_no}
     except Exception as e:
         db.rollback()
-        logger.error("[MockRefundNotify] 退款回调失败: %s", e)
+        logger.error("[MockRefundNotify] 退款回调失败: %s", e, exc_info=True)
         raise HTTPException(500, str(e))
     finally:
         db.close()
@@ -147,7 +147,7 @@ async def mock_deposit_notify(
         return {"success": True, "deposit": {"id": result.id, "status": result.status}}
     except Exception as e:
         db.rollback()
-        logger.error("[MockDepositNotify] 押金回调失败: %s", e)
+        logger.error("[MockDepositNotify] 押金回调失败: %s", e, exc_info=True)
         raise HTTPException(500, str(e))
     finally:
         db.close()

@@ -91,7 +91,10 @@ class WeChatPayV3(PaymentGateway):
                     key_path.read_bytes(), password=None
                 )
             except Exception:
-                logger.error("无法加载商户私钥，请检查 PEM 文件格式或是否设有密码保护")
+                logger.error(
+                    "无法加载商户私钥，请检查 PEM 文件格式或是否设有密码保护",
+                    exc_info=True,
+                )
                 raise
         else:
             self.private_key = None
