@@ -33,9 +33,13 @@ class BookService:
         self.copy_repo = BookCopyRepository(db)
 
     def search_books(
-        self, search_params: BookSearch, child_id: int | None = None
+        self,
+        search_params: BookSearch,
+        child_id: int | None = None,
+        published_only: bool = True,
     ) -> BookListResponse:
-        """搜索图书 — 多条件 + 分页；child_id 传入时标记'挑战'书（H2）"""
+        """搜索图书 — 多条件 + 分页；child_id 传入时标记'挑战'书（H2）；
+        published_only=False 供管理端列表（F-116 终审：下架书须可见可重新上架）"""
         books, total = self.book_repo.search(
             keyword=search_params.keyword,
             ar_level=search_params.ar_level,
@@ -43,6 +47,7 @@ class BookService:
             theme=search_params.theme,
             page=search_params.page,
             page_size=search_params.page_size,
+            published_only=published_only,
         )
 
         # H2：孩子当前级别的 AR 上限（超限标'挑战'徽标，不隐藏，引导性提示）

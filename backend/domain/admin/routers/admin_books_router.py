@@ -50,7 +50,8 @@ def list_books(
     """搜索图书 — 返回分页列表 + 全局统计"""
     service = BookService(db)
     search = BookSearch(keyword=keyword, page=page, page_size=page_size)
-    result = service.search_books(search)
+    # F-116 终审：管理端列表必须包含下架书（否则无法定位并重新上架）
+    result = service.search_books(search, published_only=False)
     stats = admin_book_service.get_book_stats()
 
     # 返回字典格式，避免 Pydantic 序列化问题

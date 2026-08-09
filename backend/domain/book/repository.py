@@ -27,10 +27,13 @@ class BookRepository(BaseRepository[Book]):
         theme: str | None = None,
         page: int = 1,
         page_size: int = 10,
+        published_only: bool = True,
     ) -> tuple[list[Book], int]:
         """多条件搜索图书，返回 (结果列表, 总数)"""
-        # F-116：用户搜索只返回上架书（toggle_publish 下架后不得再被搜索到）
-        query = self.db.query(Book).filter(Book.is_deleted == 0, Book.is_published == 1)
+        query = self.db.query(Book).filter(Book.is_deleted == 0)
+        # F-116：用户搜索只返回上架书；管理端列表传 published_only=False（须能看到下架书重新上架）
+        if published_only:
+            query = query.filter(Book.is_published == 1)
 
         # 关键词搜索（标题/作者/ISBN）——转义 LIKE 通配符防注入（审查 P1-4）
         if keyword:

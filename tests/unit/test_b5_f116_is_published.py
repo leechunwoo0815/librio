@@ -69,3 +69,51 @@ class TestF116UserInvisibleAfterPublishOff:
         assert result["is_published"] == 0
         with pytest.raises(NotFoundError, match="已下架"):
             svc.get_book_detail(b.id)
+
+
+class TestF116AdminListIncludesUnpublished:
+    """F-116 终审闭环：管理端列表必须包含下架书（否则无法定位并重新上架）"""
+
+    def test_service_admin_search_includes_unpublished(self, db):
+        _mk_book(db, "上架书", "9780000001171", is_published=1)
+        _mk_book(db, "下架书", "9780000001172", is_published=0)
+        result = BookService(db).search_books(
+            BookSearch(keyword="书"), published_only=False
+        )
+        titles = {b.title for b in result.items}
+        assert "下架书" in titles
+        assert "上架书" in titles
+        assert result.total == 2
+
+    def test_admin_router_uses_admin_query(self, db):
+        """直接调用 admin 列表路由：下架书可见（撤 router 传参即红）"""
+        from unittest.mock import MagicMock
+
+        from backend.domain.admin.services.book_service import AdminBookService
+        from backend.domain.admin.routers.admin_books_router import list_books
+
+        _mk_book(db, "上架书", "9780000001173", is_published=1)
+        _mk_book(db, "下架书", "9780000001174", is_published=0)
+        resp = list_books(
+            keyword="书",
+            page=1,
+            page_size=20,
+            admin=MagicMock(),
+            db=db,
+            admin_book_service=AdminBookService(db),
+        )
+        titles = {item["title"] for item in resp["items"]}
+        assert "下架书" in titles
+        assert "上架书" in titles
+
+    def test_toggle_off_still_visible_in_admin(self, db):
+        b = _mk_book(db, "刚下架", "9780000001175", is_published=1)
+        svc = BookService(db)
+        assert svc.toggle_publish(b.id)["is_published"] == 0
+        result = BookService(db).search_books(
+            BookSearch(keyword="刚下架"), published_only=False
+        )
+        assert len(result.items) == 1
+        assert result.items[0].title == "刚下架"
+        db.expire_all()
+        assert db.query(Book).filter(Book.title == "刚下架").first().is_published == 0
