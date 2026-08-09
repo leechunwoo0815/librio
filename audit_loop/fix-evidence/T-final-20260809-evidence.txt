@@ -8,9 +8,9 @@ P2-1 F-077：撤应用层占用检查（屏蔽 DB 兜底）→ test_f077 1 faile
 P2-4 F-016：撤 is_deleted 过滤 → test_f016 4 failed；恢复 4 passed
 P2-5 F-035：撤 < next_month_start → test_f035 1 failed；恢复 1 passed
 P2-6 F-015：撤范围查询 → test_scheduler_msg_types 1 failed；恢复 4 passed
-P2-7 F-069：撤重叠校验 → test_batch4_data 2 failed；恢复 9 passed
+P2-7 F-069：撤重叠校验 → test_batch4_data 2 failed；恢复 10 passed
 P2-8 F-049：撤白名单/403 修复 → test_batch3_security 2 failed；恢复 9 passed
-P3   F-119：撤生成列唯一（模型/迁移）→ test_batch2 1 failed；恢复 9 passed
+P3   F-119：撤生成列唯一（模型/迁移）→ test_batch2 1 failed；恢复 6 passed
 
 [全量门禁]
 pytest:  910 passed, 69 warnings in 429.99s (0:07:09)（0 failed 0 error）
