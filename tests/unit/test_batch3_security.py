@@ -102,16 +102,21 @@ class TestF049PageFailClosed:
 
         assert PAGE_PERM_MAP.get("profile") == ""
         fake_admin = {"id": 1, "permissions": []}
-        with patch(
-            "backend.domain.admin.admin_page_router._get_admin_info",
-            return_value=fake_admin,
-        ), patch(
-            "backend.domain.admin.admin_page_router.templates.TemplateResponse",
-            return_value="RENDERED",
-        ) as mock_render:
+        with (
+            patch(
+                "backend.domain.admin.admin_page_router._get_admin_info",
+                return_value=fake_admin,
+            ),
+            patch(
+                "backend.domain.admin.admin_page_router.templates.TemplateResponse",
+                return_value="RENDERED",
+            ) as mock_render,
+        ):
             from starlette.requests import Request
 
-            request = Request({"type": "http", "method": "GET", "path": "/admin/view/profile"})
+            request = Request(
+                {"type": "http", "method": "GET", "path": "/admin/view/profile"}
+            )
             resp = asyncio.run(profile(request))
         assert resp == "RENDERED"
         assert mock_render.call_args[0][1] == "admin/profile.html"

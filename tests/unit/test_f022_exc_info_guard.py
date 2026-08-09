@@ -38,6 +38,6 @@ def test_every_logger_error_inside_except_has_exc_info():
                 kwargs = {kw.arg: kw.value for kw in sub.keywords if kw.arg}
                 if "exc_info" not in kwargs:
                     violations.append(f"{path}:{getattr(sub, 'lineno', '?')}")
-    assert not violations, (
-        "except 块内 logger.error 缺 exc_info：\n" + "\n".join(violations)
+    assert not violations, "except 块内 logger.error 缺 exc_info：\n" + "\n".join(
+        violations
     )

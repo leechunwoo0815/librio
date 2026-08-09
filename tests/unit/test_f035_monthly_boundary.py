@@ -143,7 +143,11 @@ class TestF035MonthEndBoundary:
                 captured["stats"] = msg
 
         monkeypatch.setattr(scheduler.logger, "info", fake_info)
-        monkeypatch.setattr(scheduler, "date", type("D", (), {"today": staticmethod(lambda: date(2026, 8, 1))}))
+        monkeypatch.setattr(
+            scheduler,
+            "date",
+            type("D", (), {"today": staticmethod(lambda: date(2026, 8, 1))}),
+        )
         monkeypatch.setattr(scheduler, "_get_db_session", lambda: db)
 
         scheduler.generate_monthly_reports()

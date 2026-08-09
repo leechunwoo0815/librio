@@ -88,7 +88,11 @@ class TestF016RollbackIgnoresDeleted:
 
         db.expire_all()
         order = db.query(Order).filter(Order.id == order.id).first()
-        refund = db.query(RefundApplication).filter(RefundApplication.id == refund.id).first()
+        refund = (
+            db.query(RefundApplication)
+            .filter(RefundApplication.id == refund.id)
+            .first()
+        )
         assert order.refund_status == 0  # 未被置 FAILED
         assert refund.status == RefundApplication.STATUS_APPROVED  # 未被回退
 
@@ -106,7 +110,11 @@ class TestF016RollbackIgnoresDeleted:
 
         db.expire_all()
         order = db.query(Order).filter(Order.id == order.id).first()
-        refund = db.query(RefundApplication).filter(RefundApplication.id == refund.id).first()
+        refund = (
+            db.query(RefundApplication)
+            .filter(RefundApplication.id == refund.id)
+            .first()
+        )
         assert order.refund_status == 3  # 订单未删除，正常置 FAILED
         assert refund.status == RefundApplication.STATUS_APPROVED
 

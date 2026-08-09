@@ -650,7 +650,9 @@ class DepositService:
         if not record:
             raise NotFoundError("未找到已缴纳的押金记录")
         if record.status == DepositStatus.REFUNDING:
-            raise ConflictError("退款已在处理中（钱在途），无法取消；如需恢复请联系管理员")
+            raise ConflictError(
+                "退款已在处理中（钱在途），无法取消；如需恢复请联系管理员"
+            )
         if record.status != DepositStatus.REFUND_PENDING:
             raise ConflictError("当前状态不是待审核，无法取消")
 
