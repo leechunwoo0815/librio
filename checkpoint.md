@@ -1,7 +1,7 @@
 # DmkWords (librio) 项目检查点
 
-> 更新时间：2026-08-09 GMT+8 (v14)
-> 状态：✅ V3.23 — 52 题需求决策 + 四轮外部审查全闭环 + 终极全量审查 P0/P1/P2/P3 全部处置 + 160 轮审查 118 项修复五批次全闭环（audit-fix-batch-1~5）+ 终审整改（P1×3/P2×9/P3×14）闭环 + 决策表 V1.2（91 项）+ 925 pytest collected（开发机 925 passed，通过数随环境）/ 211/1369 behave + 56 表 + 67 配置 + 24 定时任务 + 336 API + CI 同构十一关全绿（含 Gate 11）
+> 更新时间：2026-08-09 GMT+8 (v15)
+> 状态：✅ V3.23 — 52 题需求决策 + 四轮外部审查全闭环 + 终极全量审查 P0/P1/P2/P3 全部处置 + 160 轮审查 118 项修复五批次全闭环（audit-fix-batch-1~5）+ 终审整改（P1×3/P2×9/P3×14）闭环 + 决策表 V1.2（91 项）+ 925 pytest collected（开发机 925 passed，通过数随环境）/ 211/1369 behave + 56 表 + 67 配置 + 24 定时任务 + 336 API + CI 同构十一关全绿（含 Gate 11）+ 门禁监控工具 monitor_gates.py 交付（v15 新增）
 
 ---
 
@@ -1380,3 +1380,20 @@ activity_checkin.html:  2    profile.html:           1    base.html:            
 | check_model_consistency | ✅ 54 tables, PASSED |
 | alembic check | ✅ No new upgrade operations detected |
 | integration_test | ✅ 55/55 全部通过 |
+
+---
+
+## §二十六、门禁监控工具交付（2026-08-09，v15）
+
+> 需求：`专家意见/门禁监控工具规格-20260809.md`；实现报告：`专家意见/门禁监控工具实现报告-20260809.md`
+
+| 项 | 内容 |
+|---|---|
+| 文件 | `scripts/monitor_gates.py`（新增，纯标准库，ruff 0 告警） |
+| 重构对象 | `sleep 500; grep -E "passed\|failed\|PASS\|FAIL\|No new\|OK:\|PASSED" /tmp/librio_gates6.log \| tail -20` |
+| 能力 | 轮询增量监控（替代 sleep 死等）/ 错误检测（`N failed(N>0)`/`FAIL`/`ERROR`/`Traceback`，[FAIL] 标红）/ 结果计数（passed/failed/PASS/FAIL/OK/No-new）+ 段名✓ 汇总 / GATES DONE 自动退出 |
+| 参数 | `--log-file`（默认 /tmp 最新）`--pattern` `--done-marker` `--interval`(5) `--stats-every`(60) `--timeout`(900) `--tail-lines`(0) `--exit-on-error` |
+| 退出码 | 0=DONE / 1=exit-on-error / 2=无日志 / 3=超时 / 4=异常；Ctrl+C 打印汇总退出 |
+| 测试 | `/tmp/test_monitor_gates.py` 18 用例（单元 13 + 集成 5）RED→GREEN 3.1s；**不入库**（pytest 门禁基线 925 零漂移） |
+| 实证 | 规格验收 1-4 全过：live 增量+DONE 退出 0 / 预写 2 failed → [FAIL]+码 1 / 无文件 → 码 2 列候选 / 历史真实文件 passed=2510 PASS=9 OK=3 No-new=1 十段全✓ |
+| 门禁影响 | 零：未改 backend/ 与 scripts/ 其他脚本，未跑门禁命令（规格 §五 禁做清单全遵守） |
